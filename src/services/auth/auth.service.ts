@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { User, UserRole, LoginCredentials, RegisterCredentials, AuthResponse } from '@/types/auth.types';
+import type { DbUser, DbUserInsert } from '@/types/database.types';
 
 // Service d'authentification - Gestion des utilisateurs dans le schéma public
 class AuthService {
@@ -9,22 +10,24 @@ class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
       // Récupérer l'utilisateur depuis la table users du schéma public
-      const { data: users, error } = await supabase
+      const { data: userData, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', credentials.email.toLowerCase())
         .maybeSingle();
 
       if (error) throw error;
-      if (!users) {
+      if (!userData) {
         return { success: false, error: 'Email ou mot de passe incorrect' };
       }
+
+      const dbUser = userData as unknown as DbUser;
 
       // Vérifier le mot de passe via une edge function
       const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-password', {
         body: { 
           password: credentials.password, 
-          hash: users.password_hash 
+          hash: dbUser.password_hash 
         }
       });
 
@@ -34,15 +37,15 @@ class AuthService {
 
       // Créer la session
       const user: User = {
-        id: users.id,
-        email: users.email,
-        firstName: users.first_name,
-        lastName: users.last_name,
-        phone: users.phone,
-        role: users.role as UserRole,
-        isActive: users.is_active,
-        createdAt: users.created_at,
-        updatedAt: users.updated_at,
+        id: dbUser.id,
+        email: dbUser.email,
+        firstName: dbUser.first_name,
+        lastName: dbUser.last_name,
+        phone: dbUser.phone,
+        role: dbUser.role as UserRole,
+        isActive: dbUser.is_active,
+        createdAt: dbUser.created_at,
+        updatedAt: dbUser.updated_at,
       };
 
       this.currentUser = user;
@@ -80,22 +83,29 @@ class AuthService {
         return { success: false, error: 'Erreur lors de la création du compte' };
       }
 
+      const insertData: DbUserInsert = {
+        email: credentials.email.toLowerCase(),
+        password_hash: hashResult.hash,
+        first_name: credentials.firstName,
+        last_name: credentials.lastName,
+        phone: credentials.phone || null,
+        role: 'client',
+        is_active: true,
+      };
+
       // Créer l'utilisateur
-      const { data: newUser, error } = await supabase
+      const { data: newUserData, error } = await supabase
         .from('users')
-        .insert({
-          email: credentials.email.toLowerCase(),
-          password_hash: hashResult.hash,
-          first_name: credentials.firstName,
-          last_name: credentials.lastName,
-          phone: credentials.phone || null,
-          role: 'client',
-          is_active: true,
-        })
+        .insert(insertData as never)
         .select()
         .single();
 
       if (error) throw error;
+      if (!newUserData) {
+        return { success: false, error: 'Erreur lors de la création du compte' };
+      }
+
+      const newUser = newUserData as unknown as DbUser;
 
       const user: User = {
         id: newUser.id,

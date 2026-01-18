@@ -14,7 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      interventions: {
+        Row: {
+          address: string
+          category: string
+          city: string
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          estimated_price: number | null
+          final_price: number | null
+          id: string
+          is_active: boolean
+          latitude: number | null
+          longitude: number | null
+          photos: string[] | null
+          postal_code: string
+          priority: string
+          scheduled_at: string | null
+          started_at: string | null
+          status: string
+          technician_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          category: string
+          city: string
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_price?: number | null
+          final_price?: number | null
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          photos?: string[] | null
+          postal_code: string
+          priority?: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          technician_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          category?: string
+          city?: string
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_price?: number | null
+          final_price?: number | null
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
+          photos?: string[] | null
+          postal_code?: string
+          priority?: string
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          technician_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interventions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interventions_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          is_active: boolean
+          last_name: string
+          password_hash: string
+          phone: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          is_active?: boolean
+          last_name: string
+          password_hash: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          password_hash?: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
