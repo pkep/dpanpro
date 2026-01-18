@@ -2,8 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { statisticsService } from '@/services/statistics/statistics.service';
+import { interventionsService } from '@/services/interventions/interventions.service';
 import type { DailyStats, CategoryStats, StatusStats, PerformanceStats, TechnicianStats } from '@/services/statistics/statistics.service';
+import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS } from '@/types/intervention.types';
+import { ExportButton } from '@/components/export/ExportButton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -64,18 +67,20 @@ export default function StatisticsDashboard() {
   const [statusStats, setStatusStats] = useState<StatusStats[]>([]);
   const [performanceStats, setPerformanceStats] = useState<PerformanceStats | null>(null);
   const [technicianStats, setTechnicianStats] = useState<TechnicianStats[]>([]);
+  const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const [daily, category, status, performance, technicians] = await Promise.all([
+        const [daily, category, status, performance, technicians, allInterventions] = await Promise.all([
           statisticsService.getDailyStats(parseInt(period)),
           statisticsService.getCategoryStats(),
           statisticsService.getStatusStats(),
           statisticsService.getPerformanceStats(),
           statisticsService.getTechnicianStats(),
+          interventionsService.getInterventions(),
         ]);
         
         setDailyStats(daily);
@@ -83,6 +88,7 @@ export default function StatisticsDashboard() {
         setStatusStats(status);
         setPerformanceStats(performance);
         setTechnicianStats(technicians);
+        setInterventions(allInterventions);
       } catch (err) {
         console.error('Error fetching statistics:', err);
       } finally {
@@ -158,6 +164,7 @@ export default function StatisticsDashboard() {
                 Admin
               </Link>
             </Button>
+            <ExportButton interventions={interventions} disabled={loading} />
           </div>
         </div>
       </header>
