@@ -1,10 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTechnicianTracking, TechnicianLocation } from '@/hooks/useTechnicianTracking';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { geocodingService } from '@/services/geocoding/geocoding.service';
+import { calculateDistance, formatDistance } from '@/utils/geolocation';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ import {
   Locate,
   AlertCircle,
   Radio,
+  Route,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -145,17 +147,24 @@ function RecenterControl({ position }: { position: [number, number] | null }) {
   ) : null;
 }
 
+interface InterventionWithDistance extends Intervention {
+  distance?: number;
+}
+
 interface LiveTrackingMapProps {
   height?: string;
   showInterventions?: boolean;
+  showDistanceLines?: boolean;
 }
 
 export function LiveTrackingMap({ 
   height = '600px',
   showInterventions = true,
+  showDistanceLines = true,
 }: LiveTrackingMapProps) {
   const { user } = useAuth();
   const [enableTracking, setEnableTracking] = useState(false);
+  const [showLines, setShowLines] = useState(showDistanceLines);
   const { 
     technicians, 
     myLocation, 
@@ -238,9 +247,27 @@ export function LiveTrackingMap({
     ? [myLocation.coords.latitude, myLocation.coords.longitude] 
     : null;
 
-  const interventionsWithCoords = useMemo(() => 
-    interventions.filter(i => i.latitude && i.longitude),
-    [interventions]
+  // Filter interventions with coordinates and calculate distances
+  const interventionsWithCoords = useMemo((): InterventionWithDistance[] => {
+    const filtered = interventions.filter(i => i.latitude && i.longitude);
+    
+    if (!myPosition) return filtered;
+    
+    return filtered.map(intervention => ({
+      ...intervention,
+      distance: calculateDistance(
+        myPosition[0],
+        myPosition[1],
+        intervention.latitude!,
+        intervention.longitude!
+      ),
+    })).sort((a, b) => (a.distance || 0) - (b.distance || 0));
+  }, [interventions, myPosition]);
+
+  // Get interventions assigned to current user
+  const myAssignedInterventions = useMemo(() => 
+    interventionsWithCoords.filter(i => i.technicianId === user?.id),
+    [interventionsWithCoords, user?.id]
   );
 
   return (
@@ -249,23 +276,36 @@ export function LiveTrackingMap({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           {user?.role === 'technician' && (
-            <div className="flex items-center gap-2">
-              <Switch
-                id="tracking"
-                checked={enableTracking}
-                onCheckedChange={setEnableTracking}
-              />
-              <Label htmlFor="tracking" className="flex items-center gap-2">
-                {isTracking ? (
-                  <>
-                    <Radio className="h-4 w-4 text-green-500 animate-pulse" />
-                    Partage de position actif
-                  </>
-                ) : (
-                  'Activer le partage de position'
-                )}
-              </Label>
-            </div>
+            <>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="tracking"
+                  checked={enableTracking}
+                  onCheckedChange={setEnableTracking}
+                />
+                <Label htmlFor="tracking" className="flex items-center gap-2">
+                  {isTracking ? (
+                    <>
+                      <Radio className="h-4 w-4 text-green-500 animate-pulse" />
+                      Position active
+                    </>
+                  ) : (
+                    'Activer GPS'
+                  )}
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="show-lines"
+                  checked={showLines}
+                  onCheckedChange={setShowLines}
+                />
+                <Label htmlFor="show-lines" className="flex items-center gap-2">
+                  <Route className="h-4 w-4" />
+                  Distances
+                </Label>
+              </div>
+            </>
           )}
         </div>
 
@@ -369,6 +409,38 @@ export function LiveTrackingMap({
               </Marker>
             ))}
 
+          {/* Distance lines from technician to assigned interventions */}
+          {showLines && myPosition && myAssignedInterventions.map((intervention) => {
+            if (!intervention.latitude || !intervention.longitude) return null;
+            
+            const lineColor = intervention.priority === 'urgent' ? '#ef4444' : 
+                             intervention.priority === 'high' ? '#f97316' : '#6366f1';
+            
+            const midpoint: [number, number] = [
+              (myPosition[0] + intervention.latitude) / 2,
+              (myPosition[1] + intervention.longitude) / 2,
+            ];
+
+            return (
+              <Polyline
+                key={`line-${intervention.id}`}
+                positions={[myPosition, [intervention.latitude, intervention.longitude]]}
+                pathOptions={{
+                  color: lineColor,
+                  weight: 3,
+                  opacity: 0.7,
+                  dashArray: '10, 10',
+                }}
+              >
+                <Tooltip permanent direction="center" className="distance-tooltip">
+                  <span className="font-semibold text-xs bg-background/90 px-2 py-1 rounded shadow">
+                    {formatDistance(intervention.distance || 0)}
+                  </span>
+                </Tooltip>
+              </Polyline>
+            );
+          })}
+
           {/* Interventions */}
           {showInterventions && interventionsWithCoords.map((intervention) => (
             <Marker
@@ -376,7 +448,7 @@ export function LiveTrackingMap({
               position={[intervention.latitude!, intervention.longitude!]}
               icon={createInterventionIcon(intervention.priority)}
             >
-              <Popup minWidth={250}>
+              <Popup minWidth={280}>
                 <div className="space-y-2 p-1">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-sm">
@@ -393,6 +465,14 @@ export function LiveTrackingMap({
                   <p className="text-xs text-muted-foreground">
                     {intervention.address}, {intervention.city}
                   </p>
+
+                  {/* Distance display */}
+                  {intervention.distance !== undefined && (
+                    <div className="flex items-center gap-2 text-xs font-medium bg-muted/50 px-2 py-1 rounded">
+                      <Route className="h-3 w-3" />
+                      <span>Distance: {formatDistance(intervention.distance)}</span>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between">
                     <Badge variant="secondary" className="text-xs">
@@ -411,6 +491,49 @@ export function LiveTrackingMap({
           ))}
         </MapContainer>
       </div>
+
+      {/* Distance Panel for assigned interventions */}
+      {myPosition && myAssignedInterventions.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Route className="h-4 w-4" />
+              Mes interventions - Distances
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {myAssignedInterventions.map((intervention) => (
+                <div 
+                  key={intervention.id}
+                  className="flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{CATEGORY_ICONS[intervention.category]}</span>
+                    <div>
+                      <p className="text-sm font-medium">{intervention.title}</p>
+                      <p className="text-xs text-muted-foreground">{intervention.city}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={intervention.priority === 'urgent' ? 'destructive' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {formatDistance(intervention.distance || 0)}
+                    </Badge>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/intervention/${intervention.id}`}>
+                        <ExternalLink className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Legend */}
       <Card>
@@ -444,6 +567,15 @@ export function LiveTrackingMap({
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
                   <span>Normale</span>
+                </div>
+              </div>
+            )}
+            {showLines && (
+              <div className="space-y-2">
+                <h4 className="font-medium text-muted-foreground">Distances</h4>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-0.5 border-t-2 border-dashed border-indigo-500"></div>
+                  <span>Ligne vers intervention</span>
                 </div>
               </div>
             )}
