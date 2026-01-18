@@ -6,7 +6,7 @@ import { NotificationsDropdown } from '@/components/notifications/NotificationsD
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map } from 'lucide-react';
+import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio } from 'lucide-react';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import type { Intervention } from '@/types/intervention.types';
 
@@ -124,6 +124,12 @@ const TechnicianDashboard = () => {
               <Link to="/map">
                 <Map className="h-4 w-4 mr-2" />
                 Carte
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/live-tracking">
+                <Radio className="h-4 w-4 mr-2" />
+                Suivi GPS
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild>

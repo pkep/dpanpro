@@ -23,6 +23,7 @@ import {
   BarChart3,
   Calendar,
   Map,
+  Radio,
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -112,6 +113,12 @@ export default function AdminDashboard() {
               <Link to="/map">
                 <Map className="mr-2 h-4 w-4" />
                 Carte
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/live-tracking">
+                <Radio className="mr-2 h-4 w-4" />
+                Suivi GPS
               </Link>
             </Button>
             <Button variant="outline" asChild>
