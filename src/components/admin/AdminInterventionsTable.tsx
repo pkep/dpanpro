@@ -32,7 +32,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-import { AlertCircle, UserPlus, Eye, MapPin, Star } from 'lucide-react';
+import { AlertCircle, UserPlus, Eye, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -194,31 +194,21 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
                     disabled={updatingId === intervention.id}
                   >
                     <SelectTrigger className="w-36">
-                      <SelectValue placeholder="Assigner">
-                        {intervention.technicianId ? (
-                          getTechnicianName(intervention.technicianId)
-                        ) : (
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <UserPlus className="h-3 w-3" />
-                            Assigner
-                          </span>
-                        )}
-                      </SelectValue>
+                      <SelectValue placeholder="Assigner" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="unassigned" disabled>
+                        Non assigné
+                      </SelectItem>
                       {technicians.map((tech) => {
                         const rating = technicianRatings.get(tech.id);
+                        const name = `${tech.firstName} ${tech.lastName}`;
+                        const ratingSuffix =
+                          rating && rating.count > 0 ? ` — ${rating.average.toFixed(1)}★` : '';
+
                         return (
-                          <SelectItem key={tech.id} value={tech.id}>
-                            <span className="flex items-center gap-2">
-                              <span>{tech.firstName} {tech.lastName}</span>
-                              {rating && rating.count > 0 && (
-                                <span className="flex items-center gap-0.5 text-xs">
-                                  <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-                                  {rating.average.toFixed(1)}
-                                </span>
-                              )}
-                            </span>
+                          <SelectItem key={tech.id} value={tech.id} textValue={name}>
+                            {`${name}${ratingSuffix}`}
                           </SelectItem>
                         );
                       })}
