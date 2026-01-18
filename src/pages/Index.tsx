@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, User, Mail, Phone, Shield, Calendar, Plus, LayoutDashboard } from 'lucide-react';
+import { LogOut, User, Mail, Phone, Shield, Calendar, Plus, LayoutDashboard, Wrench } from 'lucide-react';
 
 const Index = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -93,10 +93,18 @@ const Index = () => {
               </div>
               
               <div className="flex flex-col gap-2 mt-4">
-                <Button asChild className="w-full">
+                {(user.role === 'technician' || user.role === 'admin') && (
+                  <Button asChild className="w-full">
+                    <Link to="/technician">
+                      <Wrench className="mr-2 h-4 w-4" />
+                      Espace Technicien
+                    </Link>
+                  </Button>
+                )}
+                <Button asChild variant={user.role === 'technician' ? 'secondary' : 'default'} className="w-full">
                   <Link to="/dashboard">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Tableau de bord
+                    Tableau de bord Client
                   </Link>
                 </Button>
                 <Button asChild variant="secondary" className="w-full">
