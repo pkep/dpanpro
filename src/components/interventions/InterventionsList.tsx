@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Intervention, InterventionStatus, STATUS_LABELS } from '@/types/intervention.types';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { InterventionCard } from './InterventionCard';
@@ -15,10 +16,19 @@ interface InterventionsListProps {
 type TabValue = 'all' | 'active' | 'completed';
 
 export function InterventionsList({ clientId, onInterventionClick }: InterventionsListProps) {
+  const navigate = useNavigate();
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabValue>('all');
+
+  const handleInterventionClick = (intervention: Intervention) => {
+    if (onInterventionClick) {
+      onInterventionClick(intervention);
+    } else {
+      navigate(`/intervention/${intervention.id}`);
+    }
+  };
 
   useEffect(() => {
     const fetchInterventions = async () => {
@@ -116,7 +126,7 @@ export function InterventionsList({ clientId, onInterventionClick }: Interventio
                 <InterventionCard
                   key={intervention.id}
                   intervention={intervention}
-                  onClick={() => onInterventionClick?.(intervention)}
+                  onClick={() => handleInterventionClick(intervention)}
                 />
               ))}
             </div>
