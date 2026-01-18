@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { TechnicianInterventionsList } from '@/components/interventions/TechnicianInterventionsList';
+import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -118,6 +119,7 @@ const TechnicianDashboard = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            <NotificationsDropdown />
             <Button variant="ghost" size="icon" asChild>
               <Link to="/">
                 <Home className="h-5 w-5" />
@@ -190,10 +192,6 @@ const TechnicianDashboard = () => {
 
           <TechnicianInterventionsList 
             technicianId={user.id}
-            onInterventionClick={(intervention) => {
-              // TODO: Navigate to intervention details
-              console.log('Clicked intervention:', intervention.id);
-            }}
           />
         </div>
       </main>

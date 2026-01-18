@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UsersTable } from '@/components/admin/UsersTable';
 import { AdminInterventionsTable } from '@/components/admin/AdminInterventionsTable';
+import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import {
   Home,
   Users,
@@ -96,12 +97,15 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          <Button variant="outline" asChild>
-            <Link to="/">
-              <Home className="mr-2 h-4 w-4" />
-              Accueil
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationsDropdown />
+            <Button variant="outline" asChild>
+              <Link to="/">
+                <Home className="mr-2 h-4 w-4" />
+                Accueil
+              </Link>
+            </Button>
+          </div>
         </div>
       </header>
 
