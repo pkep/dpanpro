@@ -6,7 +6,7 @@ import { NotificationsDropdown } from '@/components/notifications/NotificationsD
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map } from 'lucide-react';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import type { Intervention } from '@/types/intervention.types';
 
@@ -120,6 +120,12 @@ const TechnicianDashboard = () => {
           
           <div className="flex items-center gap-2">
             <NotificationsDropdown />
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/map">
+                <Map className="h-4 w-4 mr-2" />
+                Carte
+              </Link>
+            </Button>
             <Button variant="ghost" size="icon" asChild>
               <Link to="/">
                 <Home className="h-5 w-5" />

@@ -25,6 +25,7 @@ import { InterventionTimeline } from '@/components/interventions/InterventionTim
 import { AddCommentForm } from '@/components/interventions/AddCommentForm';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
+import { SingleLocationMap } from '@/components/map/SingleLocationMap';
 import {
   Home,
   ArrowLeft,
@@ -37,6 +38,7 @@ import {
   CheckCircle,
   Radio,
   Camera,
+  Map,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -254,6 +256,23 @@ export default function InterventionDetails() {
                     {intervention.address}<br />
                     {intervention.postalCode} {intervention.city}
                   </p>
+                </div>
+
+                {/* Map */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                    <Map className="h-4 w-4" />
+                    Localisation
+                  </h4>
+                  <SingleLocationMap
+                    address={intervention.address}
+                    city={intervention.city}
+                    postalCode={intervention.postalCode}
+                    latitude={intervention.latitude}
+                    longitude={intervention.longitude}
+                    title={intervention.title}
+                    height="250px"
+                  />
                 </div>
 
                 <Separator />
