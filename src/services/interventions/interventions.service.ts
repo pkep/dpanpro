@@ -5,6 +5,7 @@ import type {
   InterventionStatus,
   InterventionCategory 
 } from '@/types/intervention.types';
+import type { DbIntervention, DbInterventionInsert, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
 
 class InterventionsService {
   async getInterventions(filters?: {
@@ -39,7 +40,7 @@ class InterventionsService {
 
     if (error) throw error;
 
-    return (data || []).map(this.mapToIntervention);
+    return ((data || []) as unknown as DbIntervention[]).map(this.mapToIntervention);
   }
 
   async getIntervention(id: string): Promise<Intervention | null> {
@@ -52,33 +53,35 @@ class InterventionsService {
     if (error) throw error;
     if (!data) return null;
 
-    return this.mapToIntervention(data);
+    return this.mapToIntervention(data as unknown as DbIntervention);
   }
 
   async createIntervention(
     clientId: string,
     formData: InterventionFormData
   ): Promise<Intervention> {
+    const insertData: DbInterventionInsert = {
+      client_id: clientId,
+      category: formData.category as DbInterventionCategory,
+      title: formData.title,
+      description: formData.description,
+      address: formData.address,
+      city: formData.city,
+      postal_code: formData.postalCode,
+      priority: (formData.priority || 'normal') as DbInterventionPriority,
+      status: 'new' as DbInterventionStatus,
+      is_active: true,
+    };
+
     const { data, error } = await supabase
       .from('interventions')
-      .insert({
-        client_id: clientId,
-        category: formData.category,
-        title: formData.title,
-        description: formData.description,
-        address: formData.address,
-        city: formData.city,
-        postal_code: formData.postalCode,
-        priority: formData.priority || 'normal',
-        status: 'new',
-        is_active: true,
-      })
+      .insert(insertData as never)
       .select()
       .single();
 
     if (error) throw error;
 
-    return this.mapToIntervention(data);
+    return this.mapToIntervention(data as unknown as DbIntervention);
   }
 
   async updateStatus(id: string, status: InterventionStatus): Promise<void> {
@@ -92,7 +95,7 @@ class InterventionsService {
 
     const { error } = await supabase
       .from('interventions')
-      .update(updates)
+      .update(updates as never)
       .eq('id', id);
 
     if (error) throw error;
@@ -104,7 +107,7 @@ class InterventionsService {
       .update({
         technician_id: technicianId,
         status: 'assigned',
-      })
+      } as never)
       .eq('id', id);
 
     if (error) throw error;
@@ -113,36 +116,36 @@ class InterventionsService {
   async toggleActive(id: string, isActive: boolean): Promise<void> {
     const { error } = await supabase
       .from('interventions')
-      .update({ is_active: isActive })
+      .update({ is_active: isActive } as never)
       .eq('id', id);
 
     if (error) throw error;
   }
 
-  private mapToIntervention(data: Record<string, unknown>): Intervention {
+  private mapToIntervention(data: DbIntervention): Intervention {
     return {
-      id: data.id as string,
-      clientId: data.client_id as string,
-      technicianId: data.technician_id as string | null,
+      id: data.id,
+      clientId: data.client_id,
+      technicianId: data.technician_id,
       category: data.category as InterventionCategory,
-      priority: data.priority as Intervention['priority'],
+      priority: data.priority,
       status: data.status as InterventionStatus,
-      title: data.title as string,
-      description: data.description as string,
-      address: data.address as string,
-      city: data.city as string,
-      postalCode: data.postal_code as string,
-      latitude: data.latitude as number | null,
-      longitude: data.longitude as number | null,
-      estimatedPrice: data.estimated_price as number | null,
-      finalPrice: data.final_price as number | null,
-      scheduledAt: data.scheduled_at as string | null,
-      startedAt: data.started_at as string | null,
-      completedAt: data.completed_at as string | null,
-      photos: data.photos as string[] | undefined,
-      isActive: data.is_active as boolean,
-      createdAt: data.created_at as string,
-      updatedAt: data.updated_at as string,
+      title: data.title,
+      description: data.description || '',
+      address: data.address,
+      city: data.city,
+      postalCode: data.postal_code,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      estimatedPrice: data.estimated_price,
+      finalPrice: data.final_price,
+      scheduledAt: data.scheduled_at,
+      startedAt: data.started_at,
+      completedAt: data.completed_at,
+      photos: data.photos || undefined,
+      isActive: data.is_active,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
     };
   }
 }

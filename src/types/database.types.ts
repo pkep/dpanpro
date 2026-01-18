@@ -1,0 +1,70 @@
+// Types manuels pour les tables (indépendants de Supabase types auto-générés)
+
+export type DbInterventionCategory = 'plumbing' | 'electricity' | 'heating' | 'locksmith' | 'glazing' | 'aircon' | 'other';
+export type DbInterventionPriority = 'low' | 'normal' | 'high' | 'urgent';
+export type DbInterventionStatus = 'new' | 'assigned' | 'en_route' | 'in_progress' | 'completed' | 'cancelled';
+
+export interface DbUser {
+  id: string;
+  email: string;
+  password_hash: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  role: 'client' | 'technician' | 'admin';
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbIntervention {
+  id: string;
+  client_id: string;
+  technician_id: string | null;
+  category: DbInterventionCategory;
+  priority: DbInterventionPriority;
+  status: DbInterventionStatus;
+  title: string;
+  description: string | null;
+  address: string;
+  city: string;
+  postal_code: string;
+  latitude: number | null;
+  longitude: number | null;
+  estimated_price: number | null;
+  final_price: number | null;
+  scheduled_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  photos: string[] | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbUserInsert {
+  email: string;
+  password_hash: string;
+  first_name: string;
+  last_name: string;
+  phone?: string | null;
+  role?: 'client' | 'technician' | 'admin';
+  is_active?: boolean;
+}
+
+export interface DbInterventionInsert {
+  client_id: string;
+  category: DbInterventionCategory;
+  title: string;
+  description?: string | null;
+  address: string;
+  city: string;
+  postal_code: string;
+  priority?: DbInterventionPriority;
+  status?: DbInterventionStatus;
+  technician_id?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  estimated_price?: number | null;
+  is_active?: boolean;
+}
