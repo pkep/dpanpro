@@ -93,8 +93,16 @@ const Index = () => {
               </div>
               
               <div className="flex flex-col gap-2 mt-4">
-                {(user.role === 'technician' || user.role === 'admin') && (
+                {user.role === 'admin' && (
                   <Button asChild className="w-full">
+                    <Link to="/admin">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Administration
+                    </Link>
+                  </Button>
+                )}
+                {(user.role === 'technician' || user.role === 'admin') && (
+                  <Button asChild variant={user.role === 'admin' ? 'secondary' : 'default'} className="w-full">
                     <Link to="/technician">
                       <Wrench className="mr-2 h-4 w-4" />
                       Espace Technicien
