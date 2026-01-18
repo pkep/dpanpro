@@ -21,6 +21,7 @@ import {
   Clock,
   Shield,
   BarChart3,
+  Calendar,
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -101,9 +102,15 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-2">
             <NotificationsDropdown />
             <Button variant="outline" asChild>
+              <Link to="/planning">
+                <Calendar className="mr-2 h-4 w-4" />
+                Planning
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
               <Link to="/statistics">
                 <BarChart3 className="mr-2 h-4 w-4" />
-                Statistiques
+                Stats
               </Link>
             </Button>
             <Button variant="ghost" asChild>
