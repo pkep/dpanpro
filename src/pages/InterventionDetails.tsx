@@ -26,6 +26,7 @@ import { AddCommentForm } from '@/components/interventions/AddCommentForm';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { SingleLocationMap } from '@/components/map/SingleLocationMap';
+import { RatingForm } from '@/components/ratings/RatingForm';
 import {
   Home,
   ArrowLeft,
@@ -39,6 +40,7 @@ import {
   Radio,
   Camera,
   Map,
+  Star,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -391,6 +393,22 @@ export default function InterventionDetails() {
                 />
               </CardContent>
             </Card>
+
+            {/* Rating Section (for completed interventions) */}
+            {intervention.status === 'completed' && (
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Évaluation
+                </h3>
+                <RatingForm
+                  interventionId={intervention.id}
+                  clientId={intervention.clientId}
+                  interventionStatus={intervention.status}
+                  isClient={user.role === 'client'}
+                />
+              </div>
+            )}
 
             {/* Add Comment */}
             <Card>

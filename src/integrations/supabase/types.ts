@@ -55,6 +55,44 @@ export type Database = {
           },
         ]
       }
+      intervention_ratings: {
+        Row: {
+          client_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          intervention_id: string
+          rating: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          intervention_id: string
+          rating: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          intervention_id?: string
+          rating?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_ratings_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: true
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interventions: {
         Row: {
           address: string
