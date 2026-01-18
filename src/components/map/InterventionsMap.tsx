@@ -291,56 +291,58 @@ export function InterventionsMap({
               position={[intervention.latitude!, intervention.longitude!]}
               icon={createCustomIcon(intervention.priority, intervention.status)}
             >
-              <Popup minWidth={280} maxWidth={350}>
-                <div className="space-y-3 p-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-semibold text-foreground">
-                        {CATEGORY_ICONS[intervention.category as InterventionCategory]} {intervention.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {CATEGORY_LABELS[intervention.category as InterventionCategory]}
-                      </p>
+              {intervention.latitude && intervention.longitude && (
+                <Popup minWidth={280} maxWidth={350}>
+                  <div className="space-y-3 p-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-semibold text-foreground">
+                          {CATEGORY_ICONS[intervention.category as InterventionCategory]} {intervention.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {CATEGORY_LABELS[intervention.category as InterventionCategory]}
+                        </p>
+                      </div>
+                      <Badge variant={getPriorityVariant(intervention.priority)}>
+                        {PRIORITY_LABELS[intervention.priority as keyof typeof PRIORITY_LABELS]}
+                      </Badge>
                     </div>
-                    <Badge variant={getPriorityVariant(intervention.priority)}>
-                      {PRIORITY_LABELS[intervention.priority as keyof typeof PRIORITY_LABELS]}
-                    </Badge>
-                  </div>
 
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span>{intervention.address}, {intervention.postalCode} {intervention.city}</span>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span>{intervention.address}, {intervention.postalCode} {intervention.city}</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-between">
-                    <Badge variant={getStatusVariant(intervention.status as InterventionStatus)}>
-                      {STATUS_LABELS[intervention.status as InterventionStatus]}
-                    </Badge>
-                    
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={`/interventions/${intervention.id}`}>
-                        <ExternalLink className="h-4 w-4 mr-1" />
-                        Détails
-                      </Link>
+                    <div className="flex items-center justify-between">
+                      <Badge variant={getStatusVariant(intervention.status as InterventionStatus)}>
+                        {STATUS_LABELS[intervention.status as InterventionStatus]}
+                      </Badge>
+                      
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to={`/interventions/${intervention.id}`}>
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Détails
+                        </Link>
+                      </Button>
+                    </div>
+
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => {
+                        const url = `https://www.google.com/maps/dir/?api=1&destination=${intervention.latitude},${intervention.longitude}`;
+                        window.open(url, '_blank');
+                      }}
+                    >
+                      <Navigation className="h-4 w-4 mr-2" />
+                      Itinéraire Google Maps
                     </Button>
                   </div>
-
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => {
-                      const url = `https://www.google.com/maps/dir/?api=1&destination=${intervention.latitude},${intervention.longitude}`;
-                      window.open(url, '_blank');
-                    }}
-                  >
-                    <Navigation className="h-4 w-4 mr-2" />
-                    Itinéraire Google Maps
-                  </Button>
-                </div>
-              </Popup>
+                </Popup>
+              )}
             </Marker>
           ))}
         </MapContainer>
