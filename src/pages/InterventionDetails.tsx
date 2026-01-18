@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeIntervention } from '@/hooks/useRealtimeIntervention';
@@ -23,6 +23,8 @@ import {
 } from '@/components/ui/select';
 import { InterventionTimeline } from '@/components/interventions/InterventionTimeline';
 import { AddCommentForm } from '@/components/interventions/AddCommentForm';
+import { PhotoUpload } from '@/components/photos/PhotoUpload';
+import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import {
   Home,
   ArrowLeft,
@@ -34,11 +36,11 @@ import {
   AlertCircle,
   CheckCircle,
   Radio,
+  Camera,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
 
 const STATUS_COLORS: Record<InterventionStatus, string> = {
   new: 'bg-blue-500/10 text-blue-600 border-blue-200',
@@ -56,6 +58,7 @@ export default function InterventionDetails() {
   const [technicians, setTechnicians] = useState<User[]>([]);
   const [updating, setUpdating] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+  const [photos, setPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchTechnicians = async () => {
@@ -68,6 +71,15 @@ export default function InterventionDetails() {
     };
     fetchTechnicians();
   }, []);
+
+  // Sync photos from intervention
+  useEffect(() => {
+    if (intervention?.photos) {
+      setPhotos(intervention.photos);
+    } else {
+      setPhotos([]);
+    }
+  }, [intervention?.photos]);
 
   const handleStatusChange = async (newStatus: InterventionStatus) => {
     if (!intervention || !user) return;
@@ -333,6 +345,31 @@ export default function InterventionDetails() {
                     </div>
                   </>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Photos Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="h-5 w-5" />
+                  Photos ({photos.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {canEdit && (
+                  <PhotoUpload
+                    interventionId={intervention.id}
+                    existingPhotos={photos}
+                    onPhotosUpdated={setPhotos}
+                  />
+                )}
+                <PhotoGallery
+                  interventionId={intervention.id}
+                  photos={photos}
+                  onPhotosUpdated={setPhotos}
+                  canDelete={canEdit}
+                />
               </CardContent>
             </Card>
 
