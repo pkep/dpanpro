@@ -85,32 +85,106 @@ class RatingsService {
   }
 
   async getTechnicianAverageRating(technicianId: string): Promise<{ average: number; count: number }> {
-    const { data, error } = await supabase
-      .from('intervention_ratings')
-      .select(`
-        rating,
-        intervention_id
-      `);
+    // First get all interventions for this technician
+    const { data: interventions, error: interventionsError } = await supabase
+      .from('interventions')
+      .select('id')
+      .eq('technician_id', technicianId)
+      .eq('status', 'completed');
 
-    if (error) {
-      console.error('Error fetching technician ratings:', error);
-      throw error;
+    if (interventionsError) {
+      console.error('Error fetching technician interventions:', interventionsError);
+      throw interventionsError;
     }
 
-    // Filter by technician - we need to join with interventions
-    // For now, return all ratings and filter client-side
-    // In production, you'd create a database view for this
-    const ratings = data as { rating: number; intervention_id: string }[];
-    
-    if (ratings.length === 0) {
+    if (!interventions || interventions.length === 0) {
+      return { average: 0, count: 0 };
+    }
+
+    const interventionIds = interventions.map(i => i.id);
+
+    // Get all ratings for those interventions
+    const { data: ratings, error: ratingsError } = await supabase
+      .from('intervention_ratings')
+      .select('rating')
+      .in('intervention_id', interventionIds);
+
+    if (ratingsError) {
+      console.error('Error fetching ratings:', ratingsError);
+      throw ratingsError;
+    }
+
+    if (!ratings || ratings.length === 0) {
       return { average: 0, count: 0 };
     }
 
     const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
     return {
-      average: sum / ratings.length,
+      average: Math.round((sum / ratings.length) * 10) / 10,
       count: ratings.length,
     };
+  }
+
+  async getAllTechniciansRatings(): Promise<Map<string, { average: number; count: number }>> {
+    // Get all completed interventions with their technician IDs
+    const { data: interventions, error: interventionsError } = await supabase
+      .from('interventions')
+      .select('id, technician_id')
+      .eq('status', 'completed')
+      .not('technician_id', 'is', null);
+
+    if (interventionsError) {
+      console.error('Error fetching interventions:', interventionsError);
+      throw interventionsError;
+    }
+
+    if (!interventions || interventions.length === 0) {
+      return new Map();
+    }
+
+    const interventionIds = interventions.map(i => i.id);
+
+    // Get all ratings
+    const { data: ratings, error: ratingsError } = await supabase
+      .from('intervention_ratings')
+      .select('rating, intervention_id')
+      .in('intervention_id', interventionIds);
+
+    if (ratingsError) {
+      console.error('Error fetching ratings:', ratingsError);
+      throw ratingsError;
+    }
+
+    // Map intervention_id to technician_id
+    const interventionToTechnician = new Map<string, string>();
+    interventions.forEach(i => {
+      if (i.technician_id) {
+        interventionToTechnician.set(i.id, i.technician_id);
+      }
+    });
+
+    // Calculate average per technician
+    const technicianRatings = new Map<string, number[]>();
+    
+    ratings?.forEach(r => {
+      const techId = interventionToTechnician.get(r.intervention_id);
+      if (techId) {
+        const existing = technicianRatings.get(techId) || [];
+        existing.push(r.rating);
+        technicianRatings.set(techId, existing);
+      }
+    });
+
+    const result = new Map<string, { average: number; count: number }>();
+    technicianRatings.forEach((ratings, techId) => {
+      const sum = ratings.reduce((acc, r) => acc + r, 0);
+      result.set(techId, {
+        average: Math.round((sum / ratings.length) * 10) / 10,
+        count: ratings.length,
+      });
+    });
+
+    return result;
   }
 
   private mapToRating(data: DbRating): Rating {

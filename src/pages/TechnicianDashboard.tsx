@@ -4,10 +4,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { TechnicianInterventionsList } from '@/components/interventions/TechnicianInterventionsList';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import { ProximitySettings } from '@/components/notifications/ProximitySettings';
+import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio } from 'lucide-react';
+import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio, Star } from 'lucide-react';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import type { Intervention } from '@/types/intervention.types';
 
@@ -115,7 +116,10 @@ const TechnicianDashboard = () => {
             </Avatar>
             <div>
               <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
-              <p className="text-xs text-muted-foreground">Espace Technicien</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground">Technicien</p>
+                <TechnicianRating technicianId={user.id} size="sm" showCount={false} />
+              </div>
             </div>
           </div>
           
@@ -193,6 +197,17 @@ const TechnicianDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Rating Card */}
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ma note moyenne</CardTitle>
+            <Star className="h-4 w-4 text-yellow-400" />
+          </CardHeader>
+          <CardContent>
+            <TechnicianRating technicianId={user.id} size="lg" showCount={true} />
+          </CardContent>
+        </Card>
 
         {/* Proximity Settings and Interventions */}
         <div className="grid lg:grid-cols-3 gap-6">

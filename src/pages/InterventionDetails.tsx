@@ -27,6 +27,7 @@ import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { SingleLocationMap } from '@/components/map/SingleLocationMap';
 import { RatingForm } from '@/components/ratings/RatingForm';
+import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import {
   Home,
   ArrowLeft,
@@ -287,10 +288,19 @@ export default function InterventionDetails() {
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground mb-1">Technicien</h4>
-                    <p className="text-sm flex items-center gap-2">
-                      <Wrench className="h-4 w-4" />
-                      {getTechnicianName(intervention.technicianId)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm flex items-center gap-2">
+                        <Wrench className="h-4 w-4" />
+                        {getTechnicianName(intervention.technicianId)}
+                      </p>
+                      {intervention.technicianId && (
+                        <TechnicianRating 
+                          technicianId={intervention.technicianId} 
+                          size="sm" 
+                          showCount={false} 
+                        />
+                      )}
+                    </div>
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">

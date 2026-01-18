@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { usersService } from '@/services/users/users.service';
+import { ratingsService } from '@/services/ratings/ratings.service';
 import type { Intervention, InterventionStatus } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { STATUS_LABELS, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';
@@ -30,7 +31,8 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, UserPlus, Eye, MapPin } from 'lucide-react';
+import { TechnicianRatingDisplay } from '@/components/ratings/TechnicianRating';
+import { AlertCircle, UserPlus, Eye, MapPin, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -51,6 +53,7 @@ interface AdminInterventionsTableProps {
 export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterventionsTableProps) {
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [technicians, setTechnicians] = useState<User[]>([]);
+  const [technicianRatings, setTechnicianRatings] = useState<Map<string, { average: number; count: number }>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -60,12 +63,14 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
     try {
       setLoading(true);
       setError(null);
-      const [interventionsData, techniciansData] = await Promise.all([
+      const [interventionsData, techniciansData, ratingsData] = await Promise.all([
         interventionsService.getInterventions(),
         usersService.getTechnicians(),
+        ratingsService.getAllTechniciansRatings(),
       ]);
       setInterventions(interventionsData);
       setTechnicians(techniciansData);
+      setTechnicianRatings(ratingsData);
     } catch (err) {
       setError('Erreur lors du chargement des données');
       console.error(err);
@@ -201,11 +206,24 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {technicians.map((tech) => (
-                        <SelectItem key={tech.id} value={tech.id}>
-                          {tech.firstName} {tech.lastName}
-                        </SelectItem>
-                      ))}
+                      {technicians.map((tech) => {
+                        const rating = technicianRatings.get(tech.id);
+                        return (
+                          <SelectItem key={tech.id} value={tech.id}>
+                            <div className="flex items-center justify-between gap-2 w-full">
+                              <span>{tech.firstName} {tech.lastName}</span>
+                              {rating && rating.count > 0 && (
+                                <TechnicianRatingDisplay 
+                                  average={rating.average} 
+                                  count={rating.count} 
+                                  size="sm" 
+                                  showCount={false} 
+                                />
+                              )}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </TableCell>
