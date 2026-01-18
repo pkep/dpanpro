@@ -22,6 +22,7 @@ import {
   Shield,
   BarChart3,
   Calendar,
+  Map,
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -105,6 +106,12 @@ export default function AdminDashboard() {
               <Link to="/planning">
                 <Calendar className="mr-2 h-4 w-4" />
                 Planning
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/map">
+                <Map className="mr-2 h-4 w-4" />
+                Carte
               </Link>
             </Button>
             <Button variant="outline" asChild>
