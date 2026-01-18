@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { TechnicianInterventionsList } from '@/components/interventions/TechnicianInterventionsList';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
+import { ProximitySettings } from '@/components/notifications/ProximitySettings';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -193,18 +194,24 @@ const TechnicianDashboard = () => {
           </Card>
         </div>
 
-        {/* Interventions List */}
-        <div>
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">Mes interventions</h1>
-            <p className="text-muted-foreground">
-              Gérez les interventions qui vous sont assignées
-            </p>
+        {/* Proximity Settings and Interventions */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold">Mes interventions</h1>
+              <p className="text-muted-foreground">
+                Gérez les interventions qui vous sont assignées
+              </p>
+            </div>
+
+            <TechnicianInterventionsList 
+              technicianId={user.id}
+            />
           </div>
 
-          <TechnicianInterventionsList 
-            technicianId={user.id}
-          />
+          <div className="space-y-4">
+            <ProximitySettings />
+          </div>
         </div>
       </main>
     </div>
