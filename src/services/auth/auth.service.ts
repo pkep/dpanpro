@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { User, UserRole, LoginCredentials, RegisterCredentials, AuthResponse } from '@/types/auth.types';
 import type { DbUser, DbUserInsert } from '@/types/database.types';
+import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
 // Service d'authentification - Gestion des utilisateurs dans le schéma public
 class AuthService {
@@ -96,7 +97,7 @@ class AuthService {
       // Créer l'utilisateur
       const { data: newUserData, error } = await supabase
         .from('users')
-        .insert(insertData as never)
+        .insert(insertData as TablesInsert<'users'>)
         .select()
         .single();
 

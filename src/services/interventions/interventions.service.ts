@@ -6,6 +6,7 @@ import type {
   InterventionCategory 
 } from '@/types/intervention.types';
 import type { DbIntervention, DbInterventionInsert, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
+import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 class InterventionsService {
   async getInterventions(filters?: {
@@ -75,7 +76,7 @@ class InterventionsService {
 
     const { data, error } = await supabase
       .from('interventions')
-      .insert(insertData as never)
+      .insert(insertData as TablesInsert<'interventions'>)
       .select()
       .single();
 
@@ -95,7 +96,7 @@ class InterventionsService {
 
     const { error } = await supabase
       .from('interventions')
-      .update(updates as never)
+      .update(updates as TablesUpdate<'interventions'>)
       .eq('id', id);
 
     if (error) throw error;
@@ -107,7 +108,7 @@ class InterventionsService {
       .update({
         technician_id: technicianId,
         status: 'assigned',
-      } as never)
+      } as TablesUpdate<'interventions'>)
       .eq('id', id);
 
     if (error) throw error;
@@ -116,7 +117,7 @@ class InterventionsService {
   async toggleActive(id: string, isActive: boolean): Promise<void> {
     const { error } = await supabase
       .from('interventions')
-      .update({ is_active: isActive } as never)
+      .update({ is_active: isActive } as TablesUpdate<'interventions'>)
       .eq('id', id);
 
     if (error) throw error;
