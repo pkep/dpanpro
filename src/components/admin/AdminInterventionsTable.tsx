@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TechnicianRatingDisplay } from '@/components/ratings/TechnicianRating';
+
 import { AlertCircle, UserPlus, Eye, MapPin, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -210,17 +210,15 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
                         const rating = technicianRatings.get(tech.id);
                         return (
                           <SelectItem key={tech.id} value={tech.id}>
-                            <div className="flex items-center justify-between gap-2 w-full">
+                            <span className="flex items-center gap-2">
                               <span>{tech.firstName} {tech.lastName}</span>
                               {rating && rating.count > 0 && (
-                                <TechnicianRatingDisplay 
-                                  average={rating.average} 
-                                  count={rating.count} 
-                                  size="sm" 
-                                  showCount={false} 
-                                />
+                                <span className="flex items-center gap-0.5 text-xs">
+                                  <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                                  {rating.average.toFixed(1)}
+                                </span>
                               )}
-                            </div>
+                            </span>
                           </SelectItem>
                         );
                       })}
