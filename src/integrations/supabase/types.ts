@@ -183,6 +183,144 @@ export type Database = {
           },
         ]
       }
+      partner_applications: {
+        Row: {
+          address: string
+          bank_account_holder: string
+          bank_name: string
+          bic: string
+          birth_date: string
+          birth_place: string
+          city: string
+          company_name: string
+          created_at: string
+          data_accuracy_confirmed: boolean
+          email: string
+          first_name: string
+          has_decennial_insurance: boolean
+          iban: string
+          id: string
+          insurance_company: string
+          insurance_expiry_date: string
+          insurance_policy_number: string
+          last_name: string
+          legal_status: string
+          motivation: string
+          password_hash: string
+          phone: string
+          postal_code: string
+          siret: string
+          skills: string[]
+          status: string
+          terms_accepted: boolean
+          updated_at: string
+          vat_number: string | null
+          years_experience: number
+        }
+        Insert: {
+          address: string
+          bank_account_holder: string
+          bank_name: string
+          bic: string
+          birth_date: string
+          birth_place: string
+          city: string
+          company_name: string
+          created_at?: string
+          data_accuracy_confirmed?: boolean
+          email: string
+          first_name: string
+          has_decennial_insurance?: boolean
+          iban: string
+          id?: string
+          insurance_company: string
+          insurance_expiry_date: string
+          insurance_policy_number: string
+          last_name: string
+          legal_status: string
+          motivation: string
+          password_hash: string
+          phone: string
+          postal_code: string
+          siret: string
+          skills: string[]
+          status?: string
+          terms_accepted?: boolean
+          updated_at?: string
+          vat_number?: string | null
+          years_experience: number
+        }
+        Update: {
+          address?: string
+          bank_account_holder?: string
+          bank_name?: string
+          bic?: string
+          birth_date?: string
+          birth_place?: string
+          city?: string
+          company_name?: string
+          created_at?: string
+          data_accuracy_confirmed?: boolean
+          email?: string
+          first_name?: string
+          has_decennial_insurance?: boolean
+          iban?: string
+          id?: string
+          insurance_company?: string
+          insurance_expiry_date?: string
+          insurance_policy_number?: string
+          last_name?: string
+          legal_status?: string
+          motivation?: string
+          password_hash?: string
+          phone?: string
+          postal_code?: string
+          siret?: string
+          skills?: string[]
+          status?: string
+          terms_accepted?: boolean
+          updated_at?: string
+          vat_number?: string | null
+          years_experience?: number
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string
