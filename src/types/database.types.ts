@@ -40,6 +40,9 @@ export interface DbIntervention {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  tracking_code: string | null;
+  client_email: string | null;
+  client_phone: string | null;
 }
 
 export interface DbUserInsert {
@@ -67,4 +70,7 @@ export interface DbInterventionInsert {
   longitude?: number | null;
   estimated_price?: number | null;
   is_active?: boolean;
+  client_email?: string | null;
+  client_phone?: string | null;
+  photos?: string[] | null;
 }
