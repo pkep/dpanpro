@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Camera, Upload, X, MapPin } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { storageService } from '@/services/storage/storage.service';
 import { toast } from 'sonner';
 
 interface StepProblemDescriptionProps {
@@ -47,24 +47,7 @@ export function StepProblemDescription({
           continue;
         }
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `temp/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('intervention-photos')
-          .upload(filePath, file);
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-          toast.error('Erreur lors du téléchargement');
-          continue;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('intervention-photos')
-          .getPublicUrl(filePath);
-
+        const publicUrl = await storageService.uploadFile('intervention-photos', file, 'temp');
         newPhotos.push(publicUrl);
       }
 
