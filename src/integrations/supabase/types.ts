@@ -294,10 +294,42 @@ export type Database = {
         }
         Relationships: []
       }
+      priority_multipliers: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          label: string
+          multiplier: number
+          priority: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          label: string
+          multiplier?: number
+          priority: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          label?: string
+          multiplier?: number
+          priority?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
+          base_price: number
           code: string
           created_at: string
+          default_priority: string
           description: string | null
           display_order: number
           icon: string | null
@@ -307,8 +339,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_price?: number
           code: string
           created_at?: string
+          default_priority?: string
           description?: string | null
           display_order?: number
           icon?: string | null
@@ -318,8 +352,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_price?: number
           code?: string
           created_at?: string
+          default_priority?: string
           description?: string | null
           display_order?: number
           icon?: string | null
