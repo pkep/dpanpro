@@ -20,7 +20,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
 };
 
 export function StepServiceSelection({ selectedCategory, onSelect }: StepServiceSelectionProps) {
-  const [services, setServices] = useState<Array<{ code: string; name: string; description: string | null }>>([]);
+  const [services, setServices] = useState<Array<{ code: string; name: string; description: string | null; basePrice: number; defaultPriority: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -76,6 +76,9 @@ export function StepServiceSelection({ selectedCategory, onSelect }: StepService
                   {categoryIcons[service.code] || <Wrench className="h-8 w-8" />}
                 </div>
                 <h3 className="font-semibold">{service.name}</h3>
+                <p className="text-sm font-medium text-primary mt-1">
+                  À partir de {service.basePrice}€
+                </p>
                 {service.description && (
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                     {service.description}

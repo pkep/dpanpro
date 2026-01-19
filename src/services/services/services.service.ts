@@ -10,6 +10,8 @@ export interface Service {
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
+  basePrice: number;
+  defaultPriority: string;
 }
 
 interface DbService {
@@ -22,6 +24,8 @@ interface DbService {
   display_order: number;
   created_at: string;
   updated_at: string;
+  base_price: number;
+  default_priority: string;
 }
 
 class ServicesService {
@@ -68,6 +72,8 @@ class ServicesService {
       displayOrder: data.display_order,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
+      basePrice: data.base_price,
+      defaultPriority: data.default_priority,
     };
   }
 }
