@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UsersTable } from '@/components/admin/UsersTable';
 import { AdminInterventionsTable } from '@/components/admin/AdminInterventionsTable';
+import { ServicesManagement } from '@/components/admin/ServicesManagement';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import {
   Home,
@@ -219,6 +220,10 @@ export default function AdminDashboard() {
               <Users className="h-4 w-4" />
               Utilisateurs
             </TabsTrigger>
+            <TabsTrigger value="services" className="flex items-center gap-2">
+              <Wrench className="h-4 w-4" />
+              Services & Tarifs
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="interventions">
@@ -247,6 +252,10 @@ export default function AdminDashboard() {
                 <UsersTable onUserUpdated={fetchStats} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="services">
+            <ServicesManagement />
           </TabsContent>
         </Tabs>
       </main>
