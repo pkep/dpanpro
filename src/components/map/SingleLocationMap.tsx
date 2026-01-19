@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -43,11 +43,11 @@ const createLocationIcon = () => {
 // Component to recenter map
 function RecenterMap({ center, zoom }: { center: [number, number]; zoom: number }) {
   const map = useMap();
-  
+
   useEffect(() => {
     map.setView(center, zoom);
   }, [center, zoom, map]);
-  
+
   return null;
 }
 
@@ -71,12 +71,17 @@ export function SingleLocationMap({
   title,
 }: SingleLocationMapProps) {
   const [coordinates, setCoordinates] = useState<[number, number] | null>(
-    initialLat && initialLng ? [initialLat, initialLng] : null
+    initialLat && initialLng ? [initialLat, initialLng] : null,
   );
   const [loading, setLoading] = useState(!initialLat || !initialLng);
   const [error, setError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+
+  const markerIcon = useMemo(() => createLocationIcon(), []);
 
   useEffect(() => {
+    setMapReady(false);
+
     if (initialLat && initialLng) {
       setCoordinates([initialLat, initialLng]);
       setLoading(false);
@@ -86,15 +91,15 @@ export function SingleLocationMap({
     const geocode = async () => {
       setLoading(true);
       setError(null);
-      
+
       const result = await geocodingService.geocodeAddress(address, city, postalCode);
-      
+
       if (result) {
         setCoordinates([result.latitude, result.longitude]);
       } else {
         setError('Impossible de géolocaliser cette adresse');
       }
-      
+
       setLoading(false);
     };
 
@@ -103,10 +108,7 @@ export function SingleLocationMap({
 
   if (loading) {
     return (
-      <div 
-        className="flex items-center justify-center rounded-lg border bg-muted/50" 
-        style={{ height }}
-      >
+      <div className="flex items-center justify-center rounded-lg border bg-muted/50" style={{ height }}>
         <div className="text-center space-y-2">
           <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
           <p className="text-sm text-muted-foreground">Géolocalisation en cours...</p>
@@ -117,10 +119,7 @@ export function SingleLocationMap({
 
   if (error || !coordinates) {
     return (
-      <div 
-        className="flex items-center justify-center rounded-lg border bg-muted/50" 
-        style={{ height }}
-      >
+      <div className="flex items-center justify-center rounded-lg border bg-muted/50" style={{ height }}>
         <div className="text-center space-y-2 p-4">
           <MapPin className="h-6 w-6 mx-auto text-muted-foreground" />
           <p className="text-sm text-muted-foreground">{error || 'Localisation non disponible'}</p>
@@ -142,27 +141,33 @@ export function SingleLocationMap({
           zoom={15}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={true}
+          whenReady={() => setMapReady(true)}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <RecenterMap center={coordinates} zoom={15} />
-          
-          <Marker position={coordinates} icon={createLocationIcon()}>
-            <Popup>
-              <div className="space-y-2 p-1">
-                {title && <h3 className="font-semibold">{title}</h3>}
-                <p className="text-sm">{fullAddress}</p>
-              </div>
-            </Popup>
-          </Marker>
+
+          {mapReady && (
+            <>
+              <RecenterMap center={coordinates} zoom={15} />
+
+              <Marker position={coordinates} icon={markerIcon}>
+                <Popup>
+                  <div className="space-y-2 p-1">
+                    {title && <h3 className="font-semibold">{title}</h3>}
+                    <p className="text-sm">{fullAddress}</p>
+                  </div>
+                </Popup>
+              </Marker>
+            </>
+          )}
         </MapContainer>
       </div>
-      
-      <Button 
-        variant="outline" 
-        size="sm" 
+
+      <Button
+        variant="outline"
+        size="sm"
         className="w-full"
         onClick={() => {
           const url = `https://www.google.com/maps/dir/?api=1&destination=${coordinates[0]},${coordinates[1]}`;
