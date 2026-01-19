@@ -89,6 +89,7 @@ export function InterventionsMap({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [mapCenter, setMapCenter] = useState<[number, number]>([46.603354, 1.888334]); // Center of France
   const [mapZoom, setMapZoom] = useState(6);
+  const [mapReady, setMapReady] = useState(false);
 
   // Fetch interventions if not provided
   useEffect(() => {
@@ -278,71 +279,70 @@ export function InterventionsMap({
           zoom={mapZoom}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={true}
+          whenReady={() => setMapReady(true)}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <RecenterMap center={mapCenter} zoom={mapZoom} />
+          {mapReady && <RecenterMap center={mapCenter} zoom={mapZoom} />}
           
-          {filteredInterventions.map((intervention) => (
+          {mapReady && filteredInterventions.map((intervention) => (
             <Marker
               key={intervention.id}
               position={[intervention.latitude!, intervention.longitude!]}
               icon={createCustomIcon(intervention.priority, intervention.status)}
             >
-              {intervention.latitude && intervention.longitude && (
-                <Popup minWidth={280} maxWidth={350}>
-                  <div className="space-y-3 p-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-semibold text-foreground">
-                          {CATEGORY_ICONS[intervention.category as InterventionCategory]} {intervention.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {CATEGORY_LABELS[intervention.category as InterventionCategory]}
-                        </p>
-                      </div>
-                      <Badge variant={getPriorityVariant(intervention.priority)}>
-                        {PRIORITY_LABELS[intervention.priority as keyof typeof PRIORITY_LABELS]}
-                      </Badge>
+              <Popup minWidth={280} maxWidth={350}>
+                <div className="space-y-3 p-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-semibold text-foreground">
+                        {CATEGORY_ICONS[intervention.category as InterventionCategory]} {intervention.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {CATEGORY_LABELS[intervention.category as InterventionCategory]}
+                      </p>
                     </div>
+                    <Badge variant={getPriorityVariant(intervention.priority)}>
+                      {PRIORITY_LABELS[intervention.priority as keyof typeof PRIORITY_LABELS]}
+                    </Badge>
+                  </div>
 
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span>{intervention.address}, {intervention.postalCode} {intervention.city}</span>
-                      </div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span>{intervention.address}, {intervention.postalCode} {intervention.city}</span>
                     </div>
+                  </div>
 
-                    <div className="flex items-center justify-between">
-                      <Badge variant={getStatusVariant(intervention.status as InterventionStatus)}>
-                        {STATUS_LABELS[intervention.status as InterventionStatus]}
-                      </Badge>
-                      
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/interventions/${intervention.id}`}>
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          Détails
-                        </Link>
-                      </Button>
-                    </div>
-
-                    <Button 
-                      variant="secondary" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => {
-                        const url = `https://www.google.com/maps/dir/?api=1&destination=${intervention.latitude},${intervention.longitude}`;
-                        window.open(url, '_blank');
-                      }}
-                    >
-                      <Navigation className="h-4 w-4 mr-2" />
-                      Itinéraire Google Maps
+                  <div className="flex items-center justify-between">
+                    <Badge variant={getStatusVariant(intervention.status as InterventionStatus)}>
+                      {STATUS_LABELS[intervention.status as InterventionStatus]}
+                    </Badge>
+                    
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/interventions/${intervention.id}`}>
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Détails
+                      </Link>
                     </Button>
                   </div>
-                </Popup>
-              )}
+
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => {
+                      const url = `https://www.google.com/maps/dir/?api=1&destination=${intervention.latitude},${intervention.longitude}`;
+                      window.open(url, '_blank');
+                    }}
+                  >
+                    <Navigation className="h-4 w-4 mr-2" />
+                    Itinéraire Google Maps
+                  </Button>
+                </div>
+              </Popup>
             </Marker>
           ))}
         </MapContainer>

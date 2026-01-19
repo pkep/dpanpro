@@ -175,6 +175,7 @@ export function LiveTrackingMap({
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapCenter, setMapCenter] = useState<[number, number]>([46.603354, 1.888334]);
+  const [mapReady, setMapReady] = useState(false);
 
   // Fetch active interventions
   useEffect(() => {
@@ -338,6 +339,7 @@ export function LiveTrackingMap({
           zoom={myPosition ? 13 : 6}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={true}
+          whenReady={() => setMapReady(true)}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -345,10 +347,10 @@ export function LiveTrackingMap({
           />
 
           {/* Recenter control */}
-          <RecenterControl position={myPosition} />
+          {mapReady && <RecenterControl position={myPosition} />}
 
           {/* Current user position with accuracy circle */}
-          {myPosition && myLocation && (
+          {mapReady && myPosition && myLocation && (
             <>
               <Circle
                 center={myPosition}
@@ -361,55 +363,52 @@ export function LiveTrackingMap({
                 }}
               />
               <Marker position={myPosition} icon={createTechnicianIcon(true)}>
-                {myPosition && (
-                  <Popup>
-                    <div className="space-y-2 p-1">
-                      <h3 className="font-semibold flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Ma position
-                      </h3>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <p>Précision: ±{Math.round(myLocation.coords.accuracy)}m</p>
-                        {myLocation.coords.speed && (
-                          <p>Vitesse: {Math.round(myLocation.coords.speed * 3.6)} km/h</p>
-                        )}
-                      </div>
+                <Popup>
+                  <div className="space-y-2 p-1">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Ma position
+                    </h3>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>Précision: ±{Math.round(myLocation.coords.accuracy)}m</p>
+                      {myLocation.coords.speed && (
+                        <p>Vitesse: {Math.round(myLocation.coords.speed * 3.6)} km/h</p>
+                      )}
                     </div>
-                  </Popup>
-                )}
+                  </div>
+                </Popup>
               </Marker>
             </>
           )}
 
           {/* Other technicians */}
-          {technicians
+          {mapReady && technicians
             .filter(t => t.id !== user?.id)
+            .filter(t => t.latitude != null && t.longitude != null)
             .map((tech) => (
               <Marker
                 key={tech.id}
-                position={[tech.latitude, tech.longitude]}
+                position={[tech.latitude!, tech.longitude!]}
                 icon={createTechnicianIcon(false)}
               >
-                {tech.latitude && tech.longitude && (
-                  <Popup>
-                    <div className="space-y-2 p-1">
-                      <h3 className="font-semibold flex items-center gap-2">
-                        👷 {tech.firstName} {tech.lastName}
-                      </h3>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <p>Précision: ±{Math.round(tech.accuracy)}m</p>
-                        {tech.speed && (
-                          <p>Vitesse: {Math.round(tech.speed * 3.6)} km/h</p>
-                        )}
-                        <p>Mis à jour: {format(new Date(tech.updatedAt), 'HH:mm:ss', { locale: fr })}</p>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {tech.status === 'available' ? 'Disponible' : 
-                         tech.status === 'busy' ? 'Occupé' : 'En route'}
-                      </Badge>
+                <Popup>
+                  <div className="space-y-2 p-1">
+                    <h3 className="font-semibold flex items-center gap-2">
+                      👷 {tech.firstName} {tech.lastName}
+                    </h3>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>Précision: ±{Math.round(tech.accuracy)}m</p>
+                      {tech.speed && (
+                        <p>Vitesse: {Math.round(tech.speed * 3.6)} km/h</p>
+                      )}
+                      <p>Mis à jour: {format(new Date(tech.updatedAt), 'HH:mm:ss', { locale: fr })}</p>
                     </div>
-                  </Popup>
-                )}
+                    <Badge variant="outline" className="text-xs">
+                      {tech.status === 'available' ? 'Disponible' : 
+                       tech.status === 'busy' ? 'Occupé' : 'En route'}
+                    </Badge>
+                  </div>
+                </Popup>
               </Marker>
             ))}
 
@@ -446,53 +445,51 @@ export function LiveTrackingMap({
           })}
 
           {/* Interventions */}
-          {showInterventions && interventionsWithCoords.map((intervention) => (
+          {mapReady && showInterventions && interventionsWithCoords.map((intervention) => (
             <Marker
               key={intervention.id}
               position={[intervention.latitude!, intervention.longitude!]}
               icon={createInterventionIcon(intervention.priority)}
             >
-              {intervention.latitude && intervention.longitude && (
-                <Popup minWidth={280}>
-                  <div className="space-y-2 p-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold text-sm">
-                        {CATEGORY_ICONS[intervention.category]} {intervention.title}
-                      </h3>
-                      <Badge 
-                        variant={intervention.priority === 'urgent' ? 'destructive' : 'outline'}
-                        className="text-xs"
-                      >
-                        {PRIORITY_LABELS[intervention.priority]}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-xs text-muted-foreground">
-                      {intervention.address}, {intervention.city}
-                    </p>
-
-                    {/* Distance display */}
-                    {intervention.distance !== undefined && (
-                      <div className="flex items-center gap-2 text-xs font-medium bg-muted/50 px-2 py-1 rounded">
-                        <Route className="h-3 w-3" />
-                        <span>Distance: {formatDistance(intervention.distance)}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
-                        {STATUS_LABELS[intervention.status]}
-                      </Badge>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/intervention/${intervention.id}`}>
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          Voir
-                        </Link>
-                      </Button>
-                    </div>
+              <Popup minWidth={280}>
+                <div className="space-y-2 p-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-sm">
+                      {CATEGORY_ICONS[intervention.category]} {intervention.title}
+                    </h3>
+                    <Badge 
+                      variant={intervention.priority === 'urgent' ? 'destructive' : 'outline'}
+                      className="text-xs"
+                    >
+                      {PRIORITY_LABELS[intervention.priority]}
+                    </Badge>
                   </div>
-                </Popup>
-              )}
+                  
+                  <p className="text-xs text-muted-foreground">
+                    {intervention.address}, {intervention.city}
+                  </p>
+
+                  {/* Distance display */}
+                  {intervention.distance !== undefined && (
+                    <div className="flex items-center gap-2 text-xs font-medium bg-muted/50 px-2 py-1 rounded">
+                      <Route className="h-3 w-3" />
+                      <span>Distance: {formatDistance(intervention.distance)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="text-xs">
+                      {STATUS_LABELS[intervention.status]}
+                    </Badge>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to={`/intervention/${intervention.id}`}>
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Voir
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </Popup>
             </Marker>
           ))}
         </MapContainer>
