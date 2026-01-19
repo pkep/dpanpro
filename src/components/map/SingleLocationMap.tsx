@@ -150,14 +150,12 @@ export function SingleLocationMap({
           <RecenterMap center={coordinates} zoom={15} />
           
           <Marker position={coordinates} icon={createLocationIcon()}>
-            {coordinates && (
-              <Popup>
-                <div className="space-y-2 p-1">
-                  {title && <h3 className="font-semibold">{title}</h3>}
-                  <p className="text-sm">{fullAddress}</p>
-                </div>
-              </Popup>
-            )}
+            <Popup>
+              <div className="space-y-2 p-1">
+                {title && <h3 className="font-semibold">{title}</h3>}
+                <p className="text-sm">{fullAddress}</p>
+              </div>
+            </Popup>
           </Marker>
         </MapContainer>
       </div>
