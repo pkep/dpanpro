@@ -39,16 +39,21 @@ export interface Intervention {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  trackingCode?: string | null;
+  clientEmail?: string | null;
+  clientPhone?: string | null;
 }
 
 export interface InterventionFormData {
   category: InterventionCategory;
-  title: string;
   description: string;
   address: string;
   city: string;
   postalCode: string;
   priority?: InterventionPriority;
+  clientEmail?: string;
+  clientPhone?: string;
+  photos?: string[];
 }
 
 export const CATEGORY_LABELS: Record<InterventionCategory, string> = {

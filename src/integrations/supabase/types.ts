@@ -98,7 +98,9 @@ export type Database = {
           address: string
           category: string
           city: string
+          client_email: string | null
           client_id: string
+          client_phone: string | null
           completed_at: string | null
           created_at: string
           description: string | null
@@ -116,13 +118,16 @@ export type Database = {
           status: string
           technician_id: string | null
           title: string
+          tracking_code: string | null
           updated_at: string
         }
         Insert: {
           address: string
           category: string
           city: string
+          client_email?: string | null
           client_id: string
+          client_phone?: string | null
           completed_at?: string | null
           created_at?: string
           description?: string | null
@@ -140,13 +145,16 @@ export type Database = {
           status?: string
           technician_id?: string | null
           title: string
+          tracking_code?: string | null
           updated_at?: string
         }
         Update: {
           address?: string
           category?: string
           city?: string
+          client_email?: string | null
           client_id?: string
+          client_phone?: string | null
           completed_at?: string | null
           created_at?: string
           description?: string | null
@@ -164,6 +172,7 @@ export type Database = {
           status?: string
           technician_id?: string | null
           title?: string
+          tracking_code?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -365,7 +374,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_tracking_code: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

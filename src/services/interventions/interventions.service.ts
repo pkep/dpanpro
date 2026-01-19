@@ -61,10 +61,22 @@ class InterventionsService {
     clientId: string,
     formData: InterventionFormData
   ): Promise<Intervention> {
+    // Auto-generate title from category + address + postal code
+    const categoryLabel = {
+      locksmith: 'Serrurerie',
+      plumbing: 'Plomberie',
+      electricity: 'Électricité',
+      glazing: 'Vitrerie',
+      heating: 'Chauffage',
+      aircon: 'Climatisation',
+    }[formData.category] || formData.category;
+    
+    const generatedTitle = `${categoryLabel} - ${formData.address} - ${formData.postalCode}`;
+
     const insertData: DbInterventionInsert = {
       client_id: clientId,
       category: formData.category as DbInterventionCategory,
-      title: formData.title,
+      title: generatedTitle,
       description: formData.description,
       address: formData.address,
       city: formData.city,
@@ -72,6 +84,9 @@ class InterventionsService {
       priority: (formData.priority || 'normal') as DbInterventionPriority,
       status: 'new' as DbInterventionStatus,
       is_active: true,
+      client_email: formData.clientEmail || null,
+      client_phone: formData.clientPhone || null,
+      photos: formData.photos || null,
     };
 
     const { data, error } = await supabase
@@ -147,6 +162,9 @@ class InterventionsService {
       isActive: data.is_active,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
+      trackingCode: data.tracking_code,
+      clientEmail: data.client_email,
+      clientPhone: data.client_phone,
     };
   }
 }
