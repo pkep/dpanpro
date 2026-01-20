@@ -58,9 +58,11 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to="/dashboard">Mon espace</Link>
-                </DropdownMenuItem>
+                {user.role === "client" && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard">Mon espace</Link>
+                  </DropdownMenuItem>
+                )}
                 {user.role === "technician" && (
                   <DropdownMenuItem asChild>
                     <Link to="/technician">Espace technicien</Link>
