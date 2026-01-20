@@ -1,1 +1,13 @@
 project_id = "cbbqyxxwpkfouvmmjton"
+
+[functions.create-payment-authorization]
+verify_jwt = false
+
+[functions.create-payment-intent]
+verify_jwt = false
+
+[functions.hash-password]
+verify_jwt = false
+
+[functions.verify-password]
+verify_jwt = false

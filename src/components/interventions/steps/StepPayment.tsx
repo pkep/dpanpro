@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, Shield, Info, CheckCircle2 } from 'lucide-react';
 import { QuoteInput } from '@/services/quotes/quotes.service';
+import { StripeCardForm } from '@/components/payment/StripeCardForm';
 
 interface StepPaymentProps {
   quoteLines: QuoteInput[];
@@ -13,7 +13,10 @@ interface StepPaymentProps {
   multiplierLabel: string;
   isProcessing: boolean;
   isAuthorized: boolean;
-  onAuthorize: () => void;
+  clientSecret: string | null;
+  onInitializePayment: () => void;
+  onPaymentSuccess: () => void;
+  onPaymentError: (error: string) => void;
 }
 
 export function StepPayment({
@@ -22,14 +25,27 @@ export function StepPayment({
   multiplierLabel,
   isProcessing,
   isAuthorized,
-  onAuthorize,
+  clientSecret,
+  onInitializePayment,
+  onPaymentSuccess,
+  onPaymentError,
 }: StepPaymentProps) {
+  const [initialized, setInitialized] = useState(false);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
     }).format(price);
   };
+
+  // Initialize payment when component mounts (if not already done)
+  useEffect(() => {
+    if (!initialized && !clientSecret && !isAuthorized && totalAmount > 0) {
+      setInitialized(true);
+      onInitializePayment();
+    }
+  }, [initialized, clientSecret, isAuthorized, totalAmount, onInitializePayment]);
 
   if (isAuthorized) {
     return (
@@ -63,7 +79,7 @@ export function StepPayment({
       <div>
         <h3 className="text-lg font-semibold mb-2">Devis estimatif</h3>
         <p className="text-sm text-muted-foreground">
-          Niveau d'urgence : <Badge variant="secondary">{multiplierLabel}</Badge>
+          Niveau d'urgence : <Badge variant="secondary" className="ml-1">{multiplierLabel}</Badge>
         </p>
       </div>
 
@@ -114,7 +130,7 @@ export function StepPayment({
             <div>
               <h4 className="font-medium mb-1">Autorisation de paiement sécurisée</h4>
               <p className="text-sm text-muted-foreground mb-3">
-                En cliquant sur le bouton ci-dessous, vous autorisez le blocage du montant sur votre carte. 
+                Entrez vos informations de carte ci-dessous. 
                 <strong className="text-foreground"> Le paiement réel sera effectué qu'à la fin de l'intervention.</strong>
               </p>
               <ul className="text-sm text-muted-foreground space-y-1">
@@ -127,25 +143,32 @@ export function StepPayment({
         </CardContent>
       </Card>
 
-      {/* Authorize button */}
-      <Button
-        onClick={onAuthorize}
-        disabled={isProcessing}
-        className="w-full"
-        size="lg"
-      >
-        {isProcessing ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Redirection vers le paiement...
-          </>
-        ) : (
-          <>
-            <CreditCard className="mr-2 h-4 w-4" />
-            Autoriser {formatPrice(totalAmount)}
-          </>
-        )}
-      </Button>
+      {/* Stripe Card Form */}
+      {isProcessing && !clientSecret && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Préparation du formulaire de paiement...</span>
+        </div>
+      )}
+
+      {clientSecret && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Informations de paiement
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <StripeCardForm
+              clientSecret={clientSecret}
+              amount={totalAmount}
+              onSuccess={onPaymentSuccess}
+              onError={onPaymentError}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
