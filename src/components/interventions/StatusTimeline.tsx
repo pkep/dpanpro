@@ -11,6 +11,12 @@ const STATUS_ORDER: InterventionStatus[] = [
   'completed',
 ];
 
+// Custom labels for the timeline
+const TIMELINE_LABELS: Record<InterventionStatus, string> = {
+  ...STATUS_LABELS,
+  new: 'Demande reçue',
+};
+
 interface StatusTimelineProps {
   currentStatus: InterventionStatus;
 }
@@ -79,7 +85,7 @@ export function StatusTimeline({ currentStatus }: StatusTimelineProps) {
                   isFuture && "text-muted-foreground/60"
                 )}
               >
-                {STATUS_LABELS[status]}
+                {TIMELINE_LABELS[status]}
               </span>
             </div>
           );
