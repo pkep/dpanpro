@@ -65,6 +65,8 @@ export function InterventionWizard() {
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
   const [isPaymentAuthorized, setIsPaymentAuthorized] = useState(false);
   const [authorizationId, setAuthorizationId] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [interventionId, setInterventionId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
 
   // Load services on mount
@@ -177,8 +179,8 @@ export function InterventionWizard() {
     }
   };
 
-  const handlePaymentAuthorize = async () => {
-    if (!category || !email) return;
+  const handleInitializePayment = async () => {
+    if (!category || !email || isPaymentProcessing || clientSecret) return;
 
     setIsPaymentProcessing(true);
     try {
@@ -197,30 +199,41 @@ export function InterventionWizard() {
         photos: photos.length > 0 ? photos : undefined,
       });
 
+      setInterventionId(intervention.id);
+
       // Save quote lines to database
       await quotesService.saveQuoteLines(intervention.id, quoteLines);
 
-      // Create payment authorization
-      const result = await paymentService.createAuthorizationRequest({
+      // Create payment intent and get client secret for Stripe Elements
+      const result = await paymentService.createPaymentIntent({
         interventionId: intervention.id,
         amount: totalAmount,
         clientEmail: email,
         clientPhone: phone,
       });
 
-      if (result.checkoutUrl) {
-        // Open Stripe checkout in a new tab
-        window.open(result.checkoutUrl, '_blank');
-        toast.info('Une fenêtre Stripe s\'est ouverte pour autoriser le paiement. Revenez ici une fois terminé.');
-        setIsPaymentProcessing(false);
-      } else {
-        throw new Error('No checkout URL returned');
-      }
+      setAuthorizationId(result.id);
+      setClientSecret(result.clientSecret);
     } catch (error) {
-      console.error('Error creating payment authorization:', error);
-      toast.error('Erreur lors de la création de l\'autorisation de paiement');
+      console.error('Error initializing payment:', error);
+      toast.error('Erreur lors de l\'initialisation du paiement');
+    } finally {
       setIsPaymentProcessing(false);
     }
+  };
+
+  const handlePaymentSuccess = async () => {
+    setIsPaymentAuthorized(true);
+    if (authorizationId) {
+      await paymentService.updateAuthorizationStatus(authorizationId, 'authorized');
+    }
+    toast.success('Autorisation de paiement confirmée !');
+    // Auto advance to next step
+    setCurrentStep(5);
+  };
+
+  const handlePaymentError = (error: string) => {
+    toast.error(`Erreur de paiement: ${error}`);
   };
 
   const handleSubmit = async () => {
@@ -297,7 +310,10 @@ export function InterventionWizard() {
             multiplierLabel={multiplierLabel}
             isProcessing={isPaymentProcessing}
             isAuthorized={isPaymentAuthorized}
-            onAuthorize={handlePaymentAuthorize}
+            clientSecret={clientSecret}
+            onInitializePayment={handleInitializePayment}
+            onPaymentSuccess={handlePaymentSuccess}
+            onPaymentError={handlePaymentError}
           />
         );
       case 5:

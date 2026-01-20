@@ -74,7 +74,65 @@ class PaymentService {
   private currentProvider: string = 'stripe';
 
   /**
-   * Create a payment authorization request (hold funds)
+   * Create a payment authorization request and get client secret for Stripe Elements
+   */
+  async createPaymentIntent(params: {
+    interventionId: string;
+    amount: number;
+    currency?: string;
+    clientEmail: string;
+    clientPhone?: string;
+  }): Promise<{ id: string; clientSecret: string }> {
+    // First, save the authorization request to database
+    const insertPayload = {
+      intervention_id: params.interventionId,
+      payment_provider: this.currentProvider,
+      amount_authorized: params.amount,
+      currency: params.currency || 'eur',
+      status: 'pending',
+      client_email: params.clientEmail,
+      client_phone: params.clientPhone || null,
+      metadata: {},
+    };
+    
+    const { data, error } = await supabase
+      .from('payment_authorizations')
+      .insert(insertPayload)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Call edge function to create Stripe PaymentIntent
+    const { data: stripeData, error: stripeError } = await supabase.functions.invoke('create-payment-intent', {
+      body: {
+        authorizationId: data.id,
+        amount: params.amount,
+        currency: params.currency || 'eur',
+        customerEmail: params.clientEmail,
+        interventionId: params.interventionId,
+      },
+    });
+
+    if (stripeError) {
+      // Update status to failed
+      await this.updateAuthorizationStatus(data.id, 'failed');
+      throw stripeError;
+    }
+
+    if (!stripeData?.clientSecret) {
+      await this.updateAuthorizationStatus(data.id, 'failed');
+      throw new Error('No client secret returned from payment provider');
+    }
+
+    return {
+      id: data.id,
+      clientSecret: stripeData.clientSecret,
+    };
+  }
+
+  /**
+   * Legacy method for redirect-based checkout (kept for compatibility)
    */
   async createAuthorizationRequest(params: {
     interventionId: string;
