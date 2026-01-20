@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 import {
   Elements,
   PaymentElement,
@@ -10,8 +10,18 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Load Stripe with publishable key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+// Stripe publishable key - this is a PUBLIC key, safe to include in frontend code
+// The user should replace this with their own publishable key
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+
+// Initialize Stripe
+let stripePromise: Promise<Stripe | null> | null = null;
+const getStripe = () => {
+  if (!stripePromise && STRIPE_PUBLISHABLE_KEY) {
+    stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+  }
+  return stripePromise;
+};
 
 interface PaymentFormProps {
   clientSecret: string;
@@ -117,14 +127,36 @@ interface StripeCardFormProps {
 
 export function StripeCardForm({ clientSecret, amount, onSuccess, onError }: StripeCardFormProps) {
   const [stripeReady, setStripeReady] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
 
   useEffect(() => {
-    stripePromise.then((stripe) => {
-      if (stripe) {
-        setStripeReady(true);
-      }
-    });
+    if (!STRIPE_PUBLISHABLE_KEY) {
+      setStripeError('Clé Stripe non configurée. Veuillez contacter le support.');
+      return;
+    }
+
+    const stripe = getStripe();
+    if (stripe) {
+      stripe.then((s) => {
+        if (s) {
+          setStripeReady(true);
+        } else {
+          setStripeError('Impossible de charger Stripe. Vérifiez la clé publique.');
+        }
+      }).catch((err) => {
+        setStripeError(`Erreur Stripe: ${err.message}`);
+      });
+    }
   }, []);
+
+  if (stripeError) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>{stripeError}</AlertDescription>
+      </Alert>
+    );
+  }
 
   if (!stripeReady) {
     return (
@@ -135,9 +167,11 @@ export function StripeCardForm({ clientSecret, amount, onSuccess, onError }: Str
     );
   }
 
+  const stripe = getStripe();
+
   return (
     <Elements
-      stripe={stripePromise}
+      stripe={stripe}
       options={{
         clientSecret,
         appearance: {
