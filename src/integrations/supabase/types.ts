@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      dispatch_attempts: {
+        Row: {
+          attempt_order: number
+          created_at: string
+          id: string
+          intervention_id: string
+          notified_at: string | null
+          responded_at: string | null
+          score: number
+          score_breakdown: Json
+          status: string
+          technician_id: string
+          timeout_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempt_order?: number
+          created_at?: string
+          id?: string
+          intervention_id: string
+          notified_at?: string | null
+          responded_at?: string | null
+          score?: number
+          score_breakdown?: Json
+          status?: string
+          technician_id: string
+          timeout_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempt_order?: number
+          created_at?: string
+          id?: string
+          intervention_id?: string
+          notified_at?: string | null
+          responded_at?: string | null
+          score?: number
+          score_breakdown?: Json
+          status?: string
+          technician_id?: string
+          timeout_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_attempts_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispatch_attempts_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intervention_history: {
         Row: {
           action: string
@@ -485,6 +545,54 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      technician_availability: {
+        Row: {
+          created_at: string
+          current_intervention_id: string | null
+          id: string
+          is_available: boolean
+          last_status_change: string
+          max_concurrent_interventions: number
+          technician_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_intervention_id?: string | null
+          id?: string
+          is_available?: boolean
+          last_status_change?: string
+          max_concurrent_interventions?: number
+          technician_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_intervention_id?: string | null
+          id?: string
+          is_available?: boolean
+          last_status_change?: string
+          max_concurrent_interventions?: number
+          technician_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_availability_current_intervention_id_fkey"
+            columns: ["current_intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_availability_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {

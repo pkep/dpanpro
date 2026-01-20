@@ -5,6 +5,7 @@ import { TechnicianInterventionsList } from '@/components/interventions/Technici
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import { ProximitySettings } from '@/components/notifications/ProximitySettings';
 import { TechnicianRating } from '@/components/ratings/TechnicianRating';
+import { DispatchAssignmentCard } from '@/components/dispatch/DispatchAssignmentCard';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -227,6 +228,9 @@ const TechnicianDashboard = () => {
           </div>
 
           <div className="space-y-4">
+            {/* Pending Assignment Card */}
+            <DispatchAssignmentCard />
+            
             {/* Location Status Card */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
