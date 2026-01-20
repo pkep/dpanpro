@@ -18,6 +18,8 @@ interface StepProblemDescriptionProps {
   onPostalCodeChange: (value: string) => void;
   city: string;
   onCityChange: (value: string) => void;
+  additionalInfo: string;
+  onAdditionalInfoChange: (value: string) => void;
 }
 
 export function StepProblemDescription({
@@ -31,6 +33,8 @@ export function StepProblemDescription({
   onPostalCodeChange,
   city,
   onCityChange,
+  additionalInfo,
+  onAdditionalInfoChange,
 }: StepProblemDescriptionProps) {
   const [isUploading, setIsUploading] = useState(false);
 
@@ -199,6 +203,17 @@ export function StepProblemDescription({
                 onChange={(e) => onCityChange(e.target.value)}
               />
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="additionalInfo">Informations complémentaires (optionnel)</Label>
+            <Textarea
+              id="additionalInfo"
+              placeholder="Digicode, étage, bâtiment, instructions d'accès..."
+              className="min-h-[80px] mt-2"
+              value={additionalInfo}
+              onChange={(e) => onAdditionalInfoChange(e.target.value)}
+            />
           </div>
         </div>
       </div>
