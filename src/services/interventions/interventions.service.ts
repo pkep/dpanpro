@@ -7,6 +7,7 @@ import type {
 } from '@/types/intervention.types';
 import type { DbIntervention, DbInterventionInsert, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { dispatchService } from '@/services/dispatch/dispatch.service';
 
 class InterventionsService {
   async getInterventions(filters?: {
@@ -97,7 +98,16 @@ class InterventionsService {
 
     if (error) throw error;
 
-    return this.mapToIntervention(data as unknown as DbIntervention);
+    const intervention = this.mapToIntervention(data as unknown as DbIntervention);
+
+    // Trigger automatic dispatch in background (non-blocking)
+    if (intervention.latitude && intervention.longitude) {
+      dispatchService.dispatchIntervention(intervention.id).catch(err => {
+        console.error('Auto-dispatch failed:', err);
+      });
+    }
+
+    return intervention;
   }
 
   async updateStatus(id: string, status: InterventionStatus): Promise<void> {

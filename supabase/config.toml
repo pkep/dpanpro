@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.verify-password]
 verify_jwt = false
+
+[functions.dispatch-intervention]
+verify_jwt = false
+
+[functions.check-dispatch-timeouts]
+verify_jwt = false
