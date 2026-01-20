@@ -7,7 +7,8 @@ import { CheckCircle2, Copy, MapPin, Mail, Phone, FileText, Image, CreditCard, I
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { QuoteInput } from '@/services/quotes/quotes.service';
-
+import { NextStepsCard } from './NextStepsCard';
+import { NearbyTechniciansCard } from './NearbyTechniciansCard';
 interface StepSummaryProps {
   category: InterventionCategory;
   description: string;
@@ -55,45 +56,57 @@ export function StepSummary({
 
   if (isSubmitted && trackingCode) {
     return (
-      <div className="space-y-6 text-center">
-        <div className="flex justify-center">
-          <div className="bg-green-100 dark:bg-green-900/30 rounded-full p-4">
-            <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
+      <div className="space-y-6">
+        <div className="text-center">
+          <div className="flex justify-center">
+            <div className="bg-green-100 dark:bg-green-900/30 rounded-full p-4">
+              <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <h2 className="text-2xl font-bold text-green-600 dark:text-green-400">
+              Demande envoyée !
+            </h2>
+            <p className="text-muted-foreground mt-2">
+              Votre demande d'intervention a été enregistrée avec succès
+            </p>
+          </div>
+
+          <Card className="bg-primary/5 border-primary/20 mt-6">
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground mb-2">
+                Votre code de suivi
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-3xl font-mono font-bold tracking-wider">
+                  {trackingCode}
+                </span>
+                <Button variant="ghost" size="icon" onClick={copyTrackingCode}>
+                  <Copy className="h-5 w-5" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-4">
+                Conservez ce code pour suivre l'avancement de votre intervention
+              </p>
+            </CardContent>
+          </Card>
+
+          <div className="text-sm text-muted-foreground mt-4">
+            <p>Un email de confirmation a été envoyé à <strong>{email}</strong></p>
+            <p className="mt-1">Un technicien vous contactera rapidement au <strong>{phone}</strong></p>
           </div>
         </div>
-        
-        <div>
-          <h2 className="text-2xl font-bold text-green-600 dark:text-green-400">
-            Demande envoyée !
-          </h2>
-          <p className="text-muted-foreground mt-2">
-            Votre demande d'intervention a été enregistrée avec succès
-          </p>
-        </div>
 
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground mb-2">
-              Votre code de suivi
-            </p>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-3xl font-mono font-bold tracking-wider">
-                {trackingCode}
-              </span>
-              <Button variant="ghost" size="icon" onClick={copyTrackingCode}>
-                <Copy className="h-5 w-5" />
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-4">
-              Conservez ce code pour suivre l'avancement de votre intervention
-            </p>
-          </CardContent>
-        </Card>
+        {/* Next Steps Card */}
+        <NextStepsCard />
 
-        <div className="text-sm text-muted-foreground">
-          <p>Un email de confirmation a été envoyé à <strong>{email}</strong></p>
-          <p className="mt-1">Un technicien vous contactera rapidement au <strong>{phone}</strong></p>
-        </div>
+        {/* Nearby Technicians Card */}
+        <NearbyTechniciansCard 
+          address={address}
+          postalCode={postalCode}
+          city={city}
+        />
       </div>
     );
   }

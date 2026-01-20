@@ -8,13 +8,15 @@ import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio, Star } from 'lucide-react';
+import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio, Star, MapPin } from 'lucide-react';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { useTechnicianGeolocation } from '@/hooks/useTechnicianGeolocation';
 import type { Intervention } from '@/types/intervention.types';
 
 const TechnicianDashboard = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const navigate = useNavigate();
+  const geolocation = useTechnicianGeolocation(); // Auto-tracks technician location
   const [stats, setStats] = useState({
     assigned: 0,
     inProgress: 0,
@@ -225,6 +227,33 @@ const TechnicianDashboard = () => {
           </div>
 
           <div className="space-y-4">
+            {/* Location Status Card */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Ma position</CardTitle>
+                <MapPin className={`h-4 w-4 ${geolocation.isTracking ? 'text-green-500' : 'text-muted-foreground'}`} />
+              </CardHeader>
+              <CardContent>
+                {geolocation.isTracking ? (
+                  <>
+                    <p className="text-sm font-medium">{geolocation.city || 'Localisation en cours...'}</p>
+                    {geolocation.department && (
+                      <p className="text-xs text-muted-foreground">{geolocation.department}</p>
+                    )}
+                    {geolocation.lastUpdated && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Mise à jour : {geolocation.lastUpdated.toLocaleTimeString('fr-FR')}
+                      </p>
+                    )}
+                  </>
+                ) : geolocation.error ? (
+                  <p className="text-xs text-destructive">{geolocation.error}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">En attente de localisation...</p>
+                )}
+              </CardContent>
+            </Card>
+            
             <ProximitySettings />
           </div>
         </div>

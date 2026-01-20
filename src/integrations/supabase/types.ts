@@ -247,20 +247,19 @@ export type Database = {
           city: string
           company_name: string
           created_at: string
+          current_city: string | null
           data_accuracy_confirmed: boolean
-          email: string | null
-          first_name: string | null
+          department: string | null
           has_decennial_insurance: boolean
           iban: string
           id: string
           insurance_company: string
           insurance_expiry_date: string
           insurance_policy_number: string
-          last_name: string | null
+          latitude: number | null
           legal_status: string
+          longitude: number | null
           motivation: string
-          password_hash: string | null
-          phone: string | null
           postal_code: string
           siret: string
           skills: string[]
@@ -281,20 +280,19 @@ export type Database = {
           city: string
           company_name: string
           created_at?: string
+          current_city?: string | null
           data_accuracy_confirmed?: boolean
-          email?: string | null
-          first_name?: string | null
+          department?: string | null
           has_decennial_insurance?: boolean
           iban: string
           id?: string
           insurance_company: string
           insurance_expiry_date: string
           insurance_policy_number: string
-          last_name?: string | null
+          latitude?: number | null
           legal_status: string
+          longitude?: number | null
           motivation: string
-          password_hash?: string | null
-          phone?: string | null
           postal_code: string
           siret: string
           skills: string[]
@@ -315,20 +313,19 @@ export type Database = {
           city?: string
           company_name?: string
           created_at?: string
+          current_city?: string | null
           data_accuracy_confirmed?: boolean
-          email?: string | null
-          first_name?: string | null
+          department?: string | null
           has_decennial_insurance?: boolean
           iban?: string
           id?: string
           insurance_company?: string
           insurance_expiry_date?: string
           insurance_policy_number?: string
-          last_name?: string | null
+          latitude?: number | null
           legal_status?: string
+          longitude?: number | null
           motivation?: string
-          password_hash?: string | null
-          phone?: string | null
           postal_code?: string
           siret?: string
           skills?: string[]
