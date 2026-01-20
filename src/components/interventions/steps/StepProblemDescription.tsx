@@ -137,7 +137,7 @@ export function StepProblemDescription({
             id="photo-capture"
             className="hidden"
             accept="image/*"
-            capture="environment"
+            capture
             onChange={(e) => handleFileUpload(e.target.files)}
           />
 
