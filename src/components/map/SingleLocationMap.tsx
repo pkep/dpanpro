@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { geocodingService } from '@/services/geocoding/geocoding.service';
@@ -40,17 +40,6 @@ const createLocationIcon = () => {
   });
 };
 
-// Component to recenter map
-function RecenterMap({ center, zoom }: { center: [number, number]; zoom: number }) {
-  const map = useMap();
-
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-
-  return null;
-}
-
 interface SingleLocationMapProps {
   address: string;
   city: string;
@@ -75,13 +64,10 @@ export function SingleLocationMap({
   );
   const [loading, setLoading] = useState(!initialLat || !initialLng);
   const [error, setError] = useState<string | null>(null);
-  const [mapReady, setMapReady] = useState(false);
 
   const markerIcon = useMemo(() => createLocationIcon(), []);
 
   useEffect(() => {
-    setMapReady(false);
-
     if (initialLat && initialLng) {
       setCoordinates([initialLat, initialLng]);
       setLoading(false);
@@ -135,15 +121,27 @@ export function SingleLocationMap({
 
   return (
     <div className="space-y-2">
-      <div className="rounded-lg overflow-hidden border bg-muted/30 flex items-center justify-center" style={{ height }}>
-        <div className="text-center space-y-2 p-4">
-          <MapPin className="h-8 w-8 mx-auto text-primary" />
-          {title && <h3 className="font-semibold">{title}</h3>}
-          <p className="text-sm text-muted-foreground">{fullAddress}</p>
-          <p className="text-xs text-muted-foreground">
-            Lat: {coordinates[0].toFixed(6)}, Lng: {coordinates[1].toFixed(6)}
-          </p>
-        </div>
+      <div className="rounded-lg overflow-hidden border" style={{ height }}>
+        <MapContainer
+          key={`${coordinates[0]}-${coordinates[1]}`}
+          center={coordinates}
+          zoom={15}
+          style={{ height: '100%', width: '100%' }}
+          scrollWheelZoom={true}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Marker position={coordinates} icon={markerIcon}>
+            <Popup>
+              <div className="space-y-2 p-1">
+                {title && <h3 className="font-semibold">{title}</h3>}
+                <p className="text-sm">{fullAddress}</p>
+              </div>
+            </Popup>
+          </Marker>
+        </MapContainer>
       </div>
 
       <Button
