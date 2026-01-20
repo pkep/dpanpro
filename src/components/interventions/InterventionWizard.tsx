@@ -2,16 +2,26 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/interventions/interventions.service';
-import { InterventionCategory } from '@/types/intervention.types';
+import { InterventionCategory, CATEGORY_LABELS } from '@/types/intervention.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, Loader2, Send } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, ArrowRight, Loader2, Send, Key, Wrench, Zap, Grid3X3, Flame, Snowflake } from 'lucide-react';
 import { toast } from 'sonner';
 import { StepServiceSelection } from './steps/StepServiceSelection';
 import { StepProblemDescription } from './steps/StepProblemDescription';
 import { StepContactInfo } from './steps/StepContactInfo';
 import { StepSummary } from './steps/StepSummary';
+
+const categoryIcons: Record<InterventionCategory, React.ReactNode> = {
+  locksmith: <Key className="h-5 w-5" />,
+  plumbing: <Wrench className="h-5 w-5" />,
+  electricity: <Zap className="h-5 w-5" />,
+  glazing: <Grid3X3 className="h-5 w-5" />,
+  heating: <Flame className="h-5 w-5" />,
+  aircon: <Snowflake className="h-5 w-5" />,
+};
 
 const STEPS = [
   { id: 1, title: 'Service' },
@@ -183,7 +193,15 @@ export function InterventionWizard() {
             Retour à l'accueil
           </Button>
           
-          <h1 className="text-3xl font-bold">Demande d'intervention</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold">Demande d'intervention</h1>
+            {category && currentStep > 1 && (
+              <Badge variant="secondary" className="flex items-center gap-2 text-base py-1.5 px-3">
+                {categoryIcons[category]}
+                <span>{CATEGORY_LABELS[category]}</span>
+              </Badge>
+            )}
+          </div>
           
           {/* Progress */}
           {!isSubmitted && (
