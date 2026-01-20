@@ -27,8 +27,10 @@ import { AddCommentForm } from '@/components/interventions/AddCommentForm';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { SingleLocationMap } from '@/components/map/SingleLocationMap';
+import { ClientTrackingMap } from '@/components/map/ClientTrackingMap';
 import { RatingForm } from '@/components/ratings/RatingForm';
 import { TechnicianRating } from '@/components/ratings/TechnicianRating';
+import { PushNotificationSetup } from '@/components/notifications/PushNotificationSetup';
 import {
   Home,
   ArrowLeft,
@@ -268,22 +270,43 @@ export default function InterventionDetails() {
                   </p>
                 </div>
 
-                {/* Map */}
-                <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
-                    <Map className="h-4 w-4" />
-                    Localisation
-                  </h4>
-                  <SingleLocationMap
-                    address={intervention.address}
-                    city={intervention.city}
-                    postalCode={intervention.postalCode}
-                    latitude={intervention.latitude}
-                    longitude={intervention.longitude}
-                    title={intervention.title}
-                    height="250px"
-                  />
-                </div>
+                {/* Live Tracking Map for Clients */}
+                {user.role === 'client' && intervention.technicianId && intervention.latitude && intervention.longitude && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                      <Radio className="h-4 w-4 text-green-500 animate-pulse" />
+                      Suivi en temps réel
+                    </h4>
+                    <ClientTrackingMap
+                      interventionId={intervention.id}
+                      technicianId={intervention.technicianId}
+                      destinationLatitude={intervention.latitude}
+                      destinationLongitude={intervention.longitude}
+                      destinationAddress={`${intervention.address}, ${intervention.postalCode} ${intervention.city}`}
+                      interventionStatus={intervention.status}
+                      height="350px"
+                    />
+                  </div>
+                )}
+
+                {/* Static Map for Admin/Technician or when no tracking */}
+                {(user.role !== 'client' || !intervention.technicianId) && (
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
+                      <Map className="h-4 w-4" />
+                      Localisation
+                    </h4>
+                    <SingleLocationMap
+                      address={intervention.address}
+                      city={intervention.city}
+                      postalCode={intervention.postalCode}
+                      latitude={intervention.latitude}
+                      longitude={intervention.longitude}
+                      title={intervention.title}
+                      height="250px"
+                    />
+                  </div>
+                )}
 
                 <Separator />
 
@@ -439,6 +462,11 @@ export default function InterventionDetails() {
                 />
               </CardContent>
             </Card>
+
+            {/* Push Notifications Setup for Clients */}
+            {user.role === 'client' && intervention.status !== 'completed' && intervention.status !== 'cancelled' && (
+              <PushNotificationSetup />
+            )}
           </div>
 
           {/* Timeline Sidebar */}

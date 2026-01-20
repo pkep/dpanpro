@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { TechnicianInterventionsList } from '@/components/interventions/TechnicianInterventionsList';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import { ProximitySettings } from '@/components/notifications/ProximitySettings';
+import { PushNotificationSetup } from '@/components/notifications/PushNotificationSetup';
 import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import { DispatchAssignmentCard } from '@/components/dispatch/DispatchAssignmentCard';
 import { Button } from '@/components/ui/button';
@@ -12,12 +13,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio, Star, MapPin } from 'lucide-react';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { useTechnicianGeolocation } from '@/hooks/useTechnicianGeolocation';
+import { useTechnicianPushNotifications } from '@/hooks/useFirebaseMessaging';
 import type { Intervention } from '@/types/intervention.types';
 
 const TechnicianDashboard = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const navigate = useNavigate();
   const geolocation = useTechnicianGeolocation(); // Auto-tracks technician location
+  useTechnicianPushNotifications(); // Enable push notifications for technicians
   const [stats, setStats] = useState({
     assigned: 0,
     inProgress: 0,
