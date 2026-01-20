@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { InterventionTimeline } from '@/components/interventions/InterventionTimeline';
+import { StatusTimeline } from '@/components/interventions/StatusTimeline';
 import { AddCommentForm } from '@/components/interventions/AddCommentForm';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
@@ -245,6 +246,12 @@ export default function InterventionDetails() {
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground mb-2">Description</h4>
                   <p className="text-sm">{intervention.description || 'Aucune description fournie'}</p>
+                </div>
+
+                {/* Status Timeline */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Progression</h4>
+                  <StatusTimeline currentStatus={intervention.status} />
                 </div>
 
                 <Separator />
