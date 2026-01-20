@@ -47,6 +47,7 @@ export function InterventionWizard() {
   const [address, setAddress] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [city, setCity] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
@@ -148,6 +149,8 @@ export function InterventionWizard() {
             onPostalCodeChange={setPostalCode}
             city={city}
             onCityChange={setCity}
+            additionalInfo={additionalInfo}
+            onAdditionalInfoChange={setAdditionalInfo}
           />
         );
       case 3:
