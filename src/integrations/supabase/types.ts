@@ -55,6 +55,50 @@ export type Database = {
           },
         ]
       }
+      intervention_quotes: {
+        Row: {
+          base_price: number
+          calculated_price: number
+          created_at: string
+          display_order: number
+          id: string
+          intervention_id: string
+          label: string
+          line_type: string
+          multiplier: number
+        }
+        Insert: {
+          base_price?: number
+          calculated_price?: number
+          created_at?: string
+          display_order?: number
+          id?: string
+          intervention_id: string
+          label: string
+          line_type: string
+          multiplier?: number
+        }
+        Update: {
+          base_price?: number
+          calculated_price?: number
+          created_at?: string
+          display_order?: number
+          id?: string
+          intervention_id?: string
+          label?: string
+          line_type?: string
+          multiplier?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_quotes_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intervention_ratings: {
         Row: {
           client_id: string
@@ -293,6 +337,74 @@ export type Database = {
           years_experience?: number
         }
         Relationships: []
+      }
+      payment_authorizations: {
+        Row: {
+          amount_authorized: number
+          authorization_confirmed_at: string | null
+          authorization_requested_at: string
+          cancelled_at: string | null
+          captured_at: string | null
+          client_email: string | null
+          client_phone: string | null
+          created_at: string
+          currency: string
+          id: string
+          intervention_id: string
+          metadata: Json | null
+          payment_provider: string
+          provider_customer_id: string | null
+          provider_payment_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_authorized: number
+          authorization_confirmed_at?: string | null
+          authorization_requested_at?: string
+          cancelled_at?: string | null
+          captured_at?: string | null
+          client_email?: string | null
+          client_phone?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          intervention_id: string
+          metadata?: Json | null
+          payment_provider?: string
+          provider_customer_id?: string | null
+          provider_payment_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_authorized?: number
+          authorization_confirmed_at?: string | null
+          authorization_requested_at?: string
+          cancelled_at?: string | null
+          captured_at?: string | null
+          client_email?: string | null
+          client_phone?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          intervention_id?: string
+          metadata?: Json | null
+          payment_provider?: string
+          provider_customer_id?: string | null
+          provider_payment_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_authorizations_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       priority_multipliers: {
         Row: {
