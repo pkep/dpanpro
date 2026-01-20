@@ -335,7 +335,7 @@ const Dashboard = () => {
                               <div className="mt-3 space-y-1">
                                 <div className="flex items-center justify-between text-xs">
                                   <Badge className={`${getStatusColor(intervention.status)} border text-xs`}>
-                                    {STATUS_LABELS[intervention.status]}
+                                    {intervention.status === 'new' ? 'Demande reçue' : STATUS_LABELS[intervention.status]}
                                   </Badge>
                                   <span className="text-muted-foreground">
                                     {getProgressForStatus(intervention.status)}%
@@ -470,7 +470,7 @@ const Dashboard = () => {
                           </p>
                         </div>
                         <Badge variant="outline" className={`${getStatusColor(intervention.status)} text-xs`}>
-                          {STATUS_LABELS[intervention.status]}
+                          {intervention.status === 'new' ? 'Demande reçue' : STATUS_LABELS[intervention.status]}
                         </Badge>
                       </Link>
                     ))}
