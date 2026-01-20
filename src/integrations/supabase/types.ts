@@ -248,25 +248,26 @@ export type Database = {
           company_name: string
           created_at: string
           data_accuracy_confirmed: boolean
-          email: string
-          first_name: string
+          email: string | null
+          first_name: string | null
           has_decennial_insurance: boolean
           iban: string
           id: string
           insurance_company: string
           insurance_expiry_date: string
           insurance_policy_number: string
-          last_name: string
+          last_name: string | null
           legal_status: string
           motivation: string
-          password_hash: string
-          phone: string
+          password_hash: string | null
+          phone: string | null
           postal_code: string
           siret: string
           skills: string[]
           status: string
           terms_accepted: boolean
           updated_at: string
+          user_id: string | null
           vat_number: string | null
           years_experience: number
         }
@@ -281,25 +282,26 @@ export type Database = {
           company_name: string
           created_at?: string
           data_accuracy_confirmed?: boolean
-          email: string
-          first_name: string
+          email?: string | null
+          first_name?: string | null
           has_decennial_insurance?: boolean
           iban: string
           id?: string
           insurance_company: string
           insurance_expiry_date: string
           insurance_policy_number: string
-          last_name: string
+          last_name?: string | null
           legal_status: string
           motivation: string
-          password_hash: string
-          phone: string
+          password_hash?: string | null
+          phone?: string | null
           postal_code: string
           siret: string
           skills: string[]
           status?: string
           terms_accepted?: boolean
           updated_at?: string
+          user_id?: string | null
           vat_number?: string | null
           years_experience: number
         }
@@ -314,29 +316,38 @@ export type Database = {
           company_name?: string
           created_at?: string
           data_accuracy_confirmed?: boolean
-          email?: string
-          first_name?: string
+          email?: string | null
+          first_name?: string | null
           has_decennial_insurance?: boolean
           iban?: string
           id?: string
           insurance_company?: string
           insurance_expiry_date?: string
           insurance_policy_number?: string
-          last_name?: string
+          last_name?: string | null
           legal_status?: string
           motivation?: string
-          password_hash?: string
-          phone?: string
+          password_hash?: string | null
+          phone?: string | null
           postal_code?: string
           siret?: string
           skills?: string[]
           status?: string
           terms_accepted?: boolean
           updated_at?: string
+          user_id?: string | null
           vat_number?: string | null
           years_experience?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "partner_applications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_authorizations: {
         Row: {

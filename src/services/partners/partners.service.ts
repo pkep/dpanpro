@@ -54,19 +54,38 @@ class PartnersService {
 
     const passwordHash = hashResponse.data.hash;
 
-    const { error } = await (supabase
-      .from('partner_applications') as any)
+    // First, create the user with role 'technician' and is_active = false
+    const { data: newUser, error: userError } = await (supabase
+      .from('users') as any)
       .insert({
+        email: data.email,
+        password_hash: passwordHash,
         first_name: data.firstName,
         last_name: data.lastName,
-        email: data.email,
         phone: data.phone,
+        role: 'technician',
+        is_active: false, // Will be activated when manager approves the application
+      })
+      .select('id')
+      .single();
+
+    if (userError) {
+      if (userError.code === '23505') {
+        throw new Error('Cette adresse email est déjà utilisée');
+      }
+      throw userError;
+    }
+
+    // Then create the partner application linked to the user
+    const { error: applicationError } = await (supabase
+      .from('partner_applications') as any)
+      .insert({
+        user_id: newUser.id,
         birth_date: data.birthDate,
         birth_place: data.birthPlace,
         address: data.address,
         postal_code: data.postalCode,
         city: data.city,
-        password_hash: passwordHash,
         company_name: data.companyName,
         siret: data.siret,
         vat_number: data.vatNumber || null,
@@ -86,11 +105,10 @@ class PartnersService {
         data_accuracy_confirmed: data.dataAccuracyConfirmed,
       } as Record<string, unknown>);
 
-    if (error) {
-      if (error.code === '23505') {
-        throw new Error('Cette adresse email est déjà utilisée');
-      }
-      throw error;
+    if (applicationError) {
+      // If application creation fails, we should delete the user we just created
+      await (supabase.from('users') as any).delete().eq('id', newUser.id);
+      throw applicationError;
     }
   }
 }
