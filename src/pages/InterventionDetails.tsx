@@ -237,7 +237,7 @@ export default function InterventionDetails() {
                 <CardTitle className="flex items-center justify-between">
                   <span>Détails de l'intervention</span>
                   <Badge className={`${STATUS_COLORS[intervention.status]} border text-sm`}>
-                    {STATUS_LABELS[intervention.status]}
+                    {intervention.status === 'new' ? 'Demande reçue' : STATUS_LABELS[intervention.status]}
                   </Badge>
                 </CardTitle>
               </CardHeader>
