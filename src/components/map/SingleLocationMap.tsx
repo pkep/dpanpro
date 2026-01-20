@@ -135,34 +135,15 @@ export function SingleLocationMap({
 
   return (
     <div className="space-y-2">
-      <div className="rounded-lg overflow-hidden border" style={{ height }}>
-        <MapContainer
-          center={coordinates}
-          zoom={15}
-          style={{ height: '100%', width: '100%' }}
-          scrollWheelZoom={true}
-          whenReady={() => setMapReady(true)}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          {mapReady && (
-            <>
-              <RecenterMap center={coordinates} zoom={15} />
-
-              <Marker position={coordinates} icon={markerIcon}>
-                <Popup>
-                  <div className="space-y-2 p-1">
-                    {title && <h3 className="font-semibold">{title}</h3>}
-                    <p className="text-sm">{fullAddress}</p>
-                  </div>
-                </Popup>
-              </Marker>
-            </>
-          )}
-        </MapContainer>
+      <div className="rounded-lg overflow-hidden border bg-muted/30 flex items-center justify-center" style={{ height }}>
+        <div className="text-center space-y-2 p-4">
+          <MapPin className="h-8 w-8 mx-auto text-primary" />
+          {title && <h3 className="font-semibold">{title}</h3>}
+          <p className="text-sm text-muted-foreground">{fullAddress}</p>
+          <p className="text-xs text-muted-foreground">
+            Lat: {coordinates[0].toFixed(6)}, Lng: {coordinates[1].toFixed(6)}
+          </p>
+        </div>
       </div>
 
       <Button
