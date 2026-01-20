@@ -413,16 +413,11 @@ export function LiveTrackingMap({
             ))}
 
           {/* Distance lines from technician to assigned interventions */}
-          {showLines && myPosition && myAssignedInterventions.map((intervention) => {
+          {mapReady && showLines && myPosition && myAssignedInterventions.map((intervention) => {
             if (!intervention.latitude || !intervention.longitude) return null;
             
             const lineColor = intervention.priority === 'urgent' ? '#ef4444' : 
                              intervention.priority === 'high' ? '#f97316' : '#6366f1';
-            
-            const midpoint: [number, number] = [
-              (myPosition[0] + intervention.latitude) / 2,
-              (myPosition[1] + intervention.longitude) / 2,
-            ];
 
             return (
               <Polyline
