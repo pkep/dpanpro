@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { quotesService, QuoteInput } from '@/services/quotes/quotes.service';
+import { paymentService } from '@/services/payment/payment.service';
+import { pricingService } from '@/services/pricing/pricing.service';
+import { servicesService, Service } from '@/services/services/services.service';
 import { InterventionCategory, CATEGORY_LABELS } from '@/types/intervention.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +16,7 @@ import { toast } from 'sonner';
 import { StepServiceSelection } from './steps/StepServiceSelection';
 import { StepProblemDescription } from './steps/StepProblemDescription';
 import { StepContactInfo } from './steps/StepContactInfo';
+import { StepPayment } from './steps/StepPayment';
 import { StepSummary } from './steps/StepSummary';
 
 const categoryIcons: Record<InterventionCategory, React.ReactNode> = {
@@ -24,16 +29,17 @@ const categoryIcons: Record<InterventionCategory, React.ReactNode> = {
 };
 
 const STEPS = [
-  { id: 1, title: 'Service' },
-  { id: 2, title: 'Problème' },
-  { id: 3, title: 'Contact' },
-  { id: 4, title: 'Validation' },
+  { id: 1, title: '1. Service' },
+  { id: 2, title: '2. Problème' },
+  { id: 3, title: '3. Contact' },
+  { id: 4, title: '4. Paiement' },
+  { id: 5, title: '5. Validation' },
 ];
 
 export function InterventionWizard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,6 +57,29 @@ export function InterventionWizard() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
+  // Payment state
+  const [quoteLines, setQuoteLines] = useState<QuoteInput[]>([]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [multiplier, setMultiplier] = useState(1.0);
+  const [multiplierLabel, setMultiplierLabel] = useState('Normal');
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+  const [isPaymentAuthorized, setIsPaymentAuthorized] = useState(false);
+  const [authorizationId, setAuthorizationId] = useState<string | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
+
+  // Load services on mount
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const activeServices = await servicesService.getActiveServices();
+        setServices(activeServices);
+      } catch (error) {
+        console.error('Error loading services:', error);
+      }
+    };
+    loadServices();
+  }, []);
+
   // Load service from URL params
   useEffect(() => {
     const serviceParam = searchParams.get('service');
@@ -61,7 +90,57 @@ export function InterventionWizard() {
         setCurrentStep(2); // Skip to step 2 if service is pre-selected
       }
     }
+    
+    // Check for payment callback
+    const paymentStatus = searchParams.get('payment');
+    const returnedAuthId = searchParams.get('authorization_id');
+    
+    if (paymentStatus === 'success' && returnedAuthId) {
+      setIsPaymentAuthorized(true);
+      setAuthorizationId(returnedAuthId);
+      setCurrentStep(5); // Move to validation step
+      toast.success('Autorisation de paiement confirmée !');
+    } else if (paymentStatus === 'cancelled') {
+      toast.error('Autorisation de paiement annulée');
+      setCurrentStep(4);
+    }
   }, [searchParams]);
+
+  // Generate quote when moving to payment step
+  useEffect(() => {
+    const generateQuote = async () => {
+      if (currentStep === 4 && category && !isPaymentAuthorized) {
+        try {
+          // Get service details
+          const service = services.find(s => s.code === category);
+          if (!service) {
+            toast.error('Service non trouvé');
+            return;
+          }
+
+          // Get multiplier (using 'normal' priority for now)
+          const multipliers = await pricingService.getPriorityMultipliers();
+          const normalMultiplier = multipliers.find(m => m.priority === 'normal');
+          const mult = normalMultiplier?.multiplier || 1.0;
+          setMultiplier(mult);
+          setMultiplierLabel(normalMultiplier?.label || 'Normal');
+
+          // Generate quote lines
+          const lines = quotesService.generateQuoteLines(service.basePrice, mult);
+          setQuoteLines(lines);
+
+          // Calculate total
+          const total = quotesService.calculateTotal(lines);
+          setTotalAmount(total);
+        } catch (error) {
+          console.error('Error generating quote:', error);
+          toast.error('Erreur lors de la génération du devis');
+        }
+      }
+    };
+
+    generateQuote();
+  }, [currentStep, category, services, isPaymentAuthorized]);
 
   const progress = (currentStep / STEPS.length) * 100;
 
@@ -78,7 +157,9 @@ export function InterventionWizard() {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
                phone.trim().length >= 10;
       case 4:
-        return true;
+        return isPaymentAuthorized;
+      case 5:
+        return isPaymentAuthorized;
       default:
         return false;
     }
@@ -96,12 +177,12 @@ export function InterventionWizard() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!category) return;
+  const handlePaymentAuthorize = async () => {
+    if (!category || !email) return;
 
-    setIsSubmitting(true);
+    setIsPaymentProcessing(true);
     try {
-      // Use user ID if authenticated, otherwise use a guest ID
+      // Create a temporary intervention to get an ID
       const clientId = user?.id || 'guest-' + Date.now();
 
       const intervention = await interventionsService.createIntervention(clientId, {
@@ -116,12 +197,56 @@ export function InterventionWizard() {
         photos: photos.length > 0 ? photos : undefined,
       });
 
-      setTrackingCode(intervention.trackingCode || null);
+      // Save quote lines to database
+      await quotesService.saveQuoteLines(intervention.id, quoteLines);
+
+      // Create payment authorization
+      const result = await paymentService.createAuthorizationRequest({
+        interventionId: intervention.id,
+        amount: totalAmount,
+        clientEmail: email,
+        clientPhone: phone,
+      });
+
+      if (result.checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = result.checkoutUrl;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Error creating payment authorization:', error);
+      toast.error('Erreur lors de la création de l\'autorisation de paiement');
+      setIsPaymentProcessing(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!isPaymentAuthorized) {
+      toast.error('Veuillez d\'abord autoriser le paiement');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Update authorization status to authorized
+      if (authorizationId) {
+        await paymentService.updateAuthorizationStatus(authorizationId, 'authorized');
+      }
+
+      // Get the intervention that was created during payment
+      const auth = authorizationId ? await paymentService.getAuthorization(authorizationId) : null;
+      
+      if (auth) {
+        const intervention = await interventionsService.getIntervention(auth.interventionId);
+        setTrackingCode(intervention?.trackingCode || null);
+      }
+
       setIsSubmitted(true);
       toast.success('Demande envoyée avec succès !');
     } catch (error) {
-      console.error('Error creating intervention:', error);
-      toast.error('Erreur lors de la création de la demande');
+      console.error('Error finalizing intervention:', error);
+      toast.error('Erreur lors de la finalisation de la demande');
     } finally {
       setIsSubmitting(false);
     }
@@ -164,6 +289,17 @@ export function InterventionWizard() {
         );
       case 4:
         return (
+          <StepPayment
+            quoteLines={quoteLines}
+            totalAmount={totalAmount}
+            multiplierLabel={multiplierLabel}
+            isProcessing={isPaymentProcessing}
+            isAuthorized={isPaymentAuthorized}
+            onAuthorize={handlePaymentAuthorize}
+          />
+        );
+      case 5:
+        return (
           <StepSummary
             category={category!}
             description={description}
@@ -175,6 +311,9 @@ export function InterventionWizard() {
             photos={photos}
             trackingCode={trackingCode || undefined}
             isSubmitted={isSubmitted}
+            quoteLines={quoteLines}
+            totalAmount={totalAmount}
+            isPaymentAuthorized={isPaymentAuthorized}
           />
         );
       default:
@@ -250,17 +389,22 @@ export function InterventionWizard() {
             </Button>
 
             {currentStep < STEPS.length ? (
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed()}
-              >
-                Suivant
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              currentStep === 4 && !isPaymentAuthorized ? (
+                // Payment step - button handled inside StepPayment
+                <div />
+              ) : (
+                <Button
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                >
+                  Suivant
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              )
             ) : (
               <Button
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !isPaymentAuthorized}
               >
                 {isSubmitting ? (
                   <>
@@ -270,7 +414,7 @@ export function InterventionWizard() {
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Envoyer la demande
+                    Confirmer la demande
                   </>
                 )}
               </Button>

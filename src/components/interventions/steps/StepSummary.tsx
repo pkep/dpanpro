@@ -1,9 +1,12 @@
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 import { CATEGORY_LABELS, InterventionCategory } from '@/types/intervention.types';
-import { CheckCircle2, Copy, MapPin, Mail, Phone, FileText, Image } from 'lucide-react';
+import { CheckCircle2, Copy, MapPin, Mail, Phone, FileText, Image, CreditCard, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { QuoteInput } from '@/services/quotes/quotes.service';
 
 interface StepSummaryProps {
   category: InterventionCategory;
@@ -16,6 +19,9 @@ interface StepSummaryProps {
   photos: string[];
   trackingCode?: string;
   isSubmitted?: boolean;
+  quoteLines?: QuoteInput[];
+  totalAmount?: number;
+  isPaymentAuthorized?: boolean;
 }
 
 export function StepSummary({
@@ -29,12 +35,22 @@ export function StepSummary({
   photos,
   trackingCode,
   isSubmitted = false,
+  quoteLines = [],
+  totalAmount = 0,
+  isPaymentAuthorized = false,
 }: StepSummaryProps) {
   const copyTrackingCode = () => {
     if (trackingCode) {
       navigator.clipboard.writeText(trackingCode);
       toast.success('Code de suivi copié !');
     }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(price);
   };
 
   if (isSubmitted && trackingCode) {
@@ -85,7 +101,7 @@ export function StepSummary({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Récapitulatif</h2>
+        <h2 className="text-2xl font-bold">5. Récapitulatif</h2>
         <p className="text-muted-foreground mt-2">
           Vérifiez les informations avant de valider
         </p>
@@ -174,6 +190,44 @@ export function StepSummary({
             </div>
           </CardContent>
         </Card>
+
+        {/* Payment Authorization Summary */}
+        {isPaymentAuthorized && quoteLines.length > 0 && (
+          <Card className="border-green-500/30 bg-green-50/50 dark:bg-green-900/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-green-600" />
+                <span className="text-green-700 dark:text-green-400">Autorisation de paiement confirmée</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {quoteLines.map((line, index) => (
+                <div key={index} className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">{line.label}</span>
+                  <span>{formatPrice(line.basePrice * line.multiplier)}</span>
+                </div>
+              ))}
+              
+              <Separator />
+              
+              <div className="flex justify-between items-center">
+                <span className="font-semibold">Montant autorisé</span>
+                <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                  {formatPrice(totalAmount)}
+                </span>
+              </div>
+
+              <Alert className="mt-4 bg-white/50 dark:bg-background/50">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  <strong>Le paiement sera effectué qu'à la fin de l'intervention.</strong>
+                  <br />
+                  Les fonds sont bloqués en garantie et seront prélevés uniquement après validation du service.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
