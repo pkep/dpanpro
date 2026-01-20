@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Menu, X, User, LogOut } from 'lucide-react';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Menu, X, User, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import logo from '@/assets/logo.png';
+} from "@/components/ui/dropdown-menu";
+import logo from "@/assets/logo.png";
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -21,8 +21,8 @@ export function Header() {
   };
 
   const navLinks = [
-    { href: '/#services', label: 'Dépannage' },
-    { href: '/join', label: 'Nous rejoindre' },
+    { href: "/new-intervention", label: "Dépannage" },
+    { href: "/join", label: "Nous rejoindre" },
   ];
 
   return (
@@ -61,12 +61,12 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link to="/dashboard">Mon espace</Link>
                 </DropdownMenuItem>
-                {user.role === 'technician' && (
+                {user.role === "technician" && (
                   <DropdownMenuItem asChild>
                     <Link to="/technician">Espace technicien</Link>
                   </DropdownMenuItem>
                 )}
-                {user.role === 'admin' && (
+                {user.role === "admin" && (
                   <DropdownMenuItem asChild>
                     <Link to="/admin">Administration</Link>
                   </DropdownMenuItem>
@@ -94,13 +94,9 @@ export function Header() {
         <button
           className="md:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label={mobileMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+          aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
         >
-          {mobileMenuOpen ? (
-            <X className="h-6 w-6 text-foreground" />
-          ) : (
-            <Menu className="h-6 w-6 text-foreground" />
-          )}
+          {mobileMenuOpen ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
         </button>
       </div>
 
