@@ -209,8 +209,10 @@ export function InterventionWizard() {
       });
 
       if (result.checkoutUrl) {
-        // Redirect to Stripe checkout
-        window.location.href = result.checkoutUrl;
+        // Open Stripe checkout in a new tab
+        window.open(result.checkoutUrl, '_blank');
+        toast.info('Une fenêtre Stripe s\'est ouverte pour autoriser le paiement. Revenez ici une fois terminé.');
+        setIsPaymentProcessing(false);
       } else {
         throw new Error('No checkout URL returned');
       }
