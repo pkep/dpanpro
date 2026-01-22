@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      cancelled_assignments: {
+        Row: {
+          cancelled_at: string
+          created_at: string
+          id: string
+          intervention_id: string
+          reason: string
+          technician_id: string
+        }
+        Insert: {
+          cancelled_at?: string
+          created_at?: string
+          id?: string
+          intervention_id: string
+          reason: string
+          technician_id: string
+        }
+        Update: {
+          cancelled_at?: string
+          created_at?: string
+          id?: string
+          intervention_id?: string
+          reason?: string
+          technician_id?: string
+        }
+        Relationships: []
+      }
+      declined_interventions: {
+        Row: {
+          created_at: string
+          declined_at: string
+          id: string
+          intervention_id: string
+          reason: string
+          technician_id: string
+        }
+        Insert: {
+          created_at?: string
+          declined_at?: string
+          id?: string
+          intervention_id: string
+          reason: string
+          technician_id: string
+        }
+        Update: {
+          created_at?: string
+          declined_at?: string
+          id?: string
+          intervention_id?: string
+          reason?: string
+          technician_id?: string
+        }
+        Relationships: []
+      }
       dispatch_attempts: {
         Row: {
           attempt_order: number

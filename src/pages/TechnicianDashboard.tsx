@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { TechnicianInterventionsList } from '@/components/interventions/TechnicianInterventionsList';
+import { AvailableInterventionsList } from '@/components/interventions/AvailableInterventionsList';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import { ProximitySettings } from '@/components/notifications/ProximitySettings';
 import { PushNotificationSetup } from '@/components/notifications/PushNotificationSetup';
@@ -217,15 +217,15 @@ const TechnicianDashboard = () => {
 
         {/* Proximity Settings and Interventions */}
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="lg:col-span-2">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold">Mes interventions</h1>
+              <h1 className="text-2xl font-bold">Interventions disponibles</h1>
               <p className="text-muted-foreground">
-                Gérez les interventions qui vous sont assignées
+                Acceptez ou refusez les interventions proposées
               </p>
             </div>
 
-            <TechnicianInterventionsList 
+            <AvailableInterventionsList 
               technicianId={user.id}
             />
           </div>
