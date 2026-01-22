@@ -21,8 +21,9 @@ interface TechnicianScore {
 
 interface DispatchRequest {
   interventionId: string;
-  action?: 'dispatch' | 'accept' | 'reject' | 'check_timeout';
+  action?: 'dispatch' | 'accept' | 'reject' | 'check_timeout' | 'decline' | 'cancel' | 'go';
   technicianId?: string;
+  reason?: string; // For decline and cancel actions
 }
 
 interface Intervention {
@@ -80,7 +81,7 @@ Deno.serve(async (req) => {
     );
 
     const body: DispatchRequest = await req.json();
-    const { interventionId, action = 'dispatch', technicianId } = body;
+    const { interventionId, action = 'dispatch', technicianId, reason } = body;
 
     console.log(`[Dispatch] Action: ${action}, Intervention: ${interventionId}, Technician: ${technicianId || 'N/A'}`);
 
@@ -90,6 +91,12 @@ Deno.serve(async (req) => {
         return await handleAccept(supabase, interventionId, technicianId!);
       case 'reject':
         return await handleReject(supabase, interventionId, technicianId!);
+      case 'decline':
+        return await handleDecline(supabase, interventionId, technicianId!, reason || 'Aucun motif fourni');
+      case 'cancel':
+        return await handleCancel(supabase, interventionId, technicianId!, reason || 'Aucun motif fourni');
+      case 'go':
+        return await handleGo(supabase, interventionId, technicianId!);
       case 'check_timeout':
         return await handleCheckTimeout(supabase, interventionId);
       case 'dispatch':
@@ -143,6 +150,22 @@ async function handleDispatch(supabase: any, interventionId: string) {
     .eq('intervention_id', interventionId)
     .eq('status', 'pending');
 
+  // 2b. Get technicians who have already declined this intervention
+  const { data: declinedRecords } = await supabase
+    .from('declined_interventions')
+    .select('technician_id')
+    .eq('intervention_id', interventionId);
+  
+  const declinedTechnicianIds = new Set((declinedRecords || []).map((d: any) => d.technician_id));
+
+  // 2c. Get technicians who have already cancelled this intervention
+  const { data: cancelledRecords } = await supabase
+    .from('cancelled_assignments')
+    .select('technician_id')
+    .eq('intervention_id', interventionId);
+  
+  const cancelledTechnicianIds = new Set((cancelledRecords || []).map((c: any) => c.technician_id));
+
   // 3. Get eligible technicians with location
   const { data: applications, error: appError } = await supabase
     .from('partner_applications')
@@ -159,8 +182,20 @@ async function handleDispatch(supabase: any, interventionId: string) {
     );
   }
 
-  // Get user IDs from applications
-  const userIds = applications.map((a: any) => a.user_id).filter(Boolean);
+  // Filter out technicians who declined or cancelled
+  const eligibleApplications = applications.filter((a: any) => 
+    !declinedTechnicianIds.has(a.user_id) && !cancelledTechnicianIds.has(a.user_id)
+  );
+
+  if (eligibleApplications.length === 0) {
+    return new Response(
+      JSON.stringify({ success: false, message: 'All eligible technicians have declined or cancelled' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Get user IDs from eligible applications
+  const userIds = eligibleApplications.map((a: any) => a.user_id).filter(Boolean);
 
   // 4. Get active technician users
   const { data: users, error: usersError } = await supabase
@@ -218,7 +253,7 @@ async function handleDispatch(supabase: any, interventionId: string) {
   const scoredTechnicians: TechnicianScore[] = [];
   const requiredSkill = intervention.category;
 
-  for (const app of applications) {
+  for (const app of eligibleApplications) {
     const user = users?.find((u: any) => u.id === app.user_id);
     if (!user) continue;
 
@@ -300,19 +335,22 @@ async function handleDispatch(supabase: any, interventionId: string) {
     distance: t.distanceKm
   })));
 
-  // 10. Create dispatch attempts for all ranked technicians
+  // 10. Create dispatch attempts for TOP 3 technicians
   const now = new Date();
   const timeoutAt = new Date(now.getTime() + TIMEOUT_MINUTES * 60 * 1000);
+  
+  // Only take top 3 technicians
+  const top3Technicians = scoredTechnicians.slice(0, 3);
 
-  const attempts = scoredTechnicians.map((tech, index) => ({
+  const attempts = top3Technicians.map((tech, index) => ({
     intervention_id: interventionId,
     technician_id: tech.userId,
     score: tech.score,
     score_breakdown: tech.breakdown,
-    status: index === 0 ? 'pending' : 'pending',
+    status: 'pending', // All 3 are pending - first to accept wins
     attempt_order: index + 1,
-    notified_at: index === 0 ? now.toISOString() : null,
-    timeout_at: index === 0 ? timeoutAt.toISOString() : null,
+    notified_at: now.toISOString(), // All 3 are notified immediately
+    timeout_at: timeoutAt.toISOString(), // Same timeout for all
   }));
 
   const { error: insertError } = await supabase
@@ -321,35 +359,32 @@ async function handleDispatch(supabase: any, interventionId: string) {
 
   if (insertError) throw insertError;
 
-  // 11. Assign to top technician
-  const topTech = scoredTechnicians[0];
-  
+  // 11. Do NOT assign yet - wait for technician to accept
+  // Just update status to indicate dispatch is pending
   const { error: updateError } = await supabase
     .from('interventions')
     .update({
-      technician_id: topTech.userId,
-      status: 'assigned',
+      status: 'new', // Remains new until a technician accepts
     })
     .eq('id', interventionId);
 
   if (updateError) throw updateError;
 
-  console.log(`[Dispatch] Assigned to technician: ${topTech.userId} (score: ${topTech.score})`);
+  console.log(`[Dispatch] Notified top 3 technicians:`, top3Technicians.map(t => t.userId));
 
-  // 12. TODO: Send notifications (SMS/Push)
-  // This would integrate with a service like Twilio for SMS
+  // 12. TODO: Send push notifications to all 3 technicians
   // For now, the realtime subscription handles in-app notifications
 
   return new Response(
     JSON.stringify({
       success: true,
-      message: 'Intervention dispatched successfully',
-      assignedTechnician: {
-        userId: topTech.userId,
-        score: topTech.score,
-        distanceKm: topTech.distanceKm,
-        estimatedArrivalMinutes: topTech.estimatedTravelMinutes,
-      },
+      message: 'Intervention dispatched to top 3 technicians',
+      notifiedTechnicians: top3Technicians.map(t => ({
+        userId: t.userId,
+        score: t.score,
+        distanceKm: t.distanceKm,
+        estimatedArrivalMinutes: t.estimatedTravelMinutes,
+      })),
       timeoutAt: timeoutAt.toISOString(),
       totalCandidates: scoredTechnicians.length,
     }),
@@ -540,4 +575,127 @@ function mapCategoryToSkill(category: string): string {
     'aircon': 'climatisation',
   };
   return mapping[category] || category;
+}
+
+// Handle technician declining an intervention with reason (persistent - won't be shown again)
+async function handleDecline(supabase: any, interventionId: string, technicianId: string, reason: string) {
+  console.log(`[Dispatch] Technician ${technicianId} declining intervention ${interventionId} - Reason: ${reason}`);
+
+  // Update dispatch attempt to declined
+  const { error: attemptError } = await supabase
+    .from('dispatch_attempts')
+    .update({
+      status: 'rejected',
+      responded_at: new Date().toISOString(),
+    })
+    .eq('intervention_id', interventionId)
+    .eq('technician_id', technicianId)
+    .eq('status', 'pending');
+
+  if (attemptError) throw attemptError;
+
+  // Persist the decline with reason
+  const { error: declineError } = await supabase
+    .from('declined_interventions')
+    .insert({
+      intervention_id: interventionId,
+      technician_id: technicianId,
+      reason: reason,
+    });
+
+  if (declineError) throw declineError;
+
+  return new Response(
+    JSON.stringify({ success: true, message: 'Intervention declined' }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// Handle technician cancelling an accepted assignment with reason (triggers re-dispatch)
+async function handleCancel(supabase: any, interventionId: string, technicianId: string, reason: string) {
+  console.log(`[Dispatch] Technician ${technicianId} cancelling intervention ${interventionId} - Reason: ${reason}`);
+
+  // Update dispatch attempt to cancelled
+  await supabase
+    .from('dispatch_attempts')
+    .update({
+      status: 'cancelled',
+      responded_at: new Date().toISOString(),
+    })
+    .eq('intervention_id', interventionId)
+    .eq('technician_id', technicianId);
+
+  // Persist the cancellation with reason
+  const { error: cancelError } = await supabase
+    .from('cancelled_assignments')
+    .insert({
+      intervention_id: interventionId,
+      technician_id: technicianId,
+      reason: reason,
+    });
+
+  if (cancelError) throw cancelError;
+
+  // Remove technician from intervention and set status to 'to_reassign'
+  const { error: updateError } = await supabase
+    .from('interventions')
+    .update({
+      technician_id: null,
+      status: 'to_reassign',
+    })
+    .eq('id', interventionId);
+
+  if (updateError) throw updateError;
+
+  // Clear all previous dispatch attempts
+  await supabase
+    .from('dispatch_attempts')
+    .update({ status: 'cancelled' })
+    .eq('intervention_id', interventionId);
+
+  // Re-dispatch to new top 3 technicians (excluding those who declined or cancelled)
+  console.log(`[Dispatch] Re-dispatching intervention ${interventionId}`);
+  return await handleDispatch(supabase, interventionId);
+}
+
+// Handle "Y aller" - immediately assigns and sets status to en_route
+async function handleGo(supabase: any, interventionId: string, technicianId: string) {
+  console.log(`[Dispatch] Technician ${technicianId} going directly to intervention ${interventionId}`);
+
+  // Update dispatch attempt
+  const { error: attemptError } = await supabase
+    .from('dispatch_attempts')
+    .update({
+      status: 'accepted',
+      responded_at: new Date().toISOString(),
+    })
+    .eq('intervention_id', interventionId)
+    .eq('technician_id', technicianId)
+    .eq('status', 'pending');
+
+  if (attemptError) throw attemptError;
+
+  // Cancel other pending attempts
+  await supabase
+    .from('dispatch_attempts')
+    .update({ status: 'cancelled' })
+    .eq('intervention_id', interventionId)
+    .neq('technician_id', technicianId)
+    .eq('status', 'pending');
+
+  // Update intervention - assign and set to en_route
+  const { error: intError } = await supabase
+    .from('interventions')
+    .update({ 
+      technician_id: technicianId,
+      status: 'en_route' 
+    })
+    .eq('id', interventionId);
+
+  if (intError) throw intError;
+
+  return new Response(
+    JSON.stringify({ success: true, message: 'En route to intervention' }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
 }

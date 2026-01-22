@@ -83,6 +83,56 @@ class DispatchService {
   }
 
   /**
+   * Decline an intervention with reason (persistent - won't be shown again)
+   */
+  async declineIntervention(interventionId: string, technicianId: string, reason: string): Promise<DispatchResult> {
+    const { data, error } = await supabase.functions.invoke('dispatch-intervention', {
+      body: {
+        interventionId,
+        technicianId,
+        action: 'decline',
+        reason,
+      },
+    });
+
+    if (error) throw error;
+    return data as DispatchResult;
+  }
+
+  /**
+   * Cancel an accepted assignment with reason (triggers re-dispatch)
+   */
+  async cancelAssignment(interventionId: string, technicianId: string, reason: string): Promise<DispatchResult> {
+    const { data, error } = await supabase.functions.invoke('dispatch-intervention', {
+      body: {
+        interventionId,
+        technicianId,
+        action: 'cancel',
+        reason,
+      },
+    });
+
+    if (error) throw error;
+    return data as DispatchResult;
+  }
+
+  /**
+   * Go directly to intervention (assign + set en_route)
+   */
+  async goToIntervention(interventionId: string, technicianId: string): Promise<DispatchResult> {
+    const { data, error } = await supabase.functions.invoke('dispatch-intervention', {
+      body: {
+        interventionId,
+        technicianId,
+        action: 'go',
+      },
+    });
+
+    if (error) throw error;
+    return data as DispatchResult;
+  }
+
+  /**
    * Get dispatch attempts for an intervention
    */
   async getDispatchAttempts(interventionId: string): Promise<DispatchAttempt[]> {
