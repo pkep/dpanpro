@@ -44,21 +44,13 @@ export function useTechnicianGeolocation() {
 
       const { latitude, longitude } = position.coords;
 
-      // Reverse geocode to get city and department
-      const addressInfo = await geocodingService.reverseGeocode(latitude, longitude);
+      // Use detailed reverse geocoding to get properly structured city and department
+      const addressInfo = await geocodingService.reverseGeocodeDetailed(latitude, longitude);
       
-      // Parse city and department from address
-      let city: string | null = null;
-      let department: string | null = null;
-      
-      if (addressInfo) {
-        const parts = addressInfo.split(', ');
-        // Typical format: "Street, City, Department, Region, Country"
-        if (parts.length >= 3) {
-          city = parts[1] || null;
-          department = parts[2] || null;
-        }
-      }
+      const city = addressInfo?.city || null;
+      const department = addressInfo?.department || null;
+
+      console.log('Geolocation update:', { latitude, longitude, city, department, addressInfo });
 
       // Update database
       await techniciansService.updateTechnicianLocation(

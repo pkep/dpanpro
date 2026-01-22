@@ -8,6 +8,7 @@ import type {
 import type { DbIntervention, DbInterventionInsert, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
+import { geocodingService } from '@/services/geocoding/geocoding.service';
 
 class InterventionsService {
   async getInterventions(filters?: {
@@ -74,6 +75,28 @@ class InterventionsService {
     
     const generatedTitle = `${categoryLabel} - ${formData.address} - ${formData.postalCode}`;
 
+    // Geocode the address to get latitude/longitude
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+    
+    try {
+      const geoResult = await geocodingService.geocodeAddress(
+        formData.address,
+        formData.city,
+        formData.postalCode
+      );
+      
+      if (geoResult) {
+        latitude = geoResult.latitude;
+        longitude = geoResult.longitude;
+        console.log('Geocoded intervention address:', { latitude, longitude, displayName: geoResult.displayName });
+      } else {
+        console.warn('Could not geocode intervention address:', formData.address, formData.city, formData.postalCode);
+      }
+    } catch (error) {
+      console.error('Geocoding failed for intervention:', error);
+    }
+
     const insertData: DbInterventionInsert = {
       client_id: clientId,
       category: formData.category as DbInterventionCategory,
@@ -82,6 +105,8 @@ class InterventionsService {
       address: formData.address,
       city: formData.city,
       postal_code: formData.postalCode,
+      latitude,
+      longitude,
       priority: (formData.priority || 'normal') as DbInterventionPriority,
       status: 'new' as DbInterventionStatus,
       is_active: true,
@@ -101,11 +126,10 @@ class InterventionsService {
     const intervention = this.mapToIntervention(data as unknown as DbIntervention);
 
     // Trigger automatic dispatch in background (non-blocking)
-    if (intervention.latitude && intervention.longitude) {
-      dispatchService.dispatchIntervention(intervention.id).catch(err => {
-        console.error('Auto-dispatch failed:', err);
-      });
-    }
+    // Now dispatch even without coordinates - the dispatch function will handle it
+    dispatchService.dispatchIntervention(intervention.id).catch(err => {
+      console.error('Auto-dispatch failed:', err);
+    });
 
     return intervention;
   }
