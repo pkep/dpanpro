@@ -168,6 +168,48 @@ export function useFirebaseMessaging() {
     };
   }, [user, state.permission, sendLocalNotification]);
 
+  // Subscribe to quote modification notifications for clients
+  useEffect(() => {
+    if (!user || state.permission !== 'granted') return;
+
+    const channel = supabase
+      .channel('quote-modification-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'quote_modifications',
+        },
+        async (payload) => {
+          const newMod = payload.new as any;
+          
+          // Fetch intervention to check if this user is the client
+          const { data: intervention } = await supabase
+            .from('interventions')
+            .select('client_id, title')
+            .eq('id', newMod.intervention_id)
+            .single();
+
+          if (intervention && intervention.client_id === user.id) {
+            sendLocalNotification(
+              '📋 Modification de devis',
+              `Le technicien propose ${Number(newMod.total_additional_amount).toFixed(2)}€ de prestations supplémentaires`,
+              {
+                data: { interventionId: newMod.intervention_id },
+                requireInteraction: true,
+              }
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, state.permission, sendLocalNotification]);
+
   return {
     ...state,
     requestPermission,
