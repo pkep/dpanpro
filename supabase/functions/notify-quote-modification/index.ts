@@ -17,6 +17,71 @@ interface NotifyRequest {
   clientPhone: string | null;
 }
 
+// Format French phone number to international format
+function formatPhoneNumber(phone: string): string {
+  // Remove spaces and dashes
+  let cleaned = phone.replace(/[\s\-\.]/g, "");
+  
+  // If starts with 0, replace with +33
+  if (cleaned.startsWith("0")) {
+    cleaned = "+33" + cleaned.substring(1);
+  }
+  
+  // If doesn't start with +, add +33
+  if (!cleaned.startsWith("+")) {
+    cleaned = "+33" + cleaned;
+  }
+  
+  return cleaned;
+}
+
+// Send SMS via Twilio
+async function sendSMS(to: string, message: string): Promise<boolean> {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+  if (!accountSid || !authToken || !fromNumber) {
+    console.log("Twilio credentials not configured");
+    return false;
+  }
+
+  const formattedTo = formatPhoneNumber(to);
+  console.log("Sending SMS to:", formattedTo);
+
+  try {
+    const credentials = btoa(`${accountSid}:${authToken}`);
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${credentials}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          To: formattedTo,
+          From: fromNumber,
+          Body: message,
+        }),
+      }
+    );
+
+    const result = await response.json();
+    
+    if (response.ok) {
+      console.log("SMS sent successfully:", result.sid);
+      return true;
+    } else {
+      console.error("Twilio error:", result);
+      return false;
+    }
+  } catch (error) {
+    console.error("Error sending SMS:", error);
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -26,6 +91,7 @@ serve(async (req) => {
     const { modificationId, clientEmail, clientPhone }: NotifyRequest = await req.json();
 
     console.log("Notifying client for modification:", modificationId);
+    console.log("Client email:", clientEmail, "Client phone:", clientPhone);
 
     // Get modification details
     const { data: modification, error: modError } = await supabase
@@ -140,6 +206,10 @@ serve(async (req) => {
           });
           results.email = emailRes.ok;
           console.log("Email sent:", emailRes.ok);
+          if (!emailRes.ok) {
+            const errorBody = await emailRes.text();
+            console.error("Email error:", errorBody);
+          }
         } else {
           console.log("RESEND_API_KEY not configured");
           results.email = false;
@@ -150,11 +220,19 @@ serve(async (req) => {
       }
     }
 
-    // TODO: Add SMS sending with Twilio or similar if clientPhone is available
+    // Send SMS via Twilio if clientPhone is available
     if (clientPhone) {
-      console.log("SMS would be sent to:", clientPhone);
-      // For now, just log - SMS integration can be added later
-      results.sms = false;
+      const smsMessage = `Dépan'Express: Le technicien propose ${modification.total_additional_amount.toFixed(2)}€ de prestations supplémentaires pour votre intervention. Validez ici: ${approvalUrl}`;
+      results.sms = await sendSMS(clientPhone, smsMessage);
+    }
+
+    // Update client_notified_at if at least one notification was sent
+    if (results.email || results.sms) {
+      await supabase
+        .from("quote_modifications")
+        .update({ client_notified_at: new Date().toISOString() })
+        .eq("id", modificationId);
+      console.log("Updated client_notified_at for modification:", modificationId);
     }
 
     return new Response(
