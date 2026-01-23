@@ -94,7 +94,7 @@ class QuotesService {
 
     if (error) throw error;
 
-    return ((data || []) as unknown as DbQuoteLine[]).map(this.mapToQuoteLine);
+    return ((data || []) as unknown as DbQuoteLine[]).map((d) => this.mapToQuoteLine(d));
   }
 
   /**
@@ -109,7 +109,7 @@ class QuotesService {
 
     if (error) throw error;
 
-    return ((data || []) as unknown as DbQuoteLine[]).map(this.mapToQuoteLine);
+    return ((data || []) as unknown as DbQuoteLine[]).map((d) => this.mapToQuoteLine(d));
   }
 
   private mapToQuoteLine(data: DbQuoteLine): QuoteLine {
