@@ -264,8 +264,7 @@ export function AvailableInterventionsList({
           description: 'Navigation vers le lieu d\'intervention.',
         });
         setAcceptedInterventionId(selectedIntervention.id);
-        // Navigate to map/tracking page
-        navigate(`/intervention/${selectedIntervention.id}`);
+        navigate(`/technician/intervention/${selectedIntervention.id}`);
       } else {
         toast.error('Erreur', { description: result.message });
       }
@@ -286,7 +285,7 @@ export function AvailableInterventionsList({
       const result = await dispatchService.goToIntervention(selectedIntervention.id, technicianId);
       if (result.success) {
         toast.success('En route !');
-        navigate(`/intervention/${selectedIntervention.id}`);
+        navigate(`/technician/intervention/${selectedIntervention.id}`);
       } else {
         toast.error('Erreur', { description: result.message });
       }
@@ -383,7 +382,7 @@ export function AvailableInterventionsList({
             isProcessing={processingId === acceptedIntervention.id}
             onEnRoute={() => openConfirmDialog('en_route', acceptedIntervention)}
             onCancel={() => openConfirmDialog('cancel', acceptedIntervention)}
-            onViewDetails={() => navigate(`/intervention/${acceptedIntervention.id}`)}
+            onViewDetails={() => navigate(`/technician/intervention/${acceptedIntervention.id}`)}
           />
           
           <ConfirmActionDialog
