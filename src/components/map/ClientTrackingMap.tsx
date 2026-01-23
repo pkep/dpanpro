@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, Tooltip, useMap, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
@@ -432,13 +432,7 @@ export function ClientTrackingMap({
                 opacity: 0.7,
                 dashArray: '12, 12',
               }}
-            >
-              <Tooltip permanent direction="center" className="distance-tooltip">
-                <span className="font-semibold text-xs bg-background/95 px-2 py-1 rounded shadow-lg">
-                  {etaInfo ? formatDistance(etaInfo.distanceMeters) : '...'}
-                </span>
-              </Tooltip>
-            </Polyline>
+            />
           )}
         </MapContainer>
       </div>
