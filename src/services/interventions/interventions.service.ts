@@ -136,11 +136,41 @@ class InterventionsService {
 
   async updateStatus(id: string, status: InterventionStatus, oldStatus?: InterventionStatus): Promise<void> {
     const updates: Record<string, unknown> = { status };
+    const now = new Date();
 
     if (status === 'in_progress') {
-      updates.started_at = new Date().toISOString();
+      updates.started_at = now.toISOString();
+      updates.arrived_at = now.toISOString();
+      
+      // Calculate travel time (from accepted_at to arrived_at)
+      const { data: intervention } = await supabase
+        .from('interventions')
+        .select('accepted_at')
+        .eq('id', id)
+        .single();
+      
+      if (intervention?.accepted_at) {
+        const acceptedAt = new Date(intervention.accepted_at);
+        const travelTimeSeconds = Math.round((now.getTime() - acceptedAt.getTime()) / 1000);
+        updates.travel_time_seconds = travelTimeSeconds;
+        console.log(`Travel time calculated: ${travelTimeSeconds} seconds`);
+      }
     } else if (status === 'completed') {
-      updates.completed_at = new Date().toISOString();
+      updates.completed_at = now.toISOString();
+      
+      // Calculate intervention duration (from started_at to completed_at)
+      const { data: intervention } = await supabase
+        .from('interventions')
+        .select('started_at')
+        .eq('id', id)
+        .single();
+      
+      if (intervention?.started_at) {
+        const startedAt = new Date(intervention.started_at);
+        const interventionDurationSeconds = Math.round((now.getTime() - startedAt.getTime()) / 1000);
+        updates.intervention_duration_seconds = interventionDurationSeconds;
+        console.log(`Intervention duration calculated: ${interventionDurationSeconds} seconds`);
+      }
     }
 
     const { error } = await supabase
