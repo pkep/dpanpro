@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { quoteModificationsService, QuoteModification } from '@/services/quote-modifications/quote-modifications.service';
+import { quotesService, QuoteLine } from '@/services/quotes/quotes.service';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,40 +20,58 @@ import {
   AlertCircle,
   Euro,
   FileText,
+  ArrowLeft,
+  Truck,
+  Shield,
+  Settings,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import logoImage from '@/assets/logo.png';
 
-const ITEM_TYPE_ICONS = {
+const ITEM_TYPE_ICONS: Record<string, React.ReactNode> = {
   service: <Wrench className="h-4 w-4" />,
   equipment: <Package className="h-4 w-4" />,
   other: <HelpCircle className="h-4 w-4" />,
 };
 
-const ITEM_TYPE_LABELS = {
+const ITEM_TYPE_LABELS: Record<string, string> = {
   service: 'Service',
   equipment: 'Équipement',
   other: 'Autre',
 };
 
+const LINE_TYPE_ICONS: Record<string, React.ReactNode> = {
+  displacement: <Truck className="h-4 w-4" />,
+  security: <Shield className="h-4 w-4" />,
+  repair: <Settings className="h-4 w-4" />,
+};
+
+const LINE_TYPE_LABELS: Record<string, string> = {
+  displacement: 'Déplacement',
+  security: 'Mise en sécurité',
+  repair: 'Dépannage',
+};
+
 interface InterventionInfo {
+  id: string;
   title: string;
   address: string;
   city: string;
   postalCode: string;
   category: string;
+  trackingCode: string | null;
 }
 
 export default function QuoteApprovalPage() {
   const { token } = useParams<{ token: string }>();
   const [modification, setModification] = useState<QuoteModification | null>(null);
   const [intervention, setIntervention] = useState<InterventionInfo | null>(null);
+  const [quoteLines, setQuoteLines] = useState<QuoteLine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [responded, setResponded] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,18 +95,24 @@ export default function QuoteApprovalPage() {
         // Fetch intervention details
         const { data: intData } = await supabase
           .from('interventions')
-          .select('title, address, city, postal_code, category')
+          .select('id, title, address, city, postal_code, category, tracking_code')
           .eq('id', mod.interventionId)
           .single();
 
         if (intData) {
           setIntervention({
+            id: intData.id,
             title: intData.title,
             address: intData.address,
             city: intData.city,
             postalCode: intData.postal_code,
             category: intData.category,
+            trackingCode: intData.tracking_code,
           });
+
+          // Fetch initial quote lines
+          const lines = await quotesService.getQuoteLines(mod.interventionId);
+          setQuoteLines(lines);
         }
       } catch (err) {
         console.error('Error fetching modification:', err);
@@ -106,7 +131,6 @@ export default function QuoteApprovalPage() {
     setProcessing(true);
     try {
       await quoteModificationsService.approveModification(modification.id);
-      setResponded(true);
       setModification({ ...modification, status: 'approved' });
       toast.success('Modification approuvée !');
     } catch (err) {
@@ -123,7 +147,6 @@ export default function QuoteApprovalPage() {
     setProcessing(true);
     try {
       await quoteModificationsService.declineModification(modification.id);
-      setResponded(true);
       setModification({ ...modification, status: 'declined' });
       toast.success('Modification refusée');
     } catch (err) {
@@ -140,6 +163,11 @@ export default function QuoteApprovalPage() {
       currency: 'EUR',
     }).format(amount);
   };
+
+  // Calculate totals
+  const initialTotal = quoteLines.reduce((sum, line) => sum + line.calculatedPrice, 0);
+  const additionalTotal = modification?.totalAdditionalAmount || 0;
+  const grandTotal = initialTotal + additionalTotal;
 
   if (loading) {
     return (
@@ -194,6 +222,16 @@ export default function QuoteApprovalPage() {
           </p>
         </div>
 
+        {/* Back to intervention link */}
+        {intervention && (
+          <Button asChild variant="outline" className="w-full">
+            <Link to={intervention.trackingCode ? `/track/${intervention.trackingCode}` : `/intervention/${intervention.id}`}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour à l'intervention
+            </Link>
+          </Button>
+        )}
+
         {/* Status Banner */}
         {!isPending && (
           <Alert variant={isApproved ? 'default' : 'destructive'} className={isApproved ? 'border-green-500 bg-green-50 dark:bg-green-950' : ''}>
@@ -228,6 +266,43 @@ export default function QuoteApprovalPage() {
               <p className="text-sm text-muted-foreground">
                 {intervention.address}, {intervention.postalCode} {intervention.city}
               </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Initial Quote Lines */}
+        {quoteLines.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Devis initial
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {quoteLines.map((line) => (
+                <div key={line.id} className="flex items-start justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 text-muted-foreground">
+                      {LINE_TYPE_ICONS[line.lineType] || <Wrench className="h-4 w-4" />}
+                    </div>
+                    <div>
+                      <p className="font-medium">{line.label}</p>
+                      <Badge variant="outline" className="text-xs mt-1">
+                        {LINE_TYPE_LABELS[line.lineType] || line.lineType}
+                      </Badge>
+                    </div>
+                  </div>
+                  <p className="font-semibold">{formatPrice(line.calculatedPrice)}</p>
+                </div>
+              ))}
+              
+              <Separator />
+              
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <span className="font-medium">Sous-total devis initial</span>
+                <span className="font-bold">{formatPrice(initialTotal)}</span>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -282,22 +357,38 @@ export default function QuoteApprovalPage() {
 
             <Separator />
 
-            {/* Total */}
-            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <div className="flex items-center gap-2">
-                <Euro className="h-5 w-5 text-primary" />
-                <span className="font-medium">Montant total supplémentaire</span>
-              </div>
-              <span className="text-2xl font-bold text-primary">
-                {formatPrice(modification.totalAdditionalAmount)}
-              </span>
+            {/* Subtotal additional */}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <span className="font-medium">Sous-total suppléments</span>
+              <span className="font-bold">{formatPrice(additionalTotal)}</span>
             </div>
           </CardContent>
+        </Card>
 
-          {/* Actions */}
-          {isPending && (
-            <CardFooter className="flex flex-col gap-3 pt-4">
-              <p className="text-sm text-center text-muted-foreground mb-2">
+        {/* Grand Total */}
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Euro className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Total général</span>
+              </div>
+              <span className="text-2xl font-bold text-primary">
+                {formatPrice(grandTotal)}
+              </span>
+            </div>
+            <div className="mt-2 text-sm text-muted-foreground flex justify-between">
+              <span>Devis initial : {formatPrice(initialTotal)}</span>
+              <span>Suppléments : {formatPrice(additionalTotal)}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Actions */}
+        {isPending && (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-center text-muted-foreground mb-4">
                 En approuvant, vous acceptez que ces travaux soient ajoutés à votre facture finale.
               </p>
               <div className="flex gap-3 w-full">
@@ -319,9 +410,9 @@ export default function QuoteApprovalPage() {
                   Approuver
                 </Button>
               </div>
-            </CardFooter>
-          )}
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Footer */}
         <div className="text-center text-sm text-muted-foreground">
