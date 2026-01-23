@@ -222,15 +222,6 @@ export default function QuoteApprovalPage() {
           </p>
         </div>
 
-        {/* Back to intervention link */}
-        {intervention && (
-          <Button asChild variant="outline" className="w-full">
-            <Link to={intervention.trackingCode ? `/track/${intervention.trackingCode}` : `/intervention/${intervention.id}`}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour à l'intervention
-            </Link>
-          </Button>
-        )}
 
         {/* Status Banner */}
         {!isPending && (
@@ -415,11 +406,19 @@ export default function QuoteApprovalPage() {
         )}
 
         {/* Footer */}
-        <div className="text-center text-sm text-muted-foreground">
-          <p>
+        <div className="text-center space-y-3">
+          {intervention && (
+            <Button asChild variant="outline" className="w-full">
+              <Link to={intervention.trackingCode ? `/track/${intervention.trackingCode}` : `/intervention/${intervention.id}`}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour à l'intervention
+              </Link>
+            </Button>
+          )}
+          <p className="text-sm text-muted-foreground">
             Des questions ? Contactez notre service client.
           </p>
-          <Button asChild variant="link" size="sm" className="mt-2">
+          <Button asChild variant="link" size="sm">
             <Link to="/">
               <Home className="h-3 w-3 mr-1" />
               Retour à l'accueil
