@@ -875,6 +875,91 @@ export type Database = {
           },
         ]
       }
+      technician_schedule_overrides: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: string
+          is_available: boolean
+          override_date: string
+          reason: string | null
+          start_time: string | null
+          technician_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          is_available?: boolean
+          override_date: string
+          reason?: string | null
+          start_time?: string | null
+          technician_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          is_available?: boolean
+          override_date?: string
+          reason?: string | null
+          start_time?: string | null
+          technician_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_schedule_overrides_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technician_schedules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_working_day: boolean
+          start_time: string
+          technician_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time?: string
+          id?: string
+          is_working_day?: boolean
+          start_time?: string
+          technician_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_working_day?: boolean
+          start_time?: string
+          technician_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_schedules_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string
