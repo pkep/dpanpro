@@ -10,7 +10,7 @@ import { DispatchAssignmentCard } from '@/components/dispatch/DispatchAssignment
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio, Star, MapPin } from 'lucide-react';
+import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio, Star, MapPin, BarChart3, Wallet } from 'lucide-react';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { useTechnicianGeolocation } from '@/hooks/useTechnicianGeolocation';
 import { useTechnicianPushNotifications } from '@/hooks/useFirebaseMessaging';
@@ -143,6 +143,18 @@ const TechnicianDashboard = () => {
           <div className="flex items-center gap-2">
             <NotificationsDropdown />
             <Button variant="outline" size="sm" asChild>
+              <Link to="/technician/stats">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Stats
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/technician/revenue">
+                <Wallet className="h-4 w-4 mr-2" />
+                Revenus
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
               <Link to="/map">
                 <Map className="h-4 w-4 mr-2" />
                 Carte
@@ -151,7 +163,7 @@ const TechnicianDashboard = () => {
             <Button variant="outline" size="sm" asChild>
               <Link to="/live-tracking">
                 <Radio className="h-4 w-4 mr-2" />
-                Suivi GPS
+                GPS
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild>

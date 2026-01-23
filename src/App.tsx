@@ -12,6 +12,8 @@ import NewIntervention from "./pages/NewIntervention";
 import Dashboard from "./pages/Dashboard";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicianInterventionPage from "./pages/TechnicianInterventionPage";
+import TechnicianStatsPage from "./pages/TechnicianStatsPage";
+import TechnicianRevenuePage from "./pages/TechnicianRevenuePage";
 import AdminDashboard from "./pages/AdminDashboard";
 import InterventionDetails from "./pages/InterventionDetails";
 import StatisticsDashboard from "./pages/StatisticsDashboard";
@@ -37,6 +39,8 @@ const App = () => (
             <Route path="/new-intervention" element={<NewIntervention />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/technician" element={<TechnicianDashboard />} />
+            <Route path="/technician/stats" element={<TechnicianStatsPage />} />
+            <Route path="/technician/revenue" element={<TechnicianRevenuePage />} />
             <Route path="/technician/intervention/:id" element={<TechnicianInterventionPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/intervention/:id" element={<InterventionDetails />} />
