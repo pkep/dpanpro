@@ -169,6 +169,51 @@ export type Database = {
           },
         ]
       }
+      intervention_messages: {
+        Row: {
+          created_at: string
+          id: string
+          intervention_id: string
+          is_read: boolean
+          message: string
+          sender_id: string
+          sender_role: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intervention_id: string
+          is_read?: boolean
+          message: string
+          sender_id: string
+          sender_role: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intervention_id?: string
+          is_read?: boolean
+          message?: string
+          sender_id?: string
+          sender_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_messages_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervention_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intervention_quotes: {
         Row: {
           base_price: number
@@ -557,6 +602,104 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      quote_modification_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          item_type: string
+          label: string
+          modification_id: string
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_type: string
+          label: string
+          modification_id: string
+          quantity?: number
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_type?: string
+          label?: string
+          modification_id?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_modification_items_modification_id_fkey"
+            columns: ["modification_id"]
+            isOneToOne: false
+            referencedRelation: "quote_modifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_modifications: {
+        Row: {
+          client_notified_at: string | null
+          client_responded_at: string | null
+          created_at: string
+          created_by: string
+          id: string
+          intervention_id: string
+          notification_token: string | null
+          status: string
+          total_additional_amount: number
+          updated_at: string
+        }
+        Insert: {
+          client_notified_at?: string | null
+          client_responded_at?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          intervention_id: string
+          notification_token?: string | null
+          status?: string
+          total_additional_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          client_notified_at?: string | null
+          client_responded_at?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          intervention_id?: string
+          notification_token?: string | null
+          status?: string
+          total_additional_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_modifications_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_modifications_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {

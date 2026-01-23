@@ -17,3 +17,12 @@ verify_jwt = false
 
 [functions.check-dispatch-timeouts]
 verify_jwt = false
+
+[functions.notify-quote-modification]
+verify_jwt = false
+
+[functions.capture-payment]
+verify_jwt = false
+
+[functions.cancel-payment]
+verify_jwt = false
