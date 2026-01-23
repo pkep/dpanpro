@@ -396,12 +396,27 @@ async function handleDispatch(supabase: any, interventionId: string) {
 async function handleAccept(supabase: any, interventionId: string, technicianId: string) {
   console.log(`[Dispatch] Technician ${technicianId} accepting intervention ${interventionId}`);
 
+  const now = new Date();
+
+  // Get intervention to calculate response time
+  const { data: intervention, error: getIntError } = await supabase
+    .from('interventions')
+    .select('created_at')
+    .eq('id', interventionId)
+    .single();
+
+  if (getIntError) throw getIntError;
+
+  // Calculate response time in seconds
+  const createdAt = new Date(intervention.created_at);
+  const responseTimeSeconds = Math.round((now.getTime() - createdAt.getTime()) / 1000);
+
   // Update dispatch attempt
   const { error: attemptError } = await supabase
     .from('dispatch_attempts')
     .update({
       status: 'accepted',
-      responded_at: new Date().toISOString(),
+      responded_at: now.toISOString(),
     })
     .eq('intervention_id', interventionId)
     .eq('technician_id', technicianId)
@@ -417,17 +432,23 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
     .neq('technician_id', technicianId)
     .eq('status', 'pending');
 
-  // Update intervention status
+  // Update intervention status with accepted_at and response_time_seconds
   const { error: intError } = await supabase
     .from('interventions')
-    .update({ status: 'on_route' })
+    .update({ 
+      status: 'on_route',
+      accepted_at: now.toISOString(),
+      response_time_seconds: responseTimeSeconds,
+    })
     .eq('id', interventionId)
     .eq('technician_id', technicianId);
 
   if (intError) throw intError;
 
+  console.log(`[Dispatch] Intervention ${interventionId} accepted. Response time: ${responseTimeSeconds} seconds`);
+
   return new Response(
-    JSON.stringify({ success: true, message: 'Assignment accepted' }),
+    JSON.stringify({ success: true, message: 'Assignment accepted', responseTimeSeconds }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 }
@@ -662,12 +683,27 @@ async function handleCancel(supabase: any, interventionId: string, technicianId:
 async function handleGo(supabase: any, interventionId: string, technicianId: string) {
   console.log(`[Dispatch] Technician ${technicianId} going directly to intervention ${interventionId}`);
 
+  const now = new Date();
+
+  // Get intervention to calculate response time
+  const { data: intervention, error: getIntError } = await supabase
+    .from('interventions')
+    .select('created_at')
+    .eq('id', interventionId)
+    .single();
+
+  if (getIntError) throw getIntError;
+
+  // Calculate response time in seconds
+  const createdAt = new Date(intervention.created_at);
+  const responseTimeSeconds = Math.round((now.getTime() - createdAt.getTime()) / 1000);
+
   // Update dispatch attempt
   const { error: attemptError } = await supabase
     .from('dispatch_attempts')
     .update({
       status: 'accepted',
-      responded_at: new Date().toISOString(),
+      responded_at: now.toISOString(),
     })
     .eq('intervention_id', interventionId)
     .eq('technician_id', technicianId)
@@ -683,19 +719,23 @@ async function handleGo(supabase: any, interventionId: string, technicianId: str
     .neq('technician_id', technicianId)
     .eq('status', 'pending');
 
-  // Update intervention - assign and set to on_route
+  // Update intervention - assign and set to on_route with timings
   const { error: intError } = await supabase
     .from('interventions')
     .update({ 
       technician_id: technicianId,
-      status: 'on_route' 
+      status: 'on_route',
+      accepted_at: now.toISOString(),
+      response_time_seconds: responseTimeSeconds,
     })
     .eq('id', interventionId);
 
   if (intError) throw intError;
 
+  console.log(`[Dispatch] Intervention ${interventionId} - Go! Response time: ${responseTimeSeconds} seconds`);
+
   return new Response(
-    JSON.stringify({ success: true, message: 'En route to intervention' }),
+    JSON.stringify({ success: true, message: 'En route to intervention', responseTimeSeconds }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 }

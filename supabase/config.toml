@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.send-invoice-email]
 verify_jwt = false
+
+[functions.calculate-partner-statistics]
+verify_jwt = false

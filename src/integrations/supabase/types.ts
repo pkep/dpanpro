@@ -298,7 +298,9 @@ export type Database = {
       }
       interventions: {
         Row: {
+          accepted_at: string | null
           address: string
+          arrived_at: string | null
           category: string
           city: string
           client_email: string | null
@@ -310,22 +312,27 @@ export type Database = {
           estimated_price: number | null
           final_price: number | null
           id: string
+          intervention_duration_seconds: number | null
           is_active: boolean
           latitude: number | null
           longitude: number | null
           photos: string[] | null
           postal_code: string
           priority: string
+          response_time_seconds: number | null
           scheduled_at: string | null
           started_at: string | null
           status: string
           technician_id: string | null
           title: string
           tracking_code: string | null
+          travel_time_seconds: number | null
           updated_at: string
         }
         Insert: {
+          accepted_at?: string | null
           address: string
+          arrived_at?: string | null
           category: string
           city: string
           client_email?: string | null
@@ -337,22 +344,27 @@ export type Database = {
           estimated_price?: number | null
           final_price?: number | null
           id?: string
+          intervention_duration_seconds?: number | null
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
           photos?: string[] | null
           postal_code: string
           priority?: string
+          response_time_seconds?: number | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
           technician_id?: string | null
           title: string
           tracking_code?: string | null
+          travel_time_seconds?: number | null
           updated_at?: string
         }
         Update: {
+          accepted_at?: string | null
           address?: string
+          arrived_at?: string | null
           category?: string
           city?: string
           client_email?: string | null
@@ -364,18 +376,21 @@ export type Database = {
           estimated_price?: number | null
           final_price?: number | null
           id?: string
+          intervention_duration_seconds?: number | null
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
           photos?: string[] | null
           postal_code?: string
           priority?: string
+          response_time_seconds?: number | null
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
           technician_id?: string | null
           title?: string
           tracking_code?: string | null
+          travel_time_seconds?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -504,6 +519,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      partner_statistics: {
+        Row: {
+          average_arrival_time_seconds: number | null
+          average_intervention_time_seconds: number | null
+          average_rating: number | null
+          average_response_time_seconds: number | null
+          completed_interventions: number
+          created_at: string
+          id: string
+          last_calculated_at: string
+          partner_id: string
+          total_interventions: number
+          updated_at: string
+        }
+        Insert: {
+          average_arrival_time_seconds?: number | null
+          average_intervention_time_seconds?: number | null
+          average_rating?: number | null
+          average_response_time_seconds?: number | null
+          completed_interventions?: number
+          created_at?: string
+          id?: string
+          last_calculated_at?: string
+          partner_id: string
+          total_interventions?: number
+          updated_at?: string
+        }
+        Update: {
+          average_arrival_time_seconds?: number | null
+          average_intervention_time_seconds?: number | null
+          average_rating?: number | null
+          average_response_time_seconds?: number | null
+          completed_interventions?: number
+          created_at?: string
+          id?: string
+          last_calculated_at?: string
+          partner_id?: string
+          total_interventions?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       payment_authorizations: {
         Row: {
