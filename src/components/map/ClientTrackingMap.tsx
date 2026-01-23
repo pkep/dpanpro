@@ -1,14 +1,11 @@
 import { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, Circle } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { supabase } from '@/integrations/supabase/client';
-import { techniciansService } from '@/services/technicians/technicians.service';
 import { calculateDistance, formatDistance } from '@/utils/geolocation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { 
@@ -19,105 +16,8 @@ import {
   Car,
   User,
   RefreshCw,
+  ExternalLink,
 } from 'lucide-react';
-
-// Fix for default marker icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
-
-// Custom icons
-const createTechnicianIcon = () => {
-  return L.divIcon({
-    className: 'technician-marker',
-    html: `
-      <div style="position: relative;">
-        <div style="
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 50px;
-          height: 50px;
-          background-color: rgba(59, 130, 246, 0.3);
-          border-radius: 50%;
-          animation: pulse 2s infinite;
-        "></div>
-        <div style="
-          position: relative;
-          background-color: #3b82f6;
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          border: 4px solid white;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 20px;
-        ">
-          🚗
-        </div>
-      </div>
-      <style>
-        @keyframes pulse {
-          0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-          100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
-        }
-      </style>
-    `,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -25],
-  });
-};
-
-const createDestinationIcon = () => {
-  return L.divIcon({
-    className: 'destination-marker',
-    html: `
-      <div style="
-        background-color: #22c55e;
-        width: 36px;
-        height: 36px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        border: 3px solid white;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <span style="transform: rotate(45deg); font-size: 16px;">🏠</span>
-      </div>
-    `,
-    iconSize: [36, 36],
-    iconAnchor: [18, 36],
-    popupAnchor: [0, -36],
-  });
-};
-
-// Auto-center map component
-function AutoCenter({ technicianPosition, destinationPosition }: { 
-  technicianPosition: [number, number] | null;
-  destinationPosition: [number, number];
-}) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (technicianPosition) {
-      const bounds = L.latLngBounds([technicianPosition, destinationPosition]);
-      map.fitBounds(bounds, { padding: [50, 50] });
-    } else {
-      map.setView(destinationPosition, 15);
-    }
-  }, [technicianPosition, destinationPosition, map]);
-
-  return null;
-}
 
 interface TechnicianPosition {
   latitude: number;
@@ -148,13 +48,7 @@ export function ClientTrackingMap({
 }: ClientTrackingMapProps) {
   const [technicianPosition, setTechnicianPosition] = useState<TechnicianPosition | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mapReady, setMapReady] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-
-  const destinationCoords: [number, number] = [destinationLatitude, destinationLongitude];
-  const techCoords: [number, number] | null = technicianPosition 
-    ? [technicianPosition.latitude, technicianPosition.longitude] 
-    : null;
 
   // Calculate ETA dynamically
   const etaInfo = useMemo(() => {
@@ -278,6 +172,17 @@ export function ClientTrackingMap({
   // Determine if tracking should be active
   const isTrackingActive = ['assigned', 'on_route', 'in_progress'].includes(interventionStatus);
 
+  // Open in Google Maps
+  const openInGoogleMaps = () => {
+    if (technicianPosition) {
+      const url = `https://www.google.com/maps/dir/${technicianPosition.latitude},${technicianPosition.longitude}/${destinationLatitude},${destinationLongitude}`;
+      window.open(url, '_blank');
+    } else {
+      const url = `https://www.google.com/maps/search/?api=1&query=${destinationLatitude},${destinationLongitude}`;
+      window.open(url, '_blank');
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -366,76 +271,59 @@ export function ClientTrackingMap({
         </Card>
       )}
 
-      {/* Map */}
-      <div className="rounded-lg overflow-hidden border" style={{ height }}>
-        <MapContainer
-          center={destinationCoords}
-          zoom={14}
-          style={{ height: '100%', width: '100%' }}
-          scrollWheelZoom={true}
-          whenReady={() => setMapReady(true)}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          {mapReady && <AutoCenter technicianPosition={techCoords} destinationPosition={destinationCoords} />}
-
-          {/* Technician marker */}
-          {mapReady && techCoords && (
-            <>
-              <Circle
-                center={techCoords}
-                radius={100}
-                pathOptions={{ 
-                  color: '#3b82f6', 
-                  fillColor: '#3b82f6',
-                  fillOpacity: 0.1,
-                  weight: 1,
-                }}
-              />
-              <Marker position={techCoords} icon={createTechnicianIcon()}>
-                <Popup>
-                  <div className="p-2 text-center">
-                    <p className="font-semibold">
-                      👷 {technicianPosition?.firstName} {technicianPosition?.lastName}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Mis à jour : {format(technicianPosition?.updatedAt || new Date(), 'HH:mm:ss', { locale: fr })}
-                    </p>
-                  </div>
-                </Popup>
-              </Marker>
-            </>
-          )}
-
-          {/* Destination marker */}
-          {mapReady && (
-            <Marker position={destinationCoords} icon={createDestinationIcon()}>
-              <Popup>
-                <div className="p-2">
-                  <p className="font-semibold">🏠 Votre adresse</p>
-                  <p className="text-sm text-muted-foreground">{destinationAddress}</p>
+      {/* Static Map Placeholder */}
+      <div 
+        className="rounded-lg overflow-hidden border bg-muted/30 flex flex-col items-center justify-center" 
+        style={{ height }}
+      >
+        <div className="text-center space-y-4 p-6">
+          <div className="flex items-center justify-center gap-8">
+            {technicianPosition && (
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto bg-primary rounded-full flex items-center justify-center mb-2">
+                  <Car className="h-6 w-6 text-primary-foreground" />
                 </div>
-              </Popup>
-            </Marker>
-          )}
-
-          {/* Route line */}
-          {mapReady && techCoords && (
-            <Polyline
-              positions={[techCoords, destinationCoords]}
-              pathOptions={{
-                color: '#3b82f6',
-                weight: 4,
-                opacity: 0.7,
-                dashArray: '12, 12',
-              }}
-            />
-          )}
-        </MapContainer>
+                <p className="text-xs text-muted-foreground">Technicien</p>
+                <p className="text-xs font-mono">
+                  {technicianPosition.latitude.toFixed(4)}, {technicianPosition.longitude.toFixed(4)}
+                </p>
+              </div>
+            )}
+            
+            {technicianPosition && (
+              <div className="flex items-center gap-2">
+                <Navigation className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  {etaInfo ? formatDistance(etaInfo.distanceMeters) : '...'}
+                </span>
+              </div>
+            )}
+            
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto bg-green-500 rounded-full flex items-center justify-center mb-2">
+                <MapPin className="h-6 w-6 text-white" />
+              </div>
+              <p className="text-xs text-muted-foreground">Destination</p>
+              <p className="text-xs font-mono">
+                {destinationLatitude.toFixed(4)}, {destinationLongitude.toFixed(4)}
+              </p>
+            </div>
+          </div>
+          
+          <p className="text-sm text-muted-foreground">{destinationAddress}</p>
+        </div>
       </div>
+
+      {/* Open in Google Maps button */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        onClick={openInGoogleMaps}
+      >
+        <ExternalLink className="h-4 w-4 mr-2" />
+        Voir sur Google Maps
+      </Button>
 
       {/* Last update info */}
       <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
