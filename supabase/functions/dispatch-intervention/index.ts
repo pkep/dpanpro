@@ -218,7 +218,7 @@ async function handleDispatch(supabase: any, interventionId: string) {
     .from('interventions')
     .select('technician_id')
     .in('technician_id', userIds)
-    .in('status', ['assigned', 'en_route', 'in_progress']);
+    .in('status', ['assigned', 'on_route', 'in_progress']);
 
   // Count workload per technician
   const workloadCounts: Record<string, number> = {};
@@ -420,7 +420,7 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
   // Update intervention status
   const { error: intError } = await supabase
     .from('interventions')
-    .update({ status: 'en_route' })
+    .update({ status: 'on_route' })
     .eq('id', interventionId)
     .eq('technician_id', technicianId);
 
@@ -658,7 +658,7 @@ async function handleCancel(supabase: any, interventionId: string, technicianId:
   return await handleDispatch(supabase, interventionId);
 }
 
-// Handle "Y aller" - immediately assigns and sets status to en_route
+// Handle "Y aller" - immediately assigns and sets status to on_route
 async function handleGo(supabase: any, interventionId: string, technicianId: string) {
   console.log(`[Dispatch] Technician ${technicianId} going directly to intervention ${interventionId}`);
 
@@ -683,12 +683,12 @@ async function handleGo(supabase: any, interventionId: string, technicianId: str
     .neq('technician_id', technicianId)
     .eq('status', 'pending');
 
-  // Update intervention - assign and set to en_route
+  // Update intervention - assign and set to on_route
   const { error: intError } = await supabase
     .from('interventions')
     .update({ 
       technician_id: technicianId,
-      status: 'en_route' 
+      status: 'on_route' 
     })
     .eq('id', interventionId);
 

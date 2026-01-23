@@ -47,15 +47,15 @@ const TechnicianDashboard = () => {
 
         const today = new Date().toDateString();
         
-        // Find active intervention (assigned, en_route, or in_progress)
+        // Find active intervention (assigned, on_route, or in_progress)
         const active = interventions.find(i => 
-          ['assigned', 'en_route', 'in_progress'].includes(i.status)
+          ['assigned', 'on_route', 'in_progress'].includes(i.status)
         );
         setActiveIntervention(active || null);
         
-        // Count interventions where technician is assigned (assigned, en_route, in_progress)
+        // Count interventions where technician is assigned (assigned, on_route, in_progress)
         const inProgressCount = interventions.filter(i => 
-          ['assigned', 'en_route', 'in_progress'].includes(i.status)
+          ['assigned', 'on_route', 'in_progress'].includes(i.status)
         ).length;
         
         setStats({

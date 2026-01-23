@@ -276,7 +276,7 @@ export function ClientTrackingMap({
   }, [technicianId, technicianPosition]);
 
   // Determine if tracking should be active
-  const isTrackingActive = ['assigned', 'en_route', 'in_progress'].includes(interventionStatus);
+  const isTrackingActive = ['assigned', 'on_route', 'in_progress'].includes(interventionStatus);
 
   if (loading) {
     return (

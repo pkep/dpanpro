@@ -35,7 +35,7 @@ import { toast } from 'sonner';
 const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   assigned: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-  en_route: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+  on_route: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
   in_progress: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
   completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
   cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
@@ -86,7 +86,7 @@ export default function TechnicianInterventionPage() {
     }
   };
 
-  const handleStatusChange = async (newStatus: 'en_route' | 'in_progress') => {
+  const handleStatusChange = async (newStatus: 'on_route' | 'in_progress') => {
     if (!intervention || !user) return;
     
     setIsUpdatingStatus(true);
@@ -241,7 +241,7 @@ export default function TechnicianInterventionPage() {
               
               {intervention.status === 'assigned' && (
                 <Button 
-                  onClick={() => handleStatusChange('en_route')} 
+                  onClick={() => handleStatusChange('on_route')} 
                   variant="secondary"
                   disabled={isUpdatingStatus}
                 >
@@ -250,7 +250,7 @@ export default function TechnicianInterventionPage() {
                 </Button>
               )}
               
-              {intervention.status === 'en_route' && (
+              {intervention.status === 'on_route' && (
                 <Button 
                   onClick={() => handleStatusChange('in_progress')} 
                   variant="secondary"
