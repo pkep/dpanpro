@@ -407,7 +407,7 @@ export default function QuoteApprovalPage() {
 
         {/* Footer */}
         <div className="text-center space-y-3">
-          {intervention && (
+          {!isPending && intervention && (
             <Button asChild variant="outline" className="w-full">
               <Link to={intervention.trackingCode ? `/track/${intervention.trackingCode}` : `/intervention/${intervention.id}`}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
