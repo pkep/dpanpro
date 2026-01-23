@@ -190,7 +190,7 @@ export default function TechnicianInterventionPage() {
   const isCompleted = intervention.status === 'completed';
   const isCancelled = intervention.status === 'cancelled';
   const canFinalize = intervention.status === 'in_progress';
-  const canCancel = ['assigned', 'on_route'].includes(intervention.status);
+  const canCancel = ['new', 'assigned', 'on_route'].includes(intervention.status);
 
   return (
     <div className="min-h-screen bg-background">

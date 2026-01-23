@@ -165,7 +165,7 @@ export function TechnicianInterventionsList({ technicianId, onInterventionClick 
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {filteredInterventions.map((intervention) => {
-                const canCancel = ['assigned', 'on_route'].includes(intervention.status);
+                const canCancel = ['new', 'assigned', 'on_route'].includes(intervention.status);
                 const categoryIcon = CATEGORY_ICONS[intervention.category] || '🔧';
                 const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
                 
