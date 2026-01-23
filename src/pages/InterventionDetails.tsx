@@ -5,6 +5,7 @@ import { useRealtimeIntervention } from '@/hooks/useRealtimeIntervention';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { historyService } from '@/services/history/history.service';
 import { usersService } from '@/services/users/users.service';
+import { invoiceService } from '@/services/invoice/invoice.service';
 import type { InterventionStatus } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { STATUS_LABELS, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';
@@ -46,6 +47,9 @@ import {
   Camera,
   Map,
   Star,
+  Download,
+  Loader2,
+  FileText,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -68,6 +72,21 @@ export default function InterventionDetails() {
   const [updating, setUpdating] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+
+  const handleDownloadInvoice = async () => {
+    if (!intervention) return;
+    try {
+      setDownloadingInvoice(true);
+      await invoiceService.generateAndDownloadInvoice(intervention);
+      toast.success('Facture téléchargée avec succès');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error('Erreur lors du téléchargement de la facture');
+    } finally {
+      setDownloadingInvoice(false);
+    }
+  };
 
   useEffect(() => {
     const fetchTechnicians = async () => {
@@ -441,6 +460,40 @@ export default function InterventionDetails() {
                 />
               </CardContent>
             </Card>
+
+            {/* Invoice Download & Rating Section (for completed interventions) */}
+            {intervention.status === 'completed' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Facture
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        L'intervention est terminée. Vous pouvez télécharger votre facture.
+                      </p>
+                      {intervention.finalPrice && (
+                        <p className="text-lg font-semibold mt-1">
+                          Montant : {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(intervention.finalPrice)}
+                        </p>
+                      )}
+                    </div>
+                    <Button onClick={handleDownloadInvoice} disabled={downloadingInvoice}>
+                      {downloadingInvoice ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Download className="mr-2 h-4 w-4" />
+                      )}
+                      Télécharger
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Rating Section (for completed interventions) */}
             {intervention.status === 'completed' && (
