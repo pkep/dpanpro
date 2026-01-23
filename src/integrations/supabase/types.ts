@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_settings: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          effective_from: string
+          id: string
+          partner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          effective_from?: string
+          id?: string
+          partner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          effective_from?: string
+          id?: string
+          partner_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       declined_interventions: {
         Row: {
           created_at: string
