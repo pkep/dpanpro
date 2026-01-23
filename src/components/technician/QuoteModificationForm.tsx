@@ -1,14 +1,17 @@
-import { useState } from 'react';
-import { quoteModificationsService } from '@/services/quote-modifications/quote-modifications.service';
+import { useState, useEffect } from 'react';
+import { quoteModificationsService, QuoteModification } from '@/services/quote-modifications/quote-modifications.service';
+import { quotesService, QuoteLine } from '@/services/quotes/quotes.service';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Trash2, Send, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { QuoteLinesTable } from './QuoteLinesTable';
 
 interface QuoteModificationFormProps {
   interventionId: string;
@@ -42,6 +45,30 @@ export function QuoteModificationForm({
 }: QuoteModificationFormProps) {
   const [items, setItems] = useState<ModificationItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [quoteLines, setQuoteLines] = useState<QuoteLine[]>([]);
+  const [approvedModifications, setApprovedModifications] = useState<QuoteModification[]>([]);
+
+  useEffect(() => {
+    loadQuoteData();
+  }, [interventionId]);
+
+  const loadQuoteData = async () => {
+    setIsLoading(true);
+    try {
+      const [lines, modifications] = await Promise.all([
+        quotesService.getQuoteLines(interventionId),
+        quoteModificationsService.getModificationsByIntervention(interventionId),
+      ]);
+      
+      setQuoteLines(lines);
+      setApprovedModifications(modifications.filter(m => m.status === 'approved'));
+    } catch (err) {
+      console.error('Error loading quote data:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const addItem = () => {
     setItems([
@@ -115,8 +142,9 @@ export function QuoteModificationForm({
         toast.success('Demande de modification envoyée au client');
       }
 
-      // Reset form
       setItems([]);
+      // Reload quote data to show updated modifications
+      await loadQuoteData();
     } catch (err) {
       console.error('Error creating modification:', err);
       toast.error('Erreur lors de la création de la modification');
@@ -138,17 +166,43 @@ export function QuoteModificationForm({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          Compléter le devis
-        </CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Ajoutez des prestations ou équipements supplémentaires. Le client devra valider.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-4">
+      {/* Existing quote lines table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Devis actuel
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
+            <QuoteLinesTable 
+              quoteLines={quoteLines} 
+              approvedModifications={approvedModifications} 
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add new modification form */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Ajouter des prestations
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Ajoutez des prestations ou équipements supplémentaires. Le client devra valider.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
         {items.map((item, index) => (
           <div key={item.id} className="p-4 border rounded-lg space-y-3">
             <div className="flex items-center justify-between">
@@ -257,5 +311,6 @@ export function QuoteModificationForm({
         </CardFooter>
       )}
     </Card>
+    </div>
   );
 }
