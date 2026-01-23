@@ -15,6 +15,7 @@ import { interventionsService } from '@/services/interventions/interventions.ser
 import { useTechnicianGeolocation } from '@/hooks/useTechnicianGeolocation';
 import { useTechnicianPushNotifications } from '@/hooks/useFirebaseMessaging';
 import type { Intervention } from '@/types/intervention.types';
+import { Play } from 'lucide-react';
 
 const TechnicianDashboard = () => {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -22,11 +23,11 @@ const TechnicianDashboard = () => {
   const geolocation = useTechnicianGeolocation(); // Auto-tracks technician location
   useTechnicianPushNotifications(); // Enable push notifications for technicians
   const [stats, setStats] = useState({
-    assigned: 0,
     inProgress: 0,
     completedToday: 0,
     urgent: 0,
   });
+  const [activeIntervention, setActiveIntervention] = useState<Intervention | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -46,9 +47,19 @@ const TechnicianDashboard = () => {
 
         const today = new Date().toDateString();
         
+        // Find active intervention (assigned, en_route, or in_progress)
+        const active = interventions.find(i => 
+          ['assigned', 'en_route', 'in_progress'].includes(i.status)
+        );
+        setActiveIntervention(active || null);
+        
+        // Count interventions where technician is assigned (assigned, en_route, in_progress)
+        const inProgressCount = interventions.filter(i => 
+          ['assigned', 'en_route', 'in_progress'].includes(i.status)
+        ).length;
+        
         setStats({
-          assigned: interventions.filter(i => ['assigned', 'en_route'].includes(i.status)).length,
-          inProgress: interventions.filter(i => i.status === 'in_progress').length,
+          inProgress: inProgressCount,
           completedToday: interventions.filter(i => 
             i.status === 'completed' && 
             i.completedAt && 
@@ -157,19 +168,29 @@ const TechnicianDashboard = () => {
 
       {/* Main Content */}
       <main className="container px-4 py-6">
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Assignées</CardTitle>
-              <Wrench className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.assigned}</div>
-              <p className="text-xs text-muted-foreground">interventions à traiter</p>
+        {/* Active Intervention Banner */}
+        {activeIntervention && (
+          <Card className="mb-6 border-primary bg-primary/5">
+            <CardContent className="flex items-center justify-between py-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Wrench className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">Intervention en cours</p>
+                  <p className="text-sm text-muted-foreground">{activeIntervention.title}</p>
+                </div>
+              </div>
+              <Button onClick={() => navigate(`/technician/intervention/${activeIntervention.id}`)}>
+                <Play className="h-4 w-4 mr-2" />
+                Reprendre l'intervention
+              </Button>
             </CardContent>
           </Card>
+        )}
 
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-3 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">En cours</CardTitle>
