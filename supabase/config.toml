@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.cancel-payment]
 verify_jwt = false
+
+[functions.notify-status-change]
+verify_jwt = false

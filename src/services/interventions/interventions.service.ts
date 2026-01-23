@@ -134,7 +134,7 @@ class InterventionsService {
     return intervention;
   }
 
-  async updateStatus(id: string, status: InterventionStatus): Promise<void> {
+  async updateStatus(id: string, status: InterventionStatus, oldStatus?: InterventionStatus): Promise<void> {
     const updates: Record<string, unknown> = { status };
 
     if (status === 'in_progress') {
@@ -149,6 +149,33 @@ class InterventionsService {
       .eq('id', id);
 
     if (error) throw error;
+
+    // Notify client of status change (non-blocking)
+    this.notifyStatusChange(id, status, oldStatus).catch(err => {
+      console.error('Failed to send status change notification:', err);
+    });
+  }
+
+  private async notifyStatusChange(
+    interventionId: string, 
+    newStatus: InterventionStatus, 
+    oldStatus?: InterventionStatus
+  ): Promise<void> {
+    try {
+      const { error } = await supabase.functions.invoke('notify-status-change', {
+        body: {
+          interventionId,
+          newStatus,
+          oldStatus,
+        },
+      });
+
+      if (error) {
+        console.error('Error invoking notify-status-change:', error);
+      }
+    } catch (err) {
+      console.error('Failed to call notify-status-change function:', err);
+    }
   }
 
   async assignTechnician(id: string, technicianId: string): Promise<void> {
