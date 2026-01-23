@@ -6,6 +6,7 @@ import { interventionsService } from '@/services/interventions/interventions.ser
 import { historyService } from '@/services/history/history.service';
 import { usersService } from '@/services/users/users.service';
 import { invoiceService } from '@/services/invoice/invoice.service';
+import { dispatchService } from '@/services/dispatch/dispatch.service';
 import type { InterventionStatus } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { STATUS_LABELS, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';
@@ -33,6 +34,7 @@ import { RatingForm } from '@/components/ratings/RatingForm';
 import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import { PushNotificationSetup } from '@/components/notifications/PushNotificationSetup';
 import { PendingQuoteBlocker } from '@/components/interventions/PendingQuoteBlocker';
+import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
 import {
   Home,
   ArrowLeft,
@@ -50,6 +52,7 @@ import {
   Download,
   Loader2,
   FileText,
+  XCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -73,6 +76,8 @@ export default function InterventionDetails() {
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [photos, setPhotos] = useState<string[]>([]);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const handleDownloadInvoice = async () => {
     if (!intervention) return;
@@ -157,6 +162,40 @@ export default function InterventionDetails() {
     }
   };
 
+  const handleCancelIntervention = async (reason?: string) => {
+    if (!intervention || !user || !reason) return;
+
+    setIsCancelling(true);
+    try {
+      if (intervention.technicianId) {
+        // Use dispatch service to cancel and trigger re-dispatch
+        await dispatchService.cancelAssignment(intervention.id, intervention.technicianId, reason);
+      } else {
+        // Direct status update if no technician assigned
+        await interventionsService.updateStatus(intervention.id, 'cancelled', intervention.status);
+      }
+      
+      await historyService.addHistoryEntry({
+        interventionId: intervention.id,
+        userId: user.id,
+        action: 'status_changed',
+        oldValue: intervention.status,
+        newValue: 'cancelled',
+        comment: `Annulation: ${reason}`,
+      });
+      
+      toast.success('Intervention annulée');
+      setShowCancelDialog(false);
+      setHistoryRefreshKey((k) => k + 1);
+      refresh();
+    } catch (err) {
+      console.error('Error cancelling intervention:', err);
+      toast.error('Erreur lors de l\'annulation');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const getTechnicianName = (technicianId: string | null | undefined) => {
     if (!technicianId) return 'Non assigné';
     const tech = technicians.find((t) => t.id === technicianId);
@@ -217,6 +256,7 @@ export default function InterventionDetails() {
   }
 
   const canEdit = user.role === 'admin' || user.role === 'technician';
+  const canCancel = intervention.status !== 'in_progress' && intervention.status !== 'completed' && intervention.status !== 'cancelled';
 
   return (
     <div className="min-h-screen bg-background">
@@ -431,6 +471,21 @@ export default function InterventionDetails() {
                         </div>
                       )}
                     </div>
+                    
+                    {/* Cancel Button */}
+                    {canCancel && (
+                      <div className="mt-4">
+                        <Button 
+                          variant="destructive" 
+                          onClick={() => setShowCancelDialog(true)}
+                          disabled={isCancelling}
+                          className="w-full sm:w-auto"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Annuler l'intervention
+                        </Button>
+                      </div>
+                    )}
                   </>
                 )}
               </CardContent>
@@ -549,6 +604,14 @@ export default function InterventionDetails() {
           </div>
         </div>
       </main>
+
+      {/* Cancel Confirmation Dialog */}
+      <ConfirmActionDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        action="cancel"
+        onConfirm={handleCancelIntervention}
+      />
     </div>
   );
 }
