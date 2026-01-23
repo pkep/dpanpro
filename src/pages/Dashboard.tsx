@@ -30,7 +30,9 @@ import {
   FileText,
   Download,
   Loader2,
+  XCircle,
 } from 'lucide-react';
+import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -48,6 +50,9 @@ const Dashboard = () => {
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadingInvoice, setDownloadingInvoice] = useState<string | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedIntervention, setSelectedIntervention] = useState<Intervention | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [stats, setStats] = useState<ClientStats>({
     total: 0,
     active: 0,
@@ -67,6 +72,44 @@ const Dashboard = () => {
     } finally {
       setDownloadingInvoice(null);
     }
+  };
+
+  const handleCancelClick = (intervention: Intervention) => {
+    setSelectedIntervention(intervention);
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelConfirm = async (reason?: string) => {
+    if (!selectedIntervention || !reason) return;
+    
+    setIsCancelling(true);
+    try {
+      await interventionsService.cancelIntervention(selectedIntervention.id, reason);
+      toast.success('Demande annulée avec succès');
+      // Refresh interventions
+      if (user) {
+        const data = await interventionsService.getInterventions({ clientId: user.id });
+        setInterventions(data);
+        setStats({
+          total: data.length,
+          active: data.filter(i => ['assigned', 'on_route', 'in_progress'].includes(i.status)).length,
+          completed: data.filter(i => i.status === 'completed').length,
+          pending: data.filter(i => i.status === 'new').length,
+          urgent: data.filter(i => i.priority === 'urgent' && !['completed', 'cancelled'].includes(i.status)).length,
+        });
+      }
+    } catch (err) {
+      console.error('Error cancelling intervention:', err);
+      toast.error('Erreur lors de l\'annulation');
+    } finally {
+      setIsCancelling(false);
+      setCancelDialogOpen(false);
+      setSelectedIntervention(null);
+    }
+  };
+
+  const canCancelIntervention = (intervention: Intervention): boolean => {
+    return ['new', 'assigned', 'on_route'].includes(intervention.status);
   };
 
   useEffect(() => {
@@ -361,6 +404,23 @@ const Dashboard = () => {
                                 </div>
                                 <Progress value={getProgressForStatus(intervention.status)} className="h-1.5" />
                               </div>
+
+                              {/* Cancel button */}
+                              {canCancelIntervention(intervention) && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="mt-3 text-destructive border-destructive/30 hover:bg-destructive/10"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    handleCancelClick(intervention);
+                                  }}
+                                  disabled={isCancelling}
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Annuler
+                                </Button>
+                              )}
                             </div>
                           </div>
                           <Button variant="ghost" size="sm" asChild>
@@ -542,6 +602,14 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* Cancel Dialog */}
+      <ConfirmActionDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        action="cancel_client"
+        onConfirm={handleCancelConfirm}
+      />
     </div>
   );
 };

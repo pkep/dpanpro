@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeIntervention } from '@/hooks/useRealtimeIntervention';
 import { interventionsService } from '@/services/interventions/interventions.service';
@@ -50,7 +50,9 @@ import {
   Download,
   Loader2,
   FileText,
+  XCircle,
 } from 'lucide-react';
+import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -73,6 +75,9 @@ export default function InterventionDetails() {
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [photos, setPhotos] = useState<string[]>([]);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const navigate = useNavigate();
 
   const handleDownloadInvoice = async () => {
     if (!intervention) return;
@@ -87,6 +92,25 @@ export default function InterventionDetails() {
       setDownloadingInvoice(false);
     }
   };
+
+  const handleCancelIntervention = async (reason?: string) => {
+    if (!intervention || !reason) return;
+    
+    setIsCancelling(true);
+    try {
+      await interventionsService.cancelIntervention(intervention.id, reason);
+      toast.success('Demande annulée avec succès');
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Error cancelling intervention:', err);
+      toast.error('Erreur lors de l\'annulation');
+    } finally {
+      setIsCancelling(false);
+      setCancelDialogOpen(false);
+    }
+  };
+
+  const canCancelAsClient = user?.role === 'client' && ['new', 'assigned', 'on_route'].includes(intervention?.status || '');
 
   useEffect(() => {
     const fetchTechnicians = async () => {
@@ -433,6 +457,24 @@ export default function InterventionDetails() {
                     </div>
                   </>
                 )}
+
+                {/* Client Cancel Button */}
+                {canCancelAsClient && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Actions</h4>
+                      <Button
+                        variant="destructive"
+                        onClick={() => setCancelDialogOpen(true)}
+                        disabled={isCancelling}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Annuler cette demande
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -549,6 +591,14 @@ export default function InterventionDetails() {
           </div>
         </div>
       </main>
+
+      {/* Cancel Dialog for Clients */}
+      <ConfirmActionDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        action="cancel_client"
+        onConfirm={handleCancelIntervention}
+      />
     </div>
   );
 }

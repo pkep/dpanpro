@@ -229,6 +229,27 @@ class InterventionsService {
     if (error) throw error;
   }
 
+  async cancelIntervention(id: string, reason: string): Promise<void> {
+    const { error } = await supabase
+      .from('interventions')
+      .update({
+        status: 'cancelled',
+        is_active: false,
+      } as TablesUpdate<'interventions'>)
+      .eq('id', id);
+
+    if (error) throw error;
+
+    // Cancel any pending dispatch attempts
+    await supabase
+      .from('dispatch_attempts')
+      .update({ status: 'cancelled' })
+      .eq('intervention_id', id)
+      .in('status', ['pending', 'notified']);
+
+    console.log(`Intervention ${id} cancelled by client. Reason: ${reason}`);
+  }
+
   private mapToIntervention(data: DbIntervention): Intervention {
     return {
       id: data.id,
