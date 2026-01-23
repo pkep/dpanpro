@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { invoiceService } from '@/services/invoice/invoice.service';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
@@ -12,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 import { 
   Plus, 
   LogOut, 
@@ -26,6 +28,8 @@ import {
   Calendar,
   ArrowRight,
   FileText,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -43,6 +47,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingInvoice, setDownloadingInvoice] = useState<string | null>(null);
   const [stats, setStats] = useState<ClientStats>({
     total: 0,
     active: 0,
@@ -50,6 +55,19 @@ const Dashboard = () => {
     pending: 0,
     urgent: 0,
   });
+
+  const handleDownloadInvoice = async (intervention: Intervention) => {
+    try {
+      setDownloadingInvoice(intervention.id);
+      await invoiceService.generateAndDownloadInvoice(intervention);
+      toast.success('Facture téléchargée avec succès');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast.error('Erreur lors du téléchargement de la facture');
+    } finally {
+      setDownloadingInvoice(null);
+    }
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -399,6 +417,18 @@ const Dashboard = () => {
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Terminée
                             </Badge>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDownloadInvoice(intervention)}
+                              disabled={downloadingInvoice === intervention.id}
+                            >
+                              {downloadingInvoice === intervention.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Download className="h-4 w-4" />
+                              )}
+                            </Button>
                             <Button variant="ghost" size="sm" asChild>
                               <Link to={`/intervention/${intervention.id}`}>
                                 <FileText className="h-4 w-4" />
