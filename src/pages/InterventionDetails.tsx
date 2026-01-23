@@ -31,6 +31,7 @@ import { ClientTrackingMap } from '@/components/map/ClientTrackingMap';
 import { RatingForm } from '@/components/ratings/RatingForm';
 import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import { PushNotificationSetup } from '@/components/notifications/PushNotificationSetup';
+import { PendingQuoteBlocker } from '@/components/interventions/PendingQuoteBlocker';
 import {
   Home,
   ArrowLeft,
@@ -200,6 +201,13 @@ export default function InterventionDetails() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Blocking modal for pending quote modifications - only for clients */}
+      {user.role === 'client' && intervention.status !== 'completed' && intervention.status !== 'cancelled' && (
+        <PendingQuoteBlocker 
+          interventionId={intervention.id} 
+          onQuoteResolved={refresh}
+        />
+      )}
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
