@@ -15,6 +15,9 @@ interface GeolocationState {
 
 const TRACKING_INTERVAL_MS = 30000; // 30 seconds
 
+// GPS tracking disabled - set to true to re-enable
+const GPS_TRACKING_ENABLED = false;
+
 export function useTechnicianGeolocation() {
   const { user } = useAuth();
   const [state, setState] = useState<GeolocationState>({
@@ -28,7 +31,7 @@ export function useTechnicianGeolocation() {
   });
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isTracking = user?.role === 'technician' && user?.isActive;
+  const isTracking = GPS_TRACKING_ENABLED && user?.role === 'technician' && user?.isActive;
 
   const updateLocation = useCallback(async () => {
     if (!user || user.role !== 'technician') return;
