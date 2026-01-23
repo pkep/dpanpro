@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { interventionsService } from '@/services/interventions/interventions.service';
@@ -10,6 +10,7 @@ import { quotesService } from '@/services/quotes/quotes.service';
 import { quoteModificationsService } from '@/services/quote-modifications/quote-modifications.service';
 import { paymentService } from '@/services/payment/payment.service';
 import { historyService } from '@/services/history/history.service';
+import { invoiceService } from '@/services/invoice/invoice.service';
 import { useAuth } from '@/hooks/useAuth';
 import type { Intervention } from '@/types/intervention.types';
 
@@ -107,13 +108,33 @@ export function FinalizeInterventionDialog({
         comment: `Intervention finalisée. Montant: ${finalAmount.toFixed(2)} €`,
       });
 
-      toast.success('Intervention finalisée avec succès !');
+      // Generate and download invoice PDF
+      try {
+        await invoiceService.generateAndDownloadInvoice(intervention);
+        toast.success('Intervention finalisée ! Facture téléchargée.');
+      } catch (invoiceErr) {
+        console.error('Error generating invoice:', invoiceErr);
+        toast.success('Intervention finalisée !', {
+          description: 'La facture n\'a pas pu être générée automatiquement.',
+        });
+      }
+
       onFinalized();
     } catch (err) {
       console.error('Error finalizing intervention:', err);
       toast.error('Erreur lors de la finalisation');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    try {
+      await invoiceService.generateAndDownloadInvoice(intervention);
+      toast.success('Facture téléchargée');
+    } catch (err) {
+      console.error('Error downloading invoice:', err);
+      toast.error('Erreur lors du téléchargement');
     }
   };
 
