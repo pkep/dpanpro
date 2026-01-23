@@ -108,10 +108,23 @@ export function FinalizeInterventionDialog({
         comment: `Intervention finalisée. Montant: ${finalAmount.toFixed(2)} €`,
       });
 
-      // Generate and download invoice PDF
+      // Generate and download invoice PDF + send by email
       try {
+        // Download locally
         await invoiceService.generateAndDownloadInvoice(intervention);
-        toast.success('Intervention finalisée ! Facture téléchargée.');
+        
+        // Send by email to client
+        const emailSent = await invoiceService.sendInvoiceByEmail(intervention);
+        
+        if (emailSent) {
+          toast.success('Intervention finalisée !', {
+            description: 'Facture téléchargée et envoyée par email au client.',
+          });
+        } else {
+          toast.success('Intervention finalisée ! Facture téléchargée.', {
+            description: 'L\'envoi par email n\'a pas pu être effectué.',
+          });
+        }
       } catch (invoiceErr) {
         console.error('Error generating invoice:', invoiceErr);
         toast.success('Intervention finalisée !', {
