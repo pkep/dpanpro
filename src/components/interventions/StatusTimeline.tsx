@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const STATUS_ORDER: InterventionStatus[] = [
   'new',
   'assigned',
-  'en_route',
+  'on_route',
   'in_progress',
   'completed',
 ];

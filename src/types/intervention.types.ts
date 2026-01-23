@@ -11,7 +11,7 @@ export type InterventionPriority = 'urgent' | 'high' | 'normal' | 'low';
 export type InterventionStatus = 
   | 'new'           // Nouveau
   | 'assigned'      // Assigné
-  | 'en_route'      // En route
+  | 'on_route'      // En route
   | 'in_progress'   // En cours
   | 'completed'     // Terminé
   | 'cancelled';    // Annulé
@@ -77,7 +77,7 @@ export const CATEGORY_ICONS: Record<InterventionCategory, string> = {
 export const STATUS_LABELS: Record<InterventionStatus, string> = {
   new: 'Nouveau',
   assigned: 'Assigné',
-  en_route: 'En route',
+  on_route: 'En route',
   in_progress: 'En cours',
   completed: 'Terminé',
   cancelled: 'Annulé',

@@ -134,7 +134,7 @@ export function useFirebaseMessaging() {
                 title: '👷 Technicien assigné',
                 body: 'Un technicien a été assigné à votre intervention',
               },
-              en_route: {
+              on_route: {
                 title: '🚗 Technicien en route',
                 body: 'Le technicien est en route vers votre adresse',
               },

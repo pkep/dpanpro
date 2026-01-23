@@ -176,7 +176,7 @@ export function InterventionsMap({
       case 'completed':
         return 'default';
       case 'in_progress':
-      case 'en_route':
+      case 'on_route':
         return 'secondary';
       case 'cancelled':
         return 'destructive';

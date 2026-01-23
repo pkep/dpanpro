@@ -40,7 +40,7 @@ import { fr } from 'date-fns/locale';
 const STATUS_COLORS: Record<InterventionStatus, string> = {
   new: 'bg-blue-500/10 text-blue-600 border-blue-200',
   assigned: 'bg-purple-500/10 text-purple-600 border-purple-200',
-  en_route: 'bg-yellow-500/10 text-yellow-600 border-yellow-200',
+  on_route: 'bg-yellow-500/10 text-yellow-600 border-yellow-200',
   in_progress: 'bg-orange-500/10 text-orange-600 border-orange-200',
   completed: 'bg-green-500/10 text-green-600 border-green-200',
   cancelled: 'bg-destructive/10 text-destructive border-destructive/20',

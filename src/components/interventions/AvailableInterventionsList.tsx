@@ -150,7 +150,7 @@ export function AvailableInterventionsList({
       .from('interventions')
       .select('id')
       .eq('technician_id', technicianId)
-      .in('status', ['assigned', 'en_route', 'in_progress'])
+      .in('status', ['assigned', 'on_route', 'in_progress'])
       .eq('is_active', true)
       .limit(1);
 
@@ -556,7 +556,7 @@ function AcceptedInterventionCard({
   const categoryLabel = CATEGORY_LABELS[intervention.category as keyof typeof CATEGORY_LABELS] || intervention.category;
   const categoryIcon = CATEGORY_ICONS[intervention.category as keyof typeof CATEGORY_ICONS] || '🔧';
 
-  const isEnRoute = intervention.status === 'en_route';
+  const isEnRoute = intervention.status === 'on_route';
 
   return (
     <Card className="border-2 border-primary bg-primary/5">
