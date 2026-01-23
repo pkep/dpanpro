@@ -194,9 +194,16 @@ class QuoteModificationsService {
   }
 
   /**
-   * Approve a quote modification
+   * Approve a quote modification and increment payment authorization
    */
-  async approveModification(id: string): Promise<void> {
+  async approveModification(id: string): Promise<{ incrementResult?: unknown }> {
+    // First get the modification to get intervention ID and amount
+    const modification = await this.getModification(id);
+    if (!modification) {
+      throw new Error('Modification not found');
+    }
+
+    // Update the modification status
     const { error } = await supabase
       .from('quote_modifications')
       .update({
@@ -206,6 +213,31 @@ class QuoteModificationsService {
       .eq('id', id);
 
     if (error) throw error;
+
+    // Try to increment the payment authorization
+    let incrementResult = null;
+    try {
+      const { data, error: incrementError } = await supabase.functions.invoke(
+        'increment-authorization',
+        {
+          body: {
+            interventionId: modification.interventionId,
+            additionalAmount: modification.totalAdditionalAmount,
+          },
+        }
+      );
+
+      if (incrementError) {
+        console.error('Failed to increment authorization:', incrementError);
+      } else {
+        incrementResult = data;
+        console.log('Authorization increment result:', data);
+      }
+    } catch (err) {
+      console.error('Error calling increment-authorization:', err);
+    }
+
+    return { incrementResult };
   }
 
   /**

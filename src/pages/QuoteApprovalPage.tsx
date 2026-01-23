@@ -130,9 +130,15 @@ export default function QuoteApprovalPage() {
     
     setProcessing(true);
     try {
-      await quoteModificationsService.approveModification(modification.id);
+      const result = await quoteModificationsService.approveModification(modification.id);
       setModification({ ...modification, status: 'approved' });
-      toast.success('Modification approuvée !');
+      
+      if (result.incrementResult) {
+        console.log('Payment authorization updated:', result.incrementResult);
+        toast.success('Modification approuvée et paiement mis à jour !');
+      } else {
+        toast.success('Modification approuvée !');
+      }
     } catch (err) {
       console.error('Error approving:', err);
       toast.error('Erreur lors de l\'approbation');
