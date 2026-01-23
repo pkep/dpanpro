@@ -13,6 +13,47 @@ interface SendInvoiceRequest {
   invoiceFileName: string;
 }
 
+async function sendSMS(phoneNumber: string, message: string): Promise<boolean> {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+  if (!accountSid || !authToken || !fromNumber) {
+    console.log("Twilio credentials not configured, skipping SMS");
+    return false;
+  }
+
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Authorization": "Basic " + btoa(`${accountSid}:${authToken}`),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: phoneNumber,
+        From: fromNumber,
+        Body: message,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Twilio SMS error:", errorText);
+      return false;
+    }
+
+    const result = await response.json();
+    console.log("SMS sent successfully:", result.sid);
+    return true;
+  } catch (error) {
+    console.error("Error sending SMS:", error);
+    return false;
+  }
+}
+
 serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -20,24 +61,13 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      console.log("RESEND_API_KEY not configured, skipping email");
-      return new Response(
-        JSON.stringify({ success: false, error: "Email service not configured" }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    const resend = new Resend(resendApiKey);
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { interventionId, invoiceBase64, invoiceFileName }: SendInvoiceRequest = await req.json();
 
-    console.log(`Sending invoice email for intervention ${interventionId}`);
+    console.log(`Sending invoice for intervention ${interventionId}`);
 
     // Get intervention details with client info
     const { data: intervention, error: interventionError } = await supabase
@@ -52,87 +82,106 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     const clientEmail = intervention.client_email || intervention.users?.email;
+    const clientPhone = intervention.client_phone || intervention.users?.phone;
     const clientName = intervention.client_name || intervention.users?.name || "Client";
-
-    if (!clientEmail) {
-      console.log("No client email found, skipping email");
-      return new Response(
-        JSON.stringify({ success: false, error: "No client email" }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
-
-    // Build email HTML
     const trackingCode = intervention.tracking_code || "N/A";
     const finalPrice = intervention.final_price || 0;
 
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #1a56db; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-          .invoice-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .total { font-size: 24px; color: #1a56db; font-weight: bold; }
-          .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>Facture - Intervention ${trackingCode}</h1>
-          </div>
-          <div class="content">
-            <p>Bonjour ${clientName},</p>
-            
-            <p>Nous vous remercions pour votre confiance. Veuillez trouver ci-joint la facture correspondant à votre intervention de dépannage.</p>
-            
-            <div class="invoice-info">
-              <p><strong>Référence :</strong> ${trackingCode}</p>
-              <p><strong>Adresse :</strong> ${intervention.address || "N/A"}</p>
-              <p class="total">Montant total : ${finalPrice.toFixed(2)} € TTC</p>
+    const results = {
+      email: false,
+      sms: false,
+    };
+
+    // Send email if configured
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (resendApiKey && clientEmail) {
+      try {
+        const resend = new Resend(resendApiKey);
+
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: #1a56db; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
+              .invoice-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+              .total { font-size: 24px; color: #1a56db; font-weight: bold; }
+              .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Facture - Intervention ${trackingCode}</h1>
+              </div>
+              <div class="content">
+                <p>Bonjour ${clientName},</p>
+                
+                <p>Nous vous remercions pour votre confiance. Veuillez trouver ci-joint la facture correspondant à votre intervention de dépannage.</p>
+                
+                <div class="invoice-info">
+                  <p><strong>Référence :</strong> ${trackingCode}</p>
+                  <p><strong>Adresse :</strong> ${intervention.address || "N/A"}</p>
+                  <p class="total">Montant total : ${finalPrice.toFixed(2)} € TTC</p>
+                </div>
+                
+                <p>La facture est jointe à cet email au format PDF.</p>
+                
+                <p>Si vous avez des questions concernant cette facture, n'hésitez pas à nous contacter.</p>
+                
+                <p>Cordialement,<br>L'équipe Dépannage Express</p>
+              </div>
+              <div class="footer">
+                <p>Dépannage Express - Service de dépannage à domicile</p>
+              </div>
             </div>
-            
-            <p>La facture est jointe à cet email au format PDF.</p>
-            
-            <p>Si vous avez des questions concernant cette facture, n'hésitez pas à nous contacter.</p>
-            
-            <p>Cordialement,<br>L'équipe Dépannage Express</p>
-          </div>
-          <div class="footer">
-            <p>Dépannage Express - Service de dépannage à domicile</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+          </body>
+          </html>
+        `;
 
-    // Send email with PDF attachment
-    const emailResponse = await resend.emails.send({
-      from: "Dépannage Express <onboarding@resend.dev>",
-      to: [clientEmail],
-      subject: `Facture - Intervention ${trackingCode}`,
-      html: emailHtml,
-      attachments: [
-        {
-          filename: invoiceFileName,
-          content: invoiceBase64,
-        },
-      ],
-    });
+        const emailResponse = await resend.emails.send({
+          from: "Dépannage Express <onboarding@resend.dev>",
+          to: [clientEmail],
+          subject: `Facture - Intervention ${trackingCode}`,
+          html: emailHtml,
+          attachments: [
+            {
+              filename: invoiceFileName,
+              content: invoiceBase64,
+            },
+          ],
+        });
 
-    console.log("Email sent successfully:", emailResponse);
+        console.log("Email sent successfully:", emailResponse);
+        results.email = true;
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+      }
+    } else {
+      console.log("Email not sent: RESEND_API_KEY not configured or no client email");
+    }
+
+    // Send SMS if configured
+    if (clientPhone) {
+      const smsMessage = `Dépannage Express - Votre facture pour l'intervention ${trackingCode} est disponible. Montant: ${finalPrice.toFixed(2)} € TTC. Merci pour votre confiance !`;
+      results.sms = await sendSMS(clientPhone, smsMessage);
+    } else {
+      console.log("SMS not sent: no client phone number");
+    }
 
     return new Response(
-      JSON.stringify({ success: true, emailResponse }),
+      JSON.stringify({ 
+        success: results.email || results.sms,
+        results,
+      }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
-    console.error("Error sending invoice email:", error);
+    console.error("Error sending invoice:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
