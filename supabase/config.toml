@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.notify-status-change]
 verify_jwt = false
+
+[functions.increment-authorization]
+verify_jwt = false
+
+[functions.send-invoice-email]
+verify_jwt = false
