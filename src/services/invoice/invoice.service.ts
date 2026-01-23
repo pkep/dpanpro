@@ -341,6 +341,47 @@ class InvoiceService {
     
     return pdf.output('blob');
   }
+
+  /**
+   * Generate invoice as base64 (for email attachment)
+   */
+  async generateInvoiceBase64(intervention: Intervention): Promise<{ base64: string; fileName: string }> {
+    const data = await this.prepareInvoiceData(intervention);
+    const pdf = await this.generateInvoicePDF(data);
+    
+    // Get base64 without data URI prefix
+    const base64 = pdf.output('datauristring').split(',')[1];
+    const fileName = `facture-${data.invoiceNumber}.pdf`;
+    
+    return { base64, fileName };
+  }
+
+  /**
+   * Send invoice by email
+   */
+  async sendInvoiceByEmail(intervention: Intervention): Promise<boolean> {
+    try {
+      const { base64, fileName } = await this.generateInvoiceBase64(intervention);
+      
+      const { data, error } = await supabase.functions.invoke('send-invoice-email', {
+        body: {
+          interventionId: intervention.id,
+          invoiceBase64: base64,
+          invoiceFileName: fileName,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending invoice email:', error);
+        return false;
+      }
+
+      return data?.success === true;
+    } catch (err) {
+      console.error('Error sending invoice email:', err);
+      return false;
+    }
+  }
 }
 
 export const invoiceService = new InvoiceService();
