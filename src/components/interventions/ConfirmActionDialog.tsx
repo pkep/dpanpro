@@ -12,7 +12,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
-type ActionType = 'decline' | 'accept' | 'go' | 'cancel' | 'en_route' | 'cancel_intervention' | null;
+type ActionType = 'decline' | 'accept' | 'go' | 'cancel' | 'en_route' | 'cancel_intervention' | 'cancel_client' | null;
 
 interface ConfirmActionDialogProps {
   open: boolean;
@@ -73,6 +73,14 @@ const ACTION_CONFIG: Record<NonNullable<ActionType>, {
     confirmVariant: 'destructive',
     requiresReason: true,
     reasonPlaceholder: 'Ex: Urgence personnelle, panne véhicule, indisponibilité...',
+  },
+  cancel_client: {
+    title: 'Annuler cette demande ?',
+    description: 'Votre demande d\'intervention sera annulée définitivement. Cette action est irréversible.',
+    confirmLabel: 'Confirmer l\'annulation',
+    confirmVariant: 'destructive',
+    requiresReason: true,
+    reasonPlaceholder: 'Ex: Problème résolu, erreur de saisie, autre prestataire...',
   },
 };
 
