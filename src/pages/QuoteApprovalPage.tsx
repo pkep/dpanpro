@@ -409,7 +409,7 @@ export default function QuoteApprovalPage() {
         <div className="text-center space-y-3">
           {!isPending && intervention && (
             <Button asChild variant="outline" className="w-full">
-              <Link to={intervention.trackingCode ? `/track/${intervention.trackingCode}` : `/intervention/${intervention.id}`}>
+              <Link to={`/intervention/${intervention.id}`}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour à l'intervention
               </Link>
