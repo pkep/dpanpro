@@ -19,7 +19,8 @@ import {
   AlertCircle,
   MapPin,
   Clock,
-  User
+  User,
+  XCircle
 } from 'lucide-react';
 import { CATEGORY_LABELS, CATEGORY_ICONS, STATUS_LABELS, PRIORITY_LABELS } from '@/types/intervention.types';
 import { interventionsService } from '@/services/interventions/interventions.service';
@@ -30,6 +31,8 @@ import { InterventionChat } from '@/components/technician/InterventionChat';
 import { QuoteModificationForm } from '@/components/technician/QuoteModificationForm';
 import { QuoteModificationStatus } from '@/components/technician/QuoteModificationStatus';
 import { FinalizeInterventionDialog } from '@/components/technician/FinalizeInterventionDialog';
+import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
+import { dispatchService } from '@/services/dispatch/dispatch.service';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -50,6 +53,8 @@ export default function TechnicianInterventionPage() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -113,6 +118,29 @@ export default function TechnicianInterventionPage() {
     setPhotos(newPhotos);
   };
 
+  const handleCancelIntervention = async (reason?: string) => {
+    if (!intervention || !user || !reason) return;
+    
+    setIsCancelling(true);
+    try {
+      const result = await dispatchService.cancelAssignment(intervention.id, user.id, reason);
+      if (result.success) {
+        toast.success('Intervention annulée', {
+          description: 'Elle sera reproposée à d\'autres techniciens.',
+        });
+        navigate('/technician');
+      } else {
+        toast.error('Erreur', { description: result.message });
+      }
+    } catch (err) {
+      console.error('Error cancelling intervention:', err);
+      toast.error('Erreur lors de l\'annulation');
+    } finally {
+      setIsCancelling(false);
+      setShowCancelDialog(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background p-4">
@@ -162,6 +190,7 @@ export default function TechnicianInterventionPage() {
   const isCompleted = intervention.status === 'completed';
   const isCancelled = intervention.status === 'cancelled';
   const canFinalize = intervention.status === 'in_progress';
+  const canCancel = ['assigned', 'on_route'].includes(intervention.status);
 
   return (
     <div className="min-h-screen bg-background">
@@ -271,6 +300,17 @@ export default function TechnicianInterventionPage() {
                   Finaliser
                 </Button>
               )}
+              
+              {canCancel && (
+                <Button 
+                  onClick={() => setShowCancelDialog(true)} 
+                  variant="destructive"
+                  disabled={isCancelling}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Annuler
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
@@ -373,6 +413,14 @@ export default function TechnicianInterventionPage() {
           refresh();
           navigate('/technician');
         }}
+      />
+
+      {/* Cancel Dialog */}
+      <ConfirmActionDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        action="cancel_intervention"
+        onConfirm={handleCancelIntervention}
       />
     </div>
   );
