@@ -15,8 +15,8 @@ interface GeolocationState {
 
 const TRACKING_INTERVAL_MS = 30000; // 30 seconds
 
-// GPS tracking disabled - set to true to re-enable
-const GPS_TRACKING_ENABLED = false;
+// GPS tracking - enabled for real-time technician location updates
+const GPS_TRACKING_ENABLED = true;
 
 export function useTechnicianGeolocation() {
   const { user } = useAuth();
