@@ -1,4 +1,4 @@
-import { Clock, Check, X, MapPin, Wrench } from 'lucide-react';
+import { Clock, Check, X, MapPin, Wrench, Navigation, Timer } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -27,6 +27,7 @@ export function DispatchAssignmentCard({
     pendingAssignment,
     isLoading,
     timeRemaining,
+    travelInfo,
     acceptAssignment,
     rejectAssignment,
   } = useDispatchAssignment(interventionId);
@@ -84,6 +85,26 @@ export function DispatchAssignmentCard({
               {interventionAddress}
               {interventionCity && `, ${interventionCity}`}
             </span>
+          </div>
+        )}
+
+        {/* Distance and travel time info */}
+        {travelInfo && (
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+            <div className="flex items-center gap-2 p-2 bg-background rounded-lg">
+              <Navigation className="h-4 w-4 text-primary" />
+              <div>
+                <div className="text-xs text-muted-foreground">Distance</div>
+                <div className="font-semibold">{travelInfo.distanceFormatted}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-2 bg-background rounded-lg">
+              <Timer className="h-4 w-4 text-primary" />
+              <div>
+                <div className="text-xs text-muted-foreground">Temps estimé</div>
+                <div className="font-semibold">~{travelInfo.estimatedMinutes} min</div>
+              </div>
+            </div>
           </div>
         )}
 
