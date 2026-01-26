@@ -304,13 +304,15 @@ async function handleDispatch(supabase: any, interventionId: string) {
     }
 
     // Calculate proximity score (40%)
-    const distanceMeters = calculateDistance(
+    const distanceMetersHaversine = calculateDistance(
       intervention.latitude,
       intervention.longitude,
       app.latitude,
       app.longitude
     );
-    const distanceKm = distanceMeters / 1000;
+    // Apply road detour factor (roads are typically 1.3-1.5x longer than straight line)
+    const ROAD_DETOUR_FACTOR = 1.4;
+    const distanceKm = (distanceMetersHaversine / 1000) * ROAD_DETOUR_FACTOR;
     // Normalize: 0km = 100 points, 50km+ = 0 points
     const proximityScore = Math.max(0, 100 - (distanceKm * 2));
 
@@ -336,8 +338,11 @@ async function handleDispatch(supabase: any, interventionId: string) {
       (workloadScore * WEIGHTS.workload) +
       (ratingScore * WEIGHTS.rating);
 
-    // Estimate travel time (40 km/h average)
-    const estimatedTravelMinutes = Math.round((distanceKm / 40) * 60);
+    // Estimate travel time with realistic urban speed (25 km/h in IDF with traffic)
+    // Add 5 minutes base time for departure preparation
+    const AVG_SPEED_KMH = 25;
+    const BASE_DEPARTURE_MINUTES = 5;
+    const estimatedTravelMinutes = BASE_DEPARTURE_MINUTES + Math.round((distanceKm / AVG_SPEED_KMH) * 60);
 
     scoredTechnicians.push({
       technicianId: app.id,

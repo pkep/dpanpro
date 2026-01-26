@@ -139,16 +139,24 @@ class TechniciansService {
     const techniciansWithDistance = technicians
       .filter(t => t.latitude !== null && t.longitude !== null)
       .map(tech => {
-        const distanceMeters = calculateDistance(
+        const distanceMetersHaversine = calculateDistance(
           targetLatitude,
           targetLongitude,
           tech.latitude!,
           tech.longitude!
         );
-        const distanceKm = distanceMeters / 1000;
         
-        // Estimate travel time: average speed of 40km/h in urban areas
-        const estimatedTravelTimeMinutes = Math.round((distanceKm / 40) * 60);
+        // Apply road detour factor (roads are typically 1.3-1.5x longer than straight line)
+        // Use 1.4x for urban/suburban areas in France
+        const ROAD_DETOUR_FACTOR = 1.4;
+        const distanceKm = (distanceMetersHaversine / 1000) * ROAD_DETOUR_FACTOR;
+        
+        // Estimate travel time with realistic urban speed
+        // Average speed in Île-de-France: ~25 km/h (traffic, lights, urban environment)
+        // Add 5 minutes base time for departure preparation
+        const AVG_SPEED_KMH = 25;
+        const BASE_DEPARTURE_MINUTES = 5;
+        const estimatedTravelTimeMinutes = BASE_DEPARTURE_MINUTES + Math.round((distanceKm / AVG_SPEED_KMH) * 60);
         
         // Calculate estimated arrival time
         const estimatedArrivalTime = new Date();

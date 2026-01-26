@@ -50,21 +50,25 @@ export function ClientTrackingMap({
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  // Calculate ETA dynamically
+  // Calculate ETA dynamically with realistic estimates
   const etaInfo = useMemo(() => {
     if (!technicianPosition) return null;
 
-    const distanceMeters = calculateDistance(
+    const distanceMetersHaversine = calculateDistance(
       technicianPosition.latitude,
       technicianPosition.longitude,
       destinationLatitude,
       destinationLongitude
     );
-    const distanceKm = distanceMeters / 1000;
     
-    // Average speed estimation based on distance (city vs highway)
-    const avgSpeedKmh = distanceKm < 5 ? 25 : distanceKm < 20 ? 35 : 50;
-    const travelTimeMinutes = Math.max(1, Math.round((distanceKm / avgSpeedKmh) * 60));
+    // Apply road detour factor (roads are typically 1.3-1.5x longer than straight line)
+    const ROAD_DETOUR_FACTOR = 1.4;
+    const distanceKm = (distanceMetersHaversine / 1000) * ROAD_DETOUR_FACTOR;
+    const distanceMeters = distanceMetersHaversine * ROAD_DETOUR_FACTOR;
+    
+    // Realistic average speed in urban France: 25 km/h (traffic, lights, urban environment)
+    const AVG_SPEED_KMH = 25;
+    const travelTimeMinutes = Math.max(1, Math.round((distanceKm / AVG_SPEED_KMH) * 60));
     
     const arrivalTime = new Date();
     arrivalTime.setMinutes(arrivalTime.getMinutes() + travelTimeMinutes);
