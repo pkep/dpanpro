@@ -16,6 +16,13 @@ interface NotifyPaymentRequiredRequest {
   reason?: string;
 }
 
+type TwilioMessageResult = {
+  sid?: string;
+  status?: string;
+  error_code?: string | number | null;
+  error_message?: string | null;
+};
+
 // Format French phone number to international format
 function formatPhoneNumber(phone: string): string {
   let cleaned = phone.replace(/[\s\-\.]/g, "");
@@ -60,10 +67,42 @@ async function sendSMS(to: string, message: string): Promise<boolean> {
       }
     );
 
-    const result = await response.json();
+    const result: TwilioMessageResult = await response.json();
 
     if (response.ok) {
-      console.log("[NOTIFY-PAYMENT] SMS sent successfully:", result.sid);
+      console.log("[NOTIFY-PAYMENT] SMS sent successfully:", {
+        sid: result.sid,
+        status: result.status,
+        error_code: result.error_code,
+        error_message: result.error_message,
+      });
+
+      // Attempt to immediately fetch message status from Twilio (best-effort)
+      // Note: final delivery can take time; this mainly helps detect immediate carrier rejects.
+      if (result.sid) {
+        try {
+          const credentials = btoa(`${accountSid}:${authToken}`);
+          const statusRes = await fetch(
+            `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages/${result.sid}.json`,
+            {
+              method: "GET",
+              headers: {
+                "Authorization": `Basic ${credentials}`,
+              },
+            }
+          );
+
+          const statusBody: TwilioMessageResult = await statusRes.json();
+          console.log("[NOTIFY-PAYMENT] Twilio message status:", {
+            sid: statusBody.sid,
+            status: statusBody.status,
+            error_code: statusBody.error_code,
+            error_message: statusBody.error_message,
+          });
+        } catch (statusErr) {
+          console.error("[NOTIFY-PAYMENT] Failed to fetch Twilio message status:", statusErr);
+        }
+      }
       return true;
     } else {
       console.error("[NOTIFY-PAYMENT] Twilio error:", result);
@@ -72,6 +111,31 @@ async function sendSMS(to: string, message: string): Promise<boolean> {
   } catch (error) {
     console.error("[NOTIFY-PAYMENT] Error sending SMS:", error);
     return false;
+  }
+}
+
+async function getUserContact(userId: string | null): Promise<{ phone: string | null; email: string | null }> {
+  if (!userId) return { phone: null, email: null };
+
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("phone, email")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[NOTIFY-PAYMENT] Failed to fetch user contact:", error);
+      return { phone: null, email: null };
+    }
+
+    return {
+      phone: data?.phone ?? null,
+      email: (data as unknown as { email?: string | null } | null)?.email ?? null,
+    };
+  } catch (e) {
+    console.error("[NOTIFY-PAYMENT] Failed to fetch user contact (exception):", e);
+    return { phone: null, email: null };
   }
 }
 
@@ -229,9 +293,16 @@ serve(async (req) => {
     }
 
     const trackingCode = intervention.tracking_code;
-    const clientEmail = intervention.client_email;
-    const clientPhone = intervention.client_phone;
+    let clientEmail = intervention.client_email as string | null;
+    let clientPhone = intervention.client_phone as string | null;
     const clientId = intervention.client_id;
+
+    // Fallback contact info from user profile if missing on intervention
+    if ((!clientPhone || !clientEmail) && clientId) {
+      const fallback = await getUserContact(clientId);
+      clientPhone = clientPhone || fallback.phone;
+      clientEmail = clientEmail || fallback.email;
+    }
 
     // Build tracking URL
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -243,7 +314,8 @@ serve(async (req) => {
 
     console.log("[NOTIFY-PAYMENT] Tracking URL:", trackingUrl);
 
-    const smsMessage = `⚠️ DepanExpress - Autorisation de paiement requise\n\nVotre technicien a terminé l'intervention mais votre carte n'est pas autorisée.\n\nMerci d'autoriser votre carte ici :\n${trackingUrl}\n\nCode: ${trackingCode}`;
+    // Keep SMS short/simple to reduce carrier filtering issues.
+    const smsMessage = `DepanExpress: autorisation de paiement requise.\nOuvrez: ${trackingUrl}\nCode: ${trackingCode}`;
 
     const emailSubject = "⚠️ Action requise : Autorisation de paiement";
     const emailHtml = `
