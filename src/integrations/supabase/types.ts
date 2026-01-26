@@ -331,7 +331,7 @@ export type Database = {
           category: string
           city: string
           client_email: string | null
-          client_id: string
+          client_id: string | null
           client_phone: string | null
           completed_at: string | null
           created_at: string
@@ -363,7 +363,7 @@ export type Database = {
           category: string
           city: string
           client_email?: string | null
-          client_id: string
+          client_id?: string | null
           client_phone?: string | null
           completed_at?: string | null
           created_at?: string
@@ -395,7 +395,7 @@ export type Database = {
           category?: string
           city?: string
           client_email?: string | null
-          client_id?: string
+          client_id?: string | null
           client_phone?: string | null
           completed_at?: string | null
           created_at?: string
@@ -421,13 +421,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "interventions_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "interventions_technician_id_fkey"
             columns: ["technician_id"]

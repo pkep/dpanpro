@@ -185,7 +185,8 @@ export function InterventionWizard() {
     setIsPaymentProcessing(true);
     try {
       // Create a temporary intervention to get an ID
-      const clientId = user?.id || 'guest-' + Date.now();
+      // For guest users, pass null as clientId (DB allows nullable client_id)
+      const clientId = user?.id || null;
 
       const intervention = await interventionsService.createIntervention(clientId, {
         category,
