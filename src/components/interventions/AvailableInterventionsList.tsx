@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { InterventionCategory, InterventionStatus, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
+import { calculateDistance } from '@/utils/geolocation';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,11 @@ interface AvailableIntervention {
   estimatedMinutes?: number;
 }
 
+// Travel estimation constants (matching dispatch system)
+const ROAD_DETOUR_FACTOR = 1.4;
+const AVG_SPEED_KMH = 25;
+const BASE_DEPARTURE_MINUTES = 5;
+
 export function AvailableInterventionsList({ 
   technicianId,
   onInterventionAccepted 
@@ -59,11 +65,25 @@ export function AvailableInterventionsList({
   const [error, setError] = useState<string | null>(null);
   const [acceptedInterventionId, setAcceptedInterventionId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [technicianLocation, setTechnicianLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogAction, setDialogAction] = useState<'decline' | 'accept' | 'go' | 'cancel' | 'en_route' | null>(null);
   const [selectedIntervention, setSelectedIntervention] = useState<AvailableIntervention | null>(null);
+
+  // Fetch technician's current location
+  const fetchTechnicianLocation = useCallback(async () => {
+    const { data } = await supabase
+      .from('partner_applications')
+      .select('latitude, longitude')
+      .eq('user_id', technicianId)
+      .single();
+    
+    if (data?.latitude && data?.longitude) {
+      setTechnicianLocation({ lat: data.latitude, lng: data.longitude });
+    }
+  }, [technicianId]);
 
   const fetchAvailableInterventions = useCallback(async () => {
     setIsLoading(true);
@@ -95,10 +115,29 @@ export function AvailableInterventionsList({
 
       if (interventionsError) throw interventionsError;
 
-      // Combine intervention data with attempt data
+      // Combine intervention data with attempt data and calculate real distance
       const availableInterventions: AvailableIntervention[] = (interventionsData || []).map(int => {
         const attempt = attempts.find(a => a.intervention_id === int.id);
-        const scoreBreakdown = attempt?.score_breakdown as { proximity?: number } | undefined;
+        
+        // Calculate real distance and travel time if we have both locations
+        let distanceKm: number | undefined;
+        let estimatedMinutes: number | undefined;
+        
+        if (technicianLocation && int.latitude && int.longitude) {
+          const distanceMetersHaversine = calculateDistance(
+            technicianLocation.lat,
+            technicianLocation.lng,
+            int.latitude,
+            int.longitude
+          );
+          // Apply road detour factor
+          const distanceMeters = distanceMetersHaversine * ROAD_DETOUR_FACTOR;
+          distanceKm = Math.round(distanceMeters / 100) / 10; // Round to 1 decimal
+          
+          // Calculate travel time
+          const travelMinutes = (distanceKm / AVG_SPEED_KMH) * 60;
+          estimatedMinutes = Math.round(travelMinutes + BASE_DEPARTURE_MINUTES);
+        }
         
         return {
           id: int.id,
@@ -128,7 +167,8 @@ export function AvailableInterventionsList({
           clientPhone: int.client_phone,
           score: attempt?.score || 0,
           attemptOrder: attempt?.attempt_order || 1,
-          distanceKm: scoreBreakdown?.proximity ? Math.round((100 - scoreBreakdown.proximity) / 2 * 10) / 10 : undefined,
+          distanceKm,
+          estimatedMinutes,
         };
       });
 
@@ -142,7 +182,7 @@ export function AvailableInterventionsList({
     } finally {
       setIsLoading(false);
     }
-  }, [technicianId]);
+  }, [technicianId, technicianLocation]);
 
   // Check if technician has an active intervention
   const checkActiveIntervention = useCallback(async () => {
@@ -162,9 +202,10 @@ export function AvailableInterventionsList({
   }, [technicianId]);
 
   useEffect(() => {
+    fetchTechnicianLocation();
     fetchAvailableInterventions();
     checkActiveIntervention();
-  }, [fetchAvailableInterventions, checkActiveIntervention]);
+  }, [fetchTechnicianLocation, fetchAvailableInterventions, checkActiveIntervention]);
 
   // Real-time updates
   useEffect(() => {
@@ -496,10 +537,10 @@ function AvailableInterventionCard({
           </p>
         )}
 
-        {intervention.distanceKm !== undefined && (
+        {(intervention.distanceKm !== undefined || intervention.estimatedMinutes !== undefined) && (
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span>📍 ~{intervention.distanceKm} km</span>
-            <span>⏱️ ~{Math.round((intervention.distanceKm / 40) * 60)} min</span>
+            {intervention.distanceKm !== undefined && <span>📍 ~{intervention.distanceKm} km</span>}
+            {intervention.estimatedMinutes !== undefined && <span>⏱️ ~{intervention.estimatedMinutes} min</span>}
           </div>
         )}
       </CardContent>
