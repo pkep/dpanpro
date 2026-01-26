@@ -1,12 +1,11 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { CATEGORY_LABELS } from '@/types/intervention.types';
 
 interface Notification {
   id: string;
-  type: 'assignment' | 'status_change' | 'new_intervention';
+  type: 'new_message' | 'new_photo' | 'client_cancellation' | 'new_intervention';
   title: string;
   message: string;
   interventionId: string;
@@ -18,7 +17,6 @@ export function useRealtimeNotifications() {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const previousTechnicianIds = useRef<Map<string, string | null>>(new Map());
 
   const addNotification = useCallback((notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => {
     const newNotification: Notification = {
@@ -28,16 +26,15 @@ export function useRealtimeNotifications() {
       read: false,
     };
 
-    setNotifications((prev) => [newNotification, ...prev].slice(0, 50)); // Keep last 50
+    setNotifications((prev) => [newNotification, ...prev].slice(0, 50));
     setUnreadCount((prev) => prev + 1);
 
-    // Show toast notification
     toast.info(notification.title, {
       description: notification.message,
       action: {
         label: 'Voir',
         onClick: () => {
-          window.location.href = `/intervention/${notification.interventionId}`;
+          window.location.href = `/technician/intervention/${notification.interventionId}`;
         },
       },
     });
@@ -66,10 +63,46 @@ export function useRealtimeNotifications() {
     const isTechnician = user.role === 'technician' || user.role === 'admin';
     if (!isTechnician) return;
 
-    console.log('Setting up realtime notifications for user:', user.id);
+    console.log('Setting up technician notifications for user:', user.id);
 
-    const channel = supabase
-      .channel('technician-notifications')
+    // Listen for new messages from clients
+    const messagesChannel = supabase
+      .channel('technician-messages-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'intervention_messages',
+        },
+        async (payload) => {
+          const newMessage = payload.new as any;
+          
+          // Only notify if message is from a client (not from the technician themselves)
+          if (newMessage.sender_role === 'client') {
+            // Check if this intervention belongs to this technician
+            const { data: intervention } = await supabase
+              .from('interventions')
+              .select('id, title, technician_id')
+              .eq('id', newMessage.intervention_id)
+              .single();
+
+            if (intervention && intervention.technician_id === user.id) {
+              addNotification({
+                type: 'new_message',
+                title: '💬 Nouveau message client',
+                message: `Le client a envoyé un message`,
+                interventionId: newMessage.intervention_id,
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Listen for intervention updates (photos added by client, cancellation by client)
+    const interventionsChannel = supabase
+      .channel('technician-interventions-notifications')
       .on(
         'postgres_changes',
         {
@@ -78,86 +111,74 @@ export function useRealtimeNotifications() {
           table: 'interventions',
         },
         (payload) => {
-          console.log('Intervention update received:', payload);
-          
           const newData = payload.new as any;
           const oldData = payload.old as any;
 
-          // Check if technician was just assigned (technician_id changed to current user)
-          if (
-            newData.technician_id === user.id &&
-            oldData.technician_id !== user.id
-          ) {
-            const categoryLabel = CATEGORY_LABELS[newData.category as keyof typeof CATEGORY_LABELS] || newData.category;
-            
+          // Only process if this intervention is assigned to the current technician
+          if (newData.technician_id !== user.id) return;
+
+          // Check if photos were added (client added new photos)
+          const oldPhotos = oldData.photos || [];
+          const newPhotos = newData.photos || [];
+          
+          if (newPhotos.length > oldPhotos.length) {
             addNotification({
-              type: 'assignment',
-              title: '🔔 Nouvelle intervention assignée',
-              message: `${categoryLabel}: ${newData.title} - ${newData.city}`,
+              type: 'new_photo',
+              title: '📷 Nouvelle photo ajoutée',
+              message: `Le client a ajouté ${newPhotos.length - oldPhotos.length} photo(s)`,
               interventionId: newData.id,
             });
           }
 
-          // Check if status changed for an intervention assigned to this technician
-          if (
-            newData.technician_id === user.id &&
-            oldData.status !== newData.status &&
-            oldData.technician_id === user.id
-          ) {
-            // Only notify for certain status changes
-            if (newData.status === 'cancelled') {
+          // Check if intervention was cancelled by client
+          if (oldData.status !== 'cancelled' && newData.status === 'cancelled') {
+            addNotification({
+              type: 'client_cancellation',
+              title: '❌ Intervention annulée',
+              message: `Le client a annulé l'intervention "${newData.title}"`,
+              interventionId: newData.id,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    // Listen for new urgent interventions (for admins)
+    let urgentChannel: ReturnType<typeof supabase.channel> | null = null;
+    
+    if (user.role === 'admin') {
+      urgentChannel = supabase
+        .channel('admin-urgent-notifications')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'interventions',
+          },
+          (payload) => {
+            const newData = payload.new as any;
+            
+            if (newData.priority === 'urgent') {
               addNotification({
-                type: 'status_change',
-                title: '❌ Intervention annulée',
-                message: `L'intervention "${newData.title}" a été annulée`,
+                type: 'new_intervention',
+                title: '🚨 Intervention urgente',
+                message: `Nouvelle demande urgente: ${newData.title}`,
                 interventionId: newData.id,
               });
             }
           }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'interventions',
-        },
-        (payload) => {
-          console.log('New intervention created:', payload);
-          
-          const newData = payload.new as any;
-
-          // If intervention is directly assigned to this technician on creation
-          if (newData.technician_id === user.id) {
-            const categoryLabel = CATEGORY_LABELS[newData.category as keyof typeof CATEGORY_LABELS] || newData.category;
-            
-            addNotification({
-              type: 'assignment',
-              title: '🔔 Nouvelle intervention assignée',
-              message: `${categoryLabel}: ${newData.title} - ${newData.city}`,
-              interventionId: newData.id,
-            });
-          }
-
-          // Notify admins of new interventions (urgent ones)
-          if (user.role === 'admin' && newData.priority === 'urgent') {
-            addNotification({
-              type: 'new_intervention',
-              title: '🚨 Intervention urgente',
-              message: `Nouvelle demande urgente: ${newData.title}`,
-              interventionId: newData.id,
-            });
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('Notifications subscription status:', status);
-      });
+        )
+        .subscribe();
+    }
 
     return () => {
-      console.log('Cleaning up notifications subscription');
-      supabase.removeChannel(channel);
+      console.log('Cleaning up technician notifications');
+      supabase.removeChannel(messagesChannel);
+      supabase.removeChannel(interventionsChannel);
+      if (urgentChannel) {
+        supabase.removeChannel(urgentChannel);
+      }
     };
   }, [user, addNotification]);
 
