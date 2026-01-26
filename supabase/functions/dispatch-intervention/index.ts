@@ -21,7 +21,7 @@ interface TechnicianScore {
 
 interface DispatchRequest {
   interventionId: string;
-  action?: 'dispatch' | 'accept' | 'reject' | 'check_timeout' | 'decline' | 'cancel' | 'go';
+  action?: 'dispatch' | 'accept' | 'reject' | 'check_timeout' | 'decline' | 'cancel' | 'go' | 'notify';
   technicianId?: string;
   reason?: string; // For decline and cancel actions
 }
@@ -182,6 +182,8 @@ Deno.serve(async (req) => {
         return await handleGo(supabase, interventionId, technicianId!);
       case 'check_timeout':
         return await handleCheckTimeout(supabase, interventionId);
+      case 'notify':
+        return await handleNotify(supabase, interventionId);
       case 'dispatch':
       default:
         return await handleDispatch(supabase, interventionId);
@@ -458,27 +460,10 @@ async function handleDispatch(supabase: any, interventionId: string) {
 
   if (updateError) throw updateError;
 
-  console.log(`[Dispatch] Notified top 3 technicians:`, top3Technicians.map(t => t.userId));
+  console.log(`[Dispatch] Notified top 3 technicians (attempts created):`, top3Technicians.map(t => t.userId));
 
-  // 12. Send SMS, Email, and Push notifications to all 3 technicians
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  
-  // Send notifications in background (non-blocking)
-  notifyTechniciansDispatch(
-    supabaseUrl,
-    serviceRoleKey,
-    interventionId,
-    top3Technicians.map(t => t.userId),
-    {
-      title: intervention.title || `${intervention.category}`,
-      address: intervention.address || '',
-      city: intervention.city || '',
-      postalCode: intervention.postal_code || '',
-      category: intervention.category,
-      priority: intervention.priority,
-    }
-  ).catch(err => console.error('[Dispatch] Failed to send technician notifications:', err));
+  // NOTE: Notifications are NOT sent here - they will be sent when 'notify' action is called
+  // after the client confirms the intervention (payment authorization)
 
   return new Response(
     JSON.stringify({
@@ -492,6 +477,71 @@ async function handleDispatch(supabase: any, interventionId: string) {
       })),
       timeoutAt: timeoutAt.toISOString(),
       totalCandidates: scoredTechnicians.length,
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// Handle sending notifications to pending technicians (called after payment confirmation)
+async function handleNotify(supabase: any, interventionId: string) {
+  console.log(`[Dispatch] Sending notifications for intervention: ${interventionId}`);
+
+  // Get intervention details
+  const { data: intervention, error: intError } = await supabase
+    .from('interventions')
+    .select('*')
+    .eq('id', interventionId)
+    .single();
+
+  if (intError || !intervention) {
+    throw new Error(`Intervention not found: ${interventionId}`);
+  }
+
+  // Get pending dispatch attempts
+  const { data: pendingAttempts, error: attemptsError } = await supabase
+    .from('dispatch_attempts')
+    .select('technician_id')
+    .eq('intervention_id', interventionId)
+    .eq('status', 'pending')
+    .not('notified_at', 'is', null);
+
+  if (attemptsError) throw attemptsError;
+
+  if (!pendingAttempts || pendingAttempts.length === 0) {
+    return new Response(
+      JSON.stringify({ success: false, message: 'No pending technicians to notify' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const technicianIds = pendingAttempts.map((a: any) => a.technician_id);
+
+  // Send SMS, Email, and Push notifications
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+  await notifyTechniciansDispatch(
+    supabaseUrl,
+    serviceRoleKey,
+    interventionId,
+    technicianIds,
+    {
+      title: intervention.title || `${intervention.category}`,
+      address: intervention.address || '',
+      city: intervention.city || '',
+      postalCode: intervention.postal_code || '',
+      category: intervention.category,
+      priority: intervention.priority,
+    }
+  );
+
+  console.log(`[Dispatch] Notifications sent to ${technicianIds.length} technicians`);
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      message: `Notifications sent to ${technicianIds.length} technicians`,
+      technicianIds,
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
