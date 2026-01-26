@@ -34,6 +34,10 @@ interface Intervention {
   longitude: number | null;
   technician_id: string | null;
   status: string;
+  title?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
 }
 
 interface TechnicianData {
@@ -101,6 +105,49 @@ async function notifyStatusChange(
     }
   } catch (error) {
     console.error(`[Dispatch] Error sending notification:`, error);
+  }
+}
+
+// Helper to notify technicians via SMS, Email, and Push
+async function notifyTechniciansDispatch(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  interventionId: string,
+  technicianIds: string[],
+  interventionDetails?: {
+    title: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    category: string;
+    priority: string;
+  }
+): Promise<void> {
+  try {
+    console.log(`[Dispatch] Sending multi-channel notifications to ${technicianIds.length} technicians`);
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/notify-technician-dispatch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({
+        interventionId,
+        technicianIds,
+        interventionDetails,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Dispatch] Technician notification failed (${response.status}):`, errorText);
+    } else {
+      const result = await response.json();
+      console.log(`[Dispatch] Technician notifications sent:`, result);
+    }
+  } catch (error) {
+    console.error(`[Dispatch] Error sending technician notifications:`, error);
   }
 }
 
@@ -413,8 +460,25 @@ async function handleDispatch(supabase: any, interventionId: string) {
 
   console.log(`[Dispatch] Notified top 3 technicians:`, top3Technicians.map(t => t.userId));
 
-  // 12. TODO: Send push notifications to all 3 technicians
-  // For now, the realtime subscription handles in-app notifications
+  // 12. Send SMS, Email, and Push notifications to all 3 technicians
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  
+  // Send notifications in background (non-blocking)
+  notifyTechniciansDispatch(
+    supabaseUrl,
+    serviceRoleKey,
+    interventionId,
+    top3Technicians.map(t => t.userId),
+    {
+      title: intervention.title || `${intervention.category}`,
+      address: intervention.address || '',
+      city: intervention.city || '',
+      postalCode: intervention.postal_code || '',
+      category: intervention.category,
+      priority: intervention.priority,
+    }
+  ).catch(err => console.error('[Dispatch] Failed to send technician notifications:', err));
 
   return new Response(
     JSON.stringify({
