@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.notify-payment-required]
 verify_jwt = false
+
+[functions.notify-technician-dispatch]
+verify_jwt = false
