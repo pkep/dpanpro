@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { InterventionCategory, InterventionStatus, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';
@@ -65,24 +65,27 @@ export function AvailableInterventionsList({
   const [error, setError] = useState<string | null>(null);
   const [acceptedInterventionId, setAcceptedInterventionId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [technicianLocation, setTechnicianLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const technicianLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   
   // Dialog states
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogAction, setDialogAction] = useState<'decline' | 'accept' | 'go' | 'cancel' | 'en_route' | null>(null);
   const [selectedIntervention, setSelectedIntervention] = useState<AvailableIntervention | null>(null);
 
-  // Fetch technician's current location
-  const fetchTechnicianLocation = useCallback(async () => {
-    const { data } = await supabase
-      .from('partner_applications')
-      .select('latitude, longitude')
-      .eq('user_id', technicianId)
-      .single();
-    
-    if (data?.latitude && data?.longitude) {
-      setTechnicianLocation({ lat: data.latitude, lng: data.longitude });
-    }
+  // Fetch technician's current location (only once on mount)
+  useEffect(() => {
+    const fetchLocation = async () => {
+      const { data } = await supabase
+        .from('partner_applications')
+        .select('latitude, longitude')
+        .eq('user_id', technicianId)
+        .maybeSingle();
+      
+      if (data?.latitude && data?.longitude) {
+        technicianLocationRef.current = { lat: data.latitude, lng: data.longitude };
+      }
+    };
+    fetchLocation();
   }, [technicianId]);
 
   const fetchAvailableInterventions = useCallback(async () => {
@@ -123,10 +126,11 @@ export function AvailableInterventionsList({
         let distanceKm: number | undefined;
         let estimatedMinutes: number | undefined;
         
-        if (technicianLocation && int.latitude && int.longitude) {
+        const techLocation = technicianLocationRef.current;
+        if (techLocation && int.latitude && int.longitude) {
           const distanceMetersHaversine = calculateDistance(
-            technicianLocation.lat,
-            technicianLocation.lng,
+            techLocation.lat,
+            techLocation.lng,
             int.latitude,
             int.longitude
           );
@@ -182,7 +186,7 @@ export function AvailableInterventionsList({
     } finally {
       setIsLoading(false);
     }
-  }, [technicianId, technicianLocation]);
+  }, [technicianId]);
 
   // Check if technician has an active intervention
   const checkActiveIntervention = useCallback(async () => {
@@ -202,10 +206,9 @@ export function AvailableInterventionsList({
   }, [technicianId]);
 
   useEffect(() => {
-    fetchTechnicianLocation();
     fetchAvailableInterventions();
     checkActiveIntervention();
-  }, [fetchTechnicianLocation, fetchAvailableInterventions, checkActiveIntervention]);
+  }, [fetchAvailableInterventions, checkActiveIntervention]);
 
   // Real-time updates
   useEffect(() => {
