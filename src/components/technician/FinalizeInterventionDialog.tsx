@@ -87,14 +87,20 @@ export function FinalizeInterventionDialog({
 
       if (captureError) {
         const msg = captureError.message || '';
+        // Check if client was notified
+        const clientNotified = msg.includes('notification has been sent') || msg.includes('A notification has been sent');
+        const notificationNote = clientNotified 
+          ? "\n\n✅ Le client a été notifié par SMS pour autoriser sa carte."
+          : "";
+        
         if (msg.includes('requires_payment_method') || msg.includes('Payment not authorized')) {
           throw new Error(
-            "Paiement impossible : aucune autorisation carte valide n'est disponible. Le client doit autoriser (ou ré-autoriser) sa carte avant la finalisation."
+            `Paiement impossible : aucune autorisation carte valide n'est disponible. Le client doit autoriser (ou ré-autoriser) sa carte avant la finalisation.${notificationNote}`
           );
         }
         if (msg.includes('requires_action')) {
           throw new Error(
-            "Paiement impossible : authentification bancaire requise. Le client doit finaliser l'autorisation de paiement."
+            `Paiement impossible : authentification bancaire requise. Le client doit finaliser l'autorisation de paiement.${notificationNote}`
           );
         }
         throw new Error(msg || 'Erreur lors du débit de la carte');
