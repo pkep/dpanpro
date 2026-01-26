@@ -97,7 +97,7 @@ export function PushNotificationSetup({ compact = false }: PushNotificationSetup
       <Button 
         variant="outline" 
         size="sm" 
-        onClick={requestPermission}
+        onClick={() => requestPermission()}
         className="gap-2"
       >
         <Bell className="h-4 w-4" />
@@ -134,7 +134,7 @@ export function PushNotificationSetup({ compact = false }: PushNotificationSetup
             </li>
           </ul>
           
-          <Button onClick={requestPermission} className="w-full gap-2">
+          <Button onClick={() => requestPermission()} className="w-full gap-2">
             <BellRing className="h-4 w-4" />
             Activer les notifications
           </Button>

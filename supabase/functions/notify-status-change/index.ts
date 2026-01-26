@@ -115,6 +115,11 @@ async function sendEmail(
   }
 
   try {
+    // Use resend.dev for testing or your verified domain in production
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Dépan'Express <onboarding@resend.dev>";
+    
+    console.log("Sending email to:", to, "from:", fromEmail);
+    
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -122,7 +127,7 @@ async function sendEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Dépan'Express <notifications@resend.dev>",
+        from: fromEmail,
         to: [to],
         subject,
         html: htmlContent,

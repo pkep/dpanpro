@@ -680,6 +680,39 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          email: string | null
+          fcm_token: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          email?: string | null
+          fcm_token: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          email?: string | null
+          fcm_token?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       quote_modification_items: {
         Row: {
           created_at: string
