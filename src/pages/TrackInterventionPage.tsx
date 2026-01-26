@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StatusTimeline } from '@/components/interventions/StatusTimeline';
 import { ClientTrackingMap } from '@/components/map/ClientTrackingMap';
+import { StripeCardForm } from '@/components/payment/StripeCardForm';
+import { paymentService } from '@/services/payment/payment.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -19,7 +22,9 @@ import {
   CheckCircle2,
   Wrench,
   Search,
+  Shield,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Intervention {
   id: string;
@@ -89,6 +94,14 @@ export default function TrackInterventionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Payment (late authorization) state
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentTotal, setPaymentTotal] = useState<number | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
+  const [paymentAuthorizationId, setPaymentAuthorizationId] = useState<string | null>(null);
+  const [paymentAuthorized, setPaymentAuthorized] = useState(false);
+
   useEffect(() => {
     if (!tracking_code) {
       setError('Code de suivi manquant');
@@ -143,6 +156,118 @@ export default function TrackInterventionPage() {
       supabase.removeChannel(channel);
     };
   }, [tracking_code]);
+
+  // Load payment context (quote total + last authorization status)
+  useEffect(() => {
+    if (!intervention?.id) return;
+
+    const loadPayment = async () => {
+      try {
+        setPaymentLoading(true);
+
+        const [quotesRes, modsRes, statusRes] = await Promise.all([
+          supabase
+            .from('intervention_quotes')
+            .select('calculated_price')
+            .eq('intervention_id', intervention.id),
+          supabase
+            .from('quote_modifications')
+            .select('total_additional_amount')
+            .eq('intervention_id', intervention.id)
+            .eq('status', 'approved'),
+          supabase.functions.invoke('payment-authorization-status', {
+            body: { trackingCode: tracking_code?.toUpperCase() },
+          }),
+        ]);
+
+        if (quotesRes.error) throw quotesRes.error;
+        if (modsRes.error) throw modsRes.error;
+
+        const statusError = (statusRes as any)?.error;
+        if (statusError) throw statusError;
+
+        const baseTotal = (quotesRes.data || []).reduce(
+          (sum, l) => sum + Number(l.calculated_price || 0),
+          0
+        );
+        const additionalTotal = (modsRes.data || []).reduce(
+          (sum, m) => sum + Number(m.total_additional_amount || 0),
+          0
+        );
+        const total = baseTotal + additionalTotal;
+        setPaymentTotal(total);
+
+        const payload = (statusRes as any)?.data;
+        const lastStatus = payload?.authorization?.status ?? null;
+        const isAuthorized = Boolean(payload?.authorized);
+
+        setPaymentStatus(lastStatus);
+        setPaymentAuthorized(isAuthorized);
+        setPaymentAuthorizationId(payload?.authorization?.id ?? null);
+      } catch (err) {
+        console.error('Error loading payment context:', err);
+      } finally {
+        setPaymentLoading(false);
+      }
+    };
+
+    loadPayment();
+  }, [intervention?.id, tracking_code]);
+
+  const canAuthorizePayment = useMemo(() => {
+    if (!intervention) return false;
+    if (!['assigned', 'on_route', 'in_progress'].includes(intervention.status)) return false;
+    if (!intervention.client_email) return false;
+    if (!paymentTotal || paymentTotal <= 0) return false;
+    return true;
+  }, [intervention, paymentTotal]);
+
+  const handleStartAuthorization = async () => {
+    if (!intervention) return;
+    if (!canAuthorizePayment) return;
+
+    try {
+      setPaymentLoading(true);
+      setPaymentClientSecret(null);
+
+      const { id, clientSecret } = await paymentService.createPaymentIntent({
+        interventionId: intervention.id,
+        amount: paymentTotal!,
+        clientEmail: intervention.client_email!,
+        clientPhone: intervention.client_phone || undefined,
+      });
+
+      setPaymentAuthorizationId(id);
+      setPaymentClientSecret(clientSecret);
+    } catch (err) {
+      console.error('Error starting payment authorization:', err);
+      toast.error("Impossible d'initialiser le paiement", {
+        description: "Veuillez réessayer dans quelques instants.",
+      });
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const handleAuthorizationSuccess = async () => {
+    try {
+      if (paymentAuthorizationId) {
+        await paymentService.updateAuthorizationStatus(paymentAuthorizationId, 'authorized');
+      }
+      setPaymentAuthorized(true);
+      setPaymentStatus('authorized');
+      toast.success('Carte autorisée', {
+        description: 'Vous pouvez maintenant finaliser l’intervention avec le technicien.',
+      });
+    } catch (err) {
+      console.error('Error updating authorization status:', err);
+      toast.error('Autorisation confirmée, mais enregistrement impossible');
+    }
+  };
+
+  const handleAuthorizationError = (message: string) => {
+    toast.error('Erreur de paiement', { description: message });
+  };
 
   if (loading) {
     return (
@@ -291,6 +416,70 @@ export default function TrackInterventionPage() {
                 interventionStatus={intervention.status}
                 height="300px"
               />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Payment Authorization (fallback) */}
+        {isActive && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Autorisation de paiement
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!intervention.client_email ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Vos coordonnées email sont manquantes : impossible d'autoriser le paiement.
+                  </AlertDescription>
+                </Alert>
+              ) : paymentAuthorized ? (
+                <Alert>
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertDescription>
+                    Votre carte est autorisée. Le technicien pourra débiter le montant à la fin de l'intervention.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <>
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Une autorisation de paiement est requise pour permettre la finalisation.
+                      {typeof paymentTotal === 'number' && (
+                        <> Montant à autoriser : <strong>{paymentTotal.toFixed(2)} €</strong>.</>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+
+                  {!paymentClientSecret ? (
+                    <Button
+                      onClick={handleStartAuthorization}
+                      disabled={paymentLoading || !canAuthorizePayment}
+                      className="w-full"
+                    >
+                      {paymentLoading ? 'Préparation…' : 'Autoriser ma carte maintenant'}
+                    </Button>
+                  ) : (
+                    <StripeCardForm
+                      clientSecret={paymentClientSecret}
+                      amount={paymentTotal || 0}
+                      onSuccess={handleAuthorizationSuccess}
+                      onError={handleAuthorizationError}
+                    />
+                  )}
+
+                  {paymentStatus === 'pending' && (
+                    <p className="text-xs text-muted-foreground">
+                      Une autorisation précédente est en attente. Vous pouvez autoriser à nouveau si nécessaire.
+                    </p>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
         )}

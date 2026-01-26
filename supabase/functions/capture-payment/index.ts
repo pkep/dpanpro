@@ -49,6 +49,52 @@ serve(async (req) => {
       throw new Error("No payment intent ID found");
     }
 
+    // Fetch PaymentIntent and ensure it's capturable.
+    // In some cases (client never completed authorization), the intent may still be in
+    // `requires_payment_method` / `requires_confirmation`.
+    let paymentIntent = await stripe.paymentIntents.retrieve(auth.provider_payment_id);
+    console.log("PaymentIntent status:", paymentIntent.status);
+
+    if (paymentIntent.status === "requires_payment_method" || paymentIntent.status === "requires_confirmation") {
+      // Try to recover by confirming off-session with an already saved card on the customer.
+      // This allows technicians to finalize when the customer has a saved payment method
+      // from previous successful authorizations.
+      const customerId =
+        (auth as Record<string, unknown>).provider_customer_id as string | null;
+      const resolvedCustomerId =
+        customerId || (typeof paymentIntent.customer === "string" ? paymentIntent.customer : paymentIntent.customer?.id) || null;
+
+      if (resolvedCustomerId) {
+        const paymentMethods = await stripe.paymentMethods.list({
+          customer: resolvedCustomerId,
+          type: "card",
+          limit: 1,
+        });
+
+        if (paymentMethods.data.length > 0) {
+          const pm = paymentMethods.data[0];
+          console.log("Attempting off-session confirmation with saved payment method", pm.id);
+
+          paymentIntent = await stripe.paymentIntents.confirm(auth.provider_payment_id, {
+            payment_method: pm.id,
+            off_session: true,
+          });
+          console.log("PaymentIntent status after confirm:", paymentIntent.status);
+        } else {
+          console.log("No saved card payment method found on customer", resolvedCustomerId);
+        }
+      } else {
+        console.log("No customerId available to recover PaymentIntent confirmation");
+      }
+    }
+
+    if (paymentIntent.status !== "requires_capture") {
+      // Do not attempt capture if Stripe doesn't allow it.
+      throw new Error(
+        `Payment not authorized (PaymentIntent status: ${paymentIntent.status}). The customer must authorize the card before capture.`
+      );
+    }
+
     // Check if we need to capture more than authorized
     const authorizedCents = Math.round(auth.amount_authorized * 100);
     

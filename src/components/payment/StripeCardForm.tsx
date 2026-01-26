@@ -10,8 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Stripe publishable key - this is a PUBLIC key, safe to include in frontend code
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SrfsTDTC56CKPNhIxV93gHYHDinqpxPYcNurSkhUzKwjXkaOWFxdP3khzuvaBH507yahYxrA7KtsQLOBOyChXbH005j402hQH';
+// Stripe publishable key - PUBLIC key (safe in frontend). Prefer env-configured key.
+// Fallback kept for dev/backward compatibility.
+const STRIPE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+  'pk_test_51SrfsTDTC56CKPNhIxV93gHYHDinqpxPYcNurSkhUzKwjXkaOWFxdP3khzuvaBH507yahYxrA7KtsQLOBOyChXbH005j402hQH';
 
 // Initialize Stripe
 let stripePromise: Promise<Stripe | null> | null = null;
@@ -34,6 +37,43 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Handle potential 3DS redirect return flow.
+  useEffect(() => {
+    if (!stripe) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const redirectStatus = params.get('redirect_status');
+    const returnedClientSecret = params.get('payment_intent_client_secret');
+
+    if (!redirectStatus || !returnedClientSecret) return;
+
+    stripe
+      .retrievePaymentIntent(returnedClientSecret)
+      .then(({ paymentIntent }) => {
+        if (!paymentIntent) return;
+        if (paymentIntent.status === 'requires_capture' || paymentIntent.status === 'succeeded') {
+          onSuccess();
+        } else if (paymentIntent.status === 'requires_payment_method') {
+          const msg = "Autorisation refusée ou expirée. Veuillez réessayer avec une autre carte.";
+          setErrorMessage(msg);
+          onError(msg);
+        }
+      })
+      .catch((err) => {
+        const msg = err instanceof Error ? err.message : 'Erreur lors de la vérification du paiement';
+        setErrorMessage(msg);
+        onError(msg);
+      })
+      .finally(() => {
+        // Clean URL params (avoid re-processing on refresh)
+        params.delete('payment_intent_client_secret');
+        params.delete('payment_intent');
+        params.delete('redirect_status');
+        const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
+        window.history.replaceState({}, '', newUrl);
+      });
+  }, [stripe, onSuccess, onError]);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR', {

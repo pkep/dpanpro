@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.calculate-partner-statistics]
 verify_jwt = false
+
+[functions.payment-authorization-status]
+verify_jwt = false
