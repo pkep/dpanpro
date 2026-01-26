@@ -432,16 +432,16 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
     .neq('technician_id', technicianId)
     .eq('status', 'pending');
 
-  // Update intervention status with accepted_at and response_time_seconds
+  // Update intervention status with technician_id, accepted_at and response_time_seconds
   const { error: intError } = await supabase
     .from('interventions')
     .update({ 
+      technician_id: technicianId,
       status: 'on_route',
       accepted_at: now.toISOString(),
       response_time_seconds: responseTimeSeconds,
     })
-    .eq('id', interventionId)
-    .eq('technician_id', technicianId);
+    .eq('id', interventionId);
 
   if (intError) throw intError;
 
