@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeIntervention } from '@/hooks/useRealtimeIntervention';
+import { TechnicianLayout } from '@/components/technician/TechnicianLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  ArrowLeft, 
   Navigation, 
   Camera, 
   MessageSquare, 
@@ -143,10 +143,12 @@ export default function TechnicianInterventionPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background p-4">
-        <Skeleton className="h-12 w-48 mb-4" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+      <TechnicianLayout>
+        <div className="space-y-4">
+          <Skeleton className="h-12 w-48" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </TechnicianLayout>
     );
   }
 
@@ -154,31 +156,14 @@ export default function TechnicianInterventionPage() {
     return null;
   }
 
-  if (user.role !== 'technician' && user.role !== 'admin') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Accès réservé aux techniciens</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   if (error || !intervention) {
     return (
-      <div className="min-h-screen bg-background p-4">
-        <Button variant="ghost" asChild className="mb-4">
-          <Link to="/technician">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
-          </Link>
-        </Button>
+      <TechnicianLayout title="Intervention">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error || 'Intervention non trouvée'}</AlertDescription>
         </Alert>
-      </div>
+      </TechnicianLayout>
     );
   }
 
@@ -193,29 +178,17 @@ export default function TechnicianInterventionPage() {
   const canCancel = ['new', 'assigned', 'on_route'].includes(intervention.status);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center gap-4 px-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/technician">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{categoryIcon}</span>
-              <h1 className="font-semibold">{categoryLabel}</h1>
-            </div>
-          </div>
-          <Badge className={STATUS_COLORS[intervention.status]}>{statusLabel}</Badge>
-        </div>
-      </header>
+    <TechnicianLayout 
+      title={`${categoryIcon} ${categoryLabel}`}
+      subtitle={`${intervention.address}, ${intervention.city}`}
+    >
+      {/* Status Badge */}
+      <div className="mb-4">
+        <Badge className={STATUS_COLORS[intervention.status]}>{statusLabel}</Badge>
+      </div>
 
-      {/* Main Content */}
-      <main className="container px-4 py-4 pb-24">
-        {/* Quick Info Card */}
-        <Card className="mb-4">
+      {/* Quick Info Card */}
+      <Card className="mb-4">
           <CardContent className="pt-4 space-y-3">
             <div className="flex items-start gap-2">
               <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
@@ -402,7 +375,6 @@ export default function TechnicianInterventionPage() {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
 
       {/* Finalize Dialog */}
       <FinalizeInterventionDialog
@@ -422,6 +394,6 @@ export default function TechnicianInterventionPage() {
         action="cancel_intervention"
         onConfirm={handleCancelIntervention}
       />
-    </div>
+    </TechnicianLayout>
   );
 }
