@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 interface StepServiceSelectionProps {
   selectedCategory: InterventionCategory | null;
-  onSelect: (category: InterventionCategory) => void;
+  onSelect: (category: InterventionCategory, autoAdvance?: boolean) => void;
 }
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -66,7 +66,7 @@ export function StepServiceSelection({ selectedCategory, onSelect }: StepService
                 'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
                 isSelected && 'border-primary ring-2 ring-primary/20 bg-primary/5'
               )}
-              onClick={() => onSelect(category)}
+              onClick={() => onSelect(category, true)}
             >
               <CardContent className="flex flex-col items-center justify-center p-6 text-center">
                 <div className={cn(
