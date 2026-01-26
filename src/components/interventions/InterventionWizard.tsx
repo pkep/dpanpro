@@ -48,6 +48,7 @@ export function InterventionWizard() {
 
   // Form state
   const [category, setCategory] = useState<InterventionCategory | null>(null);
+  const [priority, setPriority] = useState<string>('normal');
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [address, setAddress] = useState('');
@@ -120,12 +121,16 @@ export function InterventionWizard() {
             return;
           }
 
-          // Get multiplier (using 'normal' priority for now)
+          // Use the service's default priority
+          const servicePriority = service.defaultPriority || 'normal';
+          setPriority(servicePriority);
+
+          // Get multiplier based on service's default priority
           const multipliers = await pricingService.getPriorityMultipliers();
-          const normalMultiplier = multipliers.find(m => m.priority === 'normal');
-          const mult = normalMultiplier?.multiplier || 1.0;
+          const priorityMultiplier = multipliers.find(m => m.priority === servicePriority);
+          const mult = priorityMultiplier?.multiplier || 1.0;
           setMultiplier(mult);
-          setMultiplierLabel(normalMultiplier?.label || 'Normal');
+          setMultiplierLabel(priorityMultiplier?.label || 'Normal');
 
           // Generate quote lines
           const lines = quotesService.generateQuoteLines(service.basePrice, mult);
@@ -194,7 +199,7 @@ export function InterventionWizard() {
         address,
         city,
         postalCode,
-        priority: 'normal',
+        priority: priority as 'urgent' | 'high' | 'normal' | 'low',
         clientEmail: email,
         clientPhone: phone,
         photos: photos.length > 0 ? photos : undefined,
