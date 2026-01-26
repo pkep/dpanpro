@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { dispatchService } from '@/services/dispatch/dispatch.service';
 import { quotesService, QuoteInput } from '@/services/quotes/quotes.service';
 import { paymentService } from '@/services/payment/payment.service';
 import { pricingService } from '@/services/pricing/pricing.service';
@@ -261,6 +262,15 @@ export function InterventionWizard() {
       if (auth) {
         const intervention = await interventionsService.getIntervention(auth.interventionId);
         setTrackingCode(intervention?.trackingCode || null);
+        
+        // Send notifications to technicians now that intervention is confirmed
+        try {
+          await dispatchService.notifyTechnicians(auth.interventionId);
+          console.log('Technician notifications sent after confirmation');
+        } catch (notifyError) {
+          console.error('Error sending technician notifications:', notifyError);
+          // Non-blocking - don't fail the whole submission
+        }
       }
 
       setIsSubmitted(true);

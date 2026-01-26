@@ -133,6 +133,21 @@ class DispatchService {
   }
 
   /**
+   * Send notifications to pending technicians (after payment confirmation)
+   */
+  async notifyTechnicians(interventionId: string): Promise<DispatchResult> {
+    const { data, error } = await supabase.functions.invoke('dispatch-intervention', {
+      body: {
+        interventionId,
+        action: 'notify',
+      },
+    });
+
+    if (error) throw error;
+    return data as DispatchResult;
+  }
+
+  /**
    * Get dispatch attempts for an intervention
    */
   async getDispatchAttempts(interventionId: string): Promise<DispatchAttempt[]> {
