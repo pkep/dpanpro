@@ -1,13 +1,31 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { dispatchService, DispatchAttempt } from '@/services/dispatch/dispatch.service';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { calculateDistance, formatDistance } from '@/utils/geolocation';
+
+interface TravelInfo {
+  distanceKm: number;
+  distanceFormatted: string;
+  estimatedMinutes: number;
+}
+
+interface InterventionLocation {
+  latitude: number | null;
+  longitude: number | null;
+}
+
+interface TechnicianLocation {
+  latitude: number | null;
+  longitude: number | null;
+}
 
 interface UseDispatchAssignmentReturn {
   pendingAssignment: DispatchAttempt | null;
   isLoading: boolean;
   timeRemaining: number | null;
+  travelInfo: TravelInfo | null;
   acceptAssignment: () => Promise<void>;
   rejectAssignment: () => Promise<void>;
 }
@@ -17,6 +35,8 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
   const [pendingAssignment, setPendingAssignment] = useState<DispatchAttempt | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+  const [interventionLocation, setInterventionLocation] = useState<InterventionLocation | null>(null);
+  const [technicianLocation, setTechnicianLocation] = useState<TechnicianLocation | null>(null);
 
   // Fetch pending assignment
   const fetchPendingAssignment = useCallback(async () => {
@@ -38,10 +58,72 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
       }
 
       setPendingAssignment(assignment);
+
+      // Fetch intervention location if we have an assignment
+      if (assignment) {
+        const { data: intervention } = await supabase
+          .from('interventions')
+          .select('latitude, longitude')
+          .eq('id', assignment.interventionId)
+          .single();
+
+        if (intervention) {
+          setInterventionLocation({
+            latitude: intervention.latitude,
+            longitude: intervention.longitude,
+          });
+        }
+
+        // Fetch technician's current location
+        const { data: techApp } = await supabase
+          .from('partner_applications')
+          .select('latitude, longitude')
+          .eq('user_id', user.id)
+          .single();
+
+        if (techApp) {
+          setTechnicianLocation({
+            latitude: techApp.latitude,
+            longitude: techApp.longitude,
+          });
+        }
+      }
     } catch (error) {
       console.error('Error fetching pending assignment:', error);
     }
   }, [user, interventionId]);
+
+  // Calculate travel info
+  const travelInfo = useMemo((): TravelInfo | null => {
+    if (!technicianLocation?.latitude || !technicianLocation?.longitude ||
+        !interventionLocation?.latitude || !interventionLocation?.longitude) {
+      return null;
+    }
+
+    const distanceMetersHaversine = calculateDistance(
+      technicianLocation.latitude,
+      technicianLocation.longitude,
+      interventionLocation.latitude,
+      interventionLocation.longitude
+    );
+
+    // Apply road detour factor (roads are typically 1.3-1.5x longer than straight line)
+    const ROAD_DETOUR_FACTOR = 1.4;
+    const distanceKm = (distanceMetersHaversine / 1000) * ROAD_DETOUR_FACTOR;
+    const distanceMeters = distanceMetersHaversine * ROAD_DETOUR_FACTOR;
+
+    // Realistic average speed in urban France: 25 km/h
+    // Add 5 minutes base time for departure preparation
+    const AVG_SPEED_KMH = 25;
+    const BASE_DEPARTURE_MINUTES = 5;
+    const estimatedMinutes = BASE_DEPARTURE_MINUTES + Math.round((distanceKm / AVG_SPEED_KMH) * 60);
+
+    return {
+      distanceKm: Math.round(distanceKm * 10) / 10,
+      distanceFormatted: formatDistance(distanceMeters),
+      estimatedMinutes,
+    };
+  }, [technicianLocation, interventionLocation]);
 
   // Initial fetch
   useEffect(() => {
@@ -73,6 +155,37 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
       supabase.removeChannel(channel);
     };
   }, [user, fetchPendingAssignment]);
+
+  // Update technician location when it changes
+  useEffect(() => {
+    if (!user || user.role !== 'technician' || !pendingAssignment) return;
+
+    const channel = supabase
+      .channel('technician-location-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'partner_applications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newData = payload.new as any;
+          if (newData.latitude && newData.longitude) {
+            setTechnicianLocation({
+              latitude: newData.latitude,
+              longitude: newData.longitude,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, pendingAssignment]);
 
   // Countdown timer
   useEffect(() => {
@@ -155,6 +268,7 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
     pendingAssignment,
     isLoading,
     timeRemaining,
+    travelInfo,
     acceptAssignment,
     rejectAssignment,
   };
