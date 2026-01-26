@@ -68,6 +68,42 @@ const WEIGHTS = {
 // Timeout duration in minutes
 const TIMEOUT_MINUTES = 5;
 
+// Helper to trigger status change notifications
+async function notifyStatusChange(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  interventionId: string,
+  newStatus: string,
+  oldStatus?: string
+): Promise<void> {
+  try {
+    console.log(`[Dispatch] Triggering notification: ${oldStatus || 'unknown'} -> ${newStatus}`);
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/notify-status-change`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({
+        interventionId,
+        newStatus,
+        oldStatus,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Dispatch] Notification failed (${response.status}):`, errorText);
+    } else {
+      const result = await response.json();
+      console.log(`[Dispatch] Notification sent:`, result);
+    }
+  } catch (error) {
+    console.error(`[Dispatch] Error sending notification:`, error);
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -419,14 +455,16 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
     );
   }
 
-  // Get intervention to calculate response time
+  // Get intervention to calculate response time and get old status
   const { data: intervention, error: getIntError } = await supabase
     .from('interventions')
-    .select('created_at')
+    .select('created_at, status')
     .eq('id', interventionId)
     .single();
 
   if (getIntError) throw getIntError;
+
+  const oldStatus = intervention.status;
 
   // Calculate response time in seconds
   const createdAt = new Date(intervention.created_at);
@@ -467,6 +505,13 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
   if (intError) throw intError;
 
   console.log(`[Dispatch] Intervention ${interventionId} accepted. Response time: ${responseTimeSeconds} seconds`);
+
+  // Notify client of status change (non-blocking)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  notifyStatusChange(supabaseUrl, serviceRoleKey, interventionId, 'on_route', oldStatus).catch(err => {
+    console.error('[Dispatch] Failed to send notification:', err);
+  });
 
   return new Response(
     JSON.stringify({ success: true, message: 'Assignment accepted', responseTimeSeconds }),
@@ -706,14 +751,16 @@ async function handleGo(supabase: any, interventionId: string, technicianId: str
 
   const now = new Date();
 
-  // Get intervention to calculate response time
+  // Get intervention to calculate response time and get old status
   const { data: intervention, error: getIntError } = await supabase
     .from('interventions')
-    .select('created_at')
+    .select('created_at, status')
     .eq('id', interventionId)
     .single();
 
   if (getIntError) throw getIntError;
+
+  const oldStatus = intervention.status;
 
   // Calculate response time in seconds
   const createdAt = new Date(intervention.created_at);
@@ -754,6 +801,13 @@ async function handleGo(supabase: any, interventionId: string, technicianId: str
   if (intError) throw intError;
 
   console.log(`[Dispatch] Intervention ${interventionId} - Go! Response time: ${responseTimeSeconds} seconds`);
+
+  // Notify client of status change (non-blocking)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  notifyStatusChange(supabaseUrl, serviceRoleKey, interventionId, 'on_route', oldStatus).catch(err => {
+    console.error('[Dispatch] Failed to send notification:', err);
+  });
 
   return new Response(
     JSON.stringify({ success: true, message: 'En route to intervention', responseTimeSeconds }),
