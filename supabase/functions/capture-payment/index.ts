@@ -31,18 +31,18 @@ serve(async (req) => {
 
     console.log("Capturing payment for intervention:", interventionId, "Amount:", amount);
 
-    // Get payment authorization
+    // Get payment authorization (any status except cancelled/captured)
     const { data: auth, error: authError } = await supabase
       .from("payment_authorizations")
       .select("*")
       .eq("intervention_id", interventionId)
-      .eq("status", "authorized")
+      .in("status", ["authorized", "pending", "failed"])
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
 
     if (authError || !auth) {
-      throw new Error("No authorized payment found for this intervention");
+      throw new Error("No payment authorization found for this intervention");
     }
 
     if (!auth.provider_payment_id) {
@@ -90,8 +90,31 @@ serve(async (req) => {
 
     if (paymentIntent.status !== "requires_capture") {
       // Do not attempt capture if Stripe doesn't allow it.
+      // Notify client to authorize their card
+      console.log("Payment not authorized - notifying client to authorize card");
+      
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+        const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+        
+        await fetch(`${supabaseUrl}/functions/v1/notify-payment-required`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({
+            interventionId,
+            reason: `PaymentIntent status: ${paymentIntent.status}`,
+          }),
+        });
+        console.log("Client notification sent for payment authorization");
+      } catch (notifyErr) {
+        console.error("Failed to send payment notification:", notifyErr);
+      }
+      
       throw new Error(
-        `Payment not authorized (PaymentIntent status: ${paymentIntent.status}). The customer must authorize the card before capture.`
+        `Payment not authorized (PaymentIntent status: ${paymentIntent.status}). The customer must authorize the card before capture. A notification has been sent to the client.`
       );
     }
 

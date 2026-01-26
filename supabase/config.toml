@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.payment-authorization-status]
 verify_jwt = false
+
+[functions.notify-payment-required]
+verify_jwt = false
