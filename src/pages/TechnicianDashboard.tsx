@@ -10,7 +10,7 @@ import { DispatchAssignmentCard } from '@/components/dispatch/DispatchAssignment
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio, Star, MapPin, BarChart3, Wallet, CalendarDays } from 'lucide-react';
+import { LogOut, Home, Wrench, CheckCircle, Clock, AlertTriangle, Map, Radio, Star, MapPin, BarChart3, Wallet, CalendarDays, User } from 'lucide-react';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { useTechnicianGeolocation } from '@/hooks/useTechnicianGeolocation';
 import { useTechnicianPushNotifications } from '@/hooks/useFirebaseMessaging';
@@ -158,6 +158,12 @@ const TechnicianDashboard = () => {
               <Link to="/technician/schedule">
                 <CalendarDays className="h-4 w-4 mr-2" />
                 Planning
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/technician/profile">
+                <User className="h-4 w-4 mr-2" />
+                Profil
               </Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
