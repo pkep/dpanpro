@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
 import { NavLink } from '@/components/NavLink';
 import {
   Sidebar,
@@ -16,7 +17,6 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import {
   Home,
@@ -28,8 +28,10 @@ import {
   Map,
   Radio,
   LogOut,
+  Play,
 } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
   { title: 'Tableau de bord', url: '/technician', icon: LayoutDashboard, end: true },
@@ -49,12 +51,31 @@ export function TechnicianSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Fetch active intervention for the technician
+  const { data: activeIntervention } = useQuery({
+    queryKey: ['active-intervention', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('interventions')
+        .select('id, title, category')
+        .eq('technician_id', user.id)
+        .in('status', ['assigned', 'on_route', 'in_progress'])
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
-
-  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await logout();
@@ -95,6 +116,32 @@ export function TechnicianSidebar() {
             )}
           </div>
         </SidebarGroup>
+
+        {/* Active Intervention Link */}
+        {activeIntervention && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Mission en cours</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname.includes(`/technician/intervention/${activeIntervention.id}`)}
+                    tooltip={collapsed ? 'Reprendre l\'intervention' : undefined}
+                  >
+                    <Link
+                      to={`/technician/intervention/${activeIntervention.id}`}
+                      className="flex items-center gap-3 text-primary"
+                    >
+                      <Play className="h-4 w-4" />
+                      {!collapsed && <span>Reprendre l'intervention</span>}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {/* Main Navigation */}
         <SidebarGroup>
