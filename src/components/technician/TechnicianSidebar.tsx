@@ -63,11 +63,12 @@ export function TechnicianSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r">
       <SidebarHeader className="border-b">
-        <div className="flex items-center gap-3 px-2 py-3">
+        <div className="flex items-center justify-between px-2 py-3">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="DépanPro" className="h-8 w-8" />
+            <img src={logo} alt="DépanPro" className="h-8 w-8 shrink-0" />
             {!collapsed && <span className="font-bold text-lg">DépanPro</span>}
           </Link>
+          <SidebarTrigger className={collapsed ? "hidden" : ""} />
         </div>
       </SidebarHeader>
 
@@ -152,6 +153,13 @@ export function TechnicianSidebar() {
 
       <SidebarFooter className="border-t">
         <SidebarMenu>
+          {collapsed && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Agrandir le menu">
+                <SidebarTrigger className="w-full justify-center" />
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip={collapsed ? 'Accueil' : undefined}>
               <Link to="/" className="flex items-center gap-3">
