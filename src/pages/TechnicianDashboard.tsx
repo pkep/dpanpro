@@ -143,17 +143,33 @@ const TechnicianDashboard = () => {
       {/* Interventions and Settings */}
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <div className="mb-4">
-            <h2 className="text-xl font-bold">Interventions disponibles</h2>
-            <p className="text-muted-foreground text-sm">
-              Acceptez ou refusez les interventions proposées
-            </p>
-          </div>
-          <AvailableInterventionsList technicianId={user.id} />
+          {activeIntervention ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Wrench className="h-12 w-12 text-primary mb-4" />
+              <h2 className="text-xl font-bold mb-2">Mission en cours</h2>
+              <p className="text-muted-foreground mb-4">
+                Vous avez une intervention active. Les nouvelles missions seront disponibles une fois celle-ci terminée.
+              </p>
+              <Button onClick={() => navigate(`/technician/intervention/${activeIntervention.id}`)}>
+                <Play className="h-4 w-4 mr-2" />
+                Reprendre l'intervention
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4">
+                <h2 className="text-xl font-bold">Interventions disponibles</h2>
+                <p className="text-muted-foreground text-sm">
+                  Acceptez ou refusez les interventions proposées
+                </p>
+              </div>
+              <AvailableInterventionsList technicianId={user.id} />
+            </>
+          )}
         </div>
 
         <div className="space-y-4">
-          <DispatchAssignmentCard />
+          {!activeIntervention && <DispatchAssignmentCard />}
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
