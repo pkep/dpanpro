@@ -86,7 +86,18 @@ export function FinalizeInterventionDialog({
       });
 
       if (captureError) {
-        throw new Error('Erreur lors du débit de la carte');
+        const msg = captureError.message || '';
+        if (msg.includes('requires_payment_method') || msg.includes('Payment not authorized')) {
+          throw new Error(
+            "Paiement impossible : aucune autorisation carte valide n'est disponible. Le client doit autoriser (ou ré-autoriser) sa carte avant la finalisation."
+          );
+        }
+        if (msg.includes('requires_action')) {
+          throw new Error(
+            "Paiement impossible : authentification bancaire requise. Le client doit finaliser l'autorisation de paiement."
+          );
+        }
+        throw new Error(msg || 'Erreur lors du débit de la carte');
       }
 
       // Update intervention status
@@ -135,7 +146,8 @@ export function FinalizeInterventionDialog({
       onFinalized();
     } catch (err) {
       console.error('Error finalizing intervention:', err);
-      toast.error('Erreur lors de la finalisation');
+      const message = err instanceof Error ? err.message : 'Erreur lors de la finalisation';
+      toast.error('Erreur lors de la finalisation', { description: message });
     } finally {
       setIsProcessing(false);
     }
