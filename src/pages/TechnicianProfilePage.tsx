@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { TechnicianLayout } from '@/components/technician/TechnicianLayout';
 import { partnersService } from '@/services/partners/partners.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ChevronLeft, Loader2, Save, AlertCircle, User, Building2, Wrench, Wallet } from 'lucide-react';
+import { Loader2, Save, AlertCircle, User, Building2, Wrench, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 
 const skills = [
@@ -101,8 +101,7 @@ type ExpertiseData = z.infer<typeof expertiseSchema>;
 type BankingData = z.infer<typeof bankingSchema>;
 
 const TechnicianProfilePage = () => {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,12 +122,6 @@ const TechnicianProfilePage = () => {
   const bankingForm = useForm<BankingData>({
     resolver: zodResolver(bankingSchema),
   });
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/auth');
-    }
-  }, [isAuthenticated, authLoading, navigate]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -240,127 +233,61 @@ const TechnicianProfilePage = () => {
     }
   };
 
-  if (authLoading || isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto max-w-4xl px-4 py-8">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <Skeleton className="h-[600px] w-full" />
-        </div>
-      </div>
-    );
-  }
+  if (!user) return null;
 
-  if (!isAuthenticated || !user) {
-    return null;
-  }
-
-  if (user.role !== 'technician' && user.role !== 'admin') {
+  if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle className="text-destructive">Accès refusé</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-muted-foreground">
-              Cette page est réservée aux techniciens.
-            </p>
-            <Button asChild className="w-full">
-              <Link to="/">Retour à l'accueil</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <TechnicianLayout title="Profil" subtitle="Gérez vos informations">
+        <Skeleton className="h-[600px] w-full" />
+      </TechnicianLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-6 flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/technician">
-              <ChevronLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Mon profil</h1>
-            <p className="text-muted-foreground">Gérez vos informations personnelles et professionnelles</p>
-          </div>
-        </div>
+    <TechnicianLayout title="Profil" subtitle="Gérez vos informations">
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="personal" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span className="hidden sm:inline">Personnel</span>
+          </TabsTrigger>
+          <TabsTrigger value="professional" className="flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Professionnel</span>
+          </TabsTrigger>
+          <TabsTrigger value="expertise" className="flex items-center gap-2">
+            <Wrench className="h-4 w-4" />
+            <span className="hidden sm:inline">Expertises</span>
+          </TabsTrigger>
+          <TabsTrigger value="banking" className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" />
+            <span className="hidden sm:inline">Bancaire</span>
+          </TabsTrigger>
+        </TabsList>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="personal" className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Personnel</span>
-            </TabsTrigger>
-            <TabsTrigger value="professional" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Professionnel</span>
-            </TabsTrigger>
-            <TabsTrigger value="expertise" className="flex items-center gap-2">
-              <Wrench className="h-4 w-4" />
-              <span className="hidden sm:inline">Expertises</span>
-            </TabsTrigger>
-            <TabsTrigger value="banking" className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              <span className="hidden sm:inline">Bancaire</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="personal">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations personnelles</CardTitle>
-                <CardDescription>Vos coordonnées et informations de contact</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...personalForm}>
-                  <form onSubmit={personalForm.handleSubmit(handlePersonalSubmit)} className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={personalForm.control}
-                        name="firstName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Prénom *</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={personalForm.control}
-                        name="lastName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nom *</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
+        <TabsContent value="personal">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations personnelles</CardTitle>
+              <CardDescription>Vos coordonnées et informations de contact</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...personalForm}>
+                <form onSubmit={personalForm.handleSubmit(handlePersonalSubmit)} className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={personalForm.control}
-                      name="phone"
+                      name="firstName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Téléphone *</FormLabel>
+                          <FormLabel>Prénom *</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -368,42 +295,12 @@ const TechnicianProfilePage = () => {
                         </FormItem>
                       )}
                     />
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={personalForm.control}
-                        name="birthDate"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Date de naissance *</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={personalForm.control}
-                        name="birthPlace"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Lieu de naissance *</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
                     <FormField
                       control={personalForm.control}
-                      name="address"
+                      name="lastName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Adresse *</FormLabel>
+                          <FormLabel>Nom *</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -411,161 +308,29 @@ const TechnicianProfilePage = () => {
                         </FormItem>
                       )}
                     />
+                  </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={personalForm.control}
-                        name="postalCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Code postal *</FormLabel>
-                            <FormControl>
-                              <Input maxLength={5} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={personalForm.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ville *</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                  <FormField
+                    control={personalForm.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Téléphone *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <div className="flex justify-end pt-4">
-                      <Button type="submit" disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <Save className="mr-2 h-4 w-4" />
-                        Enregistrer
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="professional">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informations professionnelles</CardTitle>
-                <CardDescription>Détails de votre entreprise et assurances</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...professionalForm}>
-                  <form onSubmit={professionalForm.handleSubmit(handleProfessionalSubmit)} className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
-                      control={professionalForm.control}
-                      name="companyName"
+                      control={personalForm.control}
+                      name="birthDate"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nom de l'entreprise *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={professionalForm.control}
-                        name="siret"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>SIRET *</FormLabel>
-                            <FormControl>
-                              <Input maxLength={14} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={professionalForm.control}
-                        name="vatNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>N° TVA intracommunautaire</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={professionalForm.control}
-                      name="legalStatus"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Statut juridique *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sélectionnez votre statut" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {legalStatuses.map((status) => (
-                                <SelectItem key={status} value={status}>
-                                  {status}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={professionalForm.control}
-                        name="insuranceCompany"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Compagnie d'assurance *</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={professionalForm.control}
-                        name="insurancePolicyNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>N° de police *</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={professionalForm.control}
-                      name="insuranceExpiryDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date d'expiration de l'assurance *</FormLabel>
+                          <FormLabel>Date de naissance *</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
@@ -573,147 +338,161 @@ const TechnicianProfilePage = () => {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={personalForm.control}
+                      name="birthPlace"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Lieu de naissance *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
+                  <FormField
+                    control={personalForm.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Adresse *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={personalForm.control}
+                      name="postalCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Code postal *</FormLabel>
+                          <FormControl>
+                            <Input maxLength={5} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={personalForm.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ville *</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="professional">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informations professionnelles</CardTitle>
+              <CardDescription>Détails de votre entreprise et assurances</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...professionalForm}>
+                <form onSubmit={professionalForm.handleSubmit(handleProfessionalSubmit)} className="space-y-4">
+                  <FormField
+                    control={professionalForm.control}
+                    name="companyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nom de l'entreprise *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={professionalForm.control}
-                      name="hasDecennialInsurance"
+                      name="siret"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormItem>
+                          <FormLabel>SIRET *</FormLabel>
                           <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
+                            <Input maxLength={14} {...field} />
                           </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              Je dispose d'une assurance décennale
-                            </FormLabel>
-                          </div>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
-
-                    <div className="flex justify-end pt-4">
-                      <Button type="submit" disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <Save className="mr-2 h-4 w-4" />
-                        Enregistrer
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="expertise">
-            <Card>
-              <CardHeader>
-                <CardTitle>Expertises</CardTitle>
-                <CardDescription>Vos compétences et expérience</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...expertiseForm}>
-                  <form onSubmit={expertiseForm.handleSubmit(handleExpertiseSubmit)} className="space-y-4">
                     <FormField
-                      control={expertiseForm.control}
-                      name="skills"
+                      control={professionalForm.control}
+                      name="vatNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Compétences *</FormLabel>
-                          <div className="grid gap-2 sm:grid-cols-2">
-                            {skills.map((skill) => (
-                              <div key={skill.value} className="flex items-center space-x-2">
-                                <Checkbox
-                                  id={skill.value}
-                                  checked={field.value?.includes(skill.value)}
-                                  onCheckedChange={(checked) => {
-                                    const newValue = checked
-                                      ? [...(field.value || []), skill.value]
-                                      : field.value?.filter((v) => v !== skill.value) || [];
-                                    field.onChange(newValue);
-                                  }}
-                                />
-                                <label
-                                  htmlFor={skill.value}
-                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                >
-                                  {skill.label}
-                                </label>
-                              </div>
+                          <FormLabel>N° TVA intracommunautaire</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={professionalForm.control}
+                    name="legalStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Statut juridique *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Sélectionnez votre statut" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-background">
+                            {legalStatuses.map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {status}
+                              </SelectItem>
                             ))}
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
-                      control={expertiseForm.control}
-                      name="yearsExperience"
+                      control={professionalForm.control}
+                      name="insuranceCompany"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Années d'expérience *</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={0}
-                              max={50}
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={expertiseForm.control}
-                      name="motivation"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Motivation *</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              rows={4}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex justify-end pt-4">
-                      <Button type="submit" disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <Save className="mr-2 h-4 w-4" />
-                        Enregistrer
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="banking">
-            <Card>
-              <CardHeader>
-                <CardTitle>Coordonnées bancaires</CardTitle>
-                <CardDescription>Informations pour le versement de vos revenus</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...bankingForm}>
-                  <form onSubmit={bankingForm.handleSubmit(handleBankingSubmit)} className="space-y-4">
-                    <FormField
-                      control={bankingForm.control}
-                      name="bankAccountHolder"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Titulaire du compte *</FormLabel>
+                          <FormLabel>Compagnie d'assurance *</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -721,13 +500,12 @@ const TechnicianProfilePage = () => {
                         </FormItem>
                       )}
                     />
-
                     <FormField
-                      control={bankingForm.control}
-                      name="bankName"
+                      control={professionalForm.control}
+                      name="insurancePolicyNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nom de la banque *</FormLabel>
+                          <FormLabel>N° de police *</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -735,50 +513,223 @@ const TechnicianProfilePage = () => {
                         </FormItem>
                       )}
                     />
+                  </div>
 
-                    <FormField
-                      control={bankingForm.control}
-                      name="iban"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>IBAN *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={professionalForm.control}
+                    name="insuranceExpiryDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Date d'expiration de l'assurance *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={bankingForm.control}
-                      name="bic"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>BIC / SWIFT *</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={professionalForm.control}
+                    name="hasDecennialInsurance"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Je dispose d'une assurance décennale
+                          </FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
 
-                    <div className="flex justify-end pt-4">
-                      <Button type="submit" disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <Save className="mr-2 h-4 w-4" />
-                        Enregistrer
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="expertise">
+          <Card>
+            <CardHeader>
+              <CardTitle>Expertises</CardTitle>
+              <CardDescription>Vos compétences et expérience</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...expertiseForm}>
+                <form onSubmit={expertiseForm.handleSubmit(handleExpertiseSubmit)} className="space-y-4">
+                  <FormField
+                    control={expertiseForm.control}
+                    name="skills"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Compétences *</FormLabel>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {skills.map((skill) => (
+                            <div key={skill.value} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={skill.value}
+                                checked={field.value?.includes(skill.value)}
+                                onCheckedChange={(checked) => {
+                                  const newValue = checked
+                                    ? [...(field.value || []), skill.value]
+                                    : field.value?.filter((v) => v !== skill.value) || [];
+                                  field.onChange(newValue);
+                                }}
+                              />
+                              <label
+                                htmlFor={skill.value}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                {skill.label}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={expertiseForm.control}
+                    name="yearsExperience"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Années d'expérience *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={50}
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={expertiseForm.control}
+                    name="motivation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Motivation *</FormLabel>
+                        <FormControl>
+                          <Textarea rows={4} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="banking">
+          <Card>
+            <CardHeader>
+              <CardTitle>Coordonnées bancaires</CardTitle>
+              <CardDescription>Informations pour le versement de vos revenus</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...bankingForm}>
+                <form onSubmit={bankingForm.handleSubmit(handleBankingSubmit)} className="space-y-4">
+                  <FormField
+                    control={bankingForm.control}
+                    name="bankAccountHolder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Titulaire du compte *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={bankingForm.control}
+                    name="bankName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nom de la banque *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={bankingForm.control}
+                    name="iban"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>IBAN *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={bankingForm.control}
+                    name="bic"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>BIC / SWIFT *</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" disabled={isSaving}>
+                      {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Save className="mr-2 h-4 w-4" />
+                      Enregistrer
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </TechnicianLayout>
   );
 };
 
