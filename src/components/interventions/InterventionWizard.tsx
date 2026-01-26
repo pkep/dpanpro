@@ -279,7 +279,12 @@ export function InterventionWizard() {
         return (
           <StepServiceSelection
             selectedCategory={category}
-            onSelect={setCategory}
+            onSelect={(cat, autoAdvance) => {
+              setCategory(cat);
+              if (autoAdvance) {
+                setCurrentStep(2);
+              }
+            }}
           />
         );
       case 2:
