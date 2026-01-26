@@ -60,7 +60,7 @@ class InterventionsService {
   }
 
   async createIntervention(
-    clientId: string,
+    clientId: string | null,
     formData: InterventionFormData
   ): Promise<Intervention> {
     // Auto-generate title from category + address + postal code
