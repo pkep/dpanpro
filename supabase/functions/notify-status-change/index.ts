@@ -201,13 +201,38 @@ async function sendPushNotification(
   }
 }
 
-// Get client FCM tokens - currently disabled (no push_subscriptions table)
-// Push notifications will be skipped until FCM token storage is implemented
-async function getClientFcmTokens(_clientId: string | null, _clientEmail: string | null): Promise<string[]> {
-  // Push notifications are disabled - return empty array
-  // To enable push notifications, implement FCM token storage
-  console.log("Push notifications disabled - no FCM token storage configured");
-  return [];
+// Get client FCM tokens from database
+async function getClientFcmTokens(clientId: string | null, clientEmail: string | null): Promise<string[]> {
+  const tokens: string[] = [];
+  
+  // Try to get tokens by client_id first
+  if (clientId) {
+    const { data: tokensByUserId } = await supabase
+      .from('push_subscriptions')
+      .select('fcm_token')
+      .eq('user_id', clientId)
+      .eq('is_active', true);
+    
+    if (tokensByUserId) {
+      tokens.push(...tokensByUserId.map(t => t.fcm_token));
+    }
+  }
+  
+  // Also try by email
+  if (clientEmail) {
+    const { data: tokensByEmail } = await supabase
+      .from('push_subscriptions')
+      .select('fcm_token')
+      .eq('email', clientEmail)
+      .eq('is_active', true);
+    
+    if (tokensByEmail) {
+      tokens.push(...tokensByEmail.map(t => t.fcm_token));
+    }
+  }
+  
+  // Remove duplicates
+  return [...new Set(tokens)];
 }
 
 function buildEmailHtml(
