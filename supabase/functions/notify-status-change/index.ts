@@ -103,20 +103,21 @@ async function sendSMS(to: string, message: string): Promise<boolean> {
 
 // Send email via Resend
 async function sendEmail(
-  to: string, 
-  subject: string, 
+  to: string,
+  subject: string,
   htmlContent: string
-): Promise<boolean> {
+): Promise<{ ok: boolean; status?: number; error?: string }> {
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   
   if (!resendApiKey) {
     console.log("RESEND_API_KEY not configured");
-    return false;
+    return { ok: false, error: "RESEND_API_KEY not configured" };
   }
 
   try {
-    // Use resend.dev for testing or your verified domain in production
-    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "Dépan'Express <onboarding@resend.dev>";
+    // Use resend.dev for testing or your verified domain in production.
+    // IMPORTANT: keep ASCII display name here to avoid potential header encoding issues.
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "DepanExpress <onboarding@resend.dev>";
     
     console.log("Sending email to:", to, "from:", fromEmail);
     
@@ -134,17 +135,26 @@ async function sendEmail(
       }),
     });
 
+    const status = response.status;
+    const bodyText = await response.text();
+
     if (response.ok) {
-      console.log("Email sent successfully to:", to);
-      return true;
-    } else {
-      const errorBody = await response.text();
-      console.error("Resend error:", errorBody);
-      return false;
+      console.log("Email sent successfully to:", to, "status:", status);
+      return { ok: true, status };
     }
+
+    console.error("Resend error (status:", status, "):", bodyText);
+    return {
+      ok: false,
+      status,
+      error: bodyText || `Resend request failed with status ${status}`,
+    };
   } catch (error) {
     console.error("Error sending email:", error);
-    return false;
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 
@@ -372,13 +382,23 @@ serve(async (req) => {
     const baseUrl = Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app";
     const emoji = STATUS_EMOJI[newStatus] || "📋";
 
-    const results: { email?: boolean; sms?: boolean; push?: boolean } = {};
+    const results: {
+      email?: boolean;
+      email_status?: number;
+      email_error?: string;
+      sms?: boolean;
+      push?: boolean;
+      push_reason?: string;
+    } = {};
 
     // Send email if available
     if (clientEmail) {
       const subject = `${emoji} ${intervention.title} - ${STATUS_LABELS[newStatus] || newStatus}`;
       const emailHtml = buildEmailHtml(intervention, newStatus, statusMessage, baseUrl);
-      results.email = await sendEmail(clientEmail, subject, emailHtml);
+      const emailResult = await sendEmail(clientEmail, subject, emailHtml);
+      results.email = emailResult.ok;
+      results.email_status = emailResult.status;
+      results.email_error = emailResult.error;
     }
 
     // Send SMS if available
@@ -415,13 +435,16 @@ serve(async (req) => {
         );
         
         results.push = pushResults.some(r => r === true);
+        results.push_reason = results.push ? undefined : "FCM send failed";
       } else {
         console.log("No FCM tokens found for client");
         results.push = false;
+        results.push_reason = "No tokens registered";
       }
     } catch (pushError) {
       console.error("Error sending push notifications:", pushError);
       results.push = false;
+      results.push_reason = pushError instanceof Error ? pushError.message : "Unknown push error";
     }
 
     console.log("Notification results:", results);
