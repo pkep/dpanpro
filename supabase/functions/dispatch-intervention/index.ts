@@ -398,6 +398,27 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
 
   const now = new Date();
 
+  // Check if technician already has an active intervention
+  const { data: activeInterventions, error: activeError } = await supabase
+    .from('interventions')
+    .select('id, title, status')
+    .eq('technician_id', technicianId)
+    .in('status', ['assigned', 'on_route', 'in_progress']);
+
+  if (activeError) throw activeError;
+
+  if (activeInterventions && activeInterventions.length > 0) {
+    console.log(`[Dispatch] Technician ${technicianId} already has ${activeInterventions.length} active intervention(s)`);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        message: 'Vous avez déjà une intervention en cours. Terminez-la avant d\'en accepter une nouvelle.',
+        activeIntervention: activeInterventions[0]
+      }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   // Get intervention to calculate response time
   const { data: intervention, error: getIntError } = await supabase
     .from('interventions')
