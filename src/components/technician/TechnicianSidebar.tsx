@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { NavLink } from '@/components/NavLink';
 import {
@@ -54,8 +54,11 @@ export function TechnicianSidebar() {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
+  const navigate = useNavigate();
+
   const handleLogout = async () => {
     await logout();
+    navigate('/');
   };
 
   if (!user) return null;
