@@ -21,16 +21,69 @@ interface PushNotificationState {
   isLoading: boolean;
 }
 
-// Store FCM token in database for later use
-async function saveFcmToken(userId: string, token: string): Promise<void> {
-  // We'll store FCM tokens in a dedicated table or user metadata
-  // For now, we use browser localStorage and could extend to backend storage
+// Store FCM token in database for push notifications
+async function saveFcmToken(
+  userId: string | null, 
+  email: string | null, 
+  token: string
+): Promise<void> {
   try {
-    localStorage.setItem(`fcm_token_${userId}`, token);
-    console.log('FCM token saved for user:', userId);
+    // Check if token already exists
+    const { data: existingTokens } = await supabase
+      .from('push_subscriptions')
+      .select('id, user_id, email')
+      .eq('fcm_token', token);
+    
+    if (existingTokens && existingTokens.length > 0) {
+      // Update existing token (might have new user_id or email)
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .update({
+          user_id: userId || existingTokens[0].user_id || undefined,
+          email: email || existingTokens[0].email || undefined,
+          is_active: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('fcm_token', token);
+      
+      if (error) throw error;
+      console.log('FCM token updated in database');
+    } else {
+      // Insert new token - need at least email or user_id
+      if (!userId && !email) {
+        console.log('No user_id or email provided, cannot save token');
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .insert({
+          fcm_token: token,
+          is_active: true,
+          user_id: userId || undefined,
+          email: email || undefined,
+        });
+      
+      if (error) throw error;
+      console.log('FCM token saved to database');
+    }
+    
+    // Also save locally for quick access
+    localStorage.setItem('fcm_token', token);
   } catch (err) {
     console.error('Error saving FCM token:', err);
   }
+}
+
+// Register push subscription for guest users (by email)
+export async function registerGuestPushSubscription(
+  email: string,
+  token?: string
+): Promise<void> {
+  const fcmToken = token || localStorage.getItem('fcm_token');
+  if (!fcmToken || !email) return;
+  
+  await saveFcmToken(null, email, fcmToken);
 }
 
 export function useFirebaseMessaging() {
@@ -57,8 +110,8 @@ export function useFirebaseMessaging() {
     }));
   }, []);
 
-  // Request notification permission
-  const requestPermission = useCallback(async (): Promise<boolean> => {
+  // Request notification permission and generate token
+  const requestPermission = useCallback(async (guestEmail?: string): Promise<boolean> => {
     if (!state.isSupported) {
       toast.error('Les notifications push ne sont pas supportées par votre navigateur');
       return false;
@@ -69,6 +122,17 @@ export function useFirebaseMessaging() {
       setState(prev => ({ ...prev, permission }));
 
       if (permission === 'granted') {
+        // Generate a unique browser token for push notifications
+        const browserToken = `browser_${crypto.randomUUID()}`;
+        setState(prev => ({ ...prev, token: browserToken }));
+        
+        // Save token to database
+        await saveFcmToken(
+          user?.id || null,
+          guestEmail || user?.email || null,
+          browserToken
+        );
+        
         toast.success('Notifications activées !');
         return true;
       } else if (permission === 'denied') {
@@ -82,7 +146,7 @@ export function useFirebaseMessaging() {
       setState(prev => ({ ...prev, error: 'Erreur lors de la demande de permission' }));
       return false;
     }
-  }, [state.isSupported]);
+  }, [state.isSupported, user]);
 
   // Send a local notification (fallback when FCM isn't configured)
   const sendLocalNotification = useCallback((title: string, body: string, options?: NotificationOptions) => {
