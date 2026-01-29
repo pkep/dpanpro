@@ -4,6 +4,7 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { useAuth } from '@/hooks/useAuth';
+import type { User } from '@/types/auth.types';
 import { Wrench } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
@@ -20,8 +21,14 @@ export default function Auth() {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  const handleSuccess = () => {
-    navigate('/', { replace: true });
+  const handleSuccess = (user?: User) => {
+    if (user?.role === 'technician') {
+      navigate('/technician', { replace: true });
+    } else if (user?.role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else {
+      navigate('/dashboard', { replace: true });
+    }
   };
 
   if (isLoading) {

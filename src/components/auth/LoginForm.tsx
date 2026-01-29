@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useAuth } from '@/hooks/useAuth';
+import type { User } from '@/types/auth.types';
 
 const loginSchema = z.object({
   email: z
@@ -32,7 +33,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (user: User) => void;
   onSwitchToRegister: () => void;
   onForgotPassword?: () => void;
 }
@@ -60,8 +61,8 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword }: L
         email: data.email,
         password: data.password,
       });
-      if (response.success) {
-        onSuccess?.();
+      if (response.success && response.user) {
+        onSuccess?.(response.user);
       } else {
         setError(response.error || 'Erreur de connexion');
       }

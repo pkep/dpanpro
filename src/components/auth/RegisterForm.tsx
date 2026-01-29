@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useAuth } from '@/hooks/useAuth';
+import type { User as UserType } from '@/types/auth.types';
 
 const registerSchema = z.object({
   firstName: z
@@ -51,7 +52,7 @@ const registerSchema = z.object({
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 interface RegisterFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (user: UserType) => void;
   onSwitchToLogin: () => void;
 }
 
@@ -87,8 +88,8 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         phone: data.phone || undefined,
       });
 
-      if (response.success) {
-        onSuccess?.();
+      if (response.success && response.user) {
+        onSuccess?.(response.user);
       } else {
         setError(response.error || 'Erreur lors de l\'inscription');
       }
