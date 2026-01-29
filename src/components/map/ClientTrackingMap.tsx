@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { useTechnicianRealtimePosition } from '@/hooks/useTechnicianRealtimePosition';
-import { formatDistance } from '@/utils/geolocation';
-import { getRouteWithFallback, RouteResult } from '@/services/routing/routing.service';
+import { formatDistance, calculateDistance } from '@/utils/geolocation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -92,49 +91,32 @@ export function ClientTrackingMap({
 }: ClientTrackingMapProps) {
   const { position: technicianPosition, loading } = useTechnicianRealtimePosition(technicianId);
   const [centerOnTechnician, setCenterOnTechnician] = useState(false);
-  const [routeInfo, setRouteInfo] = useState<RouteResult | null>(null);
-  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const technicianMarkerRef = useRef<L.Marker | null>(null);
   const destinationMarkerRef = useRef<L.Marker | null>(null);
   const routeLineRef = useRef<L.Polyline | null>(null);
 
-  // Calculate route using IGN API
-  const calculateRouteInfo = useCallback(async () => {
-    if (!technicianPosition) {
-      setRouteInfo(null);
-      return;
-    }
-
-    setIsCalculatingRoute(true);
-    try {
-      const result = await getRouteWithFallback(
-        technicianPosition.latitude,
-        technicianPosition.longitude,
-        destinationLatitude,
-        destinationLongitude
-      );
-      setRouteInfo(result);
-    } catch (error) {
-      console.error('Error calculating route:', error);
-    } finally {
-      setIsCalculatingRoute(false);
-    }
-  }, [technicianPosition, destinationLatitude, destinationLongitude]);
-
-  // Recalculate route when technician position changes
-  useEffect(() => {
-    calculateRouteInfo();
-  }, [calculateRouteInfo]);
-
-  // Calculate ETA from route info
-  const etaInfo = routeInfo ? {
-    distanceKm: routeInfo.distanceKm,
-    distanceMeters: routeInfo.distanceKm * 1000,
-    travelTimeMinutes: routeInfo.durationMinutes,
-    arrivalTime: new Date(Date.now() + routeInfo.durationMinutes * 60 * 1000),
-  } : null;
+  // Calculate ETA using heuristic (1.4x road factor, 25 km/h average)
+  const etaInfo = technicianPosition ? (() => {
+    const distanceMeters = calculateDistance(
+      technicianPosition.latitude,
+      technicianPosition.longitude,
+      destinationLatitude,
+      destinationLongitude
+    );
+    const ROAD_DETOUR_FACTOR = 1.4;
+    const AVG_SPEED_KMH = 25;
+    const distanceKm = (distanceMeters / 1000) * ROAD_DETOUR_FACTOR;
+    const travelTimeMinutes = Math.round((distanceKm / AVG_SPEED_KMH) * 60);
+    
+    return {
+      distanceKm: Math.round(distanceKm * 10) / 10,
+      distanceMeters: distanceKm * 1000,
+      travelTimeMinutes: Math.max(1, travelTimeMinutes),
+      arrivalTime: new Date(Date.now() + travelTimeMinutes * 60 * 1000),
+    };
+  })() : null;
 
   // Determine if tracking should be active
   const isTrackingActive = ['assigned', 'on_route', 'in_progress'].includes(interventionStatus);
