@@ -62,6 +62,31 @@ class UsersService {
     if (error) throw error;
   }
 
+  async updateUser(id: string, updates: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  }): Promise<void> {
+    const dbUpdates: TablesUpdate<'users'> = {};
+    
+    if (updates.firstName !== undefined) {
+      dbUpdates.first_name = updates.firstName;
+    }
+    if (updates.lastName !== undefined) {
+      dbUpdates.last_name = updates.lastName;
+    }
+    if (updates.phone !== undefined) {
+      dbUpdates.phone = updates.phone;
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .update(dbUpdates)
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
   private mapToUser(data: DbUser): User {
     return {
       id: data.id,

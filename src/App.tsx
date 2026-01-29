@@ -10,6 +10,9 @@ import Auth from "./pages/Auth";
 import JoinPage from "./pages/JoinPage";
 import NewIntervention from "./pages/NewIntervention";
 import Dashboard from "./pages/Dashboard";
+import ClientDashboardPage from "./pages/ClientDashboardPage";
+import ClientProfilePage from "./pages/ClientProfilePage";
+import ClientInterventionsPage from "./pages/ClientInterventionsPage";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicianInterventionPage from "./pages/TechnicianInterventionPage";
 import TechnicianStatsPage from "./pages/TechnicianStatsPage";
@@ -41,7 +44,11 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/join" element={<JoinPage />} />
             <Route path="/new-intervention" element={<NewIntervention />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            {/* Client routes with sidebar */}
+            <Route path="/dashboard" element={<ClientDashboardPage />} />
+            <Route path="/dashboard/profile" element={<ClientProfilePage />} />
+            <Route path="/dashboard/interventions" element={<ClientInterventionsPage />} />
+            {/* Technician routes */}
             <Route path="/technician" element={<TechnicianDashboard />} />
             <Route path="/technician/stats" element={<TechnicianStatsPage />} />
             <Route path="/technician/revenue" element={<TechnicianRevenuePage />} />

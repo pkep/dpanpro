@@ -1,0 +1,88 @@
+import { ReactNode, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { ClientSidebar } from './ClientSidebar';
+import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+interface ClientLayoutProps {
+  children: ReactNode;
+  title?: string;
+  subtitle?: string;
+}
+
+export function ClientLayout({ children, title, subtitle }: ClientLayoutProps) {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/auth');
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-muted-foreground">Chargement...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  // Restrict to client role only (or admin for testing)
+  if (user.role !== 'client' && user.role !== 'admin') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-destructive">Accès refusé</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Cette page est réservée aux clients.
+            </p>
+            <Button asChild className="w-full">
+              <Link to="/">Retour à l'accueil</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <ClientSidebar />
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex h-14 items-center justify-between px-4">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger />
+                {title && (
+                  <div>
+                    <h1 className="font-semibold">{title}</h1>
+                    {subtitle && (
+                      <p className="text-xs text-muted-foreground">{subtitle}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <NotificationsDropdown />
+            </div>
+          </header>
+          <main className="flex-1 p-4 md:p-6">
+            {children}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
