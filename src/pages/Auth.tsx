@@ -26,6 +26,8 @@ export default function Auth() {
       navigate('/technician', { replace: true });
     } else if (user?.role === 'admin') {
       navigate('/admin', { replace: true });
+    } else if (user?.role === 'manager') {
+      navigate('/manager', { replace: true });
     } else {
       navigate('/dashboard', { replace: true });
     }
