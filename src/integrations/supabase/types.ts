@@ -936,6 +936,51 @@ export type Database = {
           },
         ]
       }
+      technician_client_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          intervention_id: string
+          rating: number
+          technician_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          intervention_id: string
+          rating: number
+          technician_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          intervention_id?: string
+          rating?: number
+          technician_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_client_ratings_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: true
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_client_ratings_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technician_schedule_overrides: {
         Row: {
           created_at: string

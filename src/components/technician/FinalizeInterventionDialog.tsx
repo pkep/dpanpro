@@ -13,6 +13,7 @@ import { historyService } from '@/services/history/history.service';
 import { invoiceService } from '@/services/invoice/invoice.service';
 import { useAuth } from '@/hooks/useAuth';
 import type { Intervention } from '@/types/intervention.types';
+import { TechnicianRatingDialog } from './TechnicianRatingDialog';
 
 interface FinalizeInterventionDialogProps {
   open: boolean;
@@ -34,6 +35,7 @@ export function FinalizeInterventionDialog({
   const [additionalAmount, setAdditionalAmount] = useState(0);
   const [hasPendingModification, setHasPendingModification] = useState(false);
   const [hasDeclinedModification, setHasDeclinedModification] = useState(false);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -149,7 +151,9 @@ export function FinalizeInterventionDialog({
         });
       }
 
-      onFinalized();
+      // Show technician rating dialog after successful finalization
+      onOpenChange(false);
+      setShowRatingDialog(true);
     } catch (err) {
       console.error('Error finalizing intervention:', err);
       const message = err instanceof Error ? err.message : 'Erreur lors de la finalisation';
@@ -208,88 +212,105 @@ export function FinalizeInterventionDialog({
 
   const totalAmount = baseQuoteTotal + additionalAmount;
 
+  const handleRatingSubmitted = () => {
+    setShowRatingDialog(false);
+    onFinalized();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Finaliser l'intervention</DialogTitle>
-          <DialogDescription>
-            Confirmez la fin de l'intervention pour procéder au débit.
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Finaliser l'intervention</DialogTitle>
+            <DialogDescription>
+              Confirmez la fin de l'intervention pour procéder au débit.
+            </DialogDescription>
+          </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : hasPendingModification ? (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Une modification de devis est en attente de validation client. Vous ne pouvez pas finaliser tant que le client n'a pas répondu.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="space-y-4">
-            {hasDeclinedModification && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Le client a refusé la modification de devis. Si le dépannage ne peut être effectué sans ces prestations, vous pouvez abandonner l'intervention.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="space-y-2 p-4 bg-muted rounded-lg">
-              <div className="flex justify-between text-sm">
-                <span>Devis initial</span>
-                <span>{baseQuoteTotal.toFixed(2)} €</span>
-              </div>
-              {additionalAmount > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Prestations supplémentaires</span>
-                  <span>+{additionalAmount.toFixed(2)} €</span>
-                </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : hasPendingModification ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Une modification de devis est en attente de validation client. Vous ne pouvez pas finaliser tant que le client n'a pas répondu.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-4">
+              {hasDeclinedModification && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Le client a refusé la modification de devis. Si le dépannage ne peut être effectué sans ces prestations, vous pouvez abandonner l'intervention.
+                  </AlertDescription>
+                </Alert>
               )}
-              <div className="flex justify-between font-bold border-t pt-2">
-                <span>Total à débiter</span>
-                <span>{totalAmount.toFixed(2)} €</span>
+
+              <div className="space-y-2 p-4 bg-muted rounded-lg">
+                <div className="flex justify-between text-sm">
+                  <span>Devis initial</span>
+                  <span>{baseQuoteTotal.toFixed(2)} €</span>
+                </div>
+                {additionalAmount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Prestations supplémentaires</span>
+                    <span>+{additionalAmount.toFixed(2)} €</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold border-t pt-2">
+                  <span>Total à débiter</span>
+                  <span>{totalAmount.toFixed(2)} €</span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          {hasDeclinedModification && !hasPendingModification && (
-            <Button
-              variant="destructive"
-              onClick={handleAbandon}
-              disabled={isProcessing}
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {hasDeclinedModification && !hasPendingModification && (
+              <Button
+                variant="destructive"
+                onClick={handleAbandon}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                )}
+                Abandonner
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleFinalize} 
+              disabled={isProcessing || hasPendingModification}
             >
               {isProcessing ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
-                <AlertTriangle className="h-4 w-4 mr-2" />
+                <CheckCircle className="h-4 w-4 mr-2" />
               )}
-              Abandonner
+              Finaliser et débiter
             </Button>
-          )}
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
-          </Button>
-          <Button 
-            onClick={handleFinalize} 
-            disabled={isProcessing || hasPendingModification}
-          >
-            {isProcessing ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <CheckCircle className="h-4 w-4 mr-2" />
-            )}
-            Finaliser et débiter
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {user && (
+        <TechnicianRatingDialog
+          open={showRatingDialog}
+          onOpenChange={setShowRatingDialog}
+          interventionId={intervention.id}
+          technicianId={user.id}
+          onSubmitted={handleRatingSubmitted}
+        />
+      )}
+    </>
   );
 }
