@@ -68,6 +68,50 @@ export type Database = {
         }
         Relationships: []
       }
+      configuration_history: {
+        Row: {
+          change_reason: string | null
+          changed_at: string
+          changed_by: string
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by: string
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          change_reason?: string | null
+          changed_at?: string
+          changed_by?: string
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          record_id?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuration_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       declined_interventions: {
         Row: {
           created_at: string
@@ -94,6 +138,50 @@ export type Database = {
           technician_id?: string
         }
         Relationships: []
+      }
+      dispatch_algorithm_config: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          updated_at: string
+          weight_proximity: number
+          weight_rating: number
+          weight_skills: number
+          weight_workload: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          weight_proximity?: number
+          weight_rating?: number
+          weight_skills?: number
+          weight_workload?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          weight_proximity?: number
+          weight_rating?: number
+          weight_skills?: number
+          weight_workload?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispatch_algorithm_config_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       dispatch_attempts: {
         Row: {
@@ -425,6 +513,48 @@ export type Database = {
             foreignKeyName: "interventions_technician_id_fkey"
             columns: ["technician_id"]
             isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manager_permissions: {
+        Row: {
+          can_create_managers: boolean
+          created_at: string
+          granted_by: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_create_managers?: boolean
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_create_managers?: boolean
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manager_permissions_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manager_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -1066,6 +1196,45 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string
@@ -1110,10 +1279,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_managers: { Args: { _user_id: string }; Returns: boolean }
       generate_tracking_code: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "manager" | "technician" | "client" | "guest"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1240,6 +1418,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "technician", "client", "guest"],
+    },
   },
 } as const
