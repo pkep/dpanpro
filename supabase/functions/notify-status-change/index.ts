@@ -251,7 +251,7 @@ async function getClientFcmTokens(clientId: string | null, clientEmail: string |
 }
 
 function buildEmailHtml(
-  intervention: { title: string; tracking_code: string | null; address: string; city: string },
+  intervention: { title: string; tracking_code: string | null; address: string; city: string; id: string },
   newStatus: string,
   statusMessage: string,
   baseUrl: string
@@ -272,6 +272,19 @@ function buildEmailHtml(
   };
 
   const colors = statusColors[newStatus] || statusColors.assigned;
+
+  // Rating section for completed interventions
+  const ratingSection = newStatus === 'completed' ? `
+        <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 20px; border-radius: 12px; margin: 24px 0; text-align: center;">
+          <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 18px;">⭐ Votre avis compte !</h3>
+          <p style="margin: 0 0 16px 0; color: #78350f; font-size: 14px;">
+            Prenez un instant pour noter votre technicien et partager votre expérience.
+          </p>
+          <a href="${baseUrl}/intervention/${intervention.id}#rating" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 14px;">
+            ⭐ Noter l'intervention
+          </a>
+        </div>
+  ` : '';
 
   return `
     <!DOCTYPE html>
@@ -314,6 +327,8 @@ function buildEmailHtml(
             </tr>
           </table>
         </div>
+
+        ${ratingSection}
         
         <div style="text-align: center; margin: 32px 0;">
           <a href="${trackingUrl}" style="background: linear-gradient(135deg, #1a1a2e, #2d2d4a); color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px;">
