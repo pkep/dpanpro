@@ -26,7 +26,7 @@ interface UseDispatchAssignmentReturn {
   isLoading: boolean;
   timeRemaining: number | null;
   travelInfo: TravelInfo | null;
-  acceptAssignment: () => Promise<void>;
+  acceptAssignment: () => Promise<string | null>;
   rejectAssignment: () => Promise<void>;
 }
 
@@ -212,8 +212,8 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
     return () => clearInterval(interval);
   }, [pendingAssignment?.timeoutAt, fetchPendingAssignment]);
 
-  const acceptAssignment = useCallback(async () => {
-    if (!pendingAssignment || !user) return;
+  const acceptAssignment = useCallback(async (): Promise<string | null> => {
+    if (!pendingAssignment || !user) return null;
 
     setIsLoading(true);
     try {
@@ -226,13 +226,17 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
         toast.success('Mission acceptée !', {
           description: 'Vous êtes maintenant en route vers le client.',
         });
+        const acceptedInterventionId = pendingAssignment.interventionId;
         setPendingAssignment(null);
+        return acceptedInterventionId;
       } else {
         toast.error('Erreur', { description: result.message });
+        return null;
       }
     } catch (error) {
       console.error('Error accepting assignment:', error);
       toast.error('Erreur lors de l\'acceptation');
+      return null;
     } finally {
       setIsLoading(false);
     }
