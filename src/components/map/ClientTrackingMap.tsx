@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react';
-import { MapContainer, TileLayer } from 'react-leaflet';
+import { MapContainer } from 'react-leaflet';
 import { useTechnicianRealtimePosition } from '@/hooks/useTechnicianRealtimePosition';
 import { calculateDistance, formatDistance } from '@/utils/geolocation';
-import { TechnicianTrackingMarker } from './TechnicianTrackingMarker';
-import { DestinationMarker } from './DestinationMarker';
-import { TrackingRouteLine } from './TrackingRouteLine';
+import { MapContent } from './MapContent';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -199,34 +197,12 @@ export function ClientTrackingMap({
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={true}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            {/* Route line */}
-            <TrackingRouteLine
-              technicianLat={technicianPosition.latitude}
-              technicianLng={technicianPosition.longitude}
-              destinationLat={destinationLatitude}
-              destinationLng={destinationLongitude}
-            />
-
-            {/* Technician marker */}
-            <TechnicianTrackingMarker
-              latitude={technicianPosition.latitude}
-              longitude={technicianPosition.longitude}
-              firstName={technicianPosition.firstName}
-              lastName={technicianPosition.lastName}
-              lastUpdated={technicianPosition.updatedAt}
+            <MapContent
+              technicianPosition={technicianPosition}
+              destinationLatitude={destinationLatitude}
+              destinationLongitude={destinationLongitude}
+              destinationAddress={destinationAddress}
               centerOnTechnician={centerOnTechnician}
-            />
-
-            {/* Destination marker */}
-            <DestinationMarker
-              latitude={destinationLatitude}
-              longitude={destinationLongitude}
-              address={destinationAddress}
             />
           </MapContainer>
         </div>
