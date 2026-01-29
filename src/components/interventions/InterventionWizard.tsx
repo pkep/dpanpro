@@ -463,8 +463,13 @@ export function InterventionWizard() {
 
         {/* Return home after submission */}
         {isSubmitted && (
-          <div className="flex justify-center mt-6">
-            <Button onClick={() => navigate('/')}>
+          <div className="flex flex-col items-center gap-3 mt-6">
+            {user && (
+              <Button onClick={() => navigate('/dashboard')} className="w-full max-w-xs">
+                Mon espace client
+              </Button>
+            )}
+            <Button variant={user ? "outline" : "default"} onClick={() => navigate('/')} className="w-full max-w-xs">
               Retour à l'accueil
             </Button>
           </div>
