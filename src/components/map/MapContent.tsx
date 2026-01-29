@@ -1,5 +1,5 @@
 import { TileLayer } from 'react-leaflet';
-import { TechnicianTrackingMarker } from './TechnicianTrackingMarker';
+import { TechnicianMarker } from './TechnicianMarker';
 import { DestinationMarker } from './DestinationMarker';
 import { TrackingRouteLine } from './TrackingRouteLine';
 
@@ -38,7 +38,7 @@ export function MapContent({
         destinationLng={destinationLongitude}
       />
 
-      <TechnicianTrackingMarker
+      <TechnicianMarker
         latitude={technicianPosition.latitude}
         longitude={technicianPosition.longitude}
         firstName={technicianPosition.firstName}
