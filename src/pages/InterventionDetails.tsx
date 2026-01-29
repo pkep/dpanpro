@@ -94,11 +94,22 @@ export default function InterventionDetails() {
   };
 
   const handleCancelIntervention = async (reason?: string) => {
-    if (!intervention || !reason) return;
+    if (!intervention || !reason || !user) return;
     
     setIsCancelling(true);
     try {
       await interventionsService.cancelIntervention(intervention.id, reason);
+      
+      // Add history entry for cancellation
+      await historyService.addHistoryEntry({
+        interventionId: intervention.id,
+        userId: user.id,
+        action: 'cancelled',
+        oldValue: intervention.status,
+        newValue: 'cancelled',
+        comment: `Annulé par le client. Raison: ${reason}`,
+      });
+      
       toast.success('Demande annulée avec succès');
       navigate('/dashboard');
     } catch (err) {
