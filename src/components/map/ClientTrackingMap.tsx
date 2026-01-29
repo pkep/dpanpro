@@ -106,7 +106,7 @@ export function ClientTrackingMap({
       destinationLongitude
     );
     const ROAD_DETOUR_FACTOR = 1.4;
-    const AVG_SPEED_KMH = 25;
+    const AVG_SPEED_KMH = 35;
     const distanceKm = (distanceMeters / 1000) * ROAD_DETOUR_FACTOR;
     const travelTimeMinutes = Math.round((distanceKm / AVG_SPEED_KMH) * 60);
     
