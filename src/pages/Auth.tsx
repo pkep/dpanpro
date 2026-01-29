@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { useAuth } from '@/hooks/useAuth';
 import { Wrench } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
-type AuthView = 'login' | 'register';
+type AuthView = 'login' | 'register' | 'forgot-password';
 
 export default function Auth() {
   const [view, setView] = useState<AuthView>('login');
@@ -88,16 +89,21 @@ export default function Auth() {
             <span className="text-2xl font-bold text-foreground">DépanPro</span>
           </div>
 
-          {view === 'login' ? (
+          {view === 'login' && (
             <LoginForm
               onSuccess={handleSuccess}
               onSwitchToRegister={() => setView('register')}
+              onForgotPassword={() => setView('forgot-password')}
             />
-          ) : (
+          )}
+          {view === 'register' && (
             <RegisterForm
               onSuccess={handleSuccess}
               onSwitchToLogin={() => setView('login')}
             />
+          )}
+          {view === 'forgot-password' && (
+            <ForgotPasswordForm onBack={() => setView('login')} />
           )}
         </div>
       </div>
