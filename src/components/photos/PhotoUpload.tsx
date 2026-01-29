@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react';
 import { photosService } from '@/services/photos/photos.service';
+import { historyService } from '@/services/history/history.service';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Camera, Upload, X, Loader2 } from 'lucide-react';
@@ -19,11 +21,11 @@ export function PhotoUpload({
   onPhotosUpdated,
   disabled = false,
 }: PhotoUploadProps) {
+  const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
@@ -55,6 +57,16 @@ export function PhotoUpload({
       const updatedPhotos = [...existingPhotos, ...newUrls];
       await photosService.updateInterventionPhotos(interventionId, updatedPhotos);
       onPhotosUpdated(updatedPhotos);
+      
+      // Add history entry for each photo
+      if (user) {
+        await historyService.addHistoryEntry({
+          interventionId,
+          userId: user.id,
+          action: 'photo_added',
+          comment: `${newUrls.length} photo(s) ajoutée(s)`,
+        });
+      }
       
       toast.success(`${newUrls.length} photo(s) ajoutée(s)`);
     } catch (err) {

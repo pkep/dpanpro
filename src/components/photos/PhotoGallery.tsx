@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { photosService } from '@/services/photos/photos.service';
+import { historyService } from '@/services/history/history.service';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -34,6 +36,7 @@ export function PhotoGallery({
   onPhotosUpdated,
   canDelete = false,
 }: PhotoGalleryProps) {
+  const { user } = useAuth();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [deleteUrl, setDeleteUrl] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -57,6 +60,17 @@ export function PhotoGallery({
       const updatedPhotos = photos.filter((p) => p !== deleteUrl);
       await photosService.updateInterventionPhotos(interventionId, updatedPhotos);
       onPhotosUpdated(updatedPhotos);
+      
+      // Add history entry for photo deletion
+      if (user) {
+        await historyService.addHistoryEntry({
+          interventionId,
+          userId: user.id,
+          action: 'photo_deleted',
+          comment: 'Photo supprimée',
+        });
+      }
+      
       toast.success('Photo supprimée');
       
       // Close lightbox if showing deleted photo

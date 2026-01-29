@@ -115,14 +115,14 @@ export function FinalizeInterventionDialog({
         .update({ final_price: finalAmount } as Record<string, unknown>)
         .eq('id', intervention.id);
 
-      // Add history entry
+      // Add history entry for finalization
       await historyService.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
-        action: 'status_changed',
+        action: 'finalized',
         oldValue: 'in_progress',
         newValue: 'completed',
-        comment: `Intervention finalisée. Montant: ${finalAmount.toFixed(2)} €`,
+        comment: `Intervention finalisée. Montant débité : ${finalAmount.toFixed(2)} €`,
       });
 
       // Generate and download invoice PDF + send by email
@@ -186,11 +186,11 @@ export function FinalizeInterventionDialog({
       // Update intervention status
       await interventionsService.updateStatus(intervention.id, 'cancelled');
 
-      // Add history entry
+      // Add history entry for cancellation
       await historyService.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
-        action: 'status_changed',
+        action: 'cancelled',
         oldValue: 'in_progress',
         newValue: 'cancelled',
         comment: 'Intervention abandonnée - le client a refusé les prestations supplémentaires nécessaires',
