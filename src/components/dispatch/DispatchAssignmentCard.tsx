@@ -1,4 +1,5 @@
 import { Clock, Check, X, MapPin, Wrench, Navigation, Timer } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -23,6 +24,7 @@ export function DispatchAssignmentCard({
   interventionAddress,
   interventionCity,
 }: DispatchAssignmentCardProps) {
+  const navigate = useNavigate();
   const {
     pendingAssignment,
     isLoading,
@@ -31,6 +33,13 @@ export function DispatchAssignmentCard({
     acceptAssignment,
     rejectAssignment,
   } = useDispatchAssignment(interventionId);
+
+  const handleAccept = async () => {
+    const acceptedId = await acceptAssignment();
+    if (acceptedId) {
+      navigate(`/technician/intervention/${acceptedId}`);
+    }
+  };
 
   if (!pendingAssignment) return null;
 
@@ -132,7 +141,7 @@ export function DispatchAssignmentCard({
         </Button>
         <Button
           className="flex-1"
-          onClick={acceptAssignment}
+          onClick={handleAccept}
           disabled={isLoading}
         >
           <Check className="h-4 w-4 mr-2" />
