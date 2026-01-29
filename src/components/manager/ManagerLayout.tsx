@@ -1,7 +1,6 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserRoles } from '@/hooks/useUserRoles';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { ManagerSidebar } from './ManagerSidebar';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
@@ -16,11 +15,8 @@ interface ManagerLayoutProps {
 }
 
 export function ManagerLayout({ children, title, subtitle }: ManagerLayoutProps) {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { isAdminOrManager, isLoading: rolesLoading } = useUserRoles();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-
-  const isLoading = authLoading || rolesLoading;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -43,8 +39,8 @@ export function ManagerLayout({ children, title, subtitle }: ManagerLayoutProps)
     return null;
   }
 
-  // Check if user has manager or admin role
-  if (!isAdminOrManager()) {
+  // Check if user has manager or admin role using the role from our custom auth system
+  if (user.role !== 'admin' && user.role !== 'manager') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Card className="max-w-md">
