@@ -1,6 +1,10 @@
-import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useMemo, useState } from 'react';
+import { MapContainer, TileLayer } from 'react-leaflet';
+import { useTechnicianRealtimePosition } from '@/hooks/useTechnicianRealtimePosition';
 import { calculateDistance, formatDistance } from '@/utils/geolocation';
+import { TechnicianTrackingMarker } from './TechnicianTrackingMarker';
+import { DestinationMarker } from './DestinationMarker';
+import { TrackingRouteLine } from './TrackingRouteLine';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -8,24 +12,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { 
-  Navigation, 
-  Clock, 
-  MapPin, 
-  Radio, 
+import {
+  Clock,
+  MapPin,
+  Radio,
   Car,
   User,
   RefreshCw,
   ExternalLink,
+  Navigation,
 } from 'lucide-react';
-
-interface TechnicianPosition {
-  latitude: number;
-  longitude: number;
-  firstName: string;
-  lastName: string;
-  updatedAt: Date;
-}
+import 'leaflet/dist/leaflet.css';
 
 interface ClientTrackingMapProps {
   interventionId: string;
@@ -46,9 +43,8 @@ export function ClientTrackingMap({
   interventionStatus,
   height = '350px',
 }: ClientTrackingMapProps) {
-  const [technicianPosition, setTechnicianPosition] = useState<TechnicianPosition | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const { position: technicianPosition, loading } = useTechnicianRealtimePosition(technicianId);
+  const [centerOnTechnician, setCenterOnTechnician] = useState(false);
 
   // Calculate ETA dynamically with realistic estimates
   const etaInfo = useMemo(() => {
@@ -60,16 +56,16 @@ export function ClientTrackingMap({
       destinationLatitude,
       destinationLongitude
     );
-    
+
     // Apply road detour factor (roads are typically 1.3-1.5x longer than straight line)
     const ROAD_DETOUR_FACTOR = 1.4;
     const distanceKm = (distanceMetersHaversine / 1000) * ROAD_DETOUR_FACTOR;
     const distanceMeters = distanceMetersHaversine * ROAD_DETOUR_FACTOR;
-    
+
     // Realistic average speed in urban France: 25 km/h (traffic, lights, urban environment)
     const AVG_SPEED_KMH = 25;
     const travelTimeMinutes = Math.max(1, Math.round((distanceKm / AVG_SPEED_KMH) * 60));
-    
+
     const arrivalTime = new Date();
     arrivalTime.setMinutes(arrivalTime.getMinutes() + travelTimeMinutes);
 
@@ -81,97 +77,16 @@ export function ClientTrackingMap({
     };
   }, [technicianPosition, destinationLatitude, destinationLongitude]);
 
-  // Fetch initial technician position
-  useEffect(() => {
-    if (!technicianId) {
-      setLoading(false);
-      return;
+  // Calculate map bounds to fit both markers
+  const mapCenter = useMemo(() => {
+    if (technicianPosition) {
+      return [
+        (technicianPosition.latitude + destinationLatitude) / 2,
+        (technicianPosition.longitude + destinationLongitude) / 2,
+      ] as [number, number];
     }
-
-    const fetchTechnicianPosition = async () => {
-      try {
-        const { data: application, error } = await supabase
-          .from('partner_applications')
-          .select('latitude, longitude, user_id')
-          .eq('user_id', technicianId)
-          .single();
-
-        if (error) throw error;
-
-        if (application?.latitude && application?.longitude) {
-          // Get technician name
-          const { data: userData } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', technicianId)
-            .single();
-
-          setTechnicianPosition({
-            latitude: application.latitude,
-            longitude: application.longitude,
-            firstName: userData?.first_name || 'Technicien',
-            lastName: userData?.last_name || '',
-            updatedAt: new Date(),
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching technician position:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTechnicianPosition();
-  }, [technicianId]);
-
-  // Subscribe to real-time updates
-  useEffect(() => {
-    if (!technicianId) return;
-
-    const channel = supabase
-      .channel(`technician-tracking-${technicianId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'partner_applications',
-          filter: `user_id=eq.${technicianId}`,
-        },
-        async (payload) => {
-          const newData = payload.new as any;
-          if (newData.latitude && newData.longitude) {
-            // Fetch technician name if not already set
-            let firstName = technicianPosition?.firstName || 'Technicien';
-            let lastName = technicianPosition?.lastName || '';
-            
-            if (!technicianPosition) {
-              const { data: userData } = await supabase
-                .from('users')
-                .select('first_name, last_name')
-                .eq('id', technicianId)
-                .single();
-              firstName = userData?.first_name || 'Technicien';
-              lastName = userData?.last_name || '';
-            }
-
-            setTechnicianPosition({
-              latitude: newData.latitude,
-              longitude: newData.longitude,
-              firstName,
-              lastName,
-              updatedAt: new Date(),
-            });
-            setLastRefresh(new Date());
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [technicianId, technicianPosition]);
+    return [destinationLatitude, destinationLongitude] as [number, number];
+  }, [technicianPosition, destinationLatitude, destinationLongitude]);
 
   // Determine if tracking should be active
   const isTrackingActive = ['assigned', 'on_route', 'in_progress'].includes(interventionStatus);
@@ -215,8 +130,8 @@ export function ClientTrackingMap({
           <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p>Le suivi en temps réel n'est pas actif</p>
           <p className="text-sm mt-2">
-            {interventionStatus === 'completed' 
-              ? 'L\'intervention est terminée'
+            {interventionStatus === 'completed'
+              ? "L'intervention est terminée"
               : 'En attente du départ du technicien'}
           </p>
         </CardContent>
@@ -227,7 +142,7 @@ export function ClientTrackingMap({
   return (
     <div className="space-y-4">
       {/* ETA Banner */}
-      {etaInfo && (
+      {etaInfo && technicianPosition && (
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="py-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -239,7 +154,7 @@ export function ClientTrackingMap({
                   <div className="flex items-center gap-2">
                     <Radio className="h-4 w-4 text-green-500 animate-pulse" />
                     <span className="font-medium">
-                      {technicianPosition?.firstName} {technicianPosition?.lastName}
+                      {technicianPosition.firstName} {technicianPosition.lastName}
                     </span>
                     <Badge variant="secondary">En route</Badge>
                   </div>
@@ -248,7 +163,7 @@ export function ClientTrackingMap({
                   </p>
                 </div>
               </div>
-              
+
               <div className="text-right">
                 <div className="flex items-center gap-2 text-2xl font-bold text-primary">
                   <Clock className="h-6 w-6" />
@@ -259,15 +174,15 @@ export function ClientTrackingMap({
                 </p>
               </div>
             </div>
-            
+
             {/* Progress bar based on distance */}
             <div className="mt-4">
               <div className="flex justify-between text-xs text-muted-foreground mb-1">
                 <span>Technicien</span>
                 <span>Votre adresse</span>
               </div>
-              <Progress 
-                value={Math.max(5, 100 - (etaInfo.distanceKm * 10))} 
+              <Progress
+                value={Math.max(5, 100 - etaInfo.distanceKm * 10)}
                 className="h-2"
               />
             </div>
@@ -275,65 +190,91 @@ export function ClientTrackingMap({
         </Card>
       )}
 
-      {/* Static Map Placeholder */}
-      <div 
-        className="rounded-lg overflow-hidden border bg-muted/30 flex flex-col items-center justify-center" 
-        style={{ height }}
-      >
-        <div className="text-center space-y-4 p-6">
-          <div className="flex items-center justify-center gap-8">
-            {technicianPosition && (
-              <div className="text-center">
-                <div className="w-12 h-12 mx-auto bg-primary rounded-full flex items-center justify-center mb-2">
-                  <Car className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <p className="text-xs text-muted-foreground">Technicien</p>
-                <p className="text-xs font-mono">
-                  {technicianPosition.latitude.toFixed(4)}, {technicianPosition.longitude.toFixed(4)}
-                </p>
-              </div>
-            )}
-            
-            {technicianPosition && (
-              <div className="flex items-center gap-2">
-                <Navigation className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm font-medium">
-                  {etaInfo ? formatDistance(etaInfo.distanceMeters) : '...'}
-                </span>
-              </div>
-            )}
-            
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-green-500 rounded-full flex items-center justify-center mb-2">
-                <MapPin className="h-6 w-6 text-white" />
-              </div>
-              <p className="text-xs text-muted-foreground">Destination</p>
-              <p className="text-xs font-mono">
-                {destinationLatitude.toFixed(4)}, {destinationLongitude.toFixed(4)}
-              </p>
-            </div>
-          </div>
-          
-          <p className="text-sm text-muted-foreground">{destinationAddress}</p>
-        </div>
-      </div>
+      {/* Interactive Map */}
+      {technicianPosition ? (
+        <div className="rounded-lg overflow-hidden border" style={{ height }}>
+          <MapContainer
+            center={mapCenter}
+            zoom={13}
+            style={{ height: '100%', width: '100%' }}
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
 
-      {/* Open in Google Maps button */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={openInGoogleMaps}
-      >
-        <ExternalLink className="h-4 w-4 mr-2" />
-        Voir sur Google Maps
-      </Button>
+            {/* Route line */}
+            <TrackingRouteLine
+              technicianLat={technicianPosition.latitude}
+              technicianLng={technicianPosition.longitude}
+              destinationLat={destinationLatitude}
+              destinationLng={destinationLongitude}
+            />
+
+            {/* Technician marker */}
+            <TechnicianTrackingMarker
+              latitude={technicianPosition.latitude}
+              longitude={technicianPosition.longitude}
+              firstName={technicianPosition.firstName}
+              lastName={technicianPosition.lastName}
+              lastUpdated={technicianPosition.updatedAt}
+              centerOnTechnician={centerOnTechnician}
+            />
+
+            {/* Destination marker */}
+            <DestinationMarker
+              latitude={destinationLatitude}
+              longitude={destinationLongitude}
+              address={destinationAddress}
+            />
+          </MapContainer>
+        </div>
+      ) : (
+        <div
+          className="rounded-lg overflow-hidden border bg-muted/30 flex flex-col items-center justify-center"
+          style={{ height }}
+        >
+          <div className="text-center space-y-4 p-6">
+            <Navigation className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+            <p className="text-muted-foreground">Position du technicien non disponible</p>
+            <p className="text-sm text-muted-foreground">
+              La carte s'affichera dès que le technicien aura partagé sa position
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons */}
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          onClick={openInGoogleMaps}
+        >
+          <ExternalLink className="h-4 w-4 mr-2" />
+          Voir sur Google Maps
+        </Button>
+        {technicianPosition && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCenterOnTechnician((prev) => !prev)}
+          >
+            <Car className="h-4 w-4 mr-2" />
+            {centerOnTechnician ? 'Arrêter le suivi' : 'Suivre le véhicule'}
+          </Button>
+        )}
+      </div>
 
       {/* Last update info */}
-      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-        <RefreshCw className="h-3 w-3" />
-        Dernière mise à jour : {format(lastRefresh, 'HH:mm:ss', { locale: fr })}
-      </div>
+      {technicianPosition && (
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <RefreshCw className="h-3 w-3" />
+          Dernière mise à jour : {format(technicianPosition.updatedAt, 'HH:mm:ss', { locale: fr })}
+        </div>
+      )}
     </div>
   );
 }
