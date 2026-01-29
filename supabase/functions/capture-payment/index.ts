@@ -31,18 +31,34 @@ serve(async (req) => {
 
     console.log("Capturing payment for intervention:", interventionId, "Amount:", amount);
 
-    // Get payment authorization (any status except cancelled/captured)
+    // Get payment authorization (most recent one)
     const { data: auth, error: authError } = await supabase
       .from("payment_authorizations")
       .select("*")
       .eq("intervention_id", interventionId)
-      .in("status", ["authorized", "pending", "failed"])
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
 
     if (authError || !auth) {
       throw new Error("No payment authorization found for this intervention");
+    }
+
+    // If already captured, return success
+    if (auth.status === "captured") {
+      console.log("Payment already captured for this intervention");
+      return new Response(
+        JSON.stringify({ success: true, alreadyCaptured: true }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // If cancelled, throw error
+    if (auth.status === "cancelled") {
+      throw new Error("Payment authorization was cancelled");
     }
 
     if (!auth.provider_payment_id) {
