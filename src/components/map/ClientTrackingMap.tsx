@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
-import { MapContainer } from 'react-leaflet';
+import { useEffect, useRef, useMemo, useState } from 'react';
+import L from 'leaflet';
 import { useTechnicianRealtimePosition } from '@/hooks/useTechnicianRealtimePosition';
 import { calculateDistance, formatDistance } from '@/utils/geolocation';
-import { MapContent } from './MapContent';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -32,6 +31,55 @@ interface ClientTrackingMapProps {
   height?: string;
 }
 
+// Fix default icon issue with Leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
+// Create a custom pulsing car icon for the technician
+const createTechnicianIcon = () => {
+  return L.divIcon({
+    className: 'technician-tracking-marker',
+    html: `
+      <div style="position: relative; width: 40px; height: 40px;">
+        <div style="position: absolute; inset: 0; background: rgba(59, 130, 246, 0.3); border-radius: 9999px; animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+        <div style="position: relative; width: 40px; height: 40px; background: hsl(221.2 83.2% 53.3%); border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 2px solid white;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+            <circle cx="7" cy="17" r="2"/>
+            <path d="M9 17h6"/>
+            <circle cx="17" cy="17" r="2"/>
+          </svg>
+        </div>
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20],
+  });
+};
+
+// Create a custom destination icon
+const createDestinationIcon = () => {
+  return L.divIcon({
+    className: 'destination-marker',
+    html: `
+      <div style="width: 40px; height: 40px; background: #22c55e; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 2px solid white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40],
+  });
+};
+
 export function ClientTrackingMap({
   interventionId,
   technicianId,
@@ -43,6 +91,11 @@ export function ClientTrackingMap({
 }: ClientTrackingMapProps) {
   const { position: technicianPosition, loading } = useTechnicianRealtimePosition(technicianId);
   const [centerOnTechnician, setCenterOnTechnician] = useState(false);
+  const mapRef = useRef<L.Map | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const technicianMarkerRef = useRef<L.Marker | null>(null);
+  const destinationMarkerRef = useRef<L.Marker | null>(null);
+  const routeLineRef = useRef<L.Polyline | null>(null);
 
   // Calculate ETA dynamically with realistic estimates
   const etaInfo = useMemo(() => {
@@ -75,19 +128,75 @@ export function ClientTrackingMap({
     };
   }, [technicianPosition, destinationLatitude, destinationLongitude]);
 
-  // Calculate map bounds to fit both markers
-  const mapCenter = useMemo(() => {
-    if (technicianPosition) {
-      return [
-        (technicianPosition.latitude + destinationLatitude) / 2,
-        (technicianPosition.longitude + destinationLongitude) / 2,
-      ] as [number, number];
-    }
-    return [destinationLatitude, destinationLongitude] as [number, number];
-  }, [technicianPosition, destinationLatitude, destinationLongitude]);
-
   // Determine if tracking should be active
   const isTrackingActive = ['assigned', 'on_route', 'in_progress'].includes(interventionStatus);
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+    if (!isTrackingActive || !technicianPosition) return;
+
+    const center: L.LatLngTuple = technicianPosition
+      ? [(technicianPosition.latitude + destinationLatitude) / 2, (technicianPosition.longitude + destinationLongitude) / 2]
+      : [destinationLatitude, destinationLongitude];
+
+    const map = L.map(mapContainerRef.current).setView(center, 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+
+    mapRef.current = map;
+
+    // Add destination marker
+    const destMarker = L.marker([destinationLatitude, destinationLongitude], {
+      icon: createDestinationIcon(),
+    }).addTo(map);
+    destMarker.bindPopup(`<div style="text-align: center;"><p style="font-weight: 500;">Lieu d'intervention</p><p style="font-size: 0.75rem; color: #6b7280; max-width: 200px;">${destinationAddress}</p></div>`);
+    destinationMarkerRef.current = destMarker;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [isTrackingActive, technicianPosition, destinationLatitude, destinationLongitude, destinationAddress]);
+
+  // Update technician marker position
+  useEffect(() => {
+    if (!mapRef.current || !technicianPosition) return;
+
+    const techPos: L.LatLngTuple = [technicianPosition.latitude, technicianPosition.longitude];
+    const destPos: L.LatLngTuple = [destinationLatitude, destinationLongitude];
+
+    // Update or create technician marker
+    if (technicianMarkerRef.current) {
+      technicianMarkerRef.current.setLatLng(techPos);
+    } else {
+      const techMarker = L.marker(techPos, {
+        icon: createTechnicianIcon(),
+      }).addTo(mapRef.current);
+      techMarker.bindPopup(`<div style="text-align: center;"><p style="font-weight: 500;">${technicianPosition.firstName} ${technicianPosition.lastName}</p><p style="font-size: 0.75rem; color: #6b7280;">Technicien en déplacement</p></div>`);
+      technicianMarkerRef.current = techMarker;
+    }
+
+    // Update or create route line
+    if (routeLineRef.current) {
+      routeLineRef.current.setLatLngs([techPos, destPos]);
+    } else {
+      const routeLine = L.polyline([techPos, destPos], {
+        color: 'hsl(221.2, 83.2%, 53.3%)',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '10, 10',
+      }).addTo(mapRef.current);
+      routeLineRef.current = routeLine;
+    }
+
+    // Center on technician if enabled
+    if (centerOnTechnician) {
+      mapRef.current.panTo(techPos, { animate: true, duration: 1 });
+    }
+  }, [technicianPosition, destinationLatitude, destinationLongitude, centerOnTechnician]);
 
   // Open in Google Maps
   const openInGoogleMaps = () => {
@@ -190,22 +299,11 @@ export function ClientTrackingMap({
 
       {/* Interactive Map */}
       {technicianPosition ? (
-        <div className="rounded-lg overflow-hidden border" style={{ height }}>
-          <MapContainer
-            center={mapCenter}
-            zoom={13}
-            style={{ height: '100%', width: '100%' }}
-            scrollWheelZoom={true}
-          >
-            <MapContent
-              technicianPosition={technicianPosition}
-              destinationLatitude={destinationLatitude}
-              destinationLongitude={destinationLongitude}
-              destinationAddress={destinationAddress}
-              centerOnTechnician={centerOnTechnician}
-            />
-          </MapContainer>
-        </div>
+        <div 
+          ref={mapContainerRef}
+          className="rounded-lg overflow-hidden border" 
+          style={{ height }}
+        />
       ) : (
         <div
           className="rounded-lg overflow-hidden border bg-muted/30 flex flex-col items-center justify-center"
@@ -251,6 +349,16 @@ export function ClientTrackingMap({
           Dernière mise à jour : {format(technicianPosition.updatedAt, 'HH:mm:ss', { locale: fr })}
         </div>
       )}
+
+      {/* Add pulse animation styles */}
+      <style>{`
+        @keyframes ping {
+          75%, 100% {
+            transform: scale(2);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }
