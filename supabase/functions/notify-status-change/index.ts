@@ -421,7 +421,13 @@ serve(async (req) => {
       const trackingUrl = intervention.tracking_code 
         ? `${baseUrl}/track/${intervention.tracking_code}`
         : baseUrl;
-      const smsMessage = `${emoji} Dépan'Express: ${statusMessage}. Réf: ${intervention.tracking_code || "N/A"}. Suivez: ${trackingUrl}`;
+      
+      // Add rating prompt for completed interventions
+      const ratingPrompt = newStatus === 'completed' 
+        ? ` Notez votre expérience: ${baseUrl}/intervention/${intervention.id}#rating`
+        : '';
+      
+      const smsMessage = `${emoji} Dépan'Express: ${statusMessage}. Réf: ${intervention.tracking_code || "N/A"}.${ratingPrompt} Suivez: ${trackingUrl}`;
       results.sms = await sendSMS(clientPhone, smsMessage);
     }
 

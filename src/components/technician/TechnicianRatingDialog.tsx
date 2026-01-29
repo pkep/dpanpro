@@ -34,20 +34,19 @@ export function TechnicianRatingDialog({
 
     setIsSubmitting(true);
     try {
-      // Insert technician rating for the client
+      // Use raw query since types are auto-generated
       const { error } = await supabase
-        .from('technician_client_ratings')
+        .from('technician_client_ratings' as any)
         .insert({
           intervention_id: interventionId,
           technician_id: technicianId,
           rating,
           comment: comment.trim() || null,
-        });
+        } as any);
 
       if (error) {
-        // If table doesn't exist yet, just log and continue
         console.error('Error saving technician rating:', error);
-        toast.info('Note enregistrée localement');
+        toast.error('Erreur lors de l\'enregistrement');
       } else {
         toast.success('Merci pour votre avis sur le client !');
       }
