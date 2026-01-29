@@ -104,7 +104,7 @@ export default function InterventionDetails() {
       await historyService.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
-        action: 'cancelled',
+        action: 'status_changed',
         oldValue: intervention.status,
         newValue: 'cancelled',
         comment: `Annulé par le client. Raison: ${reason}`,

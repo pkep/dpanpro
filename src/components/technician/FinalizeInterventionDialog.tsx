@@ -121,7 +121,7 @@ export function FinalizeInterventionDialog({
       await historyService.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
-        action: 'finalized',
+        action: 'status_changed',
         oldValue: 'in_progress',
         newValue: 'completed',
         comment: `Intervention finalisée. Montant débité : ${finalAmount.toFixed(2)} €`,
@@ -194,7 +194,7 @@ export function FinalizeInterventionDialog({
       await historyService.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
-        action: 'cancelled',
+        action: 'status_changed',
         oldValue: 'in_progress',
         newValue: 'cancelled',
         comment: 'Intervention abandonnée - le client a refusé les prestations supplémentaires nécessaires',

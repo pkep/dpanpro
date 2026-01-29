@@ -66,7 +66,7 @@ export function PhotoGallery({
         await historyService.addHistoryEntry({
           interventionId,
           userId: user.id,
-          action: 'photo_deleted',
+          action: 'updated',
           comment: 'Photo supprimée',
         });
       }
