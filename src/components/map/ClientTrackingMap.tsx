@@ -188,16 +188,10 @@ export function ClientTrackingMap({
     }
   }, [technicianPosition, destinationLatitude, destinationLongitude, centerOnTechnician]);
 
-  // Open in Google Maps
-  const openInGoogleMaps = () => {
-    if (technicianPosition) {
-      const url = `https://www.google.com/maps/dir/${technicianPosition.latitude},${technicianPosition.longitude}/${destinationLatitude},${destinationLongitude}`;
-      window.open(url, '_blank');
-    } else {
-      const url = `https://www.google.com/maps/search/?api=1&query=${destinationLatitude},${destinationLongitude}`;
-      window.open(url, '_blank');
-    }
-  };
+  // Generate Google Maps URL
+  const googleMapsUrl = technicianPosition
+    ? `https://www.google.com/maps/dir/${technicianPosition.latitude},${technicianPosition.longitude}/${destinationLatitude},${destinationLongitude}`
+    : `https://www.google.com/maps/search/?api=1&query=${destinationLatitude},${destinationLongitude}`;
 
   if (loading) {
     return (
@@ -315,10 +309,12 @@ export function ClientTrackingMap({
           variant="outline"
           size="sm"
           className="flex-1"
-          onClick={openInGoogleMaps}
+          asChild
         >
-          <ExternalLink className="h-4 w-4 mr-2" />
-          Voir sur Google Maps
+          <a href={googleMapsUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Voir sur Google Maps
+          </a>
         </Button>
         {technicianPosition && (
           <Button
