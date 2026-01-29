@@ -24,6 +24,7 @@ import MapPage from "./pages/MapPage";
 import LiveTrackingPage from "./pages/LiveTrackingPage";
 import QuoteApprovalPage from "./pages/QuoteApprovalPage";
 import TrackInterventionPage from "./pages/TrackInterventionPage";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/live-tracking" element={<LiveTrackingPage />} />
             <Route path="/quote-approval/:token" element={<QuoteApprovalPage />} />
             <Route path="/track/:tracking_code" element={<TrackInterventionPage />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
