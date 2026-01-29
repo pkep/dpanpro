@@ -1,7 +1,8 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { useTechnicianRealtimePosition } from '@/hooks/useTechnicianRealtimePosition';
-import { calculateDistance, formatDistance } from '@/utils/geolocation';
+import { formatDistance } from '@/utils/geolocation';
+import { getRouteWithFallback, RouteResult } from '@/services/routing/routing.service';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -91,42 +92,49 @@ export function ClientTrackingMap({
 }: ClientTrackingMapProps) {
   const { position: technicianPosition, loading } = useTechnicianRealtimePosition(technicianId);
   const [centerOnTechnician, setCenterOnTechnician] = useState(false);
+  const [routeInfo, setRouteInfo] = useState<RouteResult | null>(null);
+  const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const technicianMarkerRef = useRef<L.Marker | null>(null);
   const destinationMarkerRef = useRef<L.Marker | null>(null);
   const routeLineRef = useRef<L.Polyline | null>(null);
 
-  // Calculate ETA dynamically with realistic estimates
-  const etaInfo = useMemo(() => {
-    if (!technicianPosition) return null;
+  // Calculate route using IGN API
+  const calculateRouteInfo = useCallback(async () => {
+    if (!technicianPosition) {
+      setRouteInfo(null);
+      return;
+    }
 
-    const distanceMetersHaversine = calculateDistance(
-      technicianPosition.latitude,
-      technicianPosition.longitude,
-      destinationLatitude,
-      destinationLongitude
-    );
-
-    // Apply road detour factor (roads are typically 1.3-1.5x longer than straight line)
-    const ROAD_DETOUR_FACTOR = 1.4;
-    const distanceKm = (distanceMetersHaversine / 1000) * ROAD_DETOUR_FACTOR;
-    const distanceMeters = distanceMetersHaversine * ROAD_DETOUR_FACTOR;
-
-    // Realistic average speed in urban France: 25 km/h (traffic, lights, urban environment)
-    const AVG_SPEED_KMH = 25;
-    const travelTimeMinutes = Math.max(1, Math.round((distanceKm / AVG_SPEED_KMH) * 60));
-
-    const arrivalTime = new Date();
-    arrivalTime.setMinutes(arrivalTime.getMinutes() + travelTimeMinutes);
-
-    return {
-      distanceKm: Math.round(distanceKm * 10) / 10,
-      distanceMeters,
-      travelTimeMinutes,
-      arrivalTime,
-    };
+    setIsCalculatingRoute(true);
+    try {
+      const result = await getRouteWithFallback(
+        technicianPosition.latitude,
+        technicianPosition.longitude,
+        destinationLatitude,
+        destinationLongitude
+      );
+      setRouteInfo(result);
+    } catch (error) {
+      console.error('Error calculating route:', error);
+    } finally {
+      setIsCalculatingRoute(false);
+    }
   }, [technicianPosition, destinationLatitude, destinationLongitude]);
+
+  // Recalculate route when technician position changes
+  useEffect(() => {
+    calculateRouteInfo();
+  }, [calculateRouteInfo]);
+
+  // Calculate ETA from route info
+  const etaInfo = routeInfo ? {
+    distanceKm: routeInfo.distanceKm,
+    distanceMeters: routeInfo.distanceKm * 1000,
+    travelTimeMinutes: routeInfo.durationMinutes,
+    arrivalTime: new Date(Date.now() + routeInfo.durationMinutes * 60 * 1000),
+  } : null;
 
   // Determine if tracking should be active
   const isTrackingActive = ['assigned', 'on_route', 'in_progress'].includes(interventionStatus);

@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { dispatchService, DispatchAttempt } from '@/services/dispatch/dispatch.service';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { calculateDistance, formatDistance } from '@/utils/geolocation';
+import { getRouteWithFallback, RouteResult } from '@/services/routing/routing.service';
 
 interface TravelInfo {
   distanceKm: number;
@@ -93,37 +93,47 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
     }
   }, [user, interventionId]);
 
-  // Calculate travel info
-  const travelInfo = useMemo((): TravelInfo | null => {
+  // Calculate travel info using IGN API
+  const [travelInfo, setTravelInfo] = useState<TravelInfo | null>(null);
+  const [isCalculatingTravel, setIsCalculatingTravel] = useState(false);
+
+  const calculateTravelInfo = useCallback(async () => {
     if (!technicianLocation?.latitude || !technicianLocation?.longitude ||
         !interventionLocation?.latitude || !interventionLocation?.longitude) {
-      return null;
+      setTravelInfo(null);
+      return;
     }
 
-    const distanceMetersHaversine = calculateDistance(
-      technicianLocation.latitude,
-      technicianLocation.longitude,
-      interventionLocation.latitude,
-      interventionLocation.longitude
-    );
+    setIsCalculatingTravel(true);
+    try {
+      const result = await getRouteWithFallback(
+        technicianLocation.latitude,
+        technicianLocation.longitude,
+        interventionLocation.latitude,
+        interventionLocation.longitude
+      );
 
-    // Apply road detour factor (roads are typically 1.3-1.5x longer than straight line)
-    const ROAD_DETOUR_FACTOR = 1.4;
-    const distanceKm = (distanceMetersHaversine / 1000) * ROAD_DETOUR_FACTOR;
-    const distanceMeters = distanceMetersHaversine * ROAD_DETOUR_FACTOR;
+      // Add 5 minutes base departure time
+      const BASE_DEPARTURE_MINUTES = 5;
+      const estimatedMinutes = BASE_DEPARTURE_MINUTES + result.durationMinutes;
 
-    // Realistic average speed in urban France: 25 km/h
-    // Add 5 minutes base time for departure preparation
-    const AVG_SPEED_KMH = 25;
-    const BASE_DEPARTURE_MINUTES = 5;
-    const estimatedMinutes = BASE_DEPARTURE_MINUTES + Math.round((distanceKm / AVG_SPEED_KMH) * 60);
-
-    return {
-      distanceKm: Math.round(distanceKm * 10) / 10,
-      distanceFormatted: formatDistance(distanceMeters),
-      estimatedMinutes,
-    };
+      setTravelInfo({
+        distanceKm: result.distanceKm,
+        distanceFormatted: `${result.distanceKm} km`,
+        estimatedMinutes,
+      });
+    } catch (error) {
+      console.error('Error calculating travel info:', error);
+      setTravelInfo(null);
+    } finally {
+      setIsCalculatingTravel(false);
+    }
   }, [technicianLocation, interventionLocation]);
+
+  // Recalculate when locations change
+  useEffect(() => {
+    calculateTravelInfo();
+  }, [calculateTravelInfo]);
 
   // Initial fetch
   useEffect(() => {
