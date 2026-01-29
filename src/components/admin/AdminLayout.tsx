@@ -1,7 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserRoles } from '@/hooks/useUserRoles';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from './AdminSidebar';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
@@ -16,11 +15,8 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { isAdmin, isLoading: rolesLoading } = useUserRoles();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-
-  const isLoading = authLoading || rolesLoading;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -43,8 +39,8 @@ export function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
     return null;
   }
 
-  // Check if user has admin role
-  if (!isAdmin()) {
+  // Check if user has admin role using the role from our custom auth system
+  if (user.role !== 'admin') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Card className="max-w-md">
