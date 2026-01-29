@@ -1,13 +1,10 @@
-export type HistoryAction = 
-  | 'created' 
-  | 'status_changed' 
-  | 'assigned' 
-  | 'updated' 
-  | 'comment'
-  | 'photo_added'
-  | 'photo_deleted'
-  | 'cancelled'
-  | 'finalized';
+// Must match DB check constraint: intervention_history_action_check
+export type HistoryAction =
+  | 'created'
+  | 'status_changed'
+  | 'assigned'
+  | 'updated'
+  | 'comment';
 
 export interface InterventionHistory {
   id: string;
@@ -37,8 +34,4 @@ export const ACTION_LABELS: Record<HistoryAction, string> = {
   assigned: 'Assignation',
   updated: 'Mise à jour',
   comment: 'Commentaire',
-  photo_added: 'Photo ajoutée',
-  photo_deleted: 'Photo supprimée',
-  cancelled: 'Annulation',
-  finalized: 'Finalisation',
 };

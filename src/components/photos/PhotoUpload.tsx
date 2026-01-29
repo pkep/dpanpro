@@ -63,7 +63,7 @@ export function PhotoUpload({
         await historyService.addHistoryEntry({
           interventionId,
           userId: user.id,
-          action: 'photo_added',
+          action: 'updated',
           comment: `${newUrls.length} photo(s) ajoutée(s)`,
         });
       }
