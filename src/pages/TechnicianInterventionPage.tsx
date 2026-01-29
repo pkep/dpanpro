@@ -31,6 +31,7 @@ import { InterventionChat } from '@/components/technician/InterventionChat';
 import { QuoteModificationForm } from '@/components/technician/QuoteModificationForm';
 import { QuoteModificationStatus } from '@/components/technician/QuoteModificationStatus';
 import { FinalizeInterventionDialog } from '@/components/technician/FinalizeInterventionDialog';
+import { TechnicianRatingDialog } from '@/components/technician/TechnicianRatingDialog';
 import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
 import { toast } from 'sonner';
@@ -55,6 +56,7 @@ export default function TechnicianInterventionPage() {
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -382,10 +384,25 @@ export default function TechnicianInterventionPage() {
         onOpenChange={setShowFinalizeDialog}
         intervention={intervention}
         onFinalized={() => {
-          refresh();
-          navigate('/technician');
+          setShowFinalizeDialog(false);
+          setShowRatingDialog(true);
         }}
       />
+
+      {/* Rating Dialog - shown after finalization */}
+      {user && (
+        <TechnicianRatingDialog
+          open={showRatingDialog}
+          onOpenChange={setShowRatingDialog}
+          interventionId={intervention.id}
+          technicianId={user.id}
+          onSubmitted={() => {
+            setShowRatingDialog(false);
+            refresh();
+            navigate('/technician');
+          }}
+        />
+      )}
 
       {/* Cancel Dialog */}
       <ConfirmActionDialog
