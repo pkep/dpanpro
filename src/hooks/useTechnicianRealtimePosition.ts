@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TechnicianPosition {
@@ -9,12 +9,16 @@ export interface TechnicianPosition {
   updatedAt: Date;
 }
 
+// Poll interval in milliseconds (30 seconds)
+const POLL_INTERVAL_MS = 30000;
+
 export function useTechnicianRealtimePosition(technicianId: string | null) {
   const [position, setPosition] = useState<TechnicianPosition | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch initial position
+  // Fetch position from database
   const fetchPosition = useCallback(async () => {
     if (!technicianId) {
       setLoading(false);
@@ -48,6 +52,7 @@ export function useTechnicianRealtimePosition(technicianId: string | null) {
           lastName: userData?.last_name || '',
           updatedAt: new Date(),
         });
+        setError(null);
       }
     } catch (err) {
       console.error('Error fetching technician position:', err);
@@ -61,6 +66,23 @@ export function useTechnicianRealtimePosition(technicianId: string | null) {
   useEffect(() => {
     fetchPosition();
   }, [fetchPosition]);
+
+  // Poll every 30 seconds to ensure fresh data even if realtime fails
+  useEffect(() => {
+    if (!technicianId) return;
+
+    pollIntervalRef.current = setInterval(() => {
+      console.log('[ClientTrackingMap] Polling technician position...');
+      fetchPosition();
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [technicianId, fetchPosition]);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -77,6 +99,7 @@ export function useTechnicianRealtimePosition(technicianId: string | null) {
           filter: `user_id=eq.${technicianId}`,
         },
         async (payload) => {
+          console.log('[ClientTrackingMap] Realtime update received');
           const newData = payload.new as { latitude?: number; longitude?: number };
           if (newData.latitude && newData.longitude) {
             // Keep existing name or fetch if needed

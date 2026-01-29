@@ -98,16 +98,32 @@ export function useFirebaseMessaging() {
 
   // Check if push notifications are supported
   useEffect(() => {
-    const isSupported = 'Notification' in window && 
-                        'serviceWorker' in navigator && 
-                        'PushManager' in window;
+    const checkSupport = async () => {
+      // Basic API support check
+      const isSupported = 'Notification' in window;
+      
+      if (!isSupported) {
+        setState(prev => ({
+          ...prev,
+          isSupported: false,
+          permission: 'unsupported',
+          isLoading: false,
+        }));
+        return;
+      }
+
+      // Get actual permission status from Notification API
+      const currentPermission = Notification.permission;
+      
+      setState(prev => ({
+        ...prev,
+        isSupported: true,
+        permission: currentPermission,
+        isLoading: false,
+      }));
+    };
     
-    setState(prev => ({
-      ...prev,
-      isSupported,
-      permission: isSupported ? Notification.permission : 'unsupported',
-      isLoading: false,
-    }));
+    checkSupport();
   }, []);
 
   // Request notification permission and generate token
