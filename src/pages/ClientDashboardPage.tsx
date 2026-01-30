@@ -170,83 +170,83 @@ export default function ClientDashboardPage() {
 
   return (
     <ClientLayout title={`Bonjour, ${user.firstName} 👋`} subtitle="Voici le récapitulatif de vos interventions">
-      <div className="space-y-6">
-        {/* Quick Action */}
-        <div className="flex justify-end">
-          <Button asChild size="lg">
-            <Link to="/new-intervention">
-              <Plus className="mr-2 h-5 w-5" />
+      <div className="space-y-4 md:space-y-6">
+        {/* Quick Action - Full width on mobile */}
+        <div className="flex justify-center sm:justify-end">
+          <Button asChild size="default" className="w-full sm:w-auto">
+            <Link to="/dashboard/new-intervention">
+              <Plus className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
               Nouvelle demande
             </Link>
           </Button>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Responsive grid */}
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-24" />
+              <Skeleton key={i} className="h-20 sm:h-24" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4" />
-                  Total
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
+            <Card className="p-0">
+              <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1 sm:gap-2">
+                  <ClipboardList className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                  <span className="truncate">Total</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.total}</div>
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-xl sm:text-2xl font-bold">{stats.total}</div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  En attente
+            <Card className="p-0">
+              <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1 sm:gap-2">
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                  <span className="truncate">En attente</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{stats.pending}</div>
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">{stats.pending}</div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  En cours
+            <Card className="p-0">
+              <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1 sm:gap-2">
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                  <span className="truncate">En cours</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-orange-600">{stats.active}</div>
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-xl sm:text-2xl font-bold text-orange-600">{stats.active}</div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4" />
-                  Terminées
+            <Card className="p-0">
+              <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1 sm:gap-2">
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                  <span className="truncate">Terminées</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{stats.completed}</div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  Urgentes
+            <Card className="col-span-2 sm:col-span-1 p-0">
+              <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+                <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1 sm:gap-2">
+                  <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
+                  <span className="truncate">Urgentes</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-destructive">{stats.urgent}</div>
+              <CardContent className="p-3 pt-0 sm:p-4 sm:pt-0">
+                <div className="text-xl sm:text-2xl font-bold text-destructive">{stats.urgent}</div>
               </CardContent>
             </Card>
           </div>
@@ -254,32 +254,33 @@ export default function ClientDashboardPage() {
 
         {/* Active Interventions */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Interventions actives</h2>
-            <Button variant="ghost" size="sm" asChild>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-base sm:text-lg font-semibold">Interventions actives</h2>
+            <Button variant="ghost" size="sm" asChild className="text-xs sm:text-sm">
               <Link to="/dashboard/interventions">
-                Voir tout
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <span className="hidden xs:inline">Voir tout</span>
+                <span className="xs:hidden">Tout</span>
+                <ArrowRight className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Link>
             </Button>
           </div>
 
           {loading ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {[1, 2].map((i) => (
-                <Skeleton key={i} className="h-32" />
+                <Skeleton key={i} className="h-28 sm:h-32" />
               ))}
             </div>
           ) : activeInterventions.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <CheckCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="font-semibold text-lg mb-1">Aucune intervention en cours</h3>
-                <p className="text-muted-foreground text-center mb-4">
+              <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 px-4">
+                <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4" />
+                <h3 className="font-semibold text-base sm:text-lg mb-1 text-center">Aucune intervention en cours</h3>
+                <p className="text-muted-foreground text-center text-sm mb-4">
                   Vous n'avez pas d'intervention active pour le moment
                 </p>
-                <Button asChild>
-                  <Link to="/new-intervention">
+                <Button asChild size="default" className="w-full sm:w-auto">
+                  <Link to="/dashboard/new-intervention">
                     <Plus className="mr-2 h-4 w-4" />
                     Créer une demande
                   </Link>
@@ -287,48 +288,61 @@ export default function ClientDashboardPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {activeInterventions.slice(0, 3).map((intervention) => (
                 <Card key={intervention.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="text-2xl">{CATEGORY_ICONS[intervention.category]}</div>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                      {/* Mobile: Header row with icon, title, and arrow */}
+                      <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="text-xl sm:text-2xl shrink-0">{CATEGORY_ICONS[intervention.category]}</div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold truncate">{intervention.title}</h3>
-                            {intervention.priority === 'urgent' && (
-                              <Badge variant="destructive" className="text-xs">Urgent</Badge>
-                            )}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                                <h3 className="font-semibold text-sm sm:text-base truncate max-w-[180px] sm:max-w-none">{intervention.title}</h3>
+                                {intervention.priority === 'urgent' && (
+                                  <Badge variant="destructive" className="text-[10px] sm:text-xs px-1.5 py-0">Urgent</Badge>
+                                )}
+                              </div>
+                              <p className="text-xs sm:text-sm text-muted-foreground mb-2">
+                                {CATEGORY_LABELS[intervention.category]}
+                              </p>
+                            </div>
+                            {/* Arrow button - visible on mobile */}
+                            <Button variant="ghost" size="icon" asChild className="shrink-0 h-8 w-8 sm:hidden">
+                              <Link to={`/intervention/${intervention.id}`}>
+                                <ArrowRight className="h-4 w-4" />
+                              </Link>
+                            </Button>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {CATEGORY_LABELS[intervention.category]}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          
+                          {/* Location and time info */}
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {intervention.city}
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              <span className="truncate max-w-[100px] sm:max-w-none">{intervention.city}</span>
                             </span>
                             <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {formatDistanceToNow(new Date(intervention.createdAt), { 
+                              <Calendar className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{formatDistanceToNow(new Date(intervention.createdAt), { 
                                 addSuffix: true, 
                                 locale: fr 
-                              })}
+                              })}</span>
                             </span>
                           </div>
                           
                           {/* Progress indicator */}
-                          <div className="mt-3 space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <Badge className={`${getStatusColor(intervention.status)} border text-xs`}>
+                          <div className="mt-2 sm:mt-3 space-y-1">
+                            <div className="flex items-center justify-between text-[10px] sm:text-xs">
+                              <Badge className={`${getStatusColor(intervention.status)} border text-[10px] sm:text-xs px-1.5 sm:px-2`}>
                                 {intervention.status === 'new' ? 'Demande reçue' : STATUS_LABELS[intervention.status]}
                               </Badge>
                               <span className="text-muted-foreground">
                                 {getProgressForStatus(intervention.status)}%
                               </span>
                             </div>
-                            <Progress value={getProgressForStatus(intervention.status)} className="h-1.5" />
+                            <Progress value={getProgressForStatus(intervention.status)} className="h-1 sm:h-1.5" />
                           </div>
 
                           {/* Cancel button */}
@@ -336,20 +350,21 @@ export default function ClientDashboardPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="mt-3 text-destructive border-destructive/30 hover:bg-destructive/10"
+                              className="mt-2 sm:mt-3 text-destructive border-destructive/30 hover:bg-destructive/10 text-xs sm:text-sm h-8 sm:h-9"
                               onClick={(e) => {
                                 e.preventDefault();
                                 handleCancelClick(intervention);
                               }}
                               disabled={isCancelling}
                             >
-                              <XCircle className="h-4 w-4 mr-2" />
+                              <XCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                               Annuler
                             </Button>
                           )}
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" asChild>
+                      {/* Arrow button - desktop only */}
+                      <Button variant="ghost" size="sm" asChild className="hidden sm:flex shrink-0">
                         <Link to={`/intervention/${intervention.id}`}>
                           <ArrowRight className="h-4 w-4" />
                         </Link>
@@ -365,38 +380,39 @@ export default function ClientDashboardPage() {
         {/* Recent Completed */}
         {recentCompletedInterventions.length > 0 && (
           <div>
-            <h2 className="text-lg font-semibold mb-4">Dernières interventions terminées</h2>
-            <div className="space-y-4">
+            <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Dernières interventions terminées</h2>
+            <div className="space-y-3 sm:space-y-4">
               {recentCompletedInterventions.map((intervention) => (
                 <Card key={intervention.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="text-xl">{CATEGORY_ICONS[intervention.category]}</div>
-                        <div>
-                          <h3 className="font-medium">{intervention.title}</h3>
-                          <p className="text-sm text-muted-foreground">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="text-lg sm:text-xl shrink-0">{CATEGORY_ICONS[intervention.category]}</div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium text-sm sm:text-base truncate">{intervention.title}</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
                             {intervention.finalPrice ? `${intervention.finalPrice.toFixed(2)} €` : 'N/A'}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 ml-7 sm:ml-0">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDownloadInvoice(intervention)}
                           disabled={downloadingInvoice === intervention.id}
+                          className="text-xs sm:text-sm h-8 sm:h-9 flex-1 sm:flex-initial"
                         >
                           {downloadingInvoice === intervention.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                           ) : (
                             <>
-                              <FileText className="h-4 w-4 mr-2" />
+                              <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                               Facture
                             </>
                           )}
                         </Button>
-                        <Button variant="ghost" size="sm" asChild>
+                        <Button variant="ghost" size="icon" asChild className="h-8 w-8 sm:h-9 sm:w-9 shrink-0">
                           <Link to={`/intervention/${intervention.id}`}>
                             <ArrowRight className="h-4 w-4" />
                           </Link>
