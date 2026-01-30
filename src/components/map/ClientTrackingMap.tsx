@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { useTechnicianRealtimePosition } from '@/hooks/useTechnicianRealtimePosition';
+import { useClientProximityAlert } from '@/hooks/useClientProximityAlert';
 import { formatDistance, calculateDistance } from '@/utils/geolocation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -18,6 +18,7 @@ import {
   RefreshCw,
   ExternalLink,
   Navigation,
+  Bell,
 } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
@@ -96,6 +97,20 @@ export function ClientTrackingMap({
   const technicianMarkerRef = useRef<L.Marker | null>(null);
   const destinationMarkerRef = useRef<L.Marker | null>(null);
   const routeLineRef = useRef<L.Polyline | null>(null);
+
+  // Proximity alert - notify client when technician is within 500m
+  const { notificationPermission, requestPermission } = useClientProximityAlert({
+    technicianPosition: technicianPosition
+      ? { latitude: technicianPosition.latitude, longitude: technicianPosition.longitude }
+      : null,
+    destinationLatitude,
+    destinationLongitude,
+    thresholdMeters: 500,
+    cooldownMinutes: 5,
+    technicianName: technicianPosition
+      ? `${technicianPosition.firstName} ${technicianPosition.lastName}`
+      : 'Le technicien',
+  });
 
   // Calculate ETA using heuristic (1.4x road factor, 25 km/h average)
   const etaInfo = technicianPosition ? (() => {
@@ -335,6 +350,19 @@ export function ClientTrackingMap({
           </Button>
         )}
       </div>
+
+      {/* Notification permission prompt */}
+      {notificationPermission === 'default' && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={requestPermission}
+          className="w-full"
+        >
+          <Bell className="h-4 w-4 mr-2" />
+          Activer les alertes de proximité
+        </Button>
+      )}
 
       {/* Last update info */}
       {technicianPosition && (
