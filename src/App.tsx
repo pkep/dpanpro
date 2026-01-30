@@ -12,6 +12,7 @@ import NewIntervention from "./pages/NewIntervention";
 import Dashboard from "./pages/Dashboard";
 import ClientDashboardPage from "./pages/ClientDashboardPage";
 import ClientProfilePage from "./pages/ClientProfilePage";
+import ClientNewInterventionPage from "./pages/ClientNewInterventionPage";
 import ClientInterventionsPage from "./pages/ClientInterventionsPage";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
 import TechnicianInterventionPage from "./pages/TechnicianInterventionPage";
@@ -64,6 +65,7 @@ const App = () => (
             {/* Client routes with sidebar */}
             <Route path="/dashboard" element={<ClientDashboardPage />} />
             <Route path="/dashboard/profile" element={<ClientProfilePage />} />
+            <Route path="/dashboard/new-intervention" element={<ClientNewInterventionPage />} />
             <Route path="/dashboard/interventions" element={<ClientInterventionsPage />} />
             
             {/* Technician routes */}
