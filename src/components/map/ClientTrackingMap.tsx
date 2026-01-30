@@ -125,15 +125,7 @@ export function ClientTrackingMap({
   useEffect(() => {
     if (!mapContainerRef.current) return;
     if (!isTrackingActive) return;
-
-    // Cleanup existing map if present
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-      technicianMarkerRef.current = null;
-      destinationMarkerRef.current = null;
-      routeLineRef.current = null;
-    }
+    if (mapRef.current) return; // Already initialized, don't recreate
 
     const center: L.LatLngTuple = [destinationLatitude, destinationLongitude];
     const map = L.map(mapContainerRef.current).setView(center, 13);
@@ -292,27 +284,28 @@ export function ClientTrackingMap({
         </Card>
       )}
 
-      {/* Interactive Map */}
-      {technicianPosition ? (
+      {/* Interactive Map Container */}
+      <div className="relative" style={{ height }}>
         <div 
           ref={mapContainerRef}
-          className="rounded-lg overflow-hidden border" 
-          style={{ height }}
+          className="rounded-lg overflow-hidden border h-full w-full"
         />
-      ) : (
-        <div
-          className="rounded-lg overflow-hidden border bg-muted/30 flex flex-col items-center justify-center"
-          style={{ height }}
-        >
-          <div className="text-center space-y-4 p-6">
-            <Navigation className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
-            <p className="text-muted-foreground">Position du technicien non disponible</p>
-            <p className="text-sm text-muted-foreground">
-              La carte s'affichera dès que le technicien aura partagé sa position
-            </p>
+        
+        {/* Overlay message when technician position is not available */}
+        {!technicianPosition && (
+          <div
+            className="absolute inset-0 rounded-lg bg-muted/80 flex flex-col items-center justify-center pointer-events-none"
+          >
+            <div className="text-center space-y-4 p-6">
+              <Navigation className="h-12 w-12 mx-auto text-muted-foreground opacity-50" />
+              <p className="text-muted-foreground">Position du technicien non disponible</p>
+              <p className="text-sm text-muted-foreground">
+                La carte s'affichera dès que le technicien aura partagé sa position
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Action buttons */}
       <div className="flex gap-2">
