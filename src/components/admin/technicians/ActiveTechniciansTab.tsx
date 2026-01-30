@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Search, Loader2, Phone, Mail, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TechnicianDetailsModal } from './TechnicianDetailsModal';
 
 interface ActiveTechnician {
   id: string;
@@ -14,6 +15,7 @@ interface ActiveTechnician {
   email: string;
   phone: string | null;
   created_at: string;
+  is_active: boolean;
   skills: string[];
   average_rating: number | null;
   completed_interventions: number;
@@ -36,6 +38,8 @@ export function ActiveTechniciansTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [selectedTechnician, setSelectedTechnician] = useState<ActiveTechnician | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const fetchTechnicians = async () => {
     setLoading(true);
@@ -43,7 +47,7 @@ export function ActiveTechniciansTab() {
       // Get active technicians (users with role technician and is_active = true)
       let query = supabase
         .from('users')
-        .select('id, first_name, last_name, email, phone, created_at', { count: 'exact' })
+        .select('id, first_name, last_name, email, phone, created_at, is_active', { count: 'exact' })
         .eq('role', 'technician')
         .eq('is_active', true);
 
@@ -104,116 +108,131 @@ export function ActiveTechniciansTab() {
     setCurrentPage(1);
   }, [searchQuery]);
 
+  const handleTechnicianClick = (tech: ActiveTechnician) => {
+    setSelectedTechnician(tech);
+    setShowModal(true);
+  };
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Techniciens actifs</CardTitle>
-            <CardDescription>
-              {totalCount} technicien(s) sur la plateforme
-            </CardDescription>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Techniciens actifs</CardTitle>
+              <CardDescription>
+                {totalCount} technicien(s) sur la plateforme
+              </CardDescription>
+            </div>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : technicians.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">
-            {searchQuery ? 'Aucun technicien trouvé' : 'Aucun technicien actif'}
-          </p>
-        ) : (
-          <>
-            <div className="space-y-3">
-              {technicians.map((tech) => (
-                <div
-                  key={tech.id}
-                  className="border rounded-lg p-4 flex items-center justify-between hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="font-medium">
-                        {tech.first_name} {tech.last_name}
-                      </span>
-                      {tech.average_rating && (
-                        <div className="flex items-center gap-1 text-yellow-500">
-                          <Star className="h-4 w-4 fill-current" />
-                          <span className="text-sm">{tech.average_rating.toFixed(1)}</span>
-                        </div>
-                      )}
-                      <Badge variant="secondary">
-                        {tech.completed_interventions} intervention(s)
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-                      <span className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {tech.email}
-                      </span>
-                      {tech.phone && (
-                        <span className="flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {tech.phone}
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : technicians.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              {searchQuery ? 'Aucun technicien trouvé' : 'Aucun technicien actif'}
+            </p>
+          ) : (
+            <>
+              <div className="space-y-3">
+                {technicians.map((tech) => (
+                  <div
+                    key={tech.id}
+                    onClick={() => handleTechnicianClick(tech)}
+                    className="border rounded-lg p-4 flex items-center justify-between hover:bg-accent/50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="font-medium">
+                          {tech.first_name} {tech.last_name}
                         </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {tech.skills.map((skill) => (
-                        <Badge key={skill} variant="outline" className="text-xs">
-                          {SKILL_LABELS[skill] || skill}
+                        {tech.average_rating && (
+                          <div className="flex items-center gap-1 text-yellow-500">
+                            <Star className="h-4 w-4 fill-current" />
+                            <span className="text-sm">{tech.average_rating.toFixed(1)}</span>
+                          </div>
+                        )}
+                        <Badge variant="secondary">
+                          {tech.completed_interventions} intervention(s)
                         </Badge>
-                      ))}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                        <span className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {tech.email}
+                        </span>
+                        {tech.phone && (
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {tech.phone}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {tech.skills.map((skill) => (
+                          <Badge key={skill} variant="outline" className="text-xs">
+                            {SKILL_LABELS[skill] || skill}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                <p className="text-sm text-muted-foreground">
-                  Page {currentPage} sur {totalPages}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Précédent
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Suivant
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                ))}
               </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <p className="text-sm text-muted-foreground">
+                    Page {currentPage} sur {totalPages}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Précédent
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Suivant
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      <TechnicianDetailsModal
+        technician={selectedTechnician}
+        open={showModal}
+        onOpenChange={setShowModal}
+        onUpdate={fetchTechnicians}
+      />
+    </>
   );
 }
