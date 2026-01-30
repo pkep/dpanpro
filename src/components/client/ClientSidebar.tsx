@@ -30,7 +30,7 @@ const menuItems = [
   { title: 'Tableau de bord', url: '/dashboard', icon: LayoutDashboard, end: true },
   { title: 'Profil', url: '/dashboard/profile', icon: User },
   { title: 'Mes interventions', url: '/dashboard/interventions', icon: ClipboardList },
-  { title: 'Nouvelle demande', url: '/new-intervention', icon: Plus },
+  { title: 'Nouvelle demande', url: '/dashboard/new-intervention', icon: Plus },
 ];
 
 export function ClientSidebar() {

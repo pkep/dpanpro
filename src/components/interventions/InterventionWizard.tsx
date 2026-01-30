@@ -37,7 +37,11 @@ const STEPS = [
   { id: 5, title: '5. Validation' },
 ];
 
-export function InterventionWizard() {
+interface InterventionWizardProps {
+  embedded?: boolean;
+}
+
+export function InterventionWizard({ embedded = false }: InterventionWizardProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -360,33 +364,54 @@ export function InterventionWizard() {
     }
   };
 
+  // Container styles based on embedded mode
+  const containerClass = embedded 
+    ? "" 
+    : "min-h-screen bg-background";
+  
+  const innerContainerClass = embedded 
+    ? "" 
+    : "max-w-2xl mx-auto px-4 py-8";
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour à l'accueil
-          </Button>
+    <div className={containerClass}>
+      <div className={innerContainerClass}>
+        {/* Header - only show back button when not embedded */}
+        <div className={embedded ? "mb-6" : "mb-8"}>
+          {!embedded && (
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/')}
+              className="mb-4"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Retour à l'accueil
+            </Button>
+          )}
           
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">Demande d'intervention</h1>
-            {category && currentStep > 1 && (
-              <Badge variant="secondary" className="flex items-center gap-2 text-base py-1.5 px-3">
-                {categoryIcons[category]}
-                <span>{CATEGORY_LABELS[category]}</span>
-              </Badge>
-            )}
-          </div>
+          {!embedded && (
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">Demande d'intervention</h1>
+              {category && currentStep > 1 && (
+                <Badge variant="secondary" className="flex items-center gap-2 text-base py-1.5 px-3">
+                  {categoryIcons[category]}
+                  <span>{CATEGORY_LABELS[category]}</span>
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Selected category badge for embedded mode */}
+          {embedded && category && currentStep > 1 && (
+            <Badge variant="secondary" className="flex items-center gap-2 text-base py-1.5 px-3 w-fit mb-4">
+              {categoryIcons[category]}
+              <span>{CATEGORY_LABELS[category]}</span>
+            </Badge>
+          )}
           
           {/* Progress */}
           {!isSubmitted && (
-            <div className="mt-6">
+            <div className={embedded ? "" : "mt-6"}>
               <div className="flex justify-between text-sm mb-2">
                 {STEPS.map((step) => (
                   <span
