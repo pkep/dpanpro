@@ -196,14 +196,8 @@ export function ClientTrackingMap({
     ? `https://www.google.com/maps/dir/${technicianPosition.latitude},${technicianPosition.longitude}/${destinationLatitude},${destinationLongitude}`
     : `https://www.google.com/maps/search/?api=1&query=${destinationLatitude},${destinationLongitude}`;
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="w-full" style={{ height }} />
-        <Skeleton className="h-20 w-full" />
-      </div>
-    );
-  }
+  // Note: We no longer return early for loading state
+  // The map container must always be present for Leaflet to initialize
 
   if (!technicianId) {
     return (
@@ -291,8 +285,18 @@ export function ClientTrackingMap({
           className="rounded-lg overflow-hidden border h-full w-full"
         />
         
+        {/* Loading overlay */}
+        {loading && (
+          <div className="absolute inset-0 rounded-lg bg-background/80 flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+              <p className="text-sm text-muted-foreground">Chargement de la carte...</p>
+            </div>
+          </div>
+        )}
+        
         {/* Overlay message when technician position is not available */}
-        {!technicianPosition && (
+        {!loading && !technicianPosition && (
           <div
             className="absolute inset-0 rounded-lg bg-muted/80 flex flex-col items-center justify-center pointer-events-none"
           >
