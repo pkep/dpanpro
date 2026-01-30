@@ -121,15 +121,21 @@ export function ClientTrackingMap({
   // Determine if tracking should be active
   const isTrackingActive = ['assigned', 'on_route', 'in_progress'].includes(interventionStatus);
 
-  // Initialize map
+  // Initialize map - only depends on tracking state and destination, not technician position
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
-    if (!isTrackingActive || !technicianPosition) return;
+    if (!mapContainerRef.current) return;
+    if (!isTrackingActive) return;
 
-    const center: L.LatLngTuple = technicianPosition
-      ? [(technicianPosition.latitude + destinationLatitude) / 2, (technicianPosition.longitude + destinationLongitude) / 2]
-      : [destinationLatitude, destinationLongitude];
+    // Cleanup existing map if present
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+      technicianMarkerRef.current = null;
+      destinationMarkerRef.current = null;
+      routeLineRef.current = null;
+    }
 
+    const center: L.LatLngTuple = [destinationLatitude, destinationLongitude];
     const map = L.map(mapContainerRef.current).setView(center, 13);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -146,10 +152,15 @@ export function ClientTrackingMap({
     destinationMarkerRef.current = destMarker;
 
     return () => {
-      map.remove();
-      mapRef.current = null;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        technicianMarkerRef.current = null;
+        destinationMarkerRef.current = null;
+        routeLineRef.current = null;
+      }
     };
-  }, [isTrackingActive, technicianPosition, destinationLatitude, destinationLongitude, destinationAddress]);
+  }, [isTrackingActive, destinationLatitude, destinationLongitude, destinationAddress]);
 
   // Update technician marker position
   useEffect(() => {
