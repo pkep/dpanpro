@@ -1,7 +1,11 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, CheckCircle, Clock, Wallet, AlertTriangle } from 'lucide-react';
+import { PendingTechniciansTab } from '@/components/admin/technicians/PendingTechniciansTab';
+import { ActiveTechniciansTab } from '@/components/admin/technicians/ActiveTechniciansTab';
+import { DispatchTab } from '@/components/admin/technicians/DispatchTab';
+import { PayoutsTab } from '@/components/admin/technicians/PayoutsTab';
+import { DisputesTab } from '@/components/admin/technicians/DisputesTab';
 
 export default function AdminTechniciansPage() {
   return (
@@ -32,83 +36,23 @@ export default function AdminTechniciansPage() {
           </TabsList>
 
           <TabsContent value="pending">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profils en attente de validation</CardTitle>
-                <CardDescription>
-                  Examinez et validez les demandes des nouveaux techniciens
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  La liste des profils en attente sera affichée ici
-                </p>
-              </CardContent>
-            </Card>
+            <PendingTechniciansTab />
           </TabsContent>
 
           <TabsContent value="active">
-            <Card>
-              <CardHeader>
-                <CardTitle>Techniciens actifs</CardTitle>
-                <CardDescription>
-                  Gérez les techniciens actuellement sur la plateforme
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  La liste des techniciens actifs sera affichée ici
-                </p>
-              </CardContent>
-            </Card>
+            <ActiveTechniciansTab />
           </TabsContent>
 
           <TabsContent value="dispatch">
-            <Card>
-              <CardHeader>
-                <CardTitle>Dispatch manuel</CardTitle>
-                <CardDescription>
-                  Assignez manuellement des interventions à des techniciens spécifiques
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  L'interface de dispatch manuel sera affichée ici
-                </p>
-              </CardContent>
-            </Card>
+            <DispatchTab />
           </TabsContent>
 
           <TabsContent value="payments">
-            <Card>
-              <CardHeader>
-                <CardTitle>Versements techniciens</CardTitle>
-                <CardDescription>
-                  Gérez les paiements et versements en lot
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  La gestion des versements sera affichée ici
-                </p>
-              </CardContent>
-            </Card>
+            <PayoutsTab />
           </TabsContent>
 
           <TabsContent value="disputes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Gestion des litiges</CardTitle>
-                <CardDescription>
-                  Résolvez les conflits et réclamations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  La gestion des litiges sera affichée ici
-                </p>
-              </CardContent>
-            </Card>
+            <DisputesTab />
           </TabsContent>
         </Tabs>
       </div>

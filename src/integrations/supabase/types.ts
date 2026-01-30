@@ -243,6 +243,83 @@ export type Database = {
           },
         ]
       }
+      disputes: {
+        Row: {
+          admin_notes: string | null
+          client_id: string | null
+          client_notes: string | null
+          created_at: string
+          id: string
+          intervention_id: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          technician_id: string | null
+          technician_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          client_id?: string | null
+          client_notes?: string | null
+          created_at?: string
+          id?: string
+          intervention_id: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          technician_id?: string | null
+          technician_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          client_id?: string | null
+          client_notes?: string | null
+          created_at?: string
+          id?: string
+          intervention_id?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          technician_id?: string | null
+          technician_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disputes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disputes_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intervention_history: {
         Row: {
           action: string
@@ -1104,6 +1181,63 @@ export type Database = {
           },
           {
             foreignKeyName: "technician_client_ratings_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technician_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          payout_date: string
+          period_end: string
+          period_start: string
+          status: string
+          technician_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          payout_date: string
+          period_end: string
+          period_start: string
+          status?: string
+          technician_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          payout_date?: string
+          period_end?: string
+          period_start?: string
+          status?: string
+          technician_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_payouts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "technician_payouts_technician_id_fkey"
             columns: ["technician_id"]
             isOneToOne: false
             referencedRelation: "users"
