@@ -1,10 +1,72 @@
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, ClipboardList, BarChart3, AlertTriangle, TrendingUp, Clock, Shield, Settings } from 'lucide-react';
+import { Users, ClipboardList, BarChart3, TrendingUp, Clock, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { subDays } from 'date-fns';
+
+interface DashboardStats {
+  totalTechnicians: number;
+  totalClients: number;
+  interventionsMonth: number;
+  caMonth: number;
+}
 
 export default function AdminDashboardPage() {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalTechnicians: 0,
+    totalClients: 0,
+    interventionsMonth: 0,
+    caMonth: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsLoading(true);
+        const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+
+        // Fetch all stats in parallel
+        const [techniciansRes, clientsRes, interventionsRes, caRes] = await Promise.all([
+          // Total technicians
+          supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'technician'),
+          // Total distinct clients (client + guest by email)
+          supabase.from('users').select('email').in('role', ['client', 'guest']),
+          // Interventions last 30 days
+          supabase.from('interventions').select('id', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo),
+          // CA last 30 days (completed interventions)
+          supabase.from('interventions').select('final_price').eq('status', 'completed').gte('completed_at', thirtyDaysAgo),
+        ]);
+
+        // Count distinct emails for clients
+        const distinctEmails = new Set((clientsRes.data || []).map(u => u.email?.toLowerCase()));
+
+        // Sum final_price for CA
+        const totalCA = (caRes.data || []).reduce((sum, i) => sum + (Number(i.final_price) || 0), 0);
+
+        setStats({
+          totalTechnicians: techniciansRes.count || 0,
+          totalClients: distinctEmails.size,
+          interventionsMonth: interventionsRes.count || 0,
+          caMonth: totalCA,
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(amount);
+  };
+
   return (
     <AdminLayout title="Tableau de bord Admin" subtitle="Vue d'ensemble système">
       <div className="space-y-6">
@@ -16,7 +78,7 @@ export default function AdminDashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">--</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : stats.totalTechnicians}</div>
               <p className="text-xs text-muted-foreground">Sur la plateforme</p>
             </CardContent>
           </Card>
@@ -27,7 +89,7 @@ export default function AdminDashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">--</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : stats.totalClients}</div>
               <p className="text-xs text-muted-foreground">Enregistrés</p>
             </CardContent>
           </Card>
@@ -38,8 +100,8 @@ export default function AdminDashboardPage() {
               <ClipboardList className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">Ce mois</p>
+              <div className="text-2xl font-bold">{isLoading ? '...' : stats.interventionsMonth}</div>
+              <p className="text-xs text-muted-foreground">30 derniers jours</p>
             </CardContent>
           </Card>
 
@@ -49,8 +111,8 @@ export default function AdminDashboardPage() {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">-- €</div>
-              <p className="text-xs text-muted-foreground">Chiffre d'affaires</p>
+              <div className="text-2xl font-bold">{isLoading ? '...' : formatCurrency(stats.caMonth)}</div>
+              <p className="text-xs text-muted-foreground">30 derniers jours</p>
             </CardContent>
           </Card>
         </div>
