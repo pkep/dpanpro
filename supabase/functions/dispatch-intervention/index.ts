@@ -577,22 +577,11 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
   // Get intervention to calculate response time and get old status
   const { data: intervention, error: getIntError } = await supabase
     .from('interventions')
-    .select('created_at, status, technician_id')
+    .select('created_at, status')
     .eq('id', interventionId)
     .single();
 
   if (getIntError) throw getIntError;
-
-  // Check if already assigned to another technician
-  if (intervention.technician_id && intervention.technician_id !== technicianId) {
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: 'Cette intervention a déjà été acceptée par un autre technicien.' 
-      }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
 
   const oldStatus = intervention.status;
 
@@ -600,39 +589,18 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
   const createdAt = new Date(intervention.created_at);
   const responseTimeSeconds = Math.round((now.getTime() - createdAt.getTime()) / 1000);
 
-  // Check if there's an existing dispatch_attempt for this technician
-  const { data: existingAttempt } = await supabase
+  // Update dispatch attempt
+  const { error: attemptError } = await supabase
     .from('dispatch_attempts')
-    .select('id')
+    .update({
+      status: 'accepted',
+      responded_at: now.toISOString(),
+    })
     .eq('intervention_id', interventionId)
     .eq('technician_id', technicianId)
-    .eq('status', 'pending')
-    .maybeSingle();
+    .eq('status', 'pending');
 
-  if (existingAttempt) {
-    // Update existing dispatch attempt
-    await supabase
-      .from('dispatch_attempts')
-      .update({
-        status: 'accepted',
-        responded_at: now.toISOString(),
-      })
-      .eq('id', existingAttempt.id);
-  } else {
-    // Create a new dispatch_attempt for this direct acceptance
-    await supabase
-      .from('dispatch_attempts')
-      .insert({
-        intervention_id: interventionId,
-        technician_id: technicianId,
-        score: 100, // Direct acceptance gets max score
-        score_breakdown: { proximity: 100, skills: 100, workload: 100, rating: 100 },
-        status: 'accepted',
-        attempt_order: 1,
-        notified_at: now.toISOString(),
-        responded_at: now.toISOString(),
-      });
-  }
+  if (attemptError) throw attemptError;
 
   // Cancel other pending attempts
   await supabase
@@ -902,46 +870,14 @@ async function handleGo(supabase: any, interventionId: string, technicianId: str
 
   const now = new Date();
 
-  // Check if technician already has an active intervention
-  const { data: activeInterventions, error: activeError } = await supabase
-    .from('interventions')
-    .select('id, title, status')
-    .eq('technician_id', technicianId)
-    .in('status', ['assigned', 'on_route', 'in_progress']);
-
-  if (activeError) throw activeError;
-
-  if (activeInterventions && activeInterventions.length > 0) {
-    console.log(`[Dispatch] Technician ${technicianId} already has ${activeInterventions.length} active intervention(s)`);
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: 'Vous avez déjà une intervention en cours. Terminez-la avant d\'en accepter une nouvelle.',
-        activeIntervention: activeInterventions[0]
-      }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-
   // Get intervention to calculate response time and get old status
   const { data: intervention, error: getIntError } = await supabase
     .from('interventions')
-    .select('created_at, status, technician_id')
+    .select('created_at, status')
     .eq('id', interventionId)
     .single();
 
   if (getIntError) throw getIntError;
-
-  // Check if already assigned to another technician
-  if (intervention.technician_id && intervention.technician_id !== technicianId) {
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: 'Cette intervention a déjà été acceptée par un autre technicien.' 
-      }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
 
   const oldStatus = intervention.status;
 
@@ -949,40 +885,20 @@ async function handleGo(supabase: any, interventionId: string, technicianId: str
   const createdAt = new Date(intervention.created_at);
   const responseTimeSeconds = Math.round((now.getTime() - createdAt.getTime()) / 1000);
 
-  // Check if there's an existing dispatch_attempt for this technician
-  const { data: existingAttempt } = await supabase
+  // Update dispatch attempt
+  const { error: attemptError } = await supabase
     .from('dispatch_attempts')
-    .select('id')
+    .update({
+      status: 'accepted',
+      responded_at: now.toISOString(),
+    })
     .eq('intervention_id', interventionId)
     .eq('technician_id', technicianId)
-    .maybeSingle();
+    .eq('status', 'pending');
 
-  if (existingAttempt) {
-    // Update existing dispatch attempt
-    await supabase
-      .from('dispatch_attempts')
-      .update({
-        status: 'accepted',
-        responded_at: now.toISOString(),
-      })
-      .eq('id', existingAttempt.id);
-  } else {
-    // Create a new dispatch_attempt for this direct assignment
-    await supabase
-      .from('dispatch_attempts')
-      .insert({
-        intervention_id: interventionId,
-        technician_id: technicianId,
-        score: 100, // Direct assignment gets max score
-        score_breakdown: { proximity: 100, skills: 100, workload: 100, rating: 100 },
-        status: 'accepted',
-        attempt_order: 1,
-        notified_at: now.toISOString(),
-        responded_at: now.toISOString(),
-      });
-  }
+  if (attemptError) throw attemptError;
 
-  // Cancel other pending attempts for this intervention
+  // Cancel other pending attempts
   await supabase
     .from('dispatch_attempts')
     .update({ status: 'cancelled' })

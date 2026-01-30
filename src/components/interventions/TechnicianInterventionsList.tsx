@@ -94,7 +94,7 @@ export function TechnicianInterventionsList({ technicianId, onInterventionClick 
     switch (tab) {
       case 'assigned':
         return interventions.filter(
-          (i) => ['assigned', 'on_route'].includes(i.status)
+          (i) => ['assigned', 'en_route'].includes(i.status)
         );
       case 'in_progress':
         return interventions.filter(
