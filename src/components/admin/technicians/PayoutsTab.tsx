@@ -4,12 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Calendar, Euro, Plus } from 'lucide-react';
+import { Loader2, Calendar, Euro, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -32,12 +31,19 @@ interface Payout {
   technician?: Technician;
 }
 
+const PAGE_SIZE = 15;
+
 export function PayoutsTab() {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
+  
+  // Search and pagination
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Form state
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>([]);
@@ -46,21 +52,31 @@ export function PayoutsTab() {
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
   const [notes, setNotes] = useState('');
-  const [isBatchMode, setIsBatchMode] = useState(false);
 
-  const fetchData = async () => {
+  const fetchTechnicians = async () => {
     setLoading(true);
     try {
-      // Get active technicians
-      const { data: techData, error: techError } = await supabase
+      // Build query with search
+      let query = supabase
         .from('users')
-        .select('id, first_name, last_name, email')
+        .select('id, first_name, last_name, email', { count: 'exact' })
         .eq('role', 'technician')
-        .eq('is_active', true)
-        .order('last_name');
+        .eq('is_active', true);
+
+      if (searchQuery) {
+        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
+      }
+
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data: techData, count, error: techError } = await query
+        .order('last_name')
+        .range(from, to);
 
       if (techError) throw techError;
       setTechnicians(techData || []);
+      setTotalCount(count || 0);
 
       // Get recent payouts
       const { data: payoutsData, error: payoutsError } = await supabase
@@ -71,10 +87,16 @@ export function PayoutsTab() {
 
       if (payoutsError) throw payoutsError;
 
+      // Get all technicians for payout display
+      const { data: allTechData } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email')
+        .eq('role', 'technician');
+
       // Enrich with technician info
       const enrichedPayouts: Payout[] = [];
       for (const payout of payoutsData || []) {
-        const tech = techData?.find((t) => t.id === payout.technician_id);
+        const tech = allTechData?.find((t) => t.id === payout.technician_id);
         enrichedPayouts.push({
           ...payout,
           technician: tech,
@@ -91,8 +113,13 @@ export function PayoutsTab() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchTechnicians();
+  }, [currentPage, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedTechnicianIds([]);
+  }, [searchQuery]);
 
   const handleCreatePayout = async () => {
     if (selectedTechnicianIds.length === 0 || !amount || !payoutDate || !periodStart || !periodEnd) {
@@ -124,7 +151,7 @@ export function PayoutsTab() {
 
       resetForm();
       setShowDialog(false);
-      fetchData();
+      fetchTechnicians();
     } catch (error) {
       console.error('Error creating payout:', error);
       toast.error('Erreur lors de la création du versement');
@@ -143,7 +170,7 @@ export function PayoutsTab() {
       if (error) throw error;
 
       toast.success('Statut mis à jour');
-      fetchData();
+      fetchTechnicians();
     } catch (error) {
       console.error('Error updating payout status:', error);
       toast.error('Erreur lors de la mise à jour');
@@ -157,7 +184,6 @@ export function PayoutsTab() {
     setPeriodStart('');
     setPeriodEnd('');
     setNotes('');
-    setIsBatchMode(false);
   };
 
   const toggleTechnicianSelection = (techId: string) => {
@@ -166,11 +192,16 @@ export function PayoutsTab() {
     );
   };
 
-  const selectAllTechnicians = () => {
-    if (selectedTechnicianIds.length === technicians.length) {
-      setSelectedTechnicianIds([]);
+  const selectAllOnPage = () => {
+    const pageIds = technicians.map((t) => t.id);
+    const allSelected = pageIds.every((id) => selectedTechnicianIds.includes(id));
+    
+    if (allSelected) {
+      // Deselect all on current page
+      setSelectedTechnicianIds((prev) => prev.filter((id) => !pageIds.includes(id)));
     } else {
-      setSelectedTechnicianIds(technicians.map((t) => t.id));
+      // Select all on current page
+      setSelectedTechnicianIds((prev) => [...new Set([...prev, ...pageIds])]);
     }
   };
 
@@ -187,7 +218,10 @@ export function PayoutsTab() {
     }
   };
 
-  if (loading) {
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const allOnPageSelected = technicians.length > 0 && technicians.every((t) => selectedTechnicianIds.includes(t.id));
+
+  if (loading && technicians.length === 0) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-8">
@@ -199,86 +233,199 @@ export function PayoutsTab() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Versements techniciens</CardTitle>
-              <CardDescription>
-                Gérez les paiements et versements aux techniciens
-              </CardDescription>
-            </div>
-            <Button onClick={() => setShowDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouveau versement
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {payouts.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              Aucun versement enregistré
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {payouts.map((payout) => (
-                <div
-                  key={payout.id}
-                  className="border rounded-lg p-4 flex items-center justify-between"
+      <div className="space-y-6">
+        {/* Technicians Selection Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle>Sélection des techniciens</CardTitle>
+                <CardDescription>
+                  Sélectionnez les techniciens pour créer un versement groupé
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Nom, prénom ou email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Button 
+                  onClick={() => setShowDialog(true)}
+                  disabled={selectedTechnicianIds.length === 0}
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">
-                        {payout.technician?.first_name} {payout.technician?.last_name}
-                      </span>
-                      {getStatusBadge(payout.status)}
+                  <Plus className="h-4 w-4 mr-2" />
+                  Créer versement ({selectedTechnicianIds.length})
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : technicians.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                {searchQuery ? 'Aucun technicien trouvé' : 'Aucun technicien actif'}
+              </p>
+            ) : (
+              <>
+                {/* Select All Header */}
+                <div className="flex items-center gap-2 pb-3 border-b mb-3">
+                  <Checkbox
+                    id="select-all"
+                    checked={allOnPageSelected}
+                    onCheckedChange={selectAllOnPage}
+                  />
+                  <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                    Sélectionner tous sur cette page
+                  </label>
+                  {selectedTechnicianIds.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {selectedTechnicianIds.length} sélectionné(s)
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Technicians List */}
+                <div className="space-y-2">
+                  {technicians.map((tech) => (
+                    <div
+                      key={tech.id}
+                      className={`border rounded-lg p-3 flex items-center gap-3 transition-colors cursor-pointer ${
+                        selectedTechnicianIds.includes(tech.id) 
+                          ? 'bg-primary/5 border-primary/30' 
+                          : 'hover:bg-accent/50'
+                      }`}
+                      onClick={() => toggleTechnicianSelection(tech.id)}
+                    >
+                      <Checkbox
+                        checked={selectedTechnicianIds.includes(tech.id)}
+                        onCheckedChange={() => toggleTechnicianSelection(tech.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium">
+                          {tech.first_name} {tech.last_name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{tech.email}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Euro className="h-3 w-3" />
-                        {Number(payout.amount).toFixed(2)} €
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Versement le {format(new Date(payout.payout_date), 'dd MMM yyyy', { locale: fr })}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Période : {format(new Date(payout.period_start), 'dd/MM')} -{' '}
-                      {format(new Date(payout.period_end), 'dd/MM/yyyy')}
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} sur {totalPages} ({totalCount} techniciens)
                     </p>
-                    {payout.notes && (
-                      <p className="text-xs text-muted-foreground mt-1 italic">
-                        {payout.notes}
-                      </p>
-                    )}
-                  </div>
-                  {payout.status === 'pending' && (
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="text-green-600 hover:text-green-700"
-                        onClick={() => handleUpdateStatus(payout.id, 'paid')}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
                       >
-                        Marquer payé
+                        <ChevronLeft className="h-4 w-4" />
+                        Précédent
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="text-destructive"
-                        onClick={() => handleUpdateStatus(payout.id, 'cancelled')}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
                       >
-                        Annuler
+                        Suivant
+                        <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Payouts Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Historique des versements</CardTitle>
+            <CardDescription>
+              Les 50 derniers versements enregistrés
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {payouts.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                Aucun versement enregistré
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {payouts.map((payout) => (
+                  <div
+                    key={payout.id}
+                    className="border rounded-lg p-4 flex items-center justify-between"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium">
+                          {payout.technician?.first_name} {payout.technician?.last_name}
+                        </span>
+                        {getStatusBadge(payout.status)}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Euro className="h-3 w-3" />
+                          {Number(payout.amount).toFixed(2)} €
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Versement le {format(new Date(payout.payout_date), 'dd MMM yyyy', { locale: fr })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Période : {format(new Date(payout.period_start), 'dd/MM')} -{' '}
+                        {format(new Date(payout.period_end), 'dd/MM/yyyy')}
+                      </p>
+                      {payout.notes && (
+                        <p className="text-xs text-muted-foreground mt-1 italic">
+                          {payout.notes}
+                        </p>
+                      )}
+                    </div>
+                    {payout.status === 'pending' && (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 hover:text-green-700"
+                          onClick={() => handleUpdateStatus(payout.id, 'paid')}
+                        >
+                          Marquer payé
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive"
+                          onClick={() => handleUpdateStatus(payout.id, 'cancelled')}
+                        >
+                          Annuler
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Create Payout Dialog */}
       <Dialog open={showDialog} onOpenChange={(open) => { setShowDialog(open); if (!open) resetForm(); }}>
@@ -286,71 +433,29 @@ export function PayoutsTab() {
           <DialogHeader>
             <DialogTitle>Créer un versement</DialogTitle>
             <DialogDescription>
-              Assignez une date et un montant de versement à un ou plusieurs techniciens
+              Versement pour {selectedTechnicianIds.length} technicien(s) sélectionné(s)
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="batch-mode"
-                checked={isBatchMode}
-                onCheckedChange={(checked) => {
-                  setIsBatchMode(!!checked);
-                  if (!checked) setSelectedTechnicianIds([]);
-                }}
-              />
-              <label htmlFor="batch-mode" className="text-sm font-medium cursor-pointer">
-                Mode lot (plusieurs techniciens)
-              </label>
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="text-sm font-medium mb-2">Techniciens sélectionnés :</p>
+              <div className="flex flex-wrap gap-1">
+                {selectedTechnicianIds.slice(0, 5).map((id) => {
+                  const tech = technicians.find((t) => t.id === id);
+                  return tech ? (
+                    <Badge key={id} variant="secondary">
+                      {tech.first_name} {tech.last_name}
+                    </Badge>
+                  ) : null;
+                })}
+                {selectedTechnicianIds.length > 5 && (
+                  <Badge variant="outline">
+                    +{selectedTechnicianIds.length - 5} autres
+                  </Badge>
+                )}
+              </div>
             </div>
-
-            {isBatchMode ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Techniciens</label>
-                  <Button variant="link" size="sm" onClick={selectAllTechnicians}>
-                    {selectedTechnicianIds.length === technicians.length ? 'Désélectionner tout' : 'Tout sélectionner'}
-                  </Button>
-                </div>
-                <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
-                  {technicians.map((tech) => (
-                    <div key={tech.id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={tech.id}
-                        checked={selectedTechnicianIds.includes(tech.id)}
-                        onCheckedChange={() => toggleTechnicianSelection(tech.id)}
-                      />
-                      <label htmlFor={tech.id} className="text-sm cursor-pointer">
-                        {tech.first_name} {tech.last_name}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {selectedTechnicianIds.length} technicien(s) sélectionné(s)
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Technicien</label>
-                <Select
-                  value={selectedTechnicianIds[0] || ''}
-                  onValueChange={(val) => setSelectedTechnicianIds([val])}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un technicien" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {technicians.map((tech) => (
-                      <SelectItem key={tech.id} value={tech.id}>
-                        {tech.first_name} {tech.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -409,7 +514,7 @@ export function PayoutsTab() {
             </Button>
             <Button onClick={handleCreatePayout} disabled={processing}>
               {processing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Créer le versement
+              Créer {selectedTechnicianIds.length > 1 ? `${selectedTechnicianIds.length} versements` : 'le versement'}
             </Button>
           </DialogFooter>
         </DialogContent>
