@@ -842,12 +842,12 @@ async function handleCancel(supabase: any, interventionId: string, technicianId:
 
   if (cancelError) throw cancelError;
 
-  // Remove technician from intervention and set status to 'to_reassign'
+  // Remove technician from intervention and set status to 'new' for re-dispatch
   const { error: updateError } = await supabase
     .from('interventions')
     .update({
       technician_id: null,
-      status: 'to_reassign',
+      status: 'new',
     })
     .eq('id', interventionId);
 
