@@ -10,16 +10,19 @@ import Auth from "./pages/Auth";
 import JoinPage from "./pages/JoinPage";
 import NewIntervention from "./pages/NewIntervention";
 import Dashboard from "./pages/Dashboard";
-import ClientDashboardPage from "./pages/ClientDashboardPage";
-import ClientProfilePage from "./pages/ClientProfilePage";
-import ClientNewInterventionPage from "./pages/ClientNewInterventionPage";
-import ClientInterventionsPage from "./pages/ClientInterventionsPage";
-import TechnicianDashboard from "./pages/TechnicianDashboard";
-import TechnicianInterventionPage from "./pages/TechnicianInterventionPage";
-import TechnicianStatsPage from "./pages/TechnicianStatsPage";
-import TechnicianRevenuePage from "./pages/TechnicianRevenuePage";
-import TechnicianSchedulePage from "./pages/TechnicianSchedulePage";
-import TechnicianProfilePage from "./pages/TechnicianProfilePage";
+// Client pages
+import ClientDashboardPage from "./pages/client/ClientDashboardPage";
+import ClientProfilePage from "./pages/client/ClientProfilePage";
+import ClientNewInterventionPage from "./pages/client/ClientNewInterventionPage";
+import ClientInterventionsPage from "./pages/client/ClientInterventionsPage";
+
+// Technician pages
+import TechnicianDashboard from "./pages/technician/TechnicianDashboard";
+import TechnicianInterventionPage from "./pages/technician/TechnicianInterventionPage";
+import TechnicianStatsPage from "./pages/technician/TechnicianStatsPage";
+import TechnicianRevenuePage from "./pages/technician/TechnicianRevenuePage";
+import TechnicianSchedulePage from "./pages/technician/TechnicianSchedulePage";
+import TechnicianProfilePage from "./pages/technician/TechnicianProfilePage";
 import InterventionDetails from "./pages/InterventionDetails";
 import StatisticsDashboard from "./pages/StatisticsDashboard";
 import PlanningPage from "./pages/PlanningPage";
