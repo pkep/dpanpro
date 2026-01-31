@@ -99,7 +99,7 @@ serve(async (req) => {
           formattedPhone = '+33' + formattedPhone;
         }
 
-        const smsMessage = `Mission assignée par le manager: ${categoryLabel} à ${intervention.city}. ${intervention.address}. Ouvrez l'app pour voir les détails.`;
+        const smsMessage = `Depan.Pro: Mission assignee par le manager: ${categoryLabel} a ${intervention.city}. ${intervention.address}. Ouvrez l'app pour voir les details.`;
 
         const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
         const twilioAuth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
@@ -138,6 +138,7 @@ serve(async (req) => {
         const emailHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+              <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 40px; margin-bottom: 10px;" />
               <h1 style="margin: 0;">📋 Mission Assignée</h1>
             </div>
             
@@ -156,20 +157,20 @@ serve(async (req) => {
               
               <p style="font-size: 14px; color: #6b7280;">
                 Cette mission vous a été directement assignée par un manager. 
-                Ouvrez l'application Dépan'Express pour voir tous les détails.
+                Ouvrez l'application Depan.Pro pour voir tous les détails.
               </p>
             </div>
             
             <div style="background: #1f2937; color: white; padding: 15px; text-align: center; border-radius: 8px; margin-top: 10px;">
-              <p style="margin: 0; font-size: 12px;">Dépan'Express - Votre partenaire dépannage</p>
+              <p style="margin: 0; font-size: 12px;">Depan.Pro - Votre partenaire dépannage</p>
             </div>
           </div>
         `;
 
         await resend.emails.send({
-          from: `Dépan'Express <${resendFromEmail}>`,
+          from: `Depan.Pro <${resendFromEmail}>`,
           to: [techData.email],
-          subject: `📋 Mission assignée - ${categoryLabel} à ${intervention.city}`,
+          subject: `Depan.Pro : Mission assignée - ${categoryLabel} à ${intervention.city}`,
           html: emailHtml,
         });
 
