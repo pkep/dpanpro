@@ -4,12 +4,23 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import Home from "./pages/Home";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import JoinPage from "./pages/JoinPage";
-import NewIntervention from "./pages/NewIntervention";
-import Dashboard from "./pages/Dashboard";
+// Common pages
+import Home from "./pages/common/Home";
+import Index from "./pages/common/Index";
+import Auth from "./pages/common/Auth";
+import JoinPage from "./pages/common/JoinPage";
+import NewIntervention from "./pages/common/NewIntervention";
+import Dashboard from "./pages/common/Dashboard";
+import InterventionDetails from "./pages/common/InterventionDetails";
+import StatisticsDashboard from "./pages/common/StatisticsDashboard";
+import PlanningPage from "./pages/common/PlanningPage";
+import MapPage from "./pages/common/MapPage";
+import LiveTrackingPage from "./pages/common/LiveTrackingPage";
+import QuoteApprovalPage from "./pages/common/QuoteApprovalPage";
+import TrackInterventionPage from "./pages/common/TrackInterventionPage";
+import ResetPassword from "./pages/common/ResetPassword";
+import NotFound from "./pages/common/NotFound";
+
 // Client pages
 import ClientDashboardPage from "./pages/client/ClientDashboardPage";
 import ClientProfilePage from "./pages/client/ClientProfilePage";
@@ -23,15 +34,6 @@ import TechnicianStatsPage from "./pages/technician/TechnicianStatsPage";
 import TechnicianRevenuePage from "./pages/technician/TechnicianRevenuePage";
 import TechnicianSchedulePage from "./pages/technician/TechnicianSchedulePage";
 import TechnicianProfilePage from "./pages/technician/TechnicianProfilePage";
-import InterventionDetails from "./pages/InterventionDetails";
-import StatisticsDashboard from "./pages/StatisticsDashboard";
-import PlanningPage from "./pages/PlanningPage";
-import MapPage from "./pages/MapPage";
-import LiveTrackingPage from "./pages/LiveTrackingPage";
-import QuoteApprovalPage from "./pages/QuoteApprovalPage";
-import TrackInterventionPage from "./pages/TrackInterventionPage";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
 
 // Manager pages
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
