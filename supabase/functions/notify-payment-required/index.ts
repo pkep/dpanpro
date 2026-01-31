@@ -78,7 +78,6 @@ async function sendSMS(to: string, message: string): Promise<boolean> {
       });
 
       // Attempt to immediately fetch message status from Twilio (best-effort)
-      // Note: final delivery can take time; this mainly helps detect immediate carrier rejects.
       if (result.sid) {
         try {
           const credentials = btoa(`${accountSid}:${authToken}`);
@@ -153,7 +152,7 @@ async function sendEmail(
   }
 
   try {
-    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "DepanExpress <onboarding@resend.dev>";
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
 
     console.log("[NOTIFY-PAYMENT] Sending email to:", to, "from:", fromEmail);
 
@@ -164,7 +163,7 @@ async function sendEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: fromEmail,
+        from: `Depan.Pro <${fromEmail}>`,
         to: [to],
         subject,
         html: htmlContent,
@@ -306,18 +305,16 @@ serve(async (req) => {
 
     // Build tracking URL
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    // Infer frontend URL from Supabase project ref
     const projectRef = supabaseUrl.match(/https:\/\/([^.]+)/)?.[1] || "";
-    // Use production URL pattern or fallback
     const frontendUrl = `https://${projectRef.slice(0, 8)}-preview--${projectRef}.lovable.app`;
     const trackingUrl = `${frontendUrl}/track/${trackingCode}`;
 
     console.log("[NOTIFY-PAYMENT] Tracking URL:", trackingUrl);
 
     // Keep SMS short/simple to reduce carrier filtering issues.
-    const smsMessage = `DepanExpress: autorisation de paiement requise.\nOuvrez: ${trackingUrl}\nCode: ${trackingCode}`;
+    const smsMessage = `Depan.Pro: autorisation de paiement requise.\nOuvrez: ${trackingUrl}\nCode: ${trackingCode}`;
 
-    const emailSubject = "⚠️ Action requise : Autorisation de paiement";
+    const emailSubject = "Depan.Pro : Autorisation de paiement requise";
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -327,6 +324,7 @@ serve(async (req) => {
           body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 20px; }
           .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
           .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; }
+          .header img { height: 50px; margin-bottom: 15px; }
           .header h1 { margin: 0; font-size: 24px; }
           .content { padding: 30px; }
           .alert-box { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
@@ -340,6 +338,7 @@ serve(async (req) => {
       <body>
         <div class="container">
           <div class="header">
+            <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" />
             <h1>⚠️ Autorisation de paiement requise</h1>
           </div>
           <div class="content">
@@ -361,7 +360,7 @@ serve(async (req) => {
             </p>
           </div>
           <div class="footer">
-            <p>DepanExpress - Service de dépannage d'urgence</p>
+            <p>Depan.Pro - Service de dépannage d'urgence</p>
           </div>
         </div>
       </body>

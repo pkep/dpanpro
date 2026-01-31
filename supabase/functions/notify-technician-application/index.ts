@@ -13,6 +13,8 @@ interface NotifyApplicationRequest {
   reason?: string;
 }
 
+const LOGO_URL = "https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb82750d tried9.png";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -40,17 +42,22 @@ serve(async (req) => {
     let subject: string;
     let htmlContent: string;
 
+    const emailHeader = `
+      <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+        <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 50px; margin-bottom: 15px;" />
+    `;
+
     if (action === 'accepted') {
-      subject = "🎉 Votre candidature a été acceptée - Dépan'Express";
+      subject = "Depan.Pro : Votre candidature a été acceptée 🎉";
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+          ${emailHeader}
             <h1 style="margin: 0; font-size: 28px;">🎉 Félicitations ${firstName} !</h1>
           </div>
           
           <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 8px 8px;">
             <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
-              Nous avons le plaisir de vous informer que votre candidature pour devenir technicien partenaire chez <strong>Dépan'Express</strong> a été acceptée !
+              Nous avons le plaisir de vous informer que votre candidature pour devenir technicien partenaire chez <strong>Depan.Pro</strong> a été acceptée !
             </p>
             
             <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #22c55e;">
@@ -64,26 +71,27 @@ serve(async (req) => {
             </div>
             
             <p style="font-size: 14px; color: #6b7280; margin-top: 20px;">
-              Bienvenue dans l'équipe Dépan'Express ! Nous sommes impatients de travailler avec vous.
+              Bienvenue dans l'équipe Depan.Pro ! Nous sommes impatients de travailler avec vous.
             </p>
           </div>
           
           <div style="background: #1f2937; color: white; padding: 20px; text-align: center; border-radius: 8px; margin-top: 10px;">
-            <p style="margin: 0; font-size: 12px;">Dépan'Express - Votre partenaire dépannage</p>
+            <p style="margin: 0; font-size: 12px;">Depan.Pro - Votre partenaire dépannage</p>
           </div>
         </div>
       `;
     } else {
-      subject = "Réponse à votre candidature - Dépan'Express";
+      subject = "Depan.Pro : Réponse à votre candidature";
       htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: #64748b; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
+            <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 50px; margin-bottom: 15px;" />
             <h1 style="margin: 0; font-size: 24px;">Bonjour ${firstName}</h1>
           </div>
           
           <div style="padding: 30px; background: #f9fafb; border-radius: 0 0 8px 8px;">
             <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
-              Nous vous remercions pour l'intérêt que vous portez à <strong>Dépan'Express</strong> et pour le temps consacré à votre candidature.
+              Nous vous remercions pour l'intérêt que vous portez à <strong>Depan.Pro</strong> et pour le temps consacré à votre candidature.
             </p>
             
             <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
@@ -108,14 +116,14 @@ serve(async (req) => {
           </div>
           
           <div style="background: #1f2937; color: white; padding: 20px; text-align: center; border-radius: 8px; margin-top: 10px;">
-            <p style="margin: 0; font-size: 12px;">Dépan'Express - Votre partenaire dépannage</p>
+            <p style="margin: 0; font-size: 12px;">Depan.Pro - Votre partenaire dépannage</p>
           </div>
         </div>
       `;
     }
 
     const emailResponse = await resend.emails.send({
-      from: `Dépan'Express <${resendFromEmail}>`,
+      from: `Depan.Pro <${resendFromEmail}>`,
       to: [email],
       subject: subject,
       html: htmlContent,

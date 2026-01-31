@@ -115,7 +115,7 @@ serve(async (req) => {
       throw new Error("Intervention not found");
     }
 
-    const baseUrl = Deno.env.get("SITE_URL") || "https://depanage-rapide.lovable.app";
+    const baseUrl = Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app";
     const approvalUrl = `${baseUrl}/quote-approval/${modification.notification_token}`;
 
     // Build email content
@@ -134,9 +134,13 @@ serve(async (req) => {
       <html>
       <head>
         <meta charset="utf-8">
-        <title>Modification de devis - Dépan'Express</title>
+        <title>Depan.Pro : Modification de devis</title>
       </head>
       <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 60px;" />
+        </div>
+        
         <h1 style="color: #1a1a2e;">Modification de devis</h1>
         
         <p>Bonjour,</p>
@@ -178,7 +182,7 @@ serve(async (req) => {
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
         
         <p style="color: #999; font-size: 12px;">
-          Cet email a été envoyé par Dépan'Express concernant votre intervention ${intervention.tracking_code || ""}.
+          Cet email a été envoyé par Depan.Pro concernant votre intervention ${intervention.tracking_code || ""}.
         </p>
       </body>
       </html>
@@ -190,6 +194,8 @@ serve(async (req) => {
     if (clientEmail) {
       try {
         const resendApiKey = Deno.env.get("RESEND_API_KEY");
+        const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
+        
         if (resendApiKey) {
           const emailRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -198,9 +204,9 @@ serve(async (req) => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              from: "Dépan'Express <notifications@resend.dev>",
+              from: `Depan.Pro <${resendFromEmail}>`,
               to: [clientEmail],
-              subject: `Modification de devis - ${intervention.title}`,
+              subject: `Depan.Pro : Modification de devis - ${intervention.title}`,
               html: emailHtml,
             }),
           });
@@ -222,7 +228,7 @@ serve(async (req) => {
 
     // Send SMS via Twilio if clientPhone is available
     if (clientPhone) {
-      const smsMessage = `Dépan'Express: Le technicien propose ${modification.total_additional_amount.toFixed(2)}€ de prestations supplémentaires pour votre intervention. Validez ici: ${approvalUrl}`;
+      const smsMessage = `Depan.Pro: Le technicien propose ${modification.total_additional_amount.toFixed(2)}€ de prestations supplementaires pour votre intervention. Validez ici: ${approvalUrl}`;
       results.sms = await sendSMS(clientPhone, smsMessage);
     }
 

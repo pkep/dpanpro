@@ -100,9 +100,9 @@ serve(async (req) => {
       const resend = new Resend(resendApiKey);
       
       const { error: emailError } = await resend.emails.send({
-        from: `DépanPro <${resendFromEmail}>`,
+        from: `Depan.Pro <${resendFromEmail}>`,
         to: [user.email],
-        subject: 'Réinitialisation de votre mot de passe - DépanPro',
+        subject: 'Depan.Pro : Réinitialisation de votre mot de passe',
         html: `
           <!DOCTYPE html>
           <html>
@@ -112,6 +112,10 @@ serve(async (req) => {
           </head>
           <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
             <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 50px;" />
+              </div>
+              
               <h1 style="color: #333; margin-bottom: 24px; font-size: 24px;">Réinitialisation de mot de passe</h1>
               
               <p style="color: #666; font-size: 16px; line-height: 1.6;">Bonjour ${user.first_name || ''},</p>
@@ -131,7 +135,7 @@ serve(async (req) => {
               </p>
               
               <p style="color: #999; font-size: 12px; margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee;">
-                Cet email a été envoyé automatiquement par DépanPro. Si vous n'avez pas fait cette demande, vous pouvez ignorer ce message.
+                Cet email a été envoyé automatiquement par Depan.Pro. Si vous n'avez pas fait cette demande, vous pouvez ignorer ce message.
               </p>
             </div>
           </body>

@@ -94,6 +94,8 @@ serve(async (req: Request): Promise<Response> => {
 
     // Send email if configured
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
+    
     if (resendApiKey && clientEmail) {
       try {
         const resend = new Resend(resendApiKey);
@@ -107,6 +109,7 @@ serve(async (req: Request): Promise<Response> => {
               body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
               .container { max-width: 600px; margin: 0 auto; padding: 20px; }
               .header { background: #1a56db; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+              .header img { height: 50px; margin-bottom: 10px; }
               .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
               .invoice-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
               .total { font-size: 24px; color: #1a56db; font-weight: bold; }
@@ -116,6 +119,7 @@ serve(async (req: Request): Promise<Response> => {
           <body>
             <div class="container">
               <div class="header">
+                <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" />
                 <h1>Facture - Intervention ${trackingCode}</h1>
               </div>
               <div class="content">
@@ -133,10 +137,10 @@ serve(async (req: Request): Promise<Response> => {
                 
                 <p>Si vous avez des questions concernant cette facture, n'hésitez pas à nous contacter.</p>
                 
-                <p>Cordialement,<br>L'équipe Dépannage Express</p>
+                <p>Cordialement,<br>L'équipe Depan.Pro</p>
               </div>
               <div class="footer">
-                <p>Dépannage Express - Service de dépannage à domicile</p>
+                <p>Depan.Pro - Service de dépannage à domicile</p>
               </div>
             </div>
           </body>
@@ -144,9 +148,9 @@ serve(async (req: Request): Promise<Response> => {
         `;
 
         const emailResponse = await resend.emails.send({
-          from: "Dépannage Express <onboarding@resend.dev>",
+          from: `Depan.Pro <${resendFromEmail}>`,
           to: [clientEmail],
-          subject: `Facture - Intervention ${trackingCode}`,
+          subject: `Depan.Pro : Facture - Intervention ${trackingCode}`,
           html: emailHtml,
           attachments: [
             {
@@ -167,7 +171,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // Send SMS if configured
     if (clientPhone) {
-      const smsMessage = `Dépannage Express - Votre facture pour l'intervention ${trackingCode} est disponible. Montant: ${finalPrice.toFixed(2)} € TTC. Merci pour votre confiance !`;
+      const smsMessage = `Depan.Pro - Votre facture pour l'intervention ${trackingCode} est disponible. Montant: ${finalPrice.toFixed(2)} € TTC. Merci pour votre confiance !`;
       results.sms = await sendSMS(clientPhone, smsMessage);
     } else {
       console.log("SMS not sent: no client phone number");

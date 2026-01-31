@@ -115,9 +115,7 @@ async function sendEmail(
   }
 
   try {
-    // Use resend.dev for testing or your verified domain in production.
-    // IMPORTANT: keep ASCII display name here to avoid potential header encoding issues.
-    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "DepanExpress <onboarding@resend.dev>";
+    const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
     
     console.log("Sending email to:", to, "from:", fromEmail);
     
@@ -128,7 +126,7 @@ async function sendEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: fromEmail,
+        from: `Depan.Pro <${fromEmail}>`,
         to: [to],
         subject,
         html: htmlContent,
@@ -292,11 +290,12 @@ function buildEmailHtml(
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Mise à jour de votre intervention - Dépan'Express</title>
+      <title>Depan.Pro : Mise à jour de votre intervention</title>
     </head>
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
       <div style="background: white; border-radius: 12px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
         <div style="text-align: center; margin-bottom: 24px;">
+          <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 50px; margin-bottom: 15px;" />
           <h1 style="color: #1a1a2e; margin: 0; font-size: 24px;">
             ${emoji} Mise à jour de votre intervention
           </h1>
@@ -339,7 +338,7 @@ function buildEmailHtml(
         <hr style="margin: 32px 0; border: none; border-top: 1px solid #e2e8f0;">
         
         <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">
-          Cet email a été envoyé par Dépan'Express.<br>
+          Cet email a été envoyé par Depan.Pro.<br>
           En cas de question, contactez notre service client.
         </p>
       </div>
@@ -408,7 +407,7 @@ serve(async (req) => {
 
     // Send email if available
     if (clientEmail) {
-      const subject = `${emoji} ${intervention.title} - ${STATUS_LABELS[newStatus] || newStatus}`;
+      const subject = `Depan.Pro : ${intervention.title} - ${STATUS_LABELS[newStatus] || newStatus}`;
       const emailHtml = buildEmailHtml(intervention, newStatus, statusMessage, baseUrl);
       const emailResult = await sendEmail(clientEmail, subject, emailHtml);
       results.email = emailResult.ok;
@@ -424,10 +423,10 @@ serve(async (req) => {
       
       // Add rating prompt for completed interventions
       const ratingPrompt = newStatus === 'completed' 
-        ? ` Notez votre expérience: ${baseUrl}/intervention/${intervention.id}#rating`
+        ? ` Notez votre experience: ${baseUrl}/intervention/${intervention.id}#rating`
         : '';
       
-      const smsMessage = `${emoji} Dépan'Express: ${statusMessage}. Réf: ${intervention.tracking_code || "N/A"}.${ratingPrompt} Suivez: ${trackingUrl}`;
+      const smsMessage = `${emoji} Depan.Pro: ${statusMessage}. Ref: ${intervention.tracking_code || "N/A"}.${ratingPrompt} Suivez: ${trackingUrl}`;
       results.sms = await sendSMS(clientPhone, smsMessage);
     }
 

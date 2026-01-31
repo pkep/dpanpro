@@ -148,8 +148,8 @@ serve(async (req) => {
 
             // Simple SMS message (no emojis/special chars to avoid carrier filtering)
             const smsMessage = isUrgent
-              ? `URGENT - Nouvelle mission ${categoryLabel} a ${intervention.city}. ${intervention.address}, ${intervention.postalCode}. Ouvrez l'app pour accepter.`
-              : `Nouvelle mission ${categoryLabel} a ${intervention.city}. ${intervention.address}, ${intervention.postalCode}. Ouvrez l'app pour accepter.`;
+              ? `URGENT - Depan.Pro: Nouvelle mission ${categoryLabel} a ${intervention.city}. ${intervention.address}, ${intervention.postalCode}. Ouvrez l'app pour accepter.`
+              : `Depan.Pro: Nouvelle mission ${categoryLabel} a ${intervention.city}. ${intervention.address}, ${intervention.postalCode}. Ouvrez l'app pour accepter.`;
 
             const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
             const twilioAuth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
@@ -195,12 +195,13 @@ serve(async (req) => {
 
         if (resendApiKey) {
           const emailSubject = isUrgent
-            ? `🚨 URGENT - Nouvelle mission ${categoryLabel} à ${intervention.city}`
-            : `Nouvelle mission ${categoryLabel} à ${intervention.city}`;
+            ? `Depan.Pro : 🚨 URGENT - Nouvelle mission ${categoryLabel} à ${intervention.city}`
+            : `Depan.Pro : Nouvelle mission ${categoryLabel} à ${intervention.city}`;
 
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <div style="background: ${isUrgent ? '#ef4444' : '#3b82f6'}; color: white; padding: 20px; text-align: center;">
+                <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 40px; margin-bottom: 10px;" />
                 <h1 style="margin: 0;">${isUrgent ? '🚨 MISSION URGENTE' : '📋 Nouvelle Mission'}</h1>
               </div>
               
@@ -222,7 +223,7 @@ serve(async (req) => {
                 
                 <div style="text-align: center; margin: 30px 0;">
                   <p style="font-size: 14px; color: #6b7280;">
-                    Ouvrez l'application Dépan'Express pour voir les détails et accepter cette mission.
+                    Ouvrez l'application Depan.Pro pour voir les détails et accepter cette mission.
                   </p>
                 </div>
                 
@@ -232,7 +233,7 @@ serve(async (req) => {
               </div>
               
               <div style="background: #1f2937; color: white; padding: 15px; text-align: center;">
-                <p style="margin: 0; font-size: 12px;">Dépan'Express - Votre partenaire dépannage</p>
+                <p style="margin: 0; font-size: 12px;">Depan.Pro - Votre partenaire dépannage</p>
               </div>
             </div>
           `;
@@ -244,7 +245,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              from: `Dépan'Express <${resendFromEmail}>`,
+              from: `Depan.Pro <${resendFromEmail}>`,
               to: [tech.email],
               subject: emailSubject,
               html: emailHtml,
