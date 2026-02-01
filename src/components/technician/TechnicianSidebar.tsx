@@ -62,7 +62,7 @@ export function TechnicianSidebar() {
         .from('interventions')
         .select('id, title, category')
         .eq('technician_id', user.id)
-        .in('status', ['assigned', 'on_route', 'in_progress'])
+        .in('status', ['assigned', 'on_route', 'arrived', 'in_progress'])
         .limit(1)
         .maybeSingle();
       
