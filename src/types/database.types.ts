@@ -15,6 +15,7 @@ export interface DbUser {
   is_active: boolean;
   is_company: boolean;
   company_name: string | null;
+  company_address: string | null;
   siren: string | null;
   vat_number: string | null;
   created_at: string;
@@ -59,6 +60,7 @@ export interface DbUserInsert {
   is_active?: boolean;
   is_company?: boolean;
   company_name?: string | null;
+  company_address?: string | null;
   siren?: string | null;
   vat_number?: string | null;
 }

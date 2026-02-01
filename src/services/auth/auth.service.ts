@@ -94,6 +94,7 @@ class AuthService {
         is_active: true,
         is_company: credentials.isCompany || false,
         company_name: credentials.companyName || null,
+        company_address: credentials.companyAddress || null,
         siren: credentials.siren || null,
         vat_number: credentials.vatNumber || null,
       };
