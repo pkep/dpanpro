@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 export function Footer() {
+  const { phoneNumber } = useSiteSettings();
+  const phoneLink = phoneNumber.replace(/\s/g, '');
+
   return (
     <footer className="border-t border-border bg-card">
       <div className="container mx-auto px-4 py-12">
@@ -48,7 +52,7 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-primary" />
-                <a href="tel:0800123456" className="hover:text-foreground">0 800 123 456</a>
+                <a href={`tel:${phoneLink}`} className="hover:text-foreground">{phoneNumber || '0 800 123 456'}</a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />

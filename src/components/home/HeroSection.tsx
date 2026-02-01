@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Phone, ArrowRight } from 'lucide-react';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 export function HeroSection() {
+  const { phoneNumber } = useSiteSettings();
+  const phoneLink = phoneNumber.replace(/\s/g, '');
+
   return (
     <section className="relative overflow-hidden bg-secondary py-20 lg:py-32">
       <div className="absolute inset-0 bg-gradient-to-br from-secondary via-secondary to-primary/20" />
@@ -24,9 +28,9 @@ export function HeroSection() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="border-secondary-foreground/20 text-secondary-foreground hover:bg-secondary-foreground/10 text-lg">
-              <a href="tel:0800123456">
+              <a href={`tel:${phoneLink}`}>
                 <Phone className="mr-2 h-5 w-5" />
-                0 800 123 456
+                {phoneNumber || '0 800 123 456'}
               </a>
             </Button>
           </div>
