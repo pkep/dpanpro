@@ -37,27 +37,66 @@ class WorkPhotosService {
     uploadedBy: string,
     description?: string
   ): Promise<WorkPhoto[]> {
-    // Upload files to storage
-    const folder = `work-photos/${interventionId}/${photoType}`;
-    const uploadedUrls = await storageService.uploadFiles(BUCKET_NAME, files, folder);
+    console.log('[WorkPhotos] Starting upload process', {
+      interventionId,
+      photoType,
+      uploadedBy,
+      fileCount: files.length,
+    });
 
-    // Insert records into database
-    const insertData = uploadedUrls.map(url => ({
-      intervention_id: interventionId,
-      photo_url: url,
-      photo_type: photoType,
-      uploaded_by: uploadedBy,
-      description: description || null,
-    }));
+    // Step 1: Upload files to storage
+    let uploadedUrls: string[];
+    try {
+      const folder = `work-photos/${interventionId}/${photoType}`;
+      console.log('[WorkPhotos] Step 1: Uploading to storage bucket:', BUCKET_NAME, 'folder:', folder);
+      uploadedUrls = await storageService.uploadFiles(BUCKET_NAME, files, folder);
+      console.log('[WorkPhotos] Step 1 SUCCESS: Files uploaded to storage', uploadedUrls);
+    } catch (storageError: any) {
+      console.error('[WorkPhotos] Step 1 FAILED: Storage upload error', {
+        error: storageError,
+        message: storageError?.message,
+        statusCode: storageError?.statusCode,
+      });
+      throw new Error(`STORAGE_ERROR: ${storageError?.message || 'Échec de l\'upload vers le stockage'}`);
+    }
 
-    const { data, error } = await supabase
-      .from('intervention_work_photos')
-      .insert(insertData)
-      .select();
+    // Step 2: Insert records into database
+    try {
+      const insertData = uploadedUrls.map(url => ({
+        intervention_id: interventionId,
+        photo_url: url,
+        photo_type: photoType,
+        uploaded_by: uploadedBy,
+        description: description || null,
+      }));
 
-    if (error) throw error;
+      console.log('[WorkPhotos] Step 2: Inserting into database', insertData);
 
-    return (data as DbWorkPhoto[]).map(this.mapToWorkPhoto);
+      const { data, error } = await supabase
+        .from('intervention_work_photos')
+        .insert(insertData)
+        .select();
+
+      if (error) {
+        console.error('[WorkPhotos] Step 2 FAILED: Database insert error', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw new Error(`DATABASE_ERROR: [${error.code}] ${error.message}`);
+      }
+
+      console.log('[WorkPhotos] Step 2 SUCCESS: Records inserted', data);
+      return (data as DbWorkPhoto[]).map(this.mapToWorkPhoto);
+    } catch (dbError: any) {
+      // If it's already our formatted error, rethrow
+      if (dbError.message?.startsWith('DATABASE_ERROR:')) {
+        throw dbError;
+      }
+      console.error('[WorkPhotos] Step 2 FAILED: Unexpected database error', dbError);
+      throw new Error(`DATABASE_ERROR: ${dbError?.message || 'Erreur inattendue lors de l\'écriture en base'}`);
+    }
   }
 
   /**
