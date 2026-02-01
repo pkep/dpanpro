@@ -1105,11 +1105,14 @@ export type Database = {
           created_at: string
           default_priority: string
           description: string | null
+          displacement_price: number
           display_order: number
           icon: string | null
           id: string
           is_active: boolean
           name: string
+          repair_price: number
+          security_price: number
           updated_at: string
           vat_rate_individual: number
           vat_rate_professional: number
@@ -1120,11 +1123,14 @@ export type Database = {
           created_at?: string
           default_priority?: string
           description?: string | null
+          displacement_price?: number
           display_order?: number
           icon?: string | null
           id?: string
           is_active?: boolean
           name: string
+          repair_price?: number
+          security_price?: number
           updated_at?: string
           vat_rate_individual?: number
           vat_rate_professional?: number
@@ -1135,11 +1141,14 @@ export type Database = {
           created_at?: string
           default_priority?: string
           description?: string | null
+          displacement_price?: number
           display_order?: number
           icon?: string | null
           id?: string
           is_active?: boolean
           name?: string
+          repair_price?: number
+          security_price?: number
           updated_at?: string
           vat_rate_individual?: number
           vat_rate_professional?: number

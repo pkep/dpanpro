@@ -2,6 +2,7 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, Wrench, Users, Percent, Cog, Shield } from 'lucide-react';
+import { ServicesSettingsTab } from '@/components/admin/settings/ServicesSettingsTab';
 
 export default function AdminSettingsPage() {
   return (
@@ -32,22 +33,7 @@ export default function AdminSettingsPage() {
           </TabsList>
 
           <TabsContent value="services">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wrench className="h-5 w-5" />
-                  Gestion des services
-                </CardTitle>
-                <CardDescription>
-                  Modifier les noms, prix et activer/désactiver les services
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  La gestion des services sera affichée ici
-                </p>
-              </CardContent>
-            </Card>
+            <ServicesSettingsTab />
           </TabsContent>
 
           <TabsContent value="priorities">
