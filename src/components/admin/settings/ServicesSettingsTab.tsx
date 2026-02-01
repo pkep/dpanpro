@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Wrench, Pencil, Loader2 } from 'lucide-react';
+import { Wrench, Pencil, Loader2, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { servicesService, Service } from '@/services/services/services.service';
 
@@ -54,6 +54,18 @@ export function ServicesSettingsTab() {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: (data: { serviceId1: string; order1: number; serviceId2: string; order2: number }) =>
+      servicesService.swapServiceOrder(data.serviceId1, data.order1, data.serviceId2, data.order2),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['services-all'] });
+      toast.success('Ordre mis à jour');
+    },
+    onError: () => {
+      toast.error('Erreur lors du changement d\'ordre');
+    },
+  });
+
   const handleEdit = (service: Service) => {
     setEditingService(service);
     setFormData({
@@ -84,6 +96,32 @@ export function ServicesSettingsTab() {
     });
   };
 
+  const handleMoveUp = (index: number) => {
+    if (!services || index === 0) return;
+    const currentService = services[index];
+    const previousService = services[index - 1];
+    
+    reorderMutation.mutate({
+      serviceId1: currentService.id,
+      order1: currentService.displayOrder,
+      serviceId2: previousService.id,
+      order2: previousService.displayOrder,
+    });
+  };
+
+  const handleMoveDown = (index: number) => {
+    if (!services || index === services.length - 1) return;
+    const currentService = services[index];
+    const nextService = services[index + 1];
+    
+    reorderMutation.mutate({
+      serviceId1: currentService.id,
+      order1: currentService.displayOrder,
+      serviceId2: nextService.id,
+      order2: nextService.displayOrder,
+    });
+  };
+
   const calculateBasePrice = () => {
     return formData.displacementPrice + formData.securityPrice + formData.repairPrice;
   };
@@ -107,13 +145,14 @@ export function ServicesSettingsTab() {
             Gestion des services
           </CardTitle>
           <CardDescription>
-            Modifier les noms, prix et activer/désactiver les services. Le prix de base est la somme des 3 composantes.
+            Modifier les noms, prix et activer/désactiver les services. Utilisez les flèches pour réorganiser l'ordre d'affichage.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[100px]">Ordre</TableHead>
                 <TableHead>Service</TableHead>
                 <TableHead className="text-right">Déplacement</TableHead>
                 <TableHead className="text-right">Mise en sécurité</TableHead>
@@ -124,10 +163,38 @@ export function ServicesSettingsTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {services?.map((service) => {
+              {services?.map((service, index) => {
                 const total = service.displacementPrice + service.securityPrice + service.repairPrice;
                 return (
                   <TableRow key={service.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex flex-col">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            disabled={index === 0 || reorderMutation.isPending}
+                            onClick={() => handleMoveUp(index)}
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            disabled={index === (services?.length || 0) - 1 || reorderMutation.isPending}
+                            onClick={() => handleMoveDown(index)}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <span className="text-sm text-muted-foreground w-6 text-center">
+                          {index + 1}
+                        </span>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{service.name}</p>

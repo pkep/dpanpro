@@ -81,6 +81,7 @@ class ServicesService {
     if (updates.repairPrice !== undefined) dbUpdates.repair_price = updates.repairPrice;
     if (updates.vatRateIndividual !== undefined) dbUpdates.vat_rate_individual = updates.vatRateIndividual;
     if (updates.vatRateProfessional !== undefined) dbUpdates.vat_rate_professional = updates.vatRateProfessional;
+    if (updates.displayOrder !== undefined) dbUpdates.display_order = updates.displayOrder;
     
     // Recalculate base_price as sum of components
     if (updates.displacementPrice !== undefined || updates.securityPrice !== undefined || updates.repairPrice !== undefined) {
@@ -96,6 +97,23 @@ class ServicesService {
       .eq('id', id);
 
     if (error) throw error;
+  }
+
+  async swapServiceOrder(serviceId1: string, order1: number, serviceId2: string, order2: number): Promise<void> {
+    // Update both services' display_order
+    const { error: error1 } = await supabase
+      .from('services')
+      .update({ display_order: order2 } as Record<string, unknown>)
+      .eq('id', serviceId1);
+
+    if (error1) throw error1;
+
+    const { error: error2 } = await supabase
+      .from('services')
+      .update({ display_order: order1 } as Record<string, unknown>)
+      .eq('id', serviceId2);
+
+    if (error2) throw error2;
   }
 
   private mapToService(data: DbService): Service {
