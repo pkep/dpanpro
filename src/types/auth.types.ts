@@ -26,6 +26,7 @@ export interface RegisterCredentials {
   phone?: string;
   isCompany?: boolean;
   companyName?: string;
+  companyAddress?: string;
   siren?: string;
   vatNumber?: string;
 }

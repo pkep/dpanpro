@@ -53,6 +53,12 @@ const registerSchema = z.object({
     .max(100, 'La dénomination sociale ne peut pas dépasser 100 caractères')
     .optional()
     .or(z.literal('')),
+  companyAddress: z
+    .string()
+    .trim()
+    .max(255, 'L\'adresse ne peut pas dépasser 255 caractères')
+    .optional()
+    .or(z.literal('')),
   siren: z
     .string()
     .trim()
@@ -76,6 +82,14 @@ const registerSchema = z.object({
 }, {
   message: 'La dénomination sociale est requise pour une société',
   path: ['companyName'],
+}).refine((data) => {
+  if (data.isCompany) {
+    return data.companyAddress && data.companyAddress.trim().length > 0;
+  }
+  return true;
+}, {
+  message: 'L\'adresse de facturation est requise pour une société',
+  path: ['companyAddress'],
 }).refine((data) => {
   if (data.isCompany) {
     return data.siren && data.siren.trim().length > 0;
@@ -111,6 +125,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       confirmPassword: '',
       isCompany: false,
       companyName: '',
+      companyAddress: '',
       siren: '',
       vatNumber: '',
     },
@@ -131,6 +146,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         phone: data.phone || undefined,
         isCompany: data.isCompany,
         companyName: data.isCompany ? data.companyName : undefined,
+        companyAddress: data.isCompany ? data.companyAddress : undefined,
         siren: data.isCompany ? data.siren : undefined,
         vatNumber: data.isCompany ? data.vatNumber : undefined,
       });
@@ -305,6 +321,24 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                           disabled={isLoading}
                         />
                       </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="companyAddress"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adresse de facturation *</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="123 rue de Paris, 75001 Paris"
+                        disabled={isLoading}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1422,6 +1422,7 @@ export type Database = {
       }
       users: {
         Row: {
+          company_address: string | null
           company_name: string | null
           created_at: string
           email: string
@@ -1438,6 +1439,7 @@ export type Database = {
           vat_number: string | null
         }
         Insert: {
+          company_address?: string | null
           company_name?: string | null
           created_at?: string
           email: string
@@ -1454,6 +1456,7 @@ export type Database = {
           vat_number?: string | null
         }
         Update: {
+          company_address?: string | null
           company_name?: string | null
           created_at?: string
           email?: string
