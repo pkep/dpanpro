@@ -81,9 +81,22 @@ export function StartInterventionDialog({
       toast.success(`${uploadedPhotos.length} photo(s) enregistrée(s)`);
       onSuccess(uploadedPhotos);
       handleClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading photos:', error);
-      setUploadError('Erreur lors de l\'upload des photos. Veuillez réessayer.');
+      
+      // Parse the error to show detailed debug info
+      const errorMessage = error?.message || 'Erreur inconnue';
+      let debugInfo = '';
+      
+      if (errorMessage.startsWith('STORAGE_ERROR:')) {
+        debugInfo = `🗄️ Échec STOCKAGE: ${errorMessage.replace('STORAGE_ERROR: ', '')}`;
+      } else if (errorMessage.startsWith('DATABASE_ERROR:')) {
+        debugInfo = `🗃️ Échec BASE DE DONNÉES: ${errorMessage.replace('DATABASE_ERROR: ', '')}`;
+      } else {
+        debugInfo = `❓ Erreur: ${errorMessage}`;
+      }
+      
+      setUploadError(debugInfo);
     } finally {
       setIsUploading(false);
     }
