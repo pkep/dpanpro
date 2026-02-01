@@ -37,6 +37,7 @@ import { TechnicianRatingDialog } from '@/components/technician/TechnicianRating
 import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
 import { WorkPhotoCapture } from '@/components/technician/WorkPhotoCapture';
 import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
+import { StartInterventionDialog } from '@/components/technician/StartInterventionDialog';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
 import { toast } from 'sonner';
 
@@ -62,6 +63,7 @@ export default function TechnicianInterventionPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [showStartDialog, setShowStartDialog] = useState(false);
   
   // Work photos state
   const [beforePhotos, setBeforePhotos] = useState<WorkPhoto[]>([]);
@@ -125,14 +127,6 @@ export default function TechnicianInterventionPage() {
   const handleStatusChange = async (newStatus: 'on_route' | 'arrived' | 'in_progress') => {
     if (!intervention || !user) return;
     
-    // Validate before photos for starting work
-    if (newStatus === 'in_progress' && beforePhotos.length === 0) {
-      toast.error('Photos obligatoires', {
-        description: 'Vous devez prendre au moins une photo de la panne avant de commencer l\'intervention.',
-      });
-      return;
-    }
-    
     setIsUpdatingStatus(true);
     try {
       await interventionsService.updateStatus(intervention.id, newStatus);
@@ -151,6 +145,16 @@ export default function TechnicianInterventionPage() {
     } finally {
       setIsUpdatingStatus(false);
     }
+  };
+
+  const handleStartInterventionClick = () => {
+    setShowStartDialog(true);
+  };
+
+  const handleStartInterventionSuccess = async (photos: WorkPhoto[]) => {
+    setBeforePhotos(photos);
+    // Now change status to in_progress
+    await handleStatusChange('in_progress');
   };
 
   const handlePhotosUpdated = (newPhotos: string[]) => {
@@ -234,7 +238,7 @@ export default function TechnicianInterventionPage() {
   const isCancelled = intervention.status === 'cancelled';
   const canFinalize = intervention.status === 'in_progress';
   const canCancel = ['new', 'assigned', 'on_route', 'arrived'].includes(intervention.status);
-  const showBeforePhotos = ['arrived', 'in_progress'].includes(intervention.status);
+  const showBeforePhotos = intervention.status === 'in_progress' && beforePhotos.length > 0;
   const showAfterPhotos = intervention.status === 'in_progress';
 
   return (
@@ -325,12 +329,11 @@ export default function TechnicianInterventionPage() {
             
             {intervention.status === 'arrived' && (
               <Button 
-                onClick={() => handleStatusChange('in_progress')} 
+                onClick={handleStartInterventionClick} 
                 variant="secondary"
-                disabled={isUpdatingStatus || beforePhotos.length === 0}
-                title={beforePhotos.length === 0 ? 'Prenez d\'abord des photos de la panne' : undefined}
+                disabled={isUpdatingStatus}
               >
-                <Clock className="h-4 w-4 mr-2" />
+                <Camera className="h-4 w-4 mr-2" />
                 Commencer
               </Button>
             )}
@@ -360,20 +363,29 @@ export default function TechnicianInterventionPage() {
         </Card>
       )}
 
-      {/* Work Photos - Before/After (only visible to technician) */}
-      {showBeforePhotos && user && (
-        <div className="mb-4 space-y-4">
-          <WorkPhotoCapture
-            interventionId={intervention.id}
-            userId={user.id}
-            photoType="before"
-            title="📷 Photos avant intervention"
-            description="Prenez des photos de la panne pour documenter l'état initial (obligatoire avant de commencer)"
-            onPhotosCaptured={handleBeforePhotosCaptured}
-            existingPhotos={beforePhotos}
-            disabled={intervention.status === 'in_progress'}
-          />
-        </div>
+      {/* Work Photos - Before (read-only display once in_progress) */}
+      {showBeforePhotos && (
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              📷 Photos avant intervention
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-2">
+              {beforePhotos.map((photo) => (
+                <div key={photo.id} className="relative aspect-square">
+                  <img
+                    src={photo.photoUrl}
+                    alt="Photo avant"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {showAfterPhotos && user && (
@@ -528,6 +540,17 @@ export default function TechnicianInterventionPage() {
         action="cancel_intervention"
         onConfirm={handleCancelIntervention}
       />
+
+      {/* Start Intervention Dialog with photo capture */}
+      {user && (
+        <StartInterventionDialog
+          open={showStartDialog}
+          onOpenChange={setShowStartDialog}
+          interventionId={intervention.id}
+          userId={user.id}
+          onSuccess={handleStartInterventionSuccess}
+        />
+      )}
     </TechnicianLayout>
   );
 }
