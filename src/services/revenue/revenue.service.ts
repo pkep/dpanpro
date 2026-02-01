@@ -30,6 +30,17 @@ export interface PaymentPeriod {
   isPaid: boolean;
 }
 
+export interface MonthlyPayout {
+  periodStart: Date;
+  periodEnd: Date;
+  grossRevenue: number;
+  commissionRate: number;
+  netRevenue: number;
+  scheduledPaymentDate: Date;
+  isPaid: boolean;
+  paidAt: Date | null;
+}
+
 class RevenueService {
   async getRevenueStats(technicianId: string): Promise<RevenueStats> {
     const now = new Date();
@@ -192,18 +203,9 @@ class RevenueService {
 
     const commissionRate = await this.getCommissionRate(technicianId);
 
-    // Determine which 2 periods to show
-    // If we're in first half (1-15), show:
-    //   - Previous second half (16 - end of previous month) - paid on 5th of current month
-    //   - Current first half (1-15) - paid on 20th of current month
-    // If we're in second half (16-end), show:
-    //   - Current first half (1-15) - paid on 20th of current month
-    //   - Current second half (16-end) - paid on 5th of next month
-
     const periods: PaymentPeriod[] = [];
 
     if (currentDay <= 15) {
-      // Period 1: Previous month's second half (16 - end of month)
       const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
       const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
       const prevMonthLastDay = lastDayOfMonth(new Date(prevYear, prevMonth, 1));
@@ -225,7 +227,6 @@ class RevenueService {
         isPaid: currentDay >= 5,
       });
 
-      // Period 2: Current month's first half (1-15)
       const period2Start = new Date(currentYear, currentMonth, 1);
       const period2End = new Date(currentYear, currentMonth, 15);
       const period2PaymentDate = new Date(currentYear, currentMonth, 20);
@@ -243,7 +244,6 @@ class RevenueService {
         isPaid: false,
       });
     } else {
-      // Period 1: Current month's first half (1-15)
       const period1Start = new Date(currentYear, currentMonth, 1);
       const period1End = new Date(currentYear, currentMonth, 15);
       const period1PaymentDate = new Date(currentYear, currentMonth, 20);
@@ -261,7 +261,6 @@ class RevenueService {
         isPaid: currentDay >= 20,
       });
 
-      // Period 2: Current month's second half (16-end)
       const period2Start = new Date(currentYear, currentMonth, 16);
       const period2End = lastDayOfMonth(now);
       const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
@@ -283,6 +282,65 @@ class RevenueService {
     }
 
     return periods;
+  }
+
+  async getMonthlyPayout(technicianId: string): Promise<MonthlyPayout | null> {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Previous month period (1st to last day)
+    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    const periodStart = new Date(prevYear, prevMonth, 1);
+    const periodEnd = lastDayOfMonth(periodStart);
+
+    // Scheduled payment date is 1st of current month
+    const scheduledPaymentDate = new Date(currentYear, currentMonth, 1);
+
+    // Check if there's an actual payout record from admin/manager
+    const { data: payoutRecord, error } = await supabase
+      .from('technician_payouts')
+      .select('*')
+      .eq('technician_id', technicianId)
+      .gte('period_start', periodStart.toISOString().split('T')[0])
+      .lte('period_end', periodEnd.toISOString().split('T')[0])
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching payout record:', error);
+    }
+
+    const commissionRate = await this.getCommissionRate(technicianId);
+
+    // If a payout record exists, use its data
+    if (payoutRecord) {
+      return {
+        periodStart: new Date(payoutRecord.period_start),
+        periodEnd: new Date(payoutRecord.period_end),
+        grossRevenue: Number(payoutRecord.amount) / (1 - commissionRate / 100), // Reverse calculate gross
+        commissionRate,
+        netRevenue: Number(payoutRecord.amount),
+        scheduledPaymentDate: new Date(payoutRecord.payout_date),
+        isPaid: payoutRecord.status === 'paid',
+        paidAt: payoutRecord.status === 'paid' ? new Date(payoutRecord.updated_at) : null,
+      };
+    }
+
+    // Otherwise, calculate from interventions
+    const grossRevenue = await this.getPeriodRevenue(technicianId, periodStart, periodEnd);
+    const netRevenue = grossRevenue * (1 - commissionRate / 100);
+
+    return {
+      periodStart,
+      periodEnd,
+      grossRevenue,
+      commissionRate,
+      netRevenue,
+      scheduledPaymentDate,
+      isPaid: false,
+      paidAt: null,
+    };
   }
 
   private async getPeriodRevenue(technicianId: string, startDate: Date, endDate: Date): Promise<number> {
