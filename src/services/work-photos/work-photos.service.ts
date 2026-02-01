@@ -28,7 +28,7 @@ interface DbWorkPhoto {
 class WorkPhotosService {
   /**
    * Upload work photos for an intervention (before/after)
-   * Uses the abstracted storage service to allow provider swapping
+   * Uses Edge Function to bypass RLS restrictions
    */
   async uploadPhotos(
     interventionId: string,
@@ -60,9 +60,9 @@ class WorkPhotosService {
       throw new Error(`STORAGE_ERROR: ${storageError?.message || 'Échec de l\'upload vers le stockage'}`);
     }
 
-    // Step 2: Insert records into database
+    // Step 2: Insert records via Edge Function (bypasses RLS)
     try {
-      const insertData = uploadedUrls.map(url => ({
+      const photos = uploadedUrls.map(url => ({
         intervention_id: interventionId,
         photo_url: url,
         photo_type: photoType,
@@ -70,31 +70,30 @@ class WorkPhotosService {
         description: description || null,
       }));
 
-      console.log('[WorkPhotos] Step 2: Inserting into database', insertData);
+      console.log('[WorkPhotos] Step 2: Calling insert-work-photos Edge Function', photos);
 
-      const { data, error } = await supabase
-        .from('intervention_work_photos')
-        .insert(insertData)
-        .select();
+      const { data: response, error: invokeError } = await supabase.functions.invoke('insert-work-photos', {
+        body: { photos },
+      });
 
-      if (error) {
-        console.error('[WorkPhotos] Step 2 FAILED: Database insert error', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        });
-        throw new Error(`DATABASE_ERROR: [${error.code}] ${error.message}`);
+      if (invokeError) {
+        console.error('[WorkPhotos] Step 2 FAILED: Edge Function invoke error', invokeError);
+        throw new Error(`DATABASE_ERROR: ${invokeError.message}`);
       }
 
-      console.log('[WorkPhotos] Step 2 SUCCESS: Records inserted', data);
-      return (data as DbWorkPhoto[]).map(this.mapToWorkPhoto);
+      if (response?.error) {
+        console.error('[WorkPhotos] Step 2 FAILED: Edge Function returned error', response);
+        throw new Error(`DATABASE_ERROR: [${response.code || 'UNKNOWN'}] ${response.error}`);
+      }
+
+      console.log('[WorkPhotos] Step 2 SUCCESS: Records inserted via Edge Function', response?.data);
+      return (response?.data as DbWorkPhoto[]).map(this.mapToWorkPhoto);
     } catch (dbError: any) {
       // If it's already our formatted error, rethrow
-      if (dbError.message?.startsWith('DATABASE_ERROR:')) {
+      if (dbError.message?.startsWith('DATABASE_ERROR:') || dbError.message?.startsWith('STORAGE_ERROR:')) {
         throw dbError;
       }
-      console.error('[WorkPhotos] Step 2 FAILED: Unexpected database error', dbError);
+      console.error('[WorkPhotos] Step 2 FAILED: Unexpected error', dbError);
       throw new Error(`DATABASE_ERROR: ${dbError?.message || 'Erreur inattendue lors de l\'écriture en base'}`);
     }
   }
