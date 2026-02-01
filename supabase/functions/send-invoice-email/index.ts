@@ -69,10 +69,10 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`Sending invoice for intervention ${interventionId}`);
 
-    // Get intervention details with client info
+    // Get intervention details
     const { data: intervention, error: interventionError } = await supabase
       .from("interventions")
-      .select("*, users!interventions_client_id_fkey(*)")
+      .select("*")
       .eq("id", interventionId)
       .single();
 
@@ -81,9 +81,20 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error("Intervention not found");
     }
 
-    const clientEmail = intervention.client_email || intervention.users?.email;
-    const clientPhone = intervention.client_phone || intervention.users?.phone;
-    const clientName = intervention.client_name || intervention.users?.name || "Client";
+    // Get client info if client_id exists
+    let clientUser = null;
+    if (intervention.client_id) {
+      const { data: user } = await supabase
+        .from("users")
+        .select("email, phone, first_name, last_name")
+        .eq("id", intervention.client_id)
+        .single();
+      clientUser = user;
+    }
+
+    const clientEmail = intervention.client_email || clientUser?.email;
+    const clientPhone = intervention.client_phone || clientUser?.phone;
+    const clientName = clientUser ? `${clientUser.first_name} ${clientUser.last_name}` : "Client";
     const trackingCode = intervention.tracking_code || "N/A";
     const finalPrice = intervention.final_price || 0;
 
