@@ -81,6 +81,11 @@ export function ServicesManagement() {
       updatedAt: s.updated_at as string,
       basePrice: s.base_price as number,
       defaultPriority: s.default_priority as string,
+      displacementPrice: (s.displacement_price as number) || 0,
+      securityPrice: (s.security_price as number) || 0,
+      repairPrice: (s.repair_price as number) || 0,
+      vatRateIndividual: (s.vat_rate_individual as number) || 10,
+      vatRateProfessional: (s.vat_rate_professional as number) || 20,
     }));
   };
 
