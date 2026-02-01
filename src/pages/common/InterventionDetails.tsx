@@ -32,6 +32,7 @@ import { ClientTrackingMap } from '@/components/map/ClientTrackingMap';
 import { RatingForm } from '@/components/ratings/RatingForm';
 import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import { PushNotificationSetup } from '@/components/notifications/PushNotificationSetup';
+import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
 import { PendingQuoteBlocker } from '@/components/interventions/PendingQuoteBlocker';
 import {
   Home,
@@ -61,6 +62,7 @@ const STATUS_COLORS: Record<InterventionStatus, string> = {
   new: 'bg-blue-500/10 text-blue-600 border-blue-200',
   assigned: 'bg-purple-500/10 text-purple-600 border-purple-200',
   on_route: 'bg-yellow-500/10 text-yellow-600 border-yellow-200',
+  arrived: 'bg-amber-500/10 text-amber-600 border-amber-200',
   in_progress: 'bg-orange-500/10 text-orange-600 border-orange-200',
   completed: 'bg-green-500/10 text-green-600 border-green-200',
   cancelled: 'bg-destructive/10 text-destructive border-destructive/20',
@@ -513,6 +515,14 @@ export default function InterventionDetails() {
                 />
               </CardContent>
             </Card>
+
+            {/* Work Photos Section - Only visible to admin/manager/technician */}
+            {(user?.role === 'admin' || user?.role === 'manager' || (user?.role === 'technician' && intervention.technicianId === user?.id)) && (
+              <WorkPhotosGallery 
+                interventionId={intervention.id}
+                canDelete={canEdit}
+              />
+            )}
 
             {/* Invoice Download & Rating Section (for completed interventions) */}
             {intervention.status === 'completed' && (

@@ -12,6 +12,7 @@ export type InterventionStatus =
   | 'new'           // Nouveau
   | 'assigned'      // Assigné
   | 'on_route'      // En route
+  | 'arrived'       // Arrivé sur place
   | 'in_progress'   // En cours
   | 'completed'     // Terminé
   | 'cancelled';    // Annulé
@@ -78,6 +79,7 @@ export const STATUS_LABELS: Record<InterventionStatus, string> = {
   new: 'Nouveau',
   assigned: 'Assigné',
   on_route: 'En route',
+  arrived: 'Arrivé',
   in_progress: 'En cours',
   completed: 'Terminé',
   cancelled: 'Annulé',

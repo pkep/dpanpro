@@ -7,6 +7,7 @@ const STATUS_ORDER: InterventionStatus[] = [
   'new',
   'assigned',
   'on_route',
+  'arrived',
   'in_progress',
   'completed',
 ];
@@ -15,6 +16,7 @@ const STATUS_ORDER: InterventionStatus[] = [
 const TIMELINE_LABELS: Record<InterventionStatus, string> = {
   ...STATUS_LABELS,
   new: 'Demande reçue',
+  arrived: 'Arrivé',
 };
 
 interface StatusTimelineProps {

@@ -21,6 +21,7 @@ const STATUS_LABELS: Record<string, string> = {
   new: "Nouveau",
   assigned: "Assigné",
   on_route: "En route",
+  arrived: "Arrivé",
   in_progress: "En cours",
   completed: "Terminé",
   cancelled: "Annulé",
@@ -29,6 +30,7 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_MESSAGES: Record<string, string> = {
   assigned: "Un technicien a été assigné à votre intervention",
   on_route: "Le technicien est en route vers votre adresse",
+  arrived: "Le technicien est arrivé devant chez vous",
   in_progress: "L'intervention est en cours",
   completed: "L'intervention est terminée",
   cancelled: "L'intervention a été annulée",
@@ -37,6 +39,7 @@ const STATUS_MESSAGES: Record<string, string> = {
 const STATUS_EMOJI: Record<string, string> = {
   assigned: "👨‍🔧",
   on_route: "🚗",
+  arrived: "📍",
   in_progress: "🔧",
   completed: "✅",
   cancelled: "❌",
@@ -358,7 +361,7 @@ serve(async (req) => {
     console.log(`Status change notification: ${oldStatus || 'unknown'} -> ${newStatus} for intervention ${interventionId}`);
 
     // Only notify for specific statuses
-    const notifiableStatuses = ['assigned', 'on_route', 'in_progress', 'completed', 'cancelled'];
+    const notifiableStatuses = ['assigned', 'on_route', 'arrived', 'in_progress', 'completed', 'cancelled'];
     
     if (!notifiableStatuses.includes(newStatus)) {
       console.log(`Status '${newStatus}' is not notifiable, skipping`);
