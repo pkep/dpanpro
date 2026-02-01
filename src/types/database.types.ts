@@ -2,7 +2,7 @@
 
 export type DbInterventionCategory = 'plumbing' | 'electricity' | 'heating' | 'locksmith' | 'glazing' | 'aircon' | 'other';
 export type DbInterventionPriority = 'low' | 'normal' | 'high' | 'urgent';
-export type DbInterventionStatus = 'new' | 'assigned' | 'on_route' | 'in_progress' | 'completed' | 'cancelled';
+export type DbInterventionStatus = 'new' | 'assigned' | 'on_route' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface DbUser {
   id: string;

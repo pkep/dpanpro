@@ -20,11 +20,13 @@ import {
   MapPin,
   Clock,
   User,
-  XCircle
+  XCircle,
+  MapPinCheck
 } from 'lucide-react';
 import { CATEGORY_LABELS, CATEGORY_ICONS, STATUS_LABELS, PRIORITY_LABELS } from '@/types/intervention.types';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { historyService } from '@/services/history/history.service';
+import { workPhotosService, WorkPhoto } from '@/services/work-photos/work-photos.service';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { InterventionChat } from '@/components/technician/InterventionChat';
@@ -33,6 +35,8 @@ import { QuoteModificationStatus } from '@/components/technician/QuoteModificati
 import { FinalizeInterventionDialog } from '@/components/technician/FinalizeInterventionDialog';
 import { TechnicianRatingDialog } from '@/components/technician/TechnicianRatingDialog';
 import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
+import { WorkPhotoCapture } from '@/components/technician/WorkPhotoCapture';
+import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
 import { toast } from 'sonner';
 
@@ -40,6 +44,7 @@ const STATUS_COLORS: Record<string, string> = {
   new: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
   assigned: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
   on_route: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+  arrived: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
   in_progress: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
   completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
   cancelled: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
@@ -57,6 +62,11 @@ export default function TechnicianInterventionPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [showRatingDialog, setShowRatingDialog] = useState(false);
+  
+  // Work photos state
+  const [beforePhotos, setBeforePhotos] = useState<WorkPhoto[]>([]);
+  const [afterPhotos, setAfterPhotos] = useState<WorkPhoto[]>([]);
+  const [workPhotosLoaded, setWorkPhotosLoaded] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -70,9 +80,28 @@ export default function TechnicianInterventionPage() {
     }
   }, [intervention?.photos]);
 
+  // Load work photos
+  useEffect(() => {
+    if (intervention?.id && user) {
+      loadWorkPhotos();
+    }
+  }, [intervention?.id, user]);
+
+  const loadWorkPhotos = async () => {
+    if (!intervention?.id) return;
+    try {
+      const allPhotos = await workPhotosService.getPhotos(intervention.id);
+      setBeforePhotos(allPhotos.filter(p => p.photoType === 'before'));
+      setAfterPhotos(allPhotos.filter(p => p.photoType === 'after'));
+      setWorkPhotosLoaded(true);
+    } catch (err) {
+      console.error('Error loading work photos:', err);
+      setWorkPhotosLoaded(true);
+    }
+  };
+
   const handleNavigate = () => {
     if (!intervention?.latitude || !intervention?.longitude) {
-      // Use address-based navigation
       const address = encodeURIComponent(
         `${intervention?.address}, ${intervention?.postalCode} ${intervention?.city}`
       );
@@ -93,8 +122,16 @@ export default function TechnicianInterventionPage() {
     }
   };
 
-  const handleStatusChange = async (newStatus: 'on_route' | 'in_progress') => {
+  const handleStatusChange = async (newStatus: 'on_route' | 'arrived' | 'in_progress') => {
     if (!intervention || !user) return;
+    
+    // Validate before photos for starting work
+    if (newStatus === 'in_progress' && beforePhotos.length === 0) {
+      toast.error('Photos obligatoires', {
+        description: 'Vous devez prendre au moins une photo de la panne avant de commencer l\'intervention.',
+      });
+      return;
+    }
     
     setIsUpdatingStatus(true);
     try {
@@ -118,6 +155,25 @@ export default function TechnicianInterventionPage() {
 
   const handlePhotosUpdated = (newPhotos: string[]) => {
     setPhotos(newPhotos);
+  };
+
+  const handleBeforePhotosCaptured = (photos: WorkPhoto[]) => {
+    setBeforePhotos(photos);
+  };
+
+  const handleAfterPhotosCaptured = (photos: WorkPhoto[]) => {
+    setAfterPhotos(photos);
+  };
+
+  const handleFinalizeClick = () => {
+    // Validate after photos
+    if (afterPhotos.length === 0) {
+      toast.error('Photos obligatoires', {
+        description: 'Vous devez prendre au moins une photo de la panne résolue avant de finaliser.',
+      });
+      return;
+    }
+    setShowFinalizeDialog(true);
   };
 
   const handleCancelIntervention = async (reason?: string) => {
@@ -177,7 +233,9 @@ export default function TechnicianInterventionPage() {
   const isCompleted = intervention.status === 'completed';
   const isCancelled = intervention.status === 'cancelled';
   const canFinalize = intervention.status === 'in_progress';
-  const canCancel = ['new', 'assigned', 'on_route'].includes(intervention.status);
+  const canCancel = ['new', 'assigned', 'on_route', 'arrived'].includes(intervention.status);
+  const showBeforePhotos = ['arrived', 'in_progress'].includes(intervention.status);
+  const showAfterPhotos = intervention.status === 'in_progress';
 
   return (
     <TechnicianLayout 
@@ -191,192 +249,251 @@ export default function TechnicianInterventionPage() {
 
       {/* Quick Info Card */}
       <Card className="mb-4">
-          <CardContent className="pt-4 space-y-3">
-            <div className="flex items-start gap-2">
-              <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-              <div>
-                <p className="font-medium">{intervention.address}</p>
-                <p className="text-sm text-muted-foreground">
-                  {intervention.postalCode} {intervention.city}
-                </p>
-              </div>
+        <CardContent className="pt-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+            <div>
+              <p className="font-medium">{intervention.address}</p>
+              <p className="text-sm text-muted-foreground">
+                {intervention.postalCode} {intervention.city}
+              </p>
             </div>
-            
-            {intervention.description && (
-              <p className="text-sm text-muted-foreground">{intervention.description}</p>
+          </div>
+          
+          {intervention.description && (
+            <p className="text-sm text-muted-foreground">{intervention.description}</p>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline">{priorityLabel}</Badge>
+            {intervention.estimatedPrice && (
+              <Badge variant="secondary">
+                Estimé: {intervention.estimatedPrice.toFixed(2)} €
+              </Badge>
             )}
+          </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{priorityLabel}</Badge>
-              {intervention.estimatedPrice && (
-                <Badge variant="secondary">
-                  Estimé: {intervention.estimatedPrice.toFixed(2)} €
-                </Badge>
-              )}
+          {/* Client Info */}
+          <div className="flex items-center gap-4 pt-2 border-t">
+            <div className="flex items-center gap-2 text-sm">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span>{intervention.clientEmail || 'Client'}</span>
             </div>
+            {intervention.clientPhone && (
+              <Button variant="outline" size="sm" onClick={handleCall}>
+                <Phone className="h-4 w-4 mr-2" />
+                Appeler
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Client Info */}
-            <div className="flex items-center gap-4 pt-2 border-t">
-              <div className="flex items-center gap-2 text-sm">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span>{intervention.clientEmail || 'Client'}</span>
-              </div>
-              {intervention.clientPhone && (
-                <Button variant="outline" size="sm" onClick={handleCall}>
-                  <Phone className="h-4 w-4 mr-2" />
-                  Appeler
-                </Button>
-              )}
-            </div>
+      {/* Status Actions */}
+      {!isCompleted && !isCancelled && (
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Actions rapides</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button onClick={handleNavigate} variant="default">
+              <Navigation className="h-4 w-4 mr-2" />
+              Naviguer
+            </Button>
+            
+            {intervention.status === 'assigned' && (
+              <Button 
+                onClick={() => handleStatusChange('on_route')} 
+                variant="secondary"
+                disabled={isUpdatingStatus}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                En route
+              </Button>
+            )}
+            
+            {intervention.status === 'on_route' && (
+              <Button 
+                onClick={() => handleStatusChange('arrived')} 
+                variant="secondary"
+                disabled={isUpdatingStatus}
+              >
+                <MapPinCheck className="h-4 w-4 mr-2" />
+                Je suis arrivé
+              </Button>
+            )}
+            
+            {intervention.status === 'arrived' && (
+              <Button 
+                onClick={() => handleStatusChange('in_progress')} 
+                variant="secondary"
+                disabled={isUpdatingStatus || beforePhotos.length === 0}
+                title={beforePhotos.length === 0 ? 'Prenez d\'abord des photos de la panne' : undefined}
+              >
+                <Clock className="h-4 w-4 mr-2" />
+                Commencer
+              </Button>
+            )}
+            
+            {canFinalize && (
+              <Button 
+                onClick={handleFinalizeClick} 
+                variant="default"
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Finaliser
+              </Button>
+            )}
+            
+            {canCancel && (
+              <Button 
+                onClick={() => setShowCancelDialog(true)} 
+                variant="destructive"
+                disabled={isCancelling}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Annuler
+              </Button>
+            )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Status Actions */}
-        {!isCompleted && !isCancelled && (
-          <Card className="mb-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Actions rapides</CardTitle>
+      {/* Work Photos - Before/After (only visible to technician) */}
+      {showBeforePhotos && user && (
+        <div className="mb-4 space-y-4">
+          <WorkPhotoCapture
+            interventionId={intervention.id}
+            userId={user.id}
+            photoType="before"
+            title="📷 Photos avant intervention"
+            description="Prenez des photos de la panne pour documenter l'état initial (obligatoire avant de commencer)"
+            onPhotosCaptured={handleBeforePhotosCaptured}
+            existingPhotos={beforePhotos}
+            disabled={intervention.status === 'in_progress'}
+          />
+        </div>
+      )}
+
+      {showAfterPhotos && user && (
+        <div className="mb-4">
+          <WorkPhotoCapture
+            interventionId={intervention.id}
+            userId={user.id}
+            photoType="after"
+            title="📷 Photos après intervention"
+            description="Prenez des photos de la panne résolue pour documenter le travail effectué (obligatoire avant de finaliser)"
+            onPhotosCaptured={handleAfterPhotosCaptured}
+            existingPhotos={afterPhotos}
+          />
+        </div>
+      )}
+
+      {/* Quote Modification Status (shows pending approval) */}
+      <QuoteModificationStatus 
+        interventionId={intervention.id} 
+        onRefresh={refresh}
+      />
+
+      {/* Tabs */}
+      <Tabs defaultValue="photos" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="photos">
+            <Camera className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Photos</span>
+          </TabsTrigger>
+          <TabsTrigger value="messages">
+            <MessageSquare className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Messages</span>
+          </TabsTrigger>
+          <TabsTrigger value="quote">
+            <FileText className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Devis</span>
+          </TabsTrigger>
+          <TabsTrigger value="info">
+            <AlertCircle className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Infos</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="photos" className="space-y-4">
+          {/* Work photos gallery (before/after - internal) */}
+          {workPhotosLoaded && (beforePhotos.length > 0 || afterPhotos.length > 0) && (
+            <WorkPhotosGallery 
+              interventionId={intervention.id}
+              canDelete={!isCompleted && !isCancelled}
+              onPhotosChange={loadWorkPhotos}
+            />
+          )}
+          
+          {/* Client-facing photos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Photos partagées avec le client</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
-              <Button onClick={handleNavigate} variant="default">
-                <Navigation className="h-4 w-4 mr-2" />
-                Naviguer
-              </Button>
-              
-              {intervention.status === 'assigned' && (
-                <Button 
-                  onClick={() => handleStatusChange('on_route')} 
-                  variant="secondary"
-                  disabled={isUpdatingStatus}
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  En route
-                </Button>
+            <CardContent className="space-y-4">
+              <PhotoUpload
+                interventionId={intervention.id}
+                existingPhotos={photos}
+                onPhotosUpdated={handlePhotosUpdated}
+                disabled={isCompleted || isCancelled}
+              />
+              <PhotoGallery
+                interventionId={intervention.id}
+                photos={photos}
+                onPhotosUpdated={handlePhotosUpdated}
+                canDelete={!isCompleted && !isCancelled}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="messages">
+          <InterventionChat
+            interventionId={intervention.id}
+            userId={user.id}
+            userRole="technician"
+          />
+        </TabsContent>
+
+        <TabsContent value="quote">
+          <QuoteModificationForm
+            interventionId={intervention.id}
+            technicianId={user.id}
+            clientEmail={intervention.clientEmail}
+            clientPhone={intervention.clientPhone}
+            disabled={isCompleted || isCancelled}
+          />
+        </TabsContent>
+
+        <TabsContent value="info">
+          <Card>
+            <CardContent className="pt-4 space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Code de suivi</p>
+                <p className="font-mono font-medium">{intervention.trackingCode || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Créée le</p>
+                <p>{new Date(intervention.createdAt).toLocaleString('fr-FR')}</p>
+              </div>
+              {intervention.startedAt && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Démarrée le</p>
+                  <p>{new Date(intervention.startedAt).toLocaleString('fr-FR')}</p>
+                </div>
               )}
-              
-              {intervention.status === 'on_route' && (
-                <Button 
-                  onClick={() => handleStatusChange('in_progress')} 
-                  variant="secondary"
-                  disabled={isUpdatingStatus}
-                >
-                  <Clock className="h-4 w-4 mr-2" />
-                  Commencer
-                </Button>
-              )}
-              
-              {canFinalize && (
-                <Button 
-                  onClick={() => setShowFinalizeDialog(true)} 
-                  variant="default"
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Finaliser
-                </Button>
-              )}
-              
-              {canCancel && (
-                <Button 
-                  onClick={() => setShowCancelDialog(true)} 
-                  variant="destructive"
-                  disabled={isCancelling}
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Annuler
-                </Button>
+              {intervention.completedAt && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Terminée le</p>
+                  <p>{new Date(intervention.completedAt).toLocaleString('fr-FR')}</p>
+                </div>
               )}
             </CardContent>
           </Card>
-        )}
-
-        {/* Quote Modification Status (shows pending approval) */}
-        <QuoteModificationStatus 
-          interventionId={intervention.id} 
-          onRefresh={refresh}
-        />
-
-        {/* Tabs */}
-        <Tabs defaultValue="photos" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="photos">
-              <Camera className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Photos</span>
-            </TabsTrigger>
-            <TabsTrigger value="messages">
-              <MessageSquare className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Messages</span>
-            </TabsTrigger>
-            <TabsTrigger value="quote">
-              <FileText className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Devis</span>
-            </TabsTrigger>
-            <TabsTrigger value="info">
-              <AlertCircle className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Infos</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="photos" className="space-y-4">
-            <PhotoUpload
-              interventionId={intervention.id}
-              existingPhotos={photos}
-              onPhotosUpdated={handlePhotosUpdated}
-              disabled={isCompleted || isCancelled}
-            />
-            <PhotoGallery
-              interventionId={intervention.id}
-              photos={photos}
-              onPhotosUpdated={handlePhotosUpdated}
-              canDelete={!isCompleted && !isCancelled}
-            />
-          </TabsContent>
-
-          <TabsContent value="messages">
-            <InterventionChat
-              interventionId={intervention.id}
-              userId={user.id}
-              userRole="technician"
-            />
-          </TabsContent>
-
-          <TabsContent value="quote">
-            <QuoteModificationForm
-              interventionId={intervention.id}
-              technicianId={user.id}
-              clientEmail={intervention.clientEmail}
-              clientPhone={intervention.clientPhone}
-              disabled={isCompleted || isCancelled}
-            />
-          </TabsContent>
-
-          <TabsContent value="info">
-            <Card>
-              <CardContent className="pt-4 space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Code de suivi</p>
-                  <p className="font-mono font-medium">{intervention.trackingCode || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Créée le</p>
-                  <p>{new Date(intervention.createdAt).toLocaleString('fr-FR')}</p>
-                </div>
-                {intervention.startedAt && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Démarrée le</p>
-                    <p>{new Date(intervention.startedAt).toLocaleString('fr-FR')}</p>
-                  </div>
-                )}
-                {intervention.completedAt && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Terminée le</p>
-                    <p>{new Date(intervention.completedAt).toLocaleString('fr-FR')}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        </TabsContent>
+      </Tabs>
 
       {/* Finalize Dialog */}
       <FinalizeInterventionDialog

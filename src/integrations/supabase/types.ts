@@ -488,6 +488,51 @@ export type Database = {
           },
         ]
       }
+      intervention_work_photos: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          intervention_id: string
+          photo_type: string
+          photo_url: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          intervention_id: string
+          photo_type: string
+          photo_url: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          intervention_id?: string
+          photo_type?: string
+          photo_url?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_work_photos_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervention_work_photos_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interventions: {
         Row: {
           accepted_at: string | null

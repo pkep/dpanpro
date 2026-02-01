@@ -138,8 +138,7 @@ class InterventionsService {
     const updates: Record<string, unknown> = { status };
     const now = new Date();
 
-    if (status === 'in_progress') {
-      updates.started_at = now.toISOString();
+    if (status === 'arrived') {
       updates.arrived_at = now.toISOString();
       
       // Calculate travel time (from accepted_at to arrived_at)
@@ -155,6 +154,8 @@ class InterventionsService {
         updates.travel_time_seconds = travelTimeSeconds;
         console.log(`Travel time calculated: ${travelTimeSeconds} seconds`);
       }
+    } else if (status === 'in_progress') {
+      updates.started_at = now.toISOString();
     } else if (status === 'completed') {
       updates.completed_at = now.toISOString();
       
