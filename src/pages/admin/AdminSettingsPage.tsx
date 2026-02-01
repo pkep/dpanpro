@@ -1,11 +1,12 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Wrench, Users, Percent, Cog } from 'lucide-react';
+import { Settings, Wrench, Users, Percent, Cog, Phone } from 'lucide-react';
 import { ServicesSettingsTab } from '@/components/admin/settings/ServicesSettingsTab';
 import { PriorityMultipliersTab } from '@/components/admin/settings/PriorityMultipliersTab';
 import { UsersSettingsTab } from '@/components/admin/settings/UsersSettingsTab';
 import { CommissionSettingsTab } from '@/components/admin/settings/CommissionSettingsTab';
 import { DispatchAlgorithmTab } from '@/components/admin/settings/DispatchAlgorithmTab';
+import { PhoneSettingsTab } from '@/components/admin/settings/PhoneSettingsTab';
 
 export default function AdminSettingsPage() {
   return (
@@ -33,6 +34,10 @@ export default function AdminSettingsPage() {
               <Cog className="h-4 w-4" />
               Algorithme
             </TabsTrigger>
+            <TabsTrigger value="phone" className="flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              Téléphone
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="services">
@@ -53,6 +58,10 @@ export default function AdminSettingsPage() {
 
           <TabsContent value="dispatch">
             <DispatchAlgorithmTab />
+          </TabsContent>
+
+          <TabsContent value="phone">
+            <PhoneSettingsTab />
           </TabsContent>
         </Tabs>
       </div>
