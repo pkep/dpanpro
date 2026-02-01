@@ -13,6 +13,10 @@ export interface DbUser {
   phone: string | null;
   role: 'client' | 'technician' | 'admin';
   is_active: boolean;
+  is_company: boolean;
+  company_name: string | null;
+  siren: string | null;
+  vat_number: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -53,6 +57,10 @@ export interface DbUserInsert {
   phone?: string | null;
   role?: 'client' | 'technician' | 'admin';
   is_active?: boolean;
+  is_company?: boolean;
+  company_name?: string | null;
+  siren?: string | null;
+  vat_number?: string | null;
 }
 
 export interface DbInterventionInsert {

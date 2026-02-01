@@ -1111,6 +1111,8 @@ export type Database = {
           is_active: boolean
           name: string
           updated_at: string
+          vat_rate_individual: number
+          vat_rate_professional: number
         }
         Insert: {
           base_price?: number
@@ -1124,6 +1126,8 @@ export type Database = {
           is_active?: boolean
           name: string
           updated_at?: string
+          vat_rate_individual?: number
+          vat_rate_professional?: number
         }
         Update: {
           base_price?: number
@@ -1137,6 +1141,8 @@ export type Database = {
           is_active?: boolean
           name?: string
           updated_at?: string
+          vat_rate_individual?: number
+          vat_rate_professional?: number
         }
         Relationships: []
       }
@@ -1416,40 +1422,52 @@ export type Database = {
       }
       users: {
         Row: {
+          company_name: string | null
           created_at: string
           email: string
           first_name: string
           id: string
           is_active: boolean
+          is_company: boolean
           last_name: string
           password_hash: string
           phone: string | null
           role: string
+          siren: string | null
           updated_at: string
+          vat_number: string | null
         }
         Insert: {
+          company_name?: string | null
           created_at?: string
           email: string
           first_name: string
           id?: string
           is_active?: boolean
+          is_company?: boolean
           last_name: string
           password_hash: string
           phone?: string | null
           role?: string
+          siren?: string | null
           updated_at?: string
+          vat_number?: string | null
         }
         Update: {
+          company_name?: string | null
           created_at?: string
           email?: string
           first_name?: string
           id?: string
           is_active?: boolean
+          is_company?: boolean
           last_name?: string
           password_hash?: string
           phone?: string | null
           role?: string
+          siren?: string | null
           updated_at?: string
+          vat_number?: string | null
         }
         Relationships: []
       }
