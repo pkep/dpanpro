@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Phone, Eye, EyeOff, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   Form,
   FormControl,
@@ -44,9 +46,44 @@ const registerSchema = z.object({
     .min(6, 'Le mot de passe doit contenir au moins 6 caractères')
     .max(100, 'Le mot de passe ne peut pas dépasser 100 caractères'),
   confirmPassword: z.string(),
+  isCompany: z.boolean().default(false),
+  companyName: z
+    .string()
+    .trim()
+    .max(100, 'La dénomination sociale ne peut pas dépasser 100 caractères')
+    .optional()
+    .or(z.literal('')),
+  siren: z
+    .string()
+    .trim()
+    .max(14, 'Le numéro SIREN ne peut pas dépasser 14 caractères')
+    .optional()
+    .or(z.literal('')),
+  vatNumber: z
+    .string()
+    .trim()
+    .max(20, 'Le numéro TVA ne peut pas dépasser 20 caractères')
+    .optional()
+    .or(z.literal('')),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Les mots de passe ne correspondent pas',
   path: ['confirmPassword'],
+}).refine((data) => {
+  if (data.isCompany) {
+    return data.companyName && data.companyName.trim().length > 0;
+  }
+  return true;
+}, {
+  message: 'La dénomination sociale est requise pour une société',
+  path: ['companyName'],
+}).refine((data) => {
+  if (data.isCompany) {
+    return data.siren && data.siren.trim().length > 0;
+  }
+  return true;
+}, {
+  message: 'Le numéro SIREN est requis pour une société',
+  path: ['siren'],
 });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -72,8 +109,14 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       phone: '',
       password: '',
       confirmPassword: '',
+      isCompany: false,
+      companyName: '',
+      siren: '',
+      vatNumber: '',
     },
   });
+
+  const isCompany = form.watch('isCompany');
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
@@ -86,6 +129,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         firstName: data.firstName,
         lastName: data.lastName,
         phone: data.phone || undefined,
+        isCompany: data.isCompany,
+        companyName: data.isCompany ? data.companyName : undefined,
+        siren: data.isCompany ? data.siren : undefined,
+        vatNumber: data.isCompany ? data.vatNumber : undefined,
       });
 
       if (response.success && response.user) {
@@ -208,6 +255,101 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               </FormItem>
             )}
           />
+
+          {/* Company checkbox */}
+          <FormField
+            control={form.control}
+            name="isCompany"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <Label className="text-sm font-medium cursor-pointer" onClick={() => field.onChange(!field.value)}>
+                    Je suis une société
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Cochez cette case si vous êtes un professionnel
+                  </p>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {/* Company fields - shown only when isCompany is checked */}
+          {isCompany && (
+            <div className="space-y-4 rounded-md border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <Building2 className="h-4 w-4" />
+                Informations société
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="companyName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dénomination sociale *</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          {...field}
+                          placeholder="Ma Société SAS"
+                          className="pl-10"
+                          disabled={isLoading}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="siren"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numéro SIREN *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="123 456 789"
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="vatNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Numéro TVA (optionnel)</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="FR12345678901"
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          )}
 
           <FormField
             control={form.control}

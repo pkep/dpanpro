@@ -92,6 +92,10 @@ class AuthService {
         phone: credentials.phone || null,
         role: 'client',
         is_active: true,
+        is_company: credentials.isCompany || false,
+        company_name: credentials.companyName || null,
+        siren: credentials.siren || null,
+        vat_number: credentials.vatNumber || null,
       };
 
       // Créer l'utilisateur

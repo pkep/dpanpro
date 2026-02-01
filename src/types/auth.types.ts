@@ -24,6 +24,10 @@ export interface RegisterCredentials {
   firstName: string;
   lastName: string;
   phone?: string;
+  isCompany?: boolean;
+  companyName?: string;
+  siren?: string;
+  vatNumber?: string;
 }
 
 export interface AuthResponse {
