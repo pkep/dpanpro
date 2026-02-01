@@ -38,6 +38,7 @@ import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDia
 import { WorkPhotoCapture } from '@/components/technician/WorkPhotoCapture';
 import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
 import { StartInterventionDialog } from '@/components/technician/StartInterventionDialog';
+import { FinalizePhotosDialog } from '@/components/technician/FinalizePhotosDialog';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
 import { toast } from 'sonner';
 
@@ -64,6 +65,7 @@ export default function TechnicianInterventionPage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
+  const [showFinalizePhotosDialog, setShowFinalizePhotosDialog] = useState(false);
   
   // Work photos state
   const [beforePhotos, setBeforePhotos] = useState<WorkPhoto[]>([]);
@@ -170,13 +172,17 @@ export default function TechnicianInterventionPage() {
   };
 
   const handleFinalizeClick = () => {
-    // Validate after photos
+    // If no after photos, show photo capture dialog first
     if (afterPhotos.length === 0) {
-      toast.error('Photos obligatoires', {
-        description: 'Vous devez prendre au moins une photo de la panne résolue avant de finaliser.',
-      });
+      setShowFinalizePhotosDialog(true);
       return;
     }
+    setShowFinalizeDialog(true);
+  };
+
+  const handleFinalizePhotosSuccess = (photos: WorkPhoto[]) => {
+    setAfterPhotos(prev => [...prev, ...photos]);
+    // Now open the finalize dialog for payment
     setShowFinalizeDialog(true);
   };
 
@@ -549,6 +555,17 @@ export default function TechnicianInterventionPage() {
           interventionId={intervention.id}
           userId={user.id}
           onSuccess={handleStartInterventionSuccess}
+        />
+      )}
+
+      {/* Finalize Photos Dialog */}
+      {user && (
+        <FinalizePhotosDialog
+          open={showFinalizePhotosDialog}
+          onOpenChange={setShowFinalizePhotosDialog}
+          interventionId={intervention.id}
+          userId={user.id}
+          onSuccess={handleFinalizePhotosSuccess}
         />
       )}
     </TechnicianLayout>
