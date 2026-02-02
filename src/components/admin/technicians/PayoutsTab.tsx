@@ -54,8 +54,9 @@ export function PayoutsTab() {
 
   // "Versement déjà effectué" section
   const [paidTechSearchQuery, setPaidTechSearchQuery] = useState('');
-  const [paidTechnicians, setPaidTechnicians] = useState<Technician[]>([]);
-  const [loadingPaidTechs, setLoadingPaidTechs] = useState(false);
+  const [allPaidTechnicians, setAllPaidTechnicians] = useState<Technician[]>([]);
+  const [loadingPaidTechs, setLoadingPaidTechs] = useState(true);
+  const [paidTechPage, setPaidTechPage] = useState(1);
   const [selectedPaidTech, setSelectedPaidTech] = useState<Technician | null>(null);
   const [selectedTechPayouts, setSelectedTechPayouts] = useState<Payout[]>([]);
   const [loadingTechPayouts, setLoadingTechPayouts] = useState(false);
@@ -247,13 +248,8 @@ export function PayoutsTab() {
     }
   };
 
-  // Search paid technicians (those with at least one payout)
-  const searchPaidTechnicians = async (query: string) => {
-    if (!query.trim()) {
-      setPaidTechnicians([]);
-      return;
-    }
-    
+  // Fetch all paid technicians (those with at least one payout)
+  const fetchAllPaidTechnicians = async () => {
     setLoadingPaidTechs(true);
     try {
       // Get technician IDs that have payouts
@@ -264,22 +260,21 @@ export function PayoutsTab() {
       const techIdsWithPayouts = [...new Set(techsWithPayouts?.map(p => p.technician_id) || [])];
       
       if (techIdsWithPayouts.length === 0) {
-        setPaidTechnicians([]);
+        setAllPaidTechnicians([]);
         setLoadingPaidTechs(false);
         return;
       }
 
-      // Get technician details matching search
-      const { data: matchingTechs } = await supabase
+      // Get all technician details
+      const { data: techs } = await supabase
         .from('users')
         .select('id, first_name, last_name, email')
         .in('id', techIdsWithPayouts)
-        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
-        .limit(10);
+        .order('last_name');
 
-      setPaidTechnicians(matchingTechs || []);
+      setAllPaidTechnicians(techs || []);
     } catch (error) {
-      console.error('Error searching paid technicians:', error);
+      console.error('Error fetching paid technicians:', error);
     } finally {
       setLoadingPaidTechs(false);
     }
@@ -308,6 +303,7 @@ export function PayoutsTab() {
 
   useEffect(() => {
     fetchPendingTechnicians();
+    fetchAllPaidTechnicians();
   }, []);
 
   useEffect(() => {
@@ -319,10 +315,7 @@ export function PayoutsTab() {
   }, [historySearchQuery]);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      searchPaidTechnicians(paidTechSearchQuery);
-    }, 300);
-    return () => clearTimeout(timeoutId);
+    setPaidTechPage(1);
   }, [paidTechSearchQuery]);
 
   const handleCreatePayout = async () => {
@@ -605,14 +598,14 @@ export function PayoutsTab() {
                 <div>
                   <CardTitle>Versement déjà effectué</CardTitle>
                   <CardDescription>
-                    Recherchez un technicien pour voir ses derniers versements
+                    Techniciens ayant reçu au moins un versement
                   </CardDescription>
                 </div>
               </div>
               <div className="relative w-72">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher un technicien..."
+                  placeholder="Filtrer par nom, prénom, email..."
                   value={paidTechSearchQuery}
                   onChange={(e) => {
                     setPaidTechSearchQuery(e.target.value);
@@ -629,102 +622,155 @@ export function PayoutsTab() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : !paidTechSearchQuery ? (
-              <p className="text-muted-foreground text-center py-8">
-                Saisissez un nom, prénom ou email pour rechercher un technicien
-              </p>
-            ) : paidTechnicians.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                Aucun technicien trouvé avec des versements
-              </p>
-            ) : !selectedPaidTech ? (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Cliquez sur un technicien pour voir ses 12 derniers versements :
-                </p>
-                {paidTechnicians.map((tech) => (
-                  <div
-                    key={tech.id}
-                    className="border rounded-lg p-3 flex items-center gap-3 hover:bg-accent/50 cursor-pointer transition-colors"
-                    onClick={() => fetchTechnicianPayouts(tech)}
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium">
-                        {tech.first_name} {tech.last_name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{tech.email}</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Selected technician header */}
-                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                  <div>
-                    <p className="font-medium">
-                      {selectedPaidTech.first_name} {selectedPaidTech.last_name}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{selectedPaidTech.email}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedPaidTech(null);
-                      setSelectedTechPayouts([]);
-                    }}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Retour
-                  </Button>
-                </div>
+            ) : (() => {
+              // Filter technicians by search query
+              const filteredPaidTechs = paidTechSearchQuery
+                ? allPaidTechnicians.filter(t =>
+                    t.first_name.toLowerCase().includes(paidTechSearchQuery.toLowerCase()) ||
+                    t.last_name.toLowerCase().includes(paidTechSearchQuery.toLowerCase()) ||
+                    t.email.toLowerCase().includes(paidTechSearchQuery.toLowerCase())
+                  )
+                : allPaidTechnicians;
 
-                {/* Payouts list */}
-                {loadingTechPayouts ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : selectedTechPayouts.length === 0 ? (
+              const PAID_TECH_PAGE_SIZE = 4;
+              const paidTechTotalPages = Math.ceil(filteredPaidTechs.length / PAID_TECH_PAGE_SIZE);
+              const paginatedTechs = filteredPaidTechs.slice(
+                (paidTechPage - 1) * PAID_TECH_PAGE_SIZE,
+                paidTechPage * PAID_TECH_PAGE_SIZE
+              );
+
+              if (filteredPaidTechs.length === 0) {
+                return (
                   <p className="text-muted-foreground text-center py-8">
-                    Aucun versement enregistré pour ce technicien
+                    {paidTechSearchQuery ? 'Aucun technicien trouvé' : 'Aucun technicien avec des versements'}
                   </p>
-                ) : (
+                );
+              }
+
+              if (selectedPaidTech) {
+                return (
+                  <div className="space-y-4">
+                    {/* Selected technician header */}
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium">
+                          {selectedPaidTech.first_name} {selectedPaidTech.last_name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{selectedPaidTech.email}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPaidTech(null);
+                          setSelectedTechPayouts([]);
+                        }}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Retour
+                      </Button>
+                    </div>
+
+                    {/* Payouts list */}
+                    {loadingTechPayouts ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : selectedTechPayouts.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-8">
+                        Aucun versement enregistré pour ce technicien
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">
+                          12 derniers versements :
+                        </p>
+                        {selectedTechPayouts.map((payout) => (
+                          <div
+                            key={payout.id}
+                            className="border rounded-lg p-3 flex items-center justify-between"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-primary">
+                                  {formatCurrency(Number(payout.amount))}
+                                </span>
+                                {getStatusBadge(payout.status)}
+                              </div>
+                              <div className="text-xs text-muted-foreground space-y-0.5">
+                                <p>
+                                  Période : {format(new Date(payout.period_start), 'dd MMM', { locale: fr })} - {format(new Date(payout.period_end), 'dd MMM yyyy', { locale: fr })}
+                                </p>
+                                <p>
+                                  Versé le {format(new Date(payout.payout_date), 'dd MMMM yyyy', { locale: fr })}
+                                </p>
+                                {payout.notes && (
+                                  <p className="italic mt-1">{payout.notes}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Cliquez sur un technicien pour voir ses 12 derniers versements
+                  </p>
                   <div className="space-y-2">
-                    <p className="text-sm font-medium">
-                      12 derniers versements :
-                    </p>
-                    {selectedTechPayouts.map((payout) => (
+                    {paginatedTechs.map((tech) => (
                       <div
-                        key={payout.id}
-                        className="border rounded-lg p-3 flex items-center justify-between"
+                        key={tech.id}
+                        className="border rounded-lg p-3 flex items-center gap-3 hover:bg-accent/50 cursor-pointer transition-colors"
+                        onClick={() => fetchTechnicianPayouts(tech)}
                       >
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-primary">
-                              {formatCurrency(Number(payout.amount))}
-                            </span>
-                            {getStatusBadge(payout.status)}
-                          </div>
-                          <div className="text-xs text-muted-foreground space-y-0.5">
-                            <p>
-                              Période : {format(new Date(payout.period_start), 'dd MMM', { locale: fr })} - {format(new Date(payout.period_end), 'dd MMM yyyy', { locale: fr })}
-                            </p>
-                            <p>
-                              Versé le {format(new Date(payout.payout_date), 'dd MMMM yyyy', { locale: fr })}
-                            </p>
-                            {payout.notes && (
-                              <p className="italic mt-1">{payout.notes}</p>
-                            )}
-                          </div>
+                          <p className="font-medium">
+                            {tech.first_name} {tech.last_name}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{tech.email}</p>
                         </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-            )}
+
+                  {/* Pagination */}
+                  {paidTechTotalPages > 1 && (
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <p className="text-sm text-muted-foreground">
+                        Page {paidTechPage} sur {paidTechTotalPages} ({filteredPaidTechs.length} techniciens)
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPaidTechPage(p => Math.max(1, p - 1))}
+                          disabled={paidTechPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Précédent
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPaidTechPage(p => Math.min(paidTechTotalPages, p + 1))}
+                          disabled={paidTechPage === paidTechTotalPages}
+                        >
+                          Suivant
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 
