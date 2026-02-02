@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, MapPin, Clock, UserCheck, Star, Navigation, AlertCircle } from 'lucide-react';
+import { Loader2, MapPin, Clock, UserCheck, Star, Navigation, AlertCircle, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getEligibleTechnicians, type EligibleTechnician } from '@/services/dispatch/eligible-technicians.service';
@@ -292,39 +292,55 @@ export function DispatchTab() {
                               {tech.firstName[0]}{tech.lastName[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">
+                                  {tech.firstName} {tech.lastName}
+                                </span>
+                                {tech.averageRating && (
+                                  <span className="flex items-center gap-0.5 text-sm text-amber-600">
+                                    <Star className="h-3 w-3 fill-current" />
+                                    {tech.averageRating.toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <Navigation className="h-3 w-3" />
+                                  {tech.distanceKm} km
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  ~{tech.estimatedArrivalMinutes} min
+                                </span>
+                                {tech.currentCity && (
+                                  <span className="truncate">
+                                    {tech.currentCity}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium">
-                                {tech.firstName} {tech.lastName}
-                              </span>
-                              {tech.averageRating && (
-                                <span className="flex items-center gap-0.5 text-sm text-amber-600">
-                                  <Star className="h-3 w-3 fill-current" />
-                                  {tech.averageRating.toFixed(1)}
-                                </span>
+                              {tech.phone && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.location.href = `tel:${tech.phone}`;
+                                  }}
+                                  title={`Appeler ${tech.firstName}`}
+                                >
+                                  <Phone className="h-4 w-4 text-primary" />
+                                </Button>
+                              )}
+                              {selectedTechnicianId === tech.id && (
+                                <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                                  <UserCheck className="h-3 w-3 text-primary-foreground" />
+                                </div>
                               )}
                             </div>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Navigation className="h-3 w-3" />
-                                {tech.distanceKm} km
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                ~{tech.estimatedArrivalMinutes} min
-                              </span>
-                              {tech.currentCity && (
-                                <span className="truncate">
-                                  {tech.currentCity}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {selectedTechnicianId === tech.id && (
-                            <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
-                              <UserCheck className="h-3 w-3 text-primary-foreground" />
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}

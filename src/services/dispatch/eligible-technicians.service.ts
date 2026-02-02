@@ -5,6 +5,7 @@ export interface EligibleTechnician {
   id: string;
   firstName: string;
   lastName: string;
+  phone: string | null;
   skills: string[];
   avatarUrl: string | null;
   distanceKm: number;
@@ -85,7 +86,7 @@ export async function getEligibleTechnicians({
   // 5. Get active users from the eligible list
   const { data: users, error: usersError } = await supabase
     .from('users')
-    .select('id, first_name, last_name, avatar_url')
+    .select('id, first_name, last_name, avatar_url, phone')
     .in('id', eligibleUserIds)
     .eq('is_active', true)
     .eq('role', 'technician');
@@ -150,6 +151,7 @@ export async function getEligibleTechnicians({
         id: user.id,
         firstName: user.first_name,
         lastName: user.last_name,
+        phone: user.phone,
         avatarUrl: user.avatar_url,
         skills: app.skills || [],
         latitude: app.latitude,
