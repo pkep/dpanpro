@@ -20,7 +20,10 @@ interface Technician {
 }
 
 interface TechnicianWithRevenue extends Technician {
-  previousMonthRevenue: number;
+  grossRevenue: number;
+  commissionAmount: number;
+  netRevenue: number;
+  commissionRate: number;
   hasPendingPayout: boolean;
   existingPayoutId?: string;
   existingPayoutStatus?: string;
@@ -119,22 +122,33 @@ export function PayoutsTab() {
 
       const commissionRate = commissionData?.commission_rate ? Number(commissionData.commission_rate) : 15;
 
-      // Calculate revenue per technician
-      const revenueByTech: Record<string, number> = {};
+      // Calculate revenue per technician (gross and net)
+      const revenueByTech: Record<string, { gross: number; commission: number; net: number }> = {};
       interventions?.forEach(i => {
         if (i.technician_id) {
           const gross = Number(i.final_price) || 0;
-          const net = gross * (1 - commissionRate / 100);
-          revenueByTech[i.technician_id] = (revenueByTech[i.technician_id] || 0) + net;
+          const commission = gross * (commissionRate / 100);
+          const net = gross - commission;
+          
+          if (!revenueByTech[i.technician_id]) {
+            revenueByTech[i.technician_id] = { gross: 0, commission: 0, net: 0 };
+          }
+          revenueByTech[i.technician_id].gross += gross;
+          revenueByTech[i.technician_id].commission += commission;
+          revenueByTech[i.technician_id].net += net;
         }
       });
 
       // Enrich technicians with revenue and payout status
       const enrichedTechnicians: TechnicianWithRevenue[] = (techData || []).map(tech => {
         const existingPayout = existingPayouts?.find(p => p.technician_id === tech.id);
+        const revenue = revenueByTech[tech.id] || { gross: 0, commission: 0, net: 0 };
         return {
           ...tech,
-          previousMonthRevenue: revenueByTech[tech.id] || 0,
+          grossRevenue: revenue.gross,
+          commissionAmount: revenue.commission,
+          netRevenue: revenue.net,
+          commissionRate,
           hasPendingPayout: !!existingPayout,
           existingPayoutId: existingPayout?.id,
           existingPayoutStatus: existingPayout?.status,
@@ -143,11 +157,11 @@ export function PayoutsTab() {
 
       setTechnicians(enrichedTechnicians);
 
-      // Initialize payout amounts with calculated revenue
+      // Initialize payout amounts with calculated net revenue
       const initialAmounts: Record<string, string> = {};
       enrichedTechnicians.forEach(tech => {
-        if (!tech.hasPendingPayout && tech.previousMonthRevenue > 0) {
-          initialAmounts[tech.id] = tech.previousMonthRevenue.toFixed(2);
+        if (!tech.hasPendingPayout && tech.netRevenue > 0) {
+          initialAmounts[tech.id] = tech.netRevenue.toFixed(2);
         }
       });
       setPayoutAmounts(prev => ({ ...prev, ...initialAmounts }));
@@ -280,7 +294,7 @@ export function PayoutsTab() {
 
   const selectAllEligible = () => {
     const eligibleIds = technicians
-      .filter(t => !t.hasPendingPayout && t.previousMonthRevenue > 0)
+      .filter(t => !t.hasPendingPayout && t.netRevenue > 0)
       .map((t) => t.id);
     
     const allSelected = eligibleIds.every((id) => selectedTechnicianIds.includes(id));
@@ -313,9 +327,9 @@ export function PayoutsTab() {
   };
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-  const eligibleTechnicians = technicians.filter(t => !t.hasPendingPayout && t.previousMonthRevenue > 0);
+  const eligibleTechnicians = technicians.filter(t => !t.hasPendingPayout && t.netRevenue > 0);
   const allEligibleSelected = eligibleTechnicians.length > 0 && eligibleTechnicians.every((t) => selectedTechnicianIds.includes(t.id));
-  const techniciansWithPendingPayouts = technicians.filter(t => !t.hasPendingPayout && t.previousMonthRevenue > 0);
+  const techniciansWithPendingPayouts = technicians.filter(t => !t.hasPendingPayout && t.netRevenue > 0);
 
   if (loading && technicians.length === 0) {
     return (
@@ -451,11 +465,25 @@ export function PayoutsTab() {
                           </div>
                           <p className="text-sm text-muted-foreground">{tech.email}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-primary">
-                            {formatCurrency(tech.previousMonthRevenue)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Net à verser</p>
+                        <div className="text-right min-w-[200px]">
+                          {tech.grossRevenue > 0 ? (
+                            <div className="space-y-0.5">
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>CA brut :</span>
+                                <span>{formatCurrency(tech.grossRevenue)}</span>
+                              </div>
+                              <div className="flex justify-between text-xs text-destructive/80">
+                                <span>Commission ({tech.commissionRate}%) :</span>
+                                <span>- {formatCurrency(tech.commissionAmount)}</span>
+                              </div>
+                              <div className="flex justify-between font-semibold text-primary border-t pt-0.5 mt-0.5">
+                                <span className="text-xs">Net à verser :</span>
+                                <span>{formatCurrency(tech.netRevenue)}</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">Aucun CA</p>
+                          )}
                         </div>
                         {isSelected && !isDisabled && (
                           <div className="w-32" onClick={(e) => e.stopPropagation()}>
@@ -601,22 +629,42 @@ export function PayoutsTab() {
                   const tech = technicians.find((t) => t.id === id);
                   const amount = payoutAmounts[id] || '0';
                   return tech ? (
-                    <div key={id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                      <span className="text-sm">
-                        {tech.first_name} {tech.last_name}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          (Généré: {formatCurrency(tech.previousMonthRevenue)})
+                    <div key={id} className="p-3 bg-muted/50 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-sm">
+                          {tech.first_name} {tech.last_name}
                         </span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={amount}
-                          onChange={(e) => setPayoutAmounts(prev => ({ ...prev, [id]: e.target.value }))}
-                          className="w-28 text-right h-8"
-                        />
-                        <span className="text-sm">€</span>
+                      </div>
+                      
+                      {/* Calculation breakdown */}
+                      <div className="text-xs space-y-1 px-2 py-1.5 bg-background/50 rounded border">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">CA brut généré :</span>
+                          <span>{formatCurrency(tech.grossRevenue)}</span>
+                        </div>
+                        <div className="flex justify-between text-destructive/80">
+                          <span>Commission plateforme ({tech.commissionRate}%) :</span>
+                          <span>- {formatCurrency(tech.commissionAmount)}</span>
+                        </div>
+                        <div className="flex justify-between font-medium border-t pt-1 mt-1">
+                          <span>Net calculé :</span>
+                          <span className="text-primary">{formatCurrency(tech.netRevenue)}</span>
+                        </div>
+                      </div>
+
+                      {/* Editable amount */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Montant à verser :</span>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={amount}
+                            onChange={(e) => setPayoutAmounts(prev => ({ ...prev, [id]: e.target.value }))}
+                            className="w-28 text-right h-8"
+                          />
+                          <span className="text-sm">€</span>
+                        </div>
                       </div>
                     </div>
                   ) : null;
