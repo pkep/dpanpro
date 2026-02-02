@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Calendar, Euro, Plus, Search, ChevronLeft, ChevronRight, AlertTriangle, Check } from 'lucide-react';
+import { Loader2, Calendar, Euro, Plus, Search, ChevronLeft, ChevronRight, AlertTriangle, History } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -24,9 +24,6 @@ interface TechnicianWithRevenue extends Technician {
   commissionAmount: number;
   netRevenue: number;
   commissionRate: number;
-  hasPendingPayout: boolean;
-  existingPayoutId?: string;
-  existingPayoutStatus?: string;
 }
 
 interface Payout {
@@ -44,16 +41,20 @@ interface Payout {
 const PAGE_SIZE = 15;
 
 export function PayoutsTab() {
-  const [technicians, setTechnicians] = useState<TechnicianWithRevenue[]>([]);
+  // Technicians without payout for current period
+  const [pendingTechnicians, setPendingTechnicians] = useState<TechnicianWithRevenue[]>([]);
+  const [loadingPending, setLoadingPending] = useState(true);
+
+  // History section
   const [payouts, setPayouts] = useState<Payout[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotalCount, setHistoryTotalCount] = useState(0);
+
+  // Dialog state
   const [showDialog, setShowDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
-  
-  // Search and pagination
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
 
   // Form state
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>([]);
@@ -69,45 +70,47 @@ export function PayoutsTab() {
   const periodStartStr = format(periodStart, 'yyyy-MM-dd');
   const periodEndStr = format(periodEnd, 'yyyy-MM-dd');
 
-  const fetchTechnicians = async () => {
-    setLoading(true);
+  // Fetch technicians WITHOUT payout for the previous month
+  const fetchPendingTechnicians = async () => {
+    setLoadingPending(true);
     try {
-      // Build query with search
-      let query = supabase
+      // Get all active technicians
+      const { data: allTechs, error: techError } = await supabase
         .from('users')
-        .select('id, first_name, last_name, email', { count: 'exact' })
+        .select('id, first_name, last_name, email')
         .eq('role', 'technician')
-        .eq('is_active', true);
-
-      if (searchQuery) {
-        query = query.or(`first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`);
-      }
-
-      const from = (currentPage - 1) * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-
-      const { data: techData, count, error: techError } = await query
-        .order('last_name')
-        .range(from, to);
+        .eq('is_active', true)
+        .order('last_name');
 
       if (techError) throw techError;
-      setTotalCount(count || 0);
 
-      // Get previous month payouts for these technicians
-      const techIds = techData?.map(t => t.id) || [];
-      
+      const techIds = allTechs?.map(t => t.id) || [];
+
+      // Get existing payouts for this period
       const { data: existingPayouts } = await supabase
         .from('technician_payouts')
-        .select('*')
+        .select('technician_id')
         .in('technician_id', techIds)
         .eq('period_start', periodStartStr)
         .eq('period_end', periodEndStr);
 
-      // Get completed interventions for previous month for each technician
+      const paidTechIds = new Set(existingPayouts?.map(p => p.technician_id) || []);
+
+      // Filter to only technicians without a payout
+      const unpaidTechs = allTechs?.filter(t => !paidTechIds.has(t.id)) || [];
+      const unpaidTechIds = unpaidTechs.map(t => t.id);
+
+      if (unpaidTechIds.length === 0) {
+        setPendingTechnicians([]);
+        setLoadingPending(false);
+        return;
+      }
+
+      // Get completed interventions for previous month for unpaid technicians
       const { data: interventions } = await supabase
         .from('interventions')
         .select('technician_id, final_price, completed_at')
-        .in('technician_id', techIds)
+        .in('technician_id', unpaidTechIds)
         .eq('status', 'completed')
         .not('final_price', 'is', null)
         .gte('completed_at', startOfDay(periodStart).toISOString())
@@ -122,7 +125,7 @@ export function PayoutsTab() {
 
       const commissionRate = commissionData?.commission_rate ? Number(commissionData.commission_rate) : 15;
 
-      // Calculate revenue per technician (gross and net)
+      // Calculate revenue per technician
       const revenueByTech: Record<string, { gross: number; commission: number; net: number }> = {};
       interventions?.forEach(i => {
         if (i.technician_id) {
@@ -139,9 +142,8 @@ export function PayoutsTab() {
         }
       });
 
-      // Enrich technicians with revenue and payout status
-      const enrichedTechnicians: TechnicianWithRevenue[] = (techData || []).map(tech => {
-        const existingPayout = existingPayouts?.find(p => p.technician_id === tech.id);
+      // Enrich technicians with revenue
+      const enrichedTechnicians: TechnicianWithRevenue[] = unpaidTechs.map(tech => {
         const revenue = revenueByTech[tech.id] || { gross: 0, commission: 0, net: 0 };
         return {
           ...tech,
@@ -149,65 +151,105 @@ export function PayoutsTab() {
           commissionAmount: revenue.commission,
           netRevenue: revenue.net,
           commissionRate,
-          hasPendingPayout: !!existingPayout,
-          existingPayoutId: existingPayout?.id,
-          existingPayoutStatus: existingPayout?.status,
         };
       });
 
-      setTechnicians(enrichedTechnicians);
+      setPendingTechnicians(enrichedTechnicians);
 
       // Initialize payout amounts with calculated net revenue
       const initialAmounts: Record<string, string> = {};
       enrichedTechnicians.forEach(tech => {
-        if (!tech.hasPendingPayout && tech.netRevenue > 0) {
+        if (tech.netRevenue > 0) {
           initialAmounts[tech.id] = tech.netRevenue.toFixed(2);
         }
       });
       setPayoutAmounts(prev => ({ ...prev, ...initialAmounts }));
+    } catch (error) {
+      console.error('Error fetching pending technicians:', error);
+      toast.error('Erreur lors du chargement des techniciens');
+    } finally {
+      setLoadingPending(false);
+    }
+  };
 
-      // Get recent payouts for history
-      const { data: payoutsData, error: payoutsError } = await supabase
-        .from('technician_payouts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (payoutsError) throw payoutsError;
-
-      // Get all technicians for payout display
+  // Fetch payout history with search
+  const fetchPayoutHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      // First get all technicians for name lookup
       const { data: allTechData } = await supabase
         .from('users')
         .select('id, first_name, last_name, email')
         .eq('role', 'technician');
 
+      // If searching, filter technician IDs first
+      let filteredTechIds: string[] | null = null;
+      if (historySearchQuery) {
+        filteredTechIds = allTechData
+          ?.filter(t => 
+            t.first_name.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
+            t.last_name.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
+            t.email.toLowerCase().includes(historySearchQuery.toLowerCase())
+          )
+          .map(t => t.id) || [];
+      }
+
+      // Build query for payouts
+      let query = supabase
+        .from('technician_payouts')
+        .select('*', { count: 'exact' });
+
+      if (filteredTechIds !== null) {
+        if (filteredTechIds.length === 0) {
+          // No matching technicians
+          setPayouts([]);
+          setHistoryTotalCount(0);
+          setLoadingHistory(false);
+          return;
+        }
+        query = query.in('technician_id', filteredTechIds);
+      }
+
+      const from = (historyPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data: payoutsData, count, error } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) throw error;
+
+      setHistoryTotalCount(count || 0);
+
       // Enrich with technician info
-      const enrichedPayouts: Payout[] = [];
-      for (const payout of payoutsData || []) {
-        const tech = allTechData?.find((t) => t.id === payout.technician_id);
-        enrichedPayouts.push({
+      const enrichedPayouts: Payout[] = (payoutsData || []).map(payout => {
+        const tech = allTechData?.find(t => t.id === payout.technician_id);
+        return {
           ...payout,
           technician: tech,
-        });
-      }
+        };
+      });
 
       setPayouts(enrichedPayouts);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Erreur lors du chargement des données');
+      console.error('Error fetching payout history:', error);
+      toast.error('Erreur lors du chargement de l\'historique');
     } finally {
-      setLoading(false);
+      setLoadingHistory(false);
     }
   };
 
   useEffect(() => {
-    fetchTechnicians();
-  }, [currentPage, searchQuery]);
+    fetchPendingTechnicians();
+  }, []);
 
   useEffect(() => {
-    setCurrentPage(1);
-    setSelectedTechnicianIds([]);
-  }, [searchQuery]);
+    fetchPayoutHistory();
+  }, [historyPage, historySearchQuery]);
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [historySearchQuery]);
 
   const handleCreatePayout = async () => {
     // Validate all selected technicians have amounts
@@ -250,7 +292,8 @@ export function PayoutsTab() {
 
       resetForm();
       setShowDialog(false);
-      fetchTechnicians();
+      fetchPendingTechnicians();
+      fetchPayoutHistory();
     } catch (error) {
       console.error('Error creating payout:', error);
       toast.error('Erreur lors de la création du versement');
@@ -269,7 +312,7 @@ export function PayoutsTab() {
       if (error) throw error;
 
       toast.success('Statut mis à jour');
-      fetchTechnicians();
+      fetchPayoutHistory();
     } catch (error) {
       console.error('Error updating payout status:', error);
       toast.error('Erreur lors de la mise à jour');
@@ -284,25 +327,22 @@ export function PayoutsTab() {
   };
 
   const toggleTechnicianSelection = (techId: string) => {
-    const tech = technicians.find(t => t.id === techId);
-    if (tech?.hasPendingPayout) return; // Can't select if already has payout
-
     setSelectedTechnicianIds((prev) =>
       prev.includes(techId) ? prev.filter((id) => id !== techId) : [...prev, techId]
     );
   };
 
   const selectAllEligible = () => {
-    const eligibleIds = technicians
-      .filter(t => !t.hasPendingPayout && t.netRevenue > 0)
-      .map((t) => t.id);
+    const eligibleIds = pendingTechnicians
+      .filter(t => t.netRevenue > 0)
+      .map(t => t.id);
     
-    const allSelected = eligibleIds.every((id) => selectedTechnicianIds.includes(id));
+    const allSelected = eligibleIds.every(id => selectedTechnicianIds.includes(id));
     
     if (allSelected) {
-      setSelectedTechnicianIds((prev) => prev.filter((id) => !eligibleIds.includes(id)));
+      setSelectedTechnicianIds(prev => prev.filter(id => !eligibleIds.includes(id)));
     } else {
-      setSelectedTechnicianIds((prev) => [...new Set([...prev, ...eligibleIds])]);
+      setSelectedTechnicianIds(prev => [...new Set([...prev, ...eligibleIds])]);
     }
   };
 
@@ -326,20 +366,9 @@ export function PayoutsTab() {
     }).format(amount);
   };
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-  const eligibleTechnicians = technicians.filter(t => !t.hasPendingPayout && t.netRevenue > 0);
-  const allEligibleSelected = eligibleTechnicians.length > 0 && eligibleTechnicians.every((t) => selectedTechnicianIds.includes(t.id));
-  const techniciansWithPendingPayouts = technicians.filter(t => !t.hasPendingPayout && t.netRevenue > 0);
-
-  if (loading && technicians.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
+  const eligibleTechnicians = pendingTechnicians.filter(t => t.netRevenue > 0);
+  const allEligibleSelected = eligibleTechnicians.length > 0 && eligibleTechnicians.every(t => selectedTechnicianIds.includes(t.id));
+  const historyTotalPages = Math.ceil(historyTotalCount / PAGE_SIZE);
 
   return (
     <>
@@ -357,55 +386,49 @@ export function PayoutsTab() {
                   </p>
                 </div>
               </div>
-              {techniciansWithPendingPayouts.length > 0 && (
+              {pendingTechnicians.length > 0 && (
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  {techniciansWithPendingPayouts.length} versement(s) en attente
+                  {pendingTechnicians.length} technicien(s) sans versement
                 </Badge>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Technicians Selection Card */}
+        {/* Technicians Without Payout Card */}
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle>Versements du mois précédent</CardTitle>
+                <CardTitle>Versements en attente</CardTitle>
                 <CardDescription>
-                  Renseignez les versements pour la période de {format(periodStart, 'MMMM yyyy', { locale: fr })}
+                  Techniciens sans versement pour la période de {format(periodStart, 'MMMM yyyy', { locale: fr })}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Nom, prénom ou email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Button 
-                  onClick={() => setShowDialog(true)}
-                  disabled={selectedTechnicianIds.length === 0}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Valider ({selectedTechnicianIds.length})
-                </Button>
-              </div>
+              <Button 
+                onClick={() => setShowDialog(true)}
+                disabled={selectedTechnicianIds.length === 0}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Valider ({selectedTechnicianIds.length})
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {loadingPending ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : technicians.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                {searchQuery ? 'Aucun technicien trouvé' : 'Aucun technicien actif'}
-              </p>
+            ) : pendingTechnicians.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-3">
+                  <Calendar className="h-6 w-6 text-green-600" />
+                </div>
+                <p className="text-muted-foreground">
+                  Tous les versements ont été enregistrés pour cette période
+                </p>
+              </div>
             ) : (
               <>
                 {/* Select All Header */}
@@ -417,7 +440,7 @@ export function PayoutsTab() {
                       onCheckedChange={selectAllEligible}
                     />
                     <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-                      Sélectionner tous les techniciens éligibles
+                      Sélectionner tous les techniciens avec CA
                     </label>
                     {selectedTechnicianIds.length > 0 && (
                       <Badge variant="secondary" className="ml-2">
@@ -429,26 +452,22 @@ export function PayoutsTab() {
 
                 {/* Technicians List */}
                 <div className="space-y-2">
-                  {technicians.map((tech) => {
+                  {pendingTechnicians.map((tech) => {
                     const isSelected = selectedTechnicianIds.includes(tech.id);
-                    const isDisabled = tech.hasPendingPayout;
                     
                     return (
                       <div
                         key={tech.id}
-                        className={`border rounded-lg p-3 flex items-center gap-3 transition-colors ${
-                          isDisabled 
-                            ? 'bg-muted/30 opacity-60 cursor-not-allowed' 
-                            : isSelected 
-                              ? 'bg-primary/5 border-primary/30 cursor-pointer' 
-                              : 'hover:bg-accent/50 cursor-pointer'
+                        className={`border rounded-lg p-3 flex items-center gap-3 transition-colors cursor-pointer ${
+                          isSelected 
+                            ? 'bg-primary/5 border-primary/30' 
+                            : 'hover:bg-accent/50'
                         }`}
-                        onClick={() => !isDisabled && toggleTechnicianSelection(tech.id)}
+                        onClick={() => toggleTechnicianSelection(tech.id)}
                       >
                         <Checkbox
                           checked={isSelected}
-                          disabled={isDisabled}
-                          onCheckedChange={() => !isDisabled && toggleTechnicianSelection(tech.id)}
+                          onCheckedChange={() => toggleTechnicianSelection(tech.id)}
                           onClick={(e) => e.stopPropagation()}
                         />
                         <div className="flex-1">
@@ -456,11 +475,8 @@ export function PayoutsTab() {
                             <p className="font-medium">
                               {tech.first_name} {tech.last_name}
                             </p>
-                            {tech.hasPendingPayout && (
-                              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
-                                <Check className="h-3 w-3 mr-1" />
-                                {tech.existingPayoutStatus === 'paid' ? 'Versé' : 'Enregistré'}
-                              </Badge>
+                            {tech.netRevenue === 0 && (
+                              <Badge variant="outline" className="text-xs">Aucun CA</Badge>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">{tech.email}</p>
@@ -482,10 +498,10 @@ export function PayoutsTab() {
                               </div>
                             </div>
                           ) : (
-                            <p className="text-sm text-muted-foreground">Aucun CA</p>
+                            <p className="text-sm text-muted-foreground">0,00 €</p>
                           )}
                         </div>
-                        {isSelected && !isDisabled && (
+                        {isSelected && (
                           <div className="w-32" onClick={(e) => e.stopPropagation()}>
                             <Input
                               type="number"
@@ -501,19 +517,118 @@ export function PayoutsTab() {
                     );
                   })}
                 </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Payout History Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <CardTitle>Historique des versements</CardTitle>
+                  <CardDescription>
+                    Recherchez et consultez l'historique des versements
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Nom, prénom ou email..."
+                  value={historySearchQuery}
+                  onChange={(e) => setHistorySearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingHistory ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : payouts.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                {historySearchQuery ? 'Aucun versement trouvé' : 'Aucun versement enregistré'}
+              </p>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {payouts.map((payout) => (
+                    <div
+                      key={payout.id}
+                      className="border rounded-lg p-4 flex items-center justify-between"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium">
+                            {payout.technician?.first_name} {payout.technician?.last_name}
+                          </span>
+                          {getStatusBadge(payout.status)}
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-1">
+                          {payout.technician?.email}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Euro className="h-3 w-3" />
+                            {Number(payout.amount).toFixed(2)} €
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Versement le {format(new Date(payout.payout_date), 'dd MMM yyyy', { locale: fr })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Période : {format(new Date(payout.period_start), 'dd/MM')} -{' '}
+                          {format(new Date(payout.period_end), 'dd/MM/yyyy')}
+                        </p>
+                        {payout.notes && (
+                          <p className="text-xs text-muted-foreground mt-1 italic">
+                            {payout.notes}
+                          </p>
+                        )}
+                      </div>
+                      {payout.status === 'pending' && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-green-600 hover:text-green-700"
+                            onClick={() => handleUpdateStatus(payout.id, 'paid')}
+                          >
+                            Marquer payé
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => handleUpdateStatus(payout.id, 'cancelled')}
+                          >
+                            Annuler
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
+                {historyTotalPages > 1 && (
                   <div className="flex items-center justify-between mt-4 pt-4 border-t">
                     <p className="text-sm text-muted-foreground">
-                      Page {currentPage} sur {totalPages} ({totalCount} techniciens)
+                      Page {historyPage} sur {historyTotalPages} ({historyTotalCount} versements)
                     </p>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
+                        onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                        disabled={historyPage === 1}
                       >
                         <ChevronLeft className="h-4 w-4" />
                         Précédent
@@ -521,8 +636,8 @@ export function PayoutsTab() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
+                        onClick={() => setHistoryPage(p => Math.min(historyTotalPages, p + 1))}
+                        disabled={historyPage === historyTotalPages}
                       >
                         Suivant
                         <ChevronRight className="h-4 w-4" />
@@ -531,80 +646,6 @@ export function PayoutsTab() {
                   </div>
                 )}
               </>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent Payouts Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Historique des versements</CardTitle>
-            <CardDescription>
-              Les 50 derniers versements enregistrés
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {payouts.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                Aucun versement enregistré
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {payouts.map((payout) => (
-                  <div
-                    key={payout.id}
-                    className="border rounded-lg p-4 flex items-center justify-between"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">
-                          {payout.technician?.first_name} {payout.technician?.last_name}
-                        </span>
-                        {getStatusBadge(payout.status)}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Euro className="h-3 w-3" />
-                          {Number(payout.amount).toFixed(2)} €
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          Versement le {format(new Date(payout.payout_date), 'dd MMM yyyy', { locale: fr })}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Période : {format(new Date(payout.period_start), 'dd/MM')} -{' '}
-                        {format(new Date(payout.period_end), 'dd/MM/yyyy')}
-                      </p>
-                      {payout.notes && (
-                        <p className="text-xs text-muted-foreground mt-1 italic">
-                          {payout.notes}
-                        </p>
-                      )}
-                    </div>
-                    {payout.status === 'pending' && (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-green-600 hover:text-green-700"
-                          onClick={() => handleUpdateStatus(payout.id, 'paid')}
-                        >
-                          Marquer payé
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive"
-                          onClick={() => handleUpdateStatus(payout.id, 'cancelled')}
-                        >
-                          Annuler
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
             )}
           </CardContent>
         </Card>
@@ -626,7 +667,7 @@ export function PayoutsTab() {
               <p className="text-sm font-medium">Techniciens sélectionnés ({selectedTechnicianIds.length}) :</p>
               <div className="max-h-48 overflow-y-auto space-y-2">
                 {selectedTechnicianIds.map((id) => {
-                  const tech = technicians.find((t) => t.id === id);
+                  const tech = pendingTechnicians.find((t) => t.id === id);
                   const amount = payoutAmounts[id] || '0';
                   return tech ? (
                     <div key={id} className="p-3 bg-muted/50 rounded-lg space-y-2">
