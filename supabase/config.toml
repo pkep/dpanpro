@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.insert-work-photos]
 verify_jwt = false
+
+[functions.send-cancellation-invoice]
+verify_jwt = false

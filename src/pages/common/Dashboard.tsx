@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { cancellationService } from '@/services/cancellation/cancellation.service';
 import { invoiceService } from '@/services/invoice/invoice.service';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import type { Intervention } from '@/types/intervention.types';
@@ -32,7 +33,7 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react';
-import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
+import { ClientCancelDialog } from '@/components/interventions/ClientCancelDialog';
 import { format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -79,24 +80,33 @@ const Dashboard = () => {
     setCancelDialogOpen(true);
   };
 
-  const handleCancelConfirm = async (reason?: string) => {
-    if (!selectedIntervention || !reason) return;
+  const handleCancelConfirm = async (reason: string) => {
+    if (!selectedIntervention) return;
     
     setIsCancelling(true);
     try {
-      await interventionsService.cancelIntervention(selectedIntervention.id, reason);
-      toast.success('Demande annulée avec succès');
-      // Refresh interventions
-      if (user) {
-        const data = await interventionsService.getInterventions({ clientId: user.id });
-        setInterventions(data);
-        setStats({
-          total: data.length,
-          active: data.filter(i => ['assigned', 'on_route', 'in_progress'].includes(i.status)).length,
-          completed: data.filter(i => i.status === 'completed').length,
-          pending: data.filter(i => i.status === 'new').length,
-          urgent: data.filter(i => i.priority === 'urgent' && !['completed', 'cancelled'].includes(i.status)).length,
-        });
+      const result = await cancellationService.cancelInterventionWithFees(selectedIntervention.id, reason);
+      if (result.success) {
+        if (result.hasFees) {
+          toast.success('Demande annulée', {
+            description: `Frais de déplacement de ${result.feeAmount?.toFixed(2)} € facturés.`,
+          });
+        } else {
+          toast.success('Demande annulée avec succès');
+        }
+        if (user) {
+          const data = await interventionsService.getInterventions({ clientId: user.id });
+          setInterventions(data);
+          setStats({
+            total: data.length,
+            active: data.filter(i => ['assigned', 'on_route', 'in_progress'].includes(i.status)).length,
+            completed: data.filter(i => i.status === 'completed').length,
+            pending: data.filter(i => i.status === 'new').length,
+            urgent: data.filter(i => i.priority === 'urgent' && !['completed', 'cancelled'].includes(i.status)).length,
+          });
+        }
+      } else {
+        toast.error('Erreur lors de l\'annulation', { description: result.error });
       }
     } catch (err) {
       console.error('Error cancelling intervention:', err);
@@ -109,7 +119,7 @@ const Dashboard = () => {
   };
 
   const canCancelIntervention = (intervention: Intervention): boolean => {
-    return ['new', 'assigned', 'on_route'].includes(intervention.status);
+    return ['new', 'assigned', 'on_route', 'arrived', 'in_progress'].includes(intervention.status);
   };
 
   useEffect(() => {
@@ -604,12 +614,17 @@ const Dashboard = () => {
       </main>
 
       {/* Cancel Dialog */}
-      <ConfirmActionDialog
-        open={cancelDialogOpen}
-        onOpenChange={setCancelDialogOpen}
-        action="cancel_client"
-        onConfirm={handleCancelConfirm}
-      />
+      {selectedIntervention && (
+        <ClientCancelDialog
+          open={cancelDialogOpen}
+          onOpenChange={setCancelDialogOpen}
+          onConfirm={handleCancelConfirm}
+          interventionId={selectedIntervention.id}
+          interventionStatus={selectedIntervention.status}
+          interventionCategory={selectedIntervention.category}
+          isProcessing={isCancelling}
+        />
+      )}
     </div>
   );
 };
