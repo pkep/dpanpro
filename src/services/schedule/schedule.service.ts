@@ -115,11 +115,17 @@ class ScheduleService {
     endTime?: string,
     reason?: string
   ): Promise<void> {
+    // Use local date components to avoid timezone issues
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    
     const { error } = await supabase
       .from('technician_schedule_overrides')
       .upsert({
         technician_id: technicianId,
-        override_date: date.toISOString().split('T')[0],
+        override_date: dateStr,
         is_available: isAvailable,
         start_time: startTime || null,
         end_time: endTime || null,
