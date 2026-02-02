@@ -143,6 +143,16 @@ export function StepPayment({
         </AlertDescription>
       </Alert>
 
+      {/* Cancellation notice */}
+      <Alert variant="default" className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
+        <Info className="h-4 w-4 text-amber-600" />
+        <AlertDescription className="text-sm">
+          <strong className="text-amber-700 dark:text-amber-400">En cas d'annulation :</strong>
+          <br />
+          Si le technicien est arrivé sur le lieu ou a commencé l'intervention, les frais de déplacement seront automatiquement prélevés.
+        </AlertDescription>
+      </Alert>
+
       {/* Authorization explanation */}
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-6">

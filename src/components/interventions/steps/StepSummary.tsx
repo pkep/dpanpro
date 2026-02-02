@@ -102,6 +102,16 @@ export function StepSummary({
             <p>Un email de confirmation a été envoyé à <strong>{email}</strong></p>
             <p className="mt-1">Un technicien vous contactera rapidement au <strong>{phone}</strong></p>
           </div>
+
+          {/* Cancellation notice */}
+          <Alert className="mt-4 border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
+            <Info className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-sm">
+              <strong className="text-amber-700 dark:text-amber-400">En cas d'annulation :</strong>
+              <br />
+              Si le technicien est arrivé sur le lieu ou a commencé l'intervention, les frais de déplacement seront automatiquement prélevés.
+            </AlertDescription>
+          </Alert>
         </div>
 
         {/* Next Steps Card */}
@@ -256,6 +266,15 @@ export function StepSummary({
                   <strong>Le paiement sera effectué qu'à la fin de l'intervention.</strong>
                   <br />
                   Les fonds sont bloqués en garantie et seront prélevés uniquement après validation du service.
+                </AlertDescription>
+              </Alert>
+
+              <Alert className="mt-3 border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
+                <Info className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-sm">
+                  <strong className="text-amber-700 dark:text-amber-400">En cas d'annulation :</strong>
+                  <br />
+                  Si le technicien est arrivé sur le lieu ou a commencé l'intervention, les frais de déplacement seront automatiquement prélevés.
                 </AlertDescription>
               </Alert>
             </CardContent>
