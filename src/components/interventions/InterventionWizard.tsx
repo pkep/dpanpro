@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
-import { quotesService, QuoteInput } from '@/services/quotes/quotes.service';
+import { quotesService, QuoteInput, QuoteSummary } from '@/services/quotes/quotes.service';
 import { paymentService } from '@/services/payment/payment.service';
 import { pricingService } from '@/services/pricing/pricing.service';
 import { servicesService, Service } from '@/services/services/services.service';
@@ -64,8 +64,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   const [phone, setPhone] = useState('');
 
   // Payment state
-  const [quoteLines, setQuoteLines] = useState<QuoteInput[]>([]);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [quoteSummary, setQuoteSummary] = useState<QuoteSummary | null>(null);
   const [multiplier, setMultiplier] = useState(1.0);
   const [multiplierLabel, setMultiplierLabel] = useState('Normal');
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
@@ -74,6 +73,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [interventionId, setInterventionId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [isCompany, setIsCompany] = useState(false);
 
   // Load services on mount
   useEffect(() => {
@@ -137,13 +137,13 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
           setMultiplier(mult);
           setMultiplierLabel(priorityMultiplier?.label || 'Normal');
 
-          // Generate quote lines
-          const lines = quotesService.generateQuoteLines(service.basePrice, mult);
-          setQuoteLines(lines);
+          // Determine if client is a company (for logged-in users)
+          const clientIsCompany = user?.isCompany || false;
+          setIsCompany(clientIsCompany);
 
-          // Calculate total
-          const total = quotesService.calculateTotal(lines);
-          setTotalAmount(total);
+          // Generate quote summary with HT, VAT, TTC
+          const summary = quotesService.calculateQuoteSummary(service, mult, clientIsCompany);
+          setQuoteSummary(summary);
         } catch (error) {
           console.error('Error generating quote:', error);
           toast.error('Erreur lors de la génération du devis');
@@ -152,7 +152,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
     };
 
     generateQuote();
-  }, [currentStep, category, services, isPaymentAuthorized]);
+  }, [currentStep, category, services, isPaymentAuthorized, user]);
 
   const progress = (currentStep / STEPS.length) * 100;
 
@@ -190,7 +190,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   };
 
   const handleInitializePayment = async () => {
-    if (!category || !email || isPaymentProcessing || clientSecret) return;
+    if (!category || !email || isPaymentProcessing || clientSecret || !quoteSummary) return;
 
     setIsPaymentProcessing(true);
     try {
@@ -213,12 +213,12 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
       setInterventionId(intervention.id);
 
       // Save quote lines to database
-      await quotesService.saveQuoteLines(intervention.id, quoteLines);
+      await quotesService.saveQuoteLines(intervention.id, quoteSummary.lines);
 
-      // Create payment intent and get client secret for Stripe Elements
+      // Create payment intent with TTC amount and get client secret for Stripe Elements
       const result = await paymentService.createPaymentIntent({
         interventionId: intervention.id,
-        amount: totalAmount,
+        amount: quoteSummary.totalTTC,
         clientEmail: email,
         clientPhone: phone,
       });
@@ -330,8 +330,11 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
       case 4:
         return (
           <StepPayment
-            quoteLines={quoteLines}
-            totalAmount={totalAmount}
+            quoteLines={quoteSummary?.lines || []}
+            totalHT={quoteSummary?.totalHT || 0}
+            vatRate={quoteSummary?.vatRate || 10}
+            vatAmount={quoteSummary?.vatAmount || 0}
+            totalTTC={quoteSummary?.totalTTC || 0}
             multiplierLabel={multiplierLabel}
             isProcessing={isPaymentProcessing}
             isAuthorized={isPaymentAuthorized}
@@ -354,8 +357,11 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
             photos={photos}
             trackingCode={trackingCode || undefined}
             isSubmitted={isSubmitted}
-            quoteLines={quoteLines}
-            totalAmount={totalAmount}
+            quoteLines={quoteSummary?.lines || []}
+            totalHT={quoteSummary?.totalHT || 0}
+            vatRate={quoteSummary?.vatRate || 10}
+            vatAmount={quoteSummary?.vatAmount || 0}
+            totalTTC={quoteSummary?.totalTTC || 0}
             isPaymentAuthorized={isPaymentAuthorized}
           />
         );

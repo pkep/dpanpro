@@ -21,7 +21,10 @@ interface StepSummaryProps {
   trackingCode?: string;
   isSubmitted?: boolean;
   quoteLines?: QuoteInput[];
-  totalAmount?: number;
+  totalHT?: number;
+  vatRate?: number;
+  vatAmount?: number;
+  totalTTC?: number;
   isPaymentAuthorized?: boolean;
 }
 
@@ -37,7 +40,10 @@ export function StepSummary({
   trackingCode,
   isSubmitted = false,
   quoteLines = [],
-  totalAmount = 0,
+  totalHT = 0,
+  vatRate = 10,
+  vatAmount = 0,
+  totalTTC = 0,
   isPaymentAuthorized = false,
 }: StepSummaryProps) {
   const copyTrackingCode = () => {
@@ -223,10 +229,24 @@ export function StepSummary({
               
               <Separator />
               
+              {/* Total HT */}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Total HT</span>
+                <span>{formatPrice(totalHT)}</span>
+              </div>
+              
+              {/* TVA */}
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">TVA ({vatRate}%)</span>
+                <span>{formatPrice(vatAmount)}</span>
+              </div>
+              
+              <Separator />
+              
               <div className="flex justify-between items-center">
-                <span className="font-semibold">Montant autorisé</span>
+                <span className="font-semibold">Montant TTC autorisé</span>
                 <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                  {formatPrice(totalAmount)}
+                  {formatPrice(totalTTC)}
                 </span>
               </div>
 

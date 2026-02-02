@@ -45,6 +45,11 @@ class AuthService {
         phone: dbUser.phone,
         role: dbUser.role as UserRole,
         isActive: dbUser.is_active,
+        isCompany: dbUser.is_company,
+        companyName: dbUser.company_name,
+        companyAddress: dbUser.company_address,
+        siren: dbUser.siren,
+        vatNumber: dbUser.vat_number,
         createdAt: dbUser.created_at,
         updatedAt: dbUser.updated_at,
       };
@@ -121,6 +126,11 @@ class AuthService {
         phone: newUser.phone,
         role: newUser.role as UserRole,
         isActive: newUser.is_active,
+        isCompany: newUser.is_company,
+        companyName: newUser.company_name,
+        companyAddress: newUser.company_address,
+        siren: newUser.siren,
+        vatNumber: newUser.vat_number,
         createdAt: newUser.created_at,
         updatedAt: newUser.updated_at,
       };

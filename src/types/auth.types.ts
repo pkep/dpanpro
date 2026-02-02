@@ -8,6 +8,11 @@ export interface User {
   phone?: string | null;
   role: UserRole;
   isActive: boolean;
+  isCompany: boolean;
+  companyName?: string | null;
+  companyAddress?: string | null;
+  siren?: string | null;
+  vatNumber?: string | null;
   avatarUrl?: string | null;
   createdAt: string;
   updatedAt: string;
