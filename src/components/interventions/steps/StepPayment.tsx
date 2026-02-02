@@ -9,7 +9,10 @@ import { StripeCardForm } from '@/components/payment/StripeCardForm';
 
 interface StepPaymentProps {
   quoteLines: QuoteInput[];
-  totalAmount: number;
+  totalHT: number;
+  vatRate: number;
+  vatAmount: number;
+  totalTTC: number;
   multiplierLabel: string;
   isProcessing: boolean;
   isAuthorized: boolean;
@@ -21,7 +24,10 @@ interface StepPaymentProps {
 
 export function StepPayment({
   quoteLines,
-  totalAmount,
+  totalHT,
+  vatRate,
+  vatAmount,
+  totalTTC,
   multiplierLabel,
   isProcessing,
   isAuthorized,
@@ -41,11 +47,11 @@ export function StepPayment({
 
   // Initialize payment when component mounts (if not already done)
   useEffect(() => {
-    if (!initialized && !clientSecret && !isAuthorized && totalAmount > 0) {
+    if (!initialized && !clientSecret && !isAuthorized && totalTTC > 0) {
       setInitialized(true);
       onInitializePayment();
     }
-  }, [initialized, clientSecret, isAuthorized, totalAmount, onInitializePayment]);
+  }, [initialized, clientSecret, isAuthorized, totalTTC, onInitializePayment]);
 
   if (isAuthorized) {
     return (
@@ -58,7 +64,7 @@ export function StepPayment({
             Autorisation confirmée
           </h3>
           <p className="text-muted-foreground">
-            Le montant de {formatPrice(totalAmount)} a été autorisé avec succès.
+            Le montant de {formatPrice(totalTTC)} a été autorisé avec succès.
           </p>
         </div>
 
@@ -103,10 +109,25 @@ export function StepPayment({
           
           <Separator />
           
+          {/* Total HT */}
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">Total HT</span>
+            <span className="font-medium">{formatPrice(totalHT)}</span>
+          </div>
+          
+          {/* TVA */}
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-muted-foreground">TVA ({vatRate}%)</span>
+            <span className="font-medium">{formatPrice(vatAmount)}</span>
+          </div>
+          
+          <Separator />
+          
+          {/* Total TTC */}
           <div className="flex justify-between items-center pt-2">
-            <span className="font-semibold">Total estimé</span>
+            <span className="font-semibold">Total TTC</span>
             <span className="text-xl font-bold text-primary">
-              {formatPrice(totalAmount)}
+              {formatPrice(totalTTC)}
             </span>
           </div>
         </CardContent>
@@ -162,7 +183,7 @@ export function StepPayment({
           <CardContent>
             <StripeCardForm
               clientSecret={clientSecret}
-              amount={totalAmount}
+              amount={totalTTC}
               onSuccess={onPaymentSuccess}
               onError={onPaymentError}
             />

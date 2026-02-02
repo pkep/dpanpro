@@ -96,6 +96,11 @@ class UsersService {
       phone: data.phone,
       role: data.role as UserRole,
       isActive: data.is_active,
+      isCompany: data.is_company,
+      companyName: data.company_name,
+      companyAddress: data.company_address,
+      siren: data.siren,
+      vatNumber: data.vat_number,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
