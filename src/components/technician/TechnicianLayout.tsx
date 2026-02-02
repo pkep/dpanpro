@@ -1,9 +1,11 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTechnicianPhotoCheck } from '@/hooks/useTechnicianPhotoCheck';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { TechnicianSidebar } from './TechnicianSidebar';
 import { TechnicianHeader } from './TechnicianHeader';
+import { RequiredPhotosModal } from './RequiredPhotosModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -16,12 +18,26 @@ interface TechnicianLayoutProps {
 export function TechnicianLayout({ children, title, subtitle }: TechnicianLayoutProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const { needsPhoto, isLoading: isCheckingPhoto, markPhotoComplete } = useTechnicianPhotoCheck();
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       navigate('/auth');
     }
   }, [isAuthenticated, isLoading, navigate]);
+
+  // Show photo modal when needed
+  useEffect(() => {
+    if (!isCheckingPhoto && needsPhoto && user?.role === 'technician') {
+      setShowPhotoModal(true);
+    }
+  }, [isCheckingPhoto, needsPhoto, user?.role]);
+
+  const handlePhotoComplete = () => {
+    markPhotoComplete();
+    setShowPhotoModal(false);
+  };
 
   if (isLoading) {
     return (
@@ -67,6 +83,12 @@ export function TechnicianLayout({ children, title, subtitle }: TechnicianLayout
           </main>
         </div>
       </div>
+      
+      {/* Modal obligatoire pour la photo de profil */}
+      <RequiredPhotosModal
+        open={showPhotoModal}
+        onComplete={handlePhotoComplete}
+      />
     </SidebarProvider>
   );
 }

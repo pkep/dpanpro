@@ -101,6 +101,8 @@ class UsersService {
       companyAddress: data.company_address,
       siren: data.siren,
       vatNumber: data.vat_number,
+      avatarUrl: data.avatar_url,
+      companyLogoUrl: data.company_logo_url,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };

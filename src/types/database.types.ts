@@ -18,6 +18,8 @@ export interface DbUser {
   company_address: string | null;
   siren: string | null;
   vat_number: string | null;
+  avatar_url: string | null;
+  company_logo_url: string | null;
   created_at: string;
   updated_at: string;
 }
