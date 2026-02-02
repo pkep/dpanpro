@@ -1,11 +1,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { hash } from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+import { encode } from "https://deno.land/std@0.168.0/encoding/hex.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function uint8ArrayToHex(arr: Uint8Array): string {
+  return new TextDecoder().decode(encode(arr));
+}
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const saltHex = uint8ArrayToHex(salt);
+
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + saltHex);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashHex = uint8ArrayToHex(new Uint8Array(hashBuffer));
+
+  return `${saltHex}:${hashHex}`;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -97,7 +114,7 @@ serve(async (req) => {
 
     // Generate temporary password
     const tempPassword = crypto.randomUUID().slice(0, 12);
-    const passwordHash = await hash(tempPassword);
+    const passwordHash = await hashPassword(tempPassword);
 
     // Create user
     const { data: newUser, error: userError } = await supabase
