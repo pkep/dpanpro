@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { TechnicianLayout } from '@/components/technician/TechnicianLayout';
+import { ProfileImagesTab } from '@/components/technician/ProfileImagesTab';
 import { partnersService } from '@/services/partners/partners.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +40,7 @@ import {
 } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Save, AlertCircle, User, Building2, Wrench, Wallet } from 'lucide-react';
+import { Loader2, Save, AlertCircle, User, Building2, Wrench, Wallet, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 const skills = [
@@ -105,7 +106,7 @@ const TechnicianProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('personal');
+  const [activeTab, setActiveTab] = useState('images');
 
   const personalForm = useForm<PersonalData>({
     resolver: zodResolver(personalSchema),
@@ -253,7 +254,11 @@ const TechnicianProfilePage = () => {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="images" className="flex items-center gap-2">
+            <ImageIcon className="h-4 w-4" />
+            <span className="hidden sm:inline">Images</span>
+          </TabsTrigger>
           <TabsTrigger value="personal" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Personnel</span>
@@ -271,6 +276,10 @@ const TechnicianProfilePage = () => {
             <span className="hidden sm:inline">Bancaire</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="images">
+          <ProfileImagesTab />
+        </TabsContent>
 
         <TabsContent value="personal">
           <Card>

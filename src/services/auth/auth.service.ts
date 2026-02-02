@@ -50,6 +50,8 @@ class AuthService {
         companyAddress: dbUser.company_address,
         siren: dbUser.siren,
         vatNumber: dbUser.vat_number,
+        avatarUrl: dbUser.avatar_url,
+        companyLogoUrl: dbUser.company_logo_url,
         createdAt: dbUser.created_at,
         updatedAt: dbUser.updated_at,
       };
@@ -131,6 +133,8 @@ class AuthService {
         companyAddress: newUser.company_address,
         siren: newUser.siren,
         vatNumber: newUser.vat_number,
+        avatarUrl: newUser.avatar_url,
+        companyLogoUrl: newUser.company_logo_url,
         createdAt: newUser.created_at,
         updatedAt: newUser.updated_at,
       };

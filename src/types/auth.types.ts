@@ -14,6 +14,7 @@ export interface User {
   siren?: string | null;
   vatNumber?: string | null;
   avatarUrl?: string | null;
+  companyLogoUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
