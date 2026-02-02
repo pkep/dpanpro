@@ -275,23 +275,27 @@ export function AvailableInterventionsList({
   const handleAccept = async () => {
     if (!selectedIntervention) return;
     
-    setProcessingId(selectedIntervention.id);
+    const interventionId = selectedIntervention.id;
+    setProcessingId(interventionId);
     try {
-      const result = await dispatchService.acceptAssignment(selectedIntervention.id, technicianId);
+      const result = await dispatchService.acceptAssignment(interventionId, technicianId);
       if (result.success) {
         toast.success('Intervention acceptée !', {
-          description: 'Vous pouvez maintenant démarrer ou annuler.',
+          description: 'Redirection vers l\'intervention...',
         });
-        setAcceptedInterventionId(selectedIntervention.id);
+        setAcceptedInterventionId(interventionId);
         onInterventionAccepted?.(selectedIntervention);
-        fetchAvailableInterventions();
+        setDialogOpen(false);
+        // Navigate to intervention page after successful acceptance
+        navigate(`/technician/intervention/${interventionId}`);
       } else {
         toast.error('Erreur', { description: result.message });
+        setProcessingId(null);
+        setDialogOpen(false);
       }
     } catch (err) {
       console.error('Error accepting:', err);
       toast.error('Erreur lors de l\'acceptation');
-    } finally {
       setProcessingId(null);
       setDialogOpen(false);
     }
