@@ -52,6 +52,14 @@ export function PayoutsTab() {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyTotalCount, setHistoryTotalCount] = useState(0);
 
+  // "Versement déjà effectué" section
+  const [paidTechSearchQuery, setPaidTechSearchQuery] = useState('');
+  const [paidTechnicians, setPaidTechnicians] = useState<Technician[]>([]);
+  const [loadingPaidTechs, setLoadingPaidTechs] = useState(false);
+  const [selectedPaidTech, setSelectedPaidTech] = useState<Technician | null>(null);
+  const [selectedTechPayouts, setSelectedTechPayouts] = useState<Payout[]>([]);
+  const [loadingTechPayouts, setLoadingTechPayouts] = useState(false);
+
   // Dialog state
   const [showDialog, setShowDialog] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -239,6 +247,65 @@ export function PayoutsTab() {
     }
   };
 
+  // Search paid technicians (those with at least one payout)
+  const searchPaidTechnicians = async (query: string) => {
+    if (!query.trim()) {
+      setPaidTechnicians([]);
+      return;
+    }
+    
+    setLoadingPaidTechs(true);
+    try {
+      // Get technician IDs that have payouts
+      const { data: techsWithPayouts } = await supabase
+        .from('technician_payouts')
+        .select('technician_id');
+      
+      const techIdsWithPayouts = [...new Set(techsWithPayouts?.map(p => p.technician_id) || [])];
+      
+      if (techIdsWithPayouts.length === 0) {
+        setPaidTechnicians([]);
+        setLoadingPaidTechs(false);
+        return;
+      }
+
+      // Get technician details matching search
+      const { data: matchingTechs } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email')
+        .in('id', techIdsWithPayouts)
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(10);
+
+      setPaidTechnicians(matchingTechs || []);
+    } catch (error) {
+      console.error('Error searching paid technicians:', error);
+    } finally {
+      setLoadingPaidTechs(false);
+    }
+  };
+
+  // Fetch last 12 payouts for a specific technician
+  const fetchTechnicianPayouts = async (tech: Technician) => {
+    setSelectedPaidTech(tech);
+    setLoadingTechPayouts(true);
+    try {
+      const { data } = await supabase
+        .from('technician_payouts')
+        .select('*')
+        .eq('technician_id', tech.id)
+        .order('period_end', { ascending: false })
+        .limit(12);
+
+      setSelectedTechPayouts(data || []);
+    } catch (error) {
+      console.error('Error fetching technician payouts:', error);
+      toast.error('Erreur lors du chargement des versements');
+    } finally {
+      setLoadingTechPayouts(false);
+    }
+  };
+
   useEffect(() => {
     fetchPendingTechnicians();
   }, []);
@@ -250,6 +317,13 @@ export function PayoutsTab() {
   useEffect(() => {
     setHistoryPage(1);
   }, [historySearchQuery]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchPaidTechnicians(paidTechSearchQuery);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [paidTechSearchQuery]);
 
   const handleCreatePayout = async () => {
     // Validate all selected technicians have amounts
@@ -518,6 +592,138 @@ export function PayoutsTab() {
                   })}
                 </div>
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Versement déjà effectué Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Euro className="h-5 w-5 text-green-600" />
+                <div>
+                  <CardTitle>Versement déjà effectué</CardTitle>
+                  <CardDescription>
+                    Recherchez un technicien pour voir ses derniers versements
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="relative w-72">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher un technicien..."
+                  value={paidTechSearchQuery}
+                  onChange={(e) => {
+                    setPaidTechSearchQuery(e.target.value);
+                    setSelectedPaidTech(null);
+                    setSelectedTechPayouts([]);
+                  }}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingPaidTechs ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : !paidTechSearchQuery ? (
+              <p className="text-muted-foreground text-center py-8">
+                Saisissez un nom, prénom ou email pour rechercher un technicien
+              </p>
+            ) : paidTechnicians.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                Aucun technicien trouvé avec des versements
+              </p>
+            ) : !selectedPaidTech ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Cliquez sur un technicien pour voir ses 12 derniers versements :
+                </p>
+                {paidTechnicians.map((tech) => (
+                  <div
+                    key={tech.id}
+                    className="border rounded-lg p-3 flex items-center gap-3 hover:bg-accent/50 cursor-pointer transition-colors"
+                    onClick={() => fetchTechnicianPayouts(tech)}
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium">
+                        {tech.first_name} {tech.last_name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{tech.email}</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Selected technician header */}
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="font-medium">
+                      {selectedPaidTech.first_name} {selectedPaidTech.last_name}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{selectedPaidTech.email}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedPaidTech(null);
+                      setSelectedTechPayouts([]);
+                    }}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Retour
+                  </Button>
+                </div>
+
+                {/* Payouts list */}
+                {loadingTechPayouts ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : selectedTechPayouts.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    Aucun versement enregistré pour ce technicien
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">
+                      12 derniers versements :
+                    </p>
+                    {selectedTechPayouts.map((payout) => (
+                      <div
+                        key={payout.id}
+                        className="border rounded-lg p-3 flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-primary">
+                              {formatCurrency(Number(payout.amount))}
+                            </span>
+                            {getStatusBadge(payout.status)}
+                          </div>
+                          <div className="text-xs text-muted-foreground space-y-0.5">
+                            <p>
+                              Période : {format(new Date(payout.period_start), 'dd MMM', { locale: fr })} - {format(new Date(payout.period_end), 'dd MMM yyyy', { locale: fr })}
+                            </p>
+                            <p>
+                              Versé le {format(new Date(payout.payout_date), 'dd MMMM yyyy', { locale: fr })}
+                            </p>
+                            {payout.notes && (
+                              <p className="italic mt-1">{payout.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
