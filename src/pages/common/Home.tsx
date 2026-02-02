@@ -4,6 +4,7 @@ import { KeyFigures } from '@/components/home/KeyFigures';
 import { ServicesSection } from '@/components/home/ServicesSection';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import { BecomePartner } from '@/components/home/BecomePartner';
+import { FAQSection } from '@/components/home/FAQSection';
 import { Footer } from '@/components/home/Footer';
 
 const Home = () => {
@@ -18,6 +19,7 @@ const Home = () => {
         </section>
         <HowItWorks />
         <BecomePartner />
+        <FAQSection />
       </main>
       <Footer />
     </div>
