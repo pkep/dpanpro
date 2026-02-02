@@ -19,6 +19,7 @@ interface TechnicianLocation {
   lastName: string;
   email: string;
   phone: string | null;
+  avatarUrl: string | null;
   latitude: number;
   longitude: number;
   currentCity: string | null;
@@ -39,29 +40,47 @@ const SKILL_LABELS: Record<string, string> = {
   aircon: 'Climatisation',
 };
 
-// Create technician marker icon
-const createTechnicianIcon = (hasActiveIntervention: boolean) => {
+// Create technician marker icon with photo or fallback
+const createTechnicianIcon = (hasActiveIntervention: boolean, avatarUrl: string | null, initials: string) => {
   const bgColor = hasActiveIntervention ? '#f97316' : '#22c55e';
   const pulseColor = hasActiveIntervention ? 'rgba(249, 115, 22, 0.4)' : 'rgba(34, 197, 94, 0.4)';
+  const borderColor = hasActiveIntervention ? '#f97316' : '#22c55e';
 
+  // If avatar URL exists, use the photo
+  if (avatarUrl) {
+    return L.divIcon({
+      className: 'technician-marker-photo',
+      html: `
+        <div style="position: relative; width: 48px; height: 48px;">
+          <div style="position: absolute; inset: 0; background: ${pulseColor}; border-radius: 9999px; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <div style="position: relative; width: 48px; height: 48px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 3px solid ${borderColor}; overflow: hidden; background: white;">
+            <img src="${avatarUrl}" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            <div style="display: none; width: 100%; height: 100%; background: ${bgColor}; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px;">
+              ${initials}
+            </div>
+          </div>
+        </div>
+      `,
+      iconSize: [48, 48],
+      iconAnchor: [24, 24],
+      popupAnchor: [0, -24],
+    });
+  }
+
+  // Fallback to initials
   return L.divIcon({
     className: 'technician-marker',
     html: `
-      <div style="position: relative; width: 40px; height: 40px;">
+      <div style="position: relative; width: 48px; height: 48px;">
         <div style="position: absolute; inset: 0; background: ${pulseColor}; border-radius: 9999px; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-        <div style="position: relative; width: 40px; height: 40px; background: ${bgColor}; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 3px solid white;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
-            <circle cx="7" cy="17" r="2"/>
-            <path d="M9 17h6"/>
-            <circle cx="17" cy="17" r="2"/>
-          </svg>
+        <div style="position: relative; width: 48px; height: 48px; background: ${bgColor}; border-radius: 9999px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 3px solid white; color: white; font-weight: 600; font-size: 16px;">
+          ${initials}
         </div>
       </div>
     `,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -20],
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
+    popupAnchor: [0, -24],
   });
 };
 
@@ -103,11 +122,11 @@ export function TechniciansMapContent() {
         return;
       }
 
-      // Get user details
+      // Get user details with avatar
       const userIds = applications.map((a) => a.user_id).filter(Boolean);
       const { data: users, error: usersError } = await supabase
         .from('users')
-        .select('id, first_name, last_name, email, phone')
+        .select('id, first_name, last_name, email, phone, avatar_url')
         .in('id', userIds)
         .eq('is_active', true)
         .eq('role', 'technician');
@@ -147,6 +166,7 @@ export function TechniciansMapContent() {
           lastName: user.last_name,
           email: user.email,
           phone: user.phone,
+          avatarUrl: user.avatar_url,
           latitude: app.latitude!,
           longitude: app.longitude!,
           currentCity: app.current_city,
@@ -296,12 +316,14 @@ export function TechniciansMapContent() {
             {mapReady && <FitBounds technicians={filteredTechnicians} />}
 
             {mapReady &&
-              filteredTechnicians.map((tech) => (
-                <Marker
-                  key={tech.id}
-                  position={[tech.latitude, tech.longitude]}
-                  icon={createTechnicianIcon(tech.hasActiveIntervention)}
-                >
+              filteredTechnicians.map((tech) => {
+                const initials = `${tech.firstName.charAt(0)}${tech.lastName.charAt(0)}`.toUpperCase();
+                return (
+                  <Marker
+                    key={tech.id}
+                    position={[tech.latitude, tech.longitude]}
+                    icon={createTechnicianIcon(tech.hasActiveIntervention, tech.avatarUrl, initials)}
+                  >
                   <Popup minWidth={280} maxWidth={320}>
                     <div className="space-y-3 p-1">
                       <div className="flex items-start justify-between gap-2">
@@ -380,7 +402,8 @@ export function TechniciansMapContent() {
                     </div>
                   </Popup>
                 </Marker>
-              ))}
+                );
+              })}
           </MapContainer>
         )}
       </div>
