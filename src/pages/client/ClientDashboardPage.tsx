@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClientLayout } from '@/components/client/ClientLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { cancellationService } from '@/services/cancellation/cancellation.service';
 import { invoiceService } from '@/services/invoice/invoice.service';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
@@ -27,7 +28,7 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react';
-import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
+import { ClientCancelDialog } from '@/components/interventions/ClientCancelDialog';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -73,23 +74,40 @@ export default function ClientDashboardPage() {
     setCancelDialogOpen(true);
   };
 
-  const handleCancelConfirm = async (reason?: string) => {
-    if (!selectedIntervention || !reason) return;
+  const handleCancelConfirm = async (reason: string) => {
+    if (!selectedIntervention) return;
     
     setIsCancelling(true);
     try {
-      await interventionsService.cancelIntervention(selectedIntervention.id, reason);
-      toast.success('Demande annulée avec succès');
-      // Refresh interventions
-      if (user) {
-        const data = await interventionsService.getInterventions({ clientId: user.id });
-        setInterventions(data);
-        setStats({
-          total: data.length,
-          active: data.filter(i => ['assigned', 'on_route', 'in_progress'].includes(i.status)).length,
-          completed: data.filter(i => i.status === 'completed').length,
-          pending: data.filter(i => i.status === 'new').length,
-          urgent: data.filter(i => i.priority === 'urgent' && !['completed', 'cancelled'].includes(i.status)).length,
+      const result = await cancellationService.cancelInterventionWithFees(
+        selectedIntervention.id,
+        reason
+      );
+
+      if (result.success) {
+        if (result.hasFees) {
+          toast.success('Demande annulée', {
+            description: `Frais de déplacement de ${result.feeAmount?.toFixed(2)} € facturés.${result.invoiceSent ? ' Facture envoyée par email.' : ''}`,
+          });
+        } else {
+          toast.success('Demande annulée avec succès');
+        }
+        
+        // Refresh interventions
+        if (user) {
+          const data = await interventionsService.getInterventions({ clientId: user.id });
+          setInterventions(data);
+          setStats({
+            total: data.length,
+            active: data.filter(i => ['assigned', 'on_route', 'in_progress'].includes(i.status)).length,
+            completed: data.filter(i => i.status === 'completed').length,
+            pending: data.filter(i => i.status === 'new').length,
+            urgent: data.filter(i => i.priority === 'urgent' && !['completed', 'cancelled'].includes(i.status)).length,
+          });
+        }
+      } else {
+        toast.error('Erreur lors de l\'annulation', {
+          description: result.error,
         });
       }
     } catch (err) {
@@ -103,7 +121,9 @@ export default function ClientDashboardPage() {
   };
 
   const canCancelIntervention = (intervention: Intervention): boolean => {
-    return ['new', 'assigned', 'on_route'].includes(intervention.status);
+    // Allow cancellation for new, assigned, on_route, arrived, in_progress
+    // But with fees for arrived and in_progress
+    return ['new', 'assigned', 'on_route', 'arrived', 'in_progress'].includes(intervention.status);
   };
 
   useEffect(() => {
@@ -428,12 +448,17 @@ export default function ClientDashboardPage() {
       </div>
 
       {/* Cancel Dialog */}
-      <ConfirmActionDialog
-        open={cancelDialogOpen}
-        onOpenChange={setCancelDialogOpen}
-        action="cancel_client"
-        onConfirm={handleCancelConfirm}
-      />
+      {selectedIntervention && (
+        <ClientCancelDialog
+          open={cancelDialogOpen}
+          onOpenChange={setCancelDialogOpen}
+          onConfirm={handleCancelConfirm}
+          interventionId={selectedIntervention.id}
+          interventionStatus={selectedIntervention.status}
+          interventionCategory={selectedIntervention.category}
+          isProcessing={isCancelling}
+        />
+      )}
     </ClientLayout>
   );
 }

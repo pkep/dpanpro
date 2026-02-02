@@ -3,6 +3,7 @@ import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeIntervention } from '@/hooks/useRealtimeIntervention';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { cancellationService } from '@/services/cancellation/cancellation.service';
 import { historyService } from '@/services/history/history.service';
 import { usersService } from '@/services/users/users.service';
 import { invoiceService } from '@/services/invoice/invoice.service';
@@ -34,6 +35,7 @@ import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import { PushNotificationSetup } from '@/components/notifications/PushNotificationSetup';
 import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
 import { PendingQuoteBlocker } from '@/components/interventions/PendingQuoteBlocker';
+import { ClientCancelDialog } from '@/components/interventions/ClientCancelDialog';
 import {
   Home,
   ArrowLeft,
@@ -53,7 +55,6 @@ import {
   FileText,
   XCircle,
 } from 'lucide-react';
-import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -95,25 +96,42 @@ export default function InterventionDetails() {
     }
   };
 
-  const handleCancelIntervention = async (reason?: string) => {
-    if (!intervention || !reason || !user) return;
+  const handleCancelIntervention = async (reason: string) => {
+    if (!intervention || !user) return;
     
     setIsCancelling(true);
     try {
-      await interventionsService.cancelIntervention(intervention.id, reason);
-      
-      // Add history entry for cancellation
-      await historyService.addHistoryEntry({
-        interventionId: intervention.id,
-        userId: user.id,
-        action: 'status_changed',
-        oldValue: intervention.status,
-        newValue: 'cancelled',
-        comment: `Annulé par le client. Raison: ${reason}`,
-      });
-      
-      toast.success('Demande annulée avec succès');
-      navigate('/dashboard');
+      const result = await cancellationService.cancelInterventionWithFees(
+        intervention.id,
+        reason
+      );
+
+      if (result.success) {
+        // Add history entry for cancellation
+        await historyService.addHistoryEntry({
+          interventionId: intervention.id,
+          userId: user.id,
+          action: 'status_changed',
+          oldValue: intervention.status,
+          newValue: 'cancelled',
+          comment: result.hasFees 
+            ? `Annulé par le client avec frais de déplacement (${result.feeAmount?.toFixed(2)} €). Raison: ${reason}`
+            : `Annulé par le client. Raison: ${reason}`,
+        });
+        
+        if (result.hasFees) {
+          toast.success('Demande annulée', {
+            description: `Frais de déplacement de ${result.feeAmount?.toFixed(2)} € facturés.${result.invoiceSent ? ' Facture envoyée par email.' : ''}`,
+          });
+        } else {
+          toast.success('Demande annulée avec succès');
+        }
+        navigate('/dashboard');
+      } else {
+        toast.error('Erreur lors de l\'annulation', {
+          description: result.error,
+        });
+      }
     } catch (err) {
       console.error('Error cancelling intervention:', err);
       toast.error('Erreur lors de l\'annulation');
@@ -123,7 +141,8 @@ export default function InterventionDetails() {
     }
   };
 
-  const canCancelAsClient = user?.role === 'client' && ['new', 'assigned', 'on_route'].includes(intervention?.status || '');
+  // Allow cancellation for new, assigned, on_route, arrived, in_progress (with fees for arrived/in_progress)
+  const canCancelAsClient = user?.role === 'client' && ['new', 'assigned', 'on_route', 'arrived', 'in_progress'].includes(intervention?.status || '');
 
   useEffect(() => {
     const fetchTechnicians = async () => {
@@ -614,12 +633,17 @@ export default function InterventionDetails() {
       </main>
 
       {/* Cancel Dialog for Clients */}
-      <ConfirmActionDialog
-        open={cancelDialogOpen}
-        onOpenChange={setCancelDialogOpen}
-        action="cancel_client"
-        onConfirm={handleCancelIntervention}
-      />
+      {intervention && (
+        <ClientCancelDialog
+          open={cancelDialogOpen}
+          onOpenChange={setCancelDialogOpen}
+          onConfirm={handleCancelIntervention}
+          interventionId={intervention.id}
+          interventionStatus={intervention.status}
+          interventionCategory={intervention.category}
+          isProcessing={isCancelling}
+        />
+      )}
     </div>
   );
 }
