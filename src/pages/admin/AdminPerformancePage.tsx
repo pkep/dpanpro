@@ -1,159 +1,138 @@
-import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, TrendingUp, Map, Award, Target, Star, Loader2, Clock, Navigation, ThumbsUp, Euro } from 'lucide-react';
+import { BarChart3, TrendingUp, Map, Award, Star, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { PerformanceReportsTab } from '@/components/admin/performance/PerformanceReportsTab';
+import { PerformanceAnalysisTab } from '@/components/admin/performance/PerformanceAnalysisTab';
+import { PerformanceHeatmapTab } from '@/components/admin/performance/PerformanceHeatmapTab';
+import { PerformanceRankingTab } from '@/components/admin/performance/PerformanceRankingTab';
 
-interface PerformanceKPIs {
-  avgResponseTime: number | null;
-  avgArrivalTime: number | null;
-  avgRating: number | null;
-  acceptanceRate: number | null;
-  revenuePerTech: number | null;
-  totalTechnicians: number;
+function formatDuration(seconds: number | null): string {
+  if (!seconds) return '--';
+  const minutes = Math.round(seconds / 60);
+  return `${minutes} min`;
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
 }
 
 export default function AdminPerformancePage() {
-  const [loading, setLoading] = useState(true);
-  const [kpis, setKpis] = useState<PerformanceKPIs>({
-    avgResponseTime: null,
-    avgArrivalTime: null,
-    avgRating: null,
-    acceptanceRate: null,
-    revenuePerTech: null,
-    totalTechnicians: 0,
-  });
-
-  useEffect(() => {
-    fetchPerformanceData();
-  }, []);
-
-  const fetchPerformanceData = async () => {
-    setLoading(true);
-    try {
-      // Fetch all partner statistics
+  // Fetch aggregated KPIs
+  const { data: kpis, isLoading } = useQuery({
+    queryKey: ['admin-kpis'],
+    queryFn: async () => {
+      // Get partner statistics for averages
       const { data: stats, error: statsError } = await supabase
         .from('partner_statistics')
-        .select('average_response_time_seconds, average_arrival_time_seconds, average_rating, total_interventions, completed_interventions');
+        .select('average_response_time_seconds, average_arrival_time_seconds, average_rating, completed_interventions, partner_id');
 
       if (statsError) throw statsError;
 
       // Calculate averages across all technicians
-      const validStats = stats || [];
-      const totalTechnicians = validStats.length;
-
-      // Average response time (only from technicians with data)
-      const responseTimeStats = validStats.filter(s => s.average_response_time_seconds !== null);
-      const avgResponseTime = responseTimeStats.length > 0
-        ? responseTimeStats.reduce((sum, s) => sum + (s.average_response_time_seconds || 0), 0) / responseTimeStats.length
+      const validResponseTimes = stats?.filter(s => s.average_response_time_seconds).map(s => s.average_response_time_seconds!) || [];
+      const avgResponseTime = validResponseTimes.length > 0 
+        ? validResponseTimes.reduce((a, b) => a + b, 0) / validResponseTimes.length 
         : null;
 
-      // Average arrival time
-      const arrivalTimeStats = validStats.filter(s => s.average_arrival_time_seconds !== null);
-      const avgArrivalTime = arrivalTimeStats.length > 0
-        ? arrivalTimeStats.reduce((sum, s) => sum + (s.average_arrival_time_seconds || 0), 0) / arrivalTimeStats.length
+      const validArrivalTimes = stats?.filter(s => s.average_arrival_time_seconds).map(s => s.average_arrival_time_seconds!) || [];
+      const avgArrivalTime = validArrivalTimes.length > 0 
+        ? validArrivalTimes.reduce((a, b) => a + b, 0) / validArrivalTimes.length 
         : null;
 
-      // Average rating
-      const ratingStats = validStats.filter(s => s.average_rating !== null);
-      const avgRating = ratingStats.length > 0
-        ? ratingStats.reduce((sum, s) => sum + Number(s.average_rating || 0), 0) / ratingStats.length
+      const validRatings = stats?.filter(s => s.average_rating).map(s => s.average_rating!) || [];
+      const avgRating = validRatings.length > 0 
+        ? validRatings.reduce((a, b) => a + b, 0) / validRatings.length 
         : null;
 
-      // Acceptance rate (completed / total)
-      const totalInterventions = validStats.reduce((sum, s) => sum + (s.total_interventions || 0), 0);
-      const completedInterventions = validStats.reduce((sum, s) => sum + (s.completed_interventions || 0), 0);
-      const acceptanceRate = totalInterventions > 0
-        ? (completedInterventions / totalInterventions) * 100
-        : null;
+      // Get dispatch attempts for acceptance rate
+      const { data: attempts, error: attemptsError } = await supabase
+        .from('dispatch_attempts')
+        .select('status');
 
-      // Revenue per technician (this month)
+      if (attemptsError) throw attemptsError;
+
+      const totalAttempts = attempts?.length || 0;
+      const acceptedAttempts = attempts?.filter(a => a.status === 'accepted').length || 0;
+      const acceptanceRate = totalAttempts > 0 ? (acceptedAttempts / totalAttempts) * 100 : null;
+
+      // Get monthly revenue
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const { data: interventions, error: intError } = await supabase
+      const { data: interventions, error: intervError } = await supabase
         .from('interventions')
         .select('final_price, technician_id')
         .eq('status', 'completed')
-        .gte('completed_at', startOfMonth.toISOString())
-        .not('final_price', 'is', null);
+        .gte('completed_at', startOfMonth.toISOString());
 
-      if (intError) throw intError;
+      if (intervError) throw intervError;
 
-      const totalRevenue = (interventions || []).reduce((sum, i) => sum + Number(i.final_price || 0), 0);
-      const activeTechsThisMonth = new Set((interventions || []).map(i => i.technician_id)).size;
-      const revenuePerTech = activeTechsThisMonth > 0 ? totalRevenue / activeTechsThisMonth : null;
+      const totalRevenue = interventions?.reduce((sum, i) => sum + (i.final_price || 0), 0) || 0;
+      const technicianIds = new Set(interventions?.map(i => i.technician_id).filter(Boolean));
+      const avgRevenuePerTech = technicianIds.size > 0 ? totalRevenue / technicianIds.size : 0;
 
-      setKpis({
+      // First pass resolution rate (interventions completed without quote modification)
+      const { data: completedInterventions, error: completedError } = await supabase
+        .from('interventions')
+        .select('id')
+        .eq('status', 'completed');
+
+      if (completedError) throw completedError;
+
+      const { data: quoteModifications, error: quotesError } = await supabase
+        .from('quote_modifications')
+        .select('intervention_id');
+
+      if (quotesError) throw quotesError;
+
+      const interventionsWithModifications = new Set(quoteModifications?.map(q => q.intervention_id) || []);
+      const firstPassResolutions = completedInterventions?.filter(i => !interventionsWithModifications.has(i.id)).length || 0;
+      const totalCompleted = completedInterventions?.length || 0;
+      const firstPassRate = totalCompleted > 0 ? (firstPassResolutions / totalCompleted) * 100 : null;
+
+      return {
         avgResponseTime,
         avgArrivalTime,
         avgRating,
         acceptanceRate,
-        revenuePerTech,
-        totalTechnicians,
-      });
-    } catch (error) {
-      console.error('Error fetching performance data:', error);
-    } finally {
-      setLoading(false);
+        avgRevenuePerTech,
+        firstPassRate,
+      };
+    },
+  });
+
+  const getStatusColor = (value: number | null, target: number, isLower: boolean = true) => {
+    if (value === null) return 'text-muted-foreground';
+    if (isLower) {
+      return value <= target ? 'text-green-600' : 'text-orange-600';
     }
-  };
-
-  const formatTime = (seconds: number | null): string => {
-    if (seconds === null) return '--';
-    const minutes = Math.round(seconds / 60);
-    return `${minutes}`;
-  };
-
-  const getTimeStatus = (seconds: number | null, targetMinutes: number): 'good' | 'warning' | 'bad' => {
-    if (seconds === null) return 'good';
-    const minutes = seconds / 60;
-    if (minutes <= targetMinutes) return 'good';
-    if (minutes <= targetMinutes * 1.5) return 'warning';
-    return 'bad';
-  };
-
-  const getRatingStatus = (rating: number | null): 'good' | 'warning' | 'bad' => {
-    if (rating === null) return 'good';
-    if (rating >= 4.5) return 'good';
-    if (rating >= 4.0) return 'warning';
-    return 'bad';
-  };
-
-  const getPercentStatus = (percent: number | null, target: number): 'good' | 'warning' | 'bad' => {
-    if (percent === null) return 'good';
-    if (percent >= target) return 'good';
-    if (percent >= target * 0.9) return 'warning';
-    return 'bad';
-  };
-
-  const statusColors = {
-    good: 'text-green-600',
-    warning: 'text-yellow-600',
-    bad: 'text-red-600',
+    return value >= target ? 'text-green-600' : 'text-orange-600';
   };
 
   return (
     <AdminLayout title="Dashboard Performance" subtitle="KPIs et analyses">
       <div className="space-y-6">
         {/* KPIs Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" />
+              <CardTitle className="text-xs font-medium text-muted-foreground">
                 Temps réponse moyen
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold">{formatTime(kpis.avgResponseTime)} min</div>
-                  <p className={`text-xs ${statusColors[getTimeStatus(kpis.avgResponseTime, 30)]}`}>
+                  <div className="text-xl font-bold">
+                    {formatDuration(kpis?.avgResponseTime || null)}
+                  </div>
+                  <p className={`text-xs ${getStatusColor(kpis?.avgResponseTime ? kpis.avgResponseTime / 60 : null, 30, true)}`}>
                     Objectif: &lt;30 min
                   </p>
                 </>
@@ -163,18 +142,19 @@ export default function AdminPerformancePage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Navigation className="h-3 w-3" />
+              <CardTitle className="text-xs font-medium text-muted-foreground">
                 Temps arrivée moyen
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold">{formatTime(kpis.avgArrivalTime)} min</div>
-                  <p className={`text-xs ${statusColors[getTimeStatus(kpis.avgArrivalTime, 45)]}`}>
+                  <div className="text-xl font-bold">
+                    {formatDuration(kpis?.avgArrivalTime || null)}
+                  </div>
+                  <p className={`text-xs ${getStatusColor(kpis?.avgArrivalTime ? kpis.avgArrivalTime / 60 : null, 45, true)}`}>
                     Objectif: &lt;45 min
                   </p>
                 </>
@@ -184,21 +164,42 @@ export default function AdminPerformancePage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Star className="h-3 w-3" />
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                Taux résolution 1er passage
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              ) : (
+                <>
+                  <div className="text-xl font-bold">
+                    {kpis?.firstPassRate ? `${kpis.firstPassRate.toFixed(0)}%` : '--%'}
+                  </div>
+                  <p className={`text-xs ${getStatusColor(kpis?.firstPassRate || null, 85, false)}`}>
+                    Objectif: &gt;85%
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
                 Satisfaction client
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
                   <div className="text-xl font-bold flex items-center gap-1">
-                    {kpis.avgRating !== null ? kpis.avgRating.toFixed(1) : '--'}/5
-                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    {kpis?.avgRating ? kpis.avgRating.toFixed(1) : '--'}/5 
+                    <Star className="h-4 w-4 text-yellow-500" />
                   </div>
-                  <p className={`text-xs ${statusColors[getRatingStatus(kpis.avgRating)]}`}>
+                  <p className={`text-xs ${getStatusColor(kpis?.avgRating || null, 4.5, false)}`}>
                     Objectif: &gt;4.5
                   </p>
                 </>
@@ -208,20 +209,19 @@ export default function AdminPerformancePage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <ThumbsUp className="h-3 w-3" />
+              <CardTitle className="text-xs font-medium text-muted-foreground">
                 Taux acceptation tech.
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
                   <div className="text-xl font-bold">
-                    {kpis.acceptanceRate !== null ? kpis.acceptanceRate.toFixed(0) : '--'}%
+                    {kpis?.acceptanceRate ? `${kpis.acceptanceRate.toFixed(0)}%` : '--%'}
                   </div>
-                  <p className={`text-xs ${statusColors[getPercentStatus(kpis.acceptanceRate, 90)]}`}>
+                  <p className={`text-xs ${getStatusColor(kpis?.acceptanceRate || null, 90, false)}`}>
                     Objectif: &gt;90%
                   </p>
                 </>
@@ -231,22 +231,19 @@ export default function AdminPerformancePage() {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Euro className="h-3 w-3" />
+              <CardTitle className="text-xs font-medium text-muted-foreground">
                 CA/Technicien
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
                   <div className="text-xl font-bold">
-                    {kpis.revenuePerTech !== null ? `${kpis.revenuePerTech.toFixed(0)} €` : '-- €'}
+                    {formatCurrency(kpis?.avgRevenuePerTech || 0)}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Ce mois ({kpis.totalTechnicians} techniciens)
-                  </p>
+                  <p className="text-xs text-muted-foreground">Ce mois</p>
                 </>
               )}
             </CardContent>
@@ -272,90 +269,22 @@ export default function AdminPerformancePage() {
               <Award className="h-4 w-4" />
               Classement
             </TabsTrigger>
-            <TabsTrigger value="forecast" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Prévisions
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="reports">
-            <Card>
-              <CardHeader>
-                <CardTitle>Rapports</CardTitle>
-                <CardDescription>
-                  Export PDF/CSV quotidien, hebdomadaire, mensuel
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  Les options d'export de rapports seront affichées ici
-                </p>
-              </CardContent>
-            </Card>
+            <PerformanceReportsTab />
           </TabsContent>
 
           <TabsContent value="analysis">
-            <Card>
-              <CardHeader>
-                <CardTitle>Analyse de performance</CardTitle>
-                <CardDescription>
-                  Temps de réponse, taux de résolution, satisfaction
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  Les graphiques d'analyse seront affichés ici
-                </p>
-              </CardContent>
-            </Card>
+            <PerformanceAnalysisTab />
           </TabsContent>
 
           <TabsContent value="heatmap">
-            <Card>
-              <CardHeader>
-                <CardTitle>Heatmap géographique</CardTitle>
-                <CardDescription>
-                  Zones à forte demande
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  La carte heatmap sera affichée ici
-                </p>
-              </CardContent>
-            </Card>
+            <PerformanceHeatmapTab />
           </TabsContent>
 
           <TabsContent value="ranking">
-            <Card>
-              <CardHeader>
-                <CardTitle>Classement techniciens</CardTitle>
-                <CardDescription>
-                  Évaluations et statistiques par technicien
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  Le classement des techniciens sera affiché ici
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="forecast">
-            <Card>
-              <CardHeader>
-                <CardTitle>Prévisions</CardTitle>
-                <CardDescription>
-                  Estimation des pics de demande basée sur l'historique
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-8">
-                  Les prévisions de demande seront affichées ici
-                </p>
-              </CardContent>
-            </Card>
+            <PerformanceRankingTab />
           </TabsContent>
         </Tabs>
       </div>
