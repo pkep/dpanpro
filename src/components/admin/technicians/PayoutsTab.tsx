@@ -8,8 +8,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Calendar, Euro, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { Loader2, Calendar, Euro, Plus, Search, ChevronLeft, ChevronRight, AlertTriangle, Check } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, subMonths, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface Technician {
@@ -17,6 +17,13 @@ interface Technician {
   first_name: string;
   last_name: string;
   email: string;
+}
+
+interface TechnicianWithRevenue extends Technician {
+  previousMonthRevenue: number;
+  hasPendingPayout: boolean;
+  existingPayoutId?: string;
+  existingPayoutStatus?: string;
 }
 
 interface Payout {
@@ -34,7 +41,7 @@ interface Payout {
 const PAGE_SIZE = 15;
 
 export function PayoutsTab() {
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [technicians, setTechnicians] = useState<TechnicianWithRevenue[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
@@ -47,11 +54,17 @@ export function PayoutsTab() {
 
   // Form state
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>([]);
-  const [amount, setAmount] = useState('');
-  const [payoutDate, setPayoutDate] = useState('');
-  const [periodStart, setPeriodStart] = useState('');
-  const [periodEnd, setPeriodEnd] = useState('');
+  const [payoutAmounts, setPayoutAmounts] = useState<Record<string, string>>({});
+  const [payoutDate, setPayoutDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [notes, setNotes] = useState('');
+
+  // Previous month period
+  const now = new Date();
+  const previousMonth = subMonths(now, 1);
+  const periodStart = startOfMonth(previousMonth);
+  const periodEnd = endOfMonth(previousMonth);
+  const periodStartStr = format(periodStart, 'yyyy-MM-dd');
+  const periodEndStr = format(periodEnd, 'yyyy-MM-dd');
 
   const fetchTechnicians = async () => {
     setLoading(true);
@@ -75,10 +88,71 @@ export function PayoutsTab() {
         .range(from, to);
 
       if (techError) throw techError;
-      setTechnicians(techData || []);
       setTotalCount(count || 0);
 
-      // Get recent payouts
+      // Get previous month payouts for these technicians
+      const techIds = techData?.map(t => t.id) || [];
+      
+      const { data: existingPayouts } = await supabase
+        .from('technician_payouts')
+        .select('*')
+        .in('technician_id', techIds)
+        .eq('period_start', periodStartStr)
+        .eq('period_end', periodEndStr);
+
+      // Get completed interventions for previous month for each technician
+      const { data: interventions } = await supabase
+        .from('interventions')
+        .select('technician_id, final_price, completed_at')
+        .in('technician_id', techIds)
+        .eq('status', 'completed')
+        .not('final_price', 'is', null)
+        .gte('completed_at', startOfDay(periodStart).toISOString())
+        .lte('completed_at', endOfDay(periodEnd).toISOString());
+
+      // Get commission rate
+      const { data: commissionData } = await supabase
+        .from('commission_settings')
+        .select('commission_rate')
+        .is('partner_id', null)
+        .single();
+
+      const commissionRate = commissionData?.commission_rate ? Number(commissionData.commission_rate) : 15;
+
+      // Calculate revenue per technician
+      const revenueByTech: Record<string, number> = {};
+      interventions?.forEach(i => {
+        if (i.technician_id) {
+          const gross = Number(i.final_price) || 0;
+          const net = gross * (1 - commissionRate / 100);
+          revenueByTech[i.technician_id] = (revenueByTech[i.technician_id] || 0) + net;
+        }
+      });
+
+      // Enrich technicians with revenue and payout status
+      const enrichedTechnicians: TechnicianWithRevenue[] = (techData || []).map(tech => {
+        const existingPayout = existingPayouts?.find(p => p.technician_id === tech.id);
+        return {
+          ...tech,
+          previousMonthRevenue: revenueByTech[tech.id] || 0,
+          hasPendingPayout: !!existingPayout,
+          existingPayoutId: existingPayout?.id,
+          existingPayoutStatus: existingPayout?.status,
+        };
+      });
+
+      setTechnicians(enrichedTechnicians);
+
+      // Initialize payout amounts with calculated revenue
+      const initialAmounts: Record<string, string> = {};
+      enrichedTechnicians.forEach(tech => {
+        if (!tech.hasPendingPayout && tech.previousMonthRevenue > 0) {
+          initialAmounts[tech.id] = tech.previousMonthRevenue.toFixed(2);
+        }
+      });
+      setPayoutAmounts(prev => ({ ...prev, ...initialAmounts }));
+
+      // Get recent payouts for history
       const { data: payoutsData, error: payoutsError } = await supabase
         .from('technician_payouts')
         .select('*')
@@ -122,8 +196,19 @@ export function PayoutsTab() {
   }, [searchQuery]);
 
   const handleCreatePayout = async () => {
-    if (selectedTechnicianIds.length === 0 || !amount || !payoutDate || !periodStart || !periodEnd) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+    // Validate all selected technicians have amounts
+    const missingAmounts = selectedTechnicianIds.filter(id => {
+      const amount = payoutAmounts[id];
+      return !amount || parseFloat(amount) <= 0;
+    });
+
+    if (missingAmounts.length > 0) {
+      toast.error('Veuillez renseigner un montant valide pour tous les techniciens sélectionnés');
+      return;
+    }
+
+    if (selectedTechnicianIds.length === 0 || !payoutDate) {
+      toast.error('Veuillez sélectionner au moins un technicien et une date de versement');
       return;
     }
 
@@ -131,11 +216,11 @@ export function PayoutsTab() {
     try {
       const payoutsToCreate = selectedTechnicianIds.map((techId) => ({
         technician_id: techId,
-        amount: parseFloat(amount),
+        amount: parseFloat(payoutAmounts[techId] || '0'),
         payout_date: payoutDate,
-        period_start: periodStart,
-        period_end: periodEnd,
-        status: 'pending',
+        period_start: periodStartStr,
+        period_end: periodEndStr,
+        status: 'paid',
         notes: notes || null,
       }));
 
@@ -179,29 +264,31 @@ export function PayoutsTab() {
 
   const resetForm = () => {
     setSelectedTechnicianIds([]);
-    setAmount('');
-    setPayoutDate('');
-    setPeriodStart('');
-    setPeriodEnd('');
+    setPayoutAmounts({});
+    setPayoutDate(format(new Date(), 'yyyy-MM-dd'));
     setNotes('');
   };
 
   const toggleTechnicianSelection = (techId: string) => {
+    const tech = technicians.find(t => t.id === techId);
+    if (tech?.hasPendingPayout) return; // Can't select if already has payout
+
     setSelectedTechnicianIds((prev) =>
       prev.includes(techId) ? prev.filter((id) => id !== techId) : [...prev, techId]
     );
   };
 
-  const selectAllOnPage = () => {
-    const pageIds = technicians.map((t) => t.id);
-    const allSelected = pageIds.every((id) => selectedTechnicianIds.includes(id));
+  const selectAllEligible = () => {
+    const eligibleIds = technicians
+      .filter(t => !t.hasPendingPayout && t.previousMonthRevenue > 0)
+      .map((t) => t.id);
+    
+    const allSelected = eligibleIds.every((id) => selectedTechnicianIds.includes(id));
     
     if (allSelected) {
-      // Deselect all on current page
-      setSelectedTechnicianIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+      setSelectedTechnicianIds((prev) => prev.filter((id) => !eligibleIds.includes(id)));
     } else {
-      // Select all on current page
-      setSelectedTechnicianIds((prev) => [...new Set([...prev, ...pageIds])]);
+      setSelectedTechnicianIds((prev) => [...new Set([...prev, ...eligibleIds])]);
     }
   };
 
@@ -218,8 +305,17 @@ export function PayoutsTab() {
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(amount);
+  };
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-  const allOnPageSelected = technicians.length > 0 && technicians.every((t) => selectedTechnicianIds.includes(t.id));
+  const eligibleTechnicians = technicians.filter(t => !t.hasPendingPayout && t.previousMonthRevenue > 0);
+  const allEligibleSelected = eligibleTechnicians.length > 0 && eligibleTechnicians.every((t) => selectedTechnicianIds.includes(t.id));
+  const techniciansWithPendingPayouts = technicians.filter(t => !t.hasPendingPayout && t.previousMonthRevenue > 0);
 
   if (loading && technicians.length === 0) {
     return (
@@ -234,14 +330,37 @@ export function PayoutsTab() {
   return (
     <>
       <div className="space-y-6">
+        {/* Period Info Card */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium">Période de versement : {format(periodStart, 'MMMM yyyy', { locale: fr })}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Du {format(periodStart, 'dd MMMM', { locale: fr })} au {format(periodEnd, 'dd MMMM yyyy', { locale: fr })}
+                  </p>
+                </div>
+              </div>
+              {techniciansWithPendingPayouts.length > 0 && (
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  {techniciansWithPendingPayouts.length} versement(s) en attente
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Technicians Selection Card */}
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle>Sélection des techniciens</CardTitle>
+                <CardTitle>Versements du mois précédent</CardTitle>
                 <CardDescription>
-                  Sélectionnez les techniciens pour créer un versement groupé
+                  Renseignez les versements pour la période de {format(periodStart, 'MMMM yyyy', { locale: fr })}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -259,7 +378,7 @@ export function PayoutsTab() {
                   disabled={selectedTechnicianIds.length === 0}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Créer versement ({selectedTechnicianIds.length})
+                  Valider ({selectedTechnicianIds.length})
                 </Button>
               </div>
             </div>
@@ -276,47 +395,83 @@ export function PayoutsTab() {
             ) : (
               <>
                 {/* Select All Header */}
-                <div className="flex items-center gap-2 pb-3 border-b mb-3">
-                  <Checkbox
-                    id="select-all"
-                    checked={allOnPageSelected}
-                    onCheckedChange={selectAllOnPage}
-                  />
-                  <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
-                    Sélectionner tous sur cette page
-                  </label>
-                  {selectedTechnicianIds.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {selectedTechnicianIds.length} sélectionné(s)
-                    </Badge>
-                  )}
-                </div>
+                {eligibleTechnicians.length > 0 && (
+                  <div className="flex items-center gap-2 pb-3 border-b mb-3">
+                    <Checkbox
+                      id="select-all"
+                      checked={allEligibleSelected}
+                      onCheckedChange={selectAllEligible}
+                    />
+                    <label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                      Sélectionner tous les techniciens éligibles
+                    </label>
+                    {selectedTechnicianIds.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {selectedTechnicianIds.length} sélectionné(s)
+                      </Badge>
+                    )}
+                  </div>
+                )}
 
                 {/* Technicians List */}
                 <div className="space-y-2">
-                  {technicians.map((tech) => (
-                    <div
-                      key={tech.id}
-                      className={`border rounded-lg p-3 flex items-center gap-3 transition-colors cursor-pointer ${
-                        selectedTechnicianIds.includes(tech.id) 
-                          ? 'bg-primary/5 border-primary/30' 
-                          : 'hover:bg-accent/50'
-                      }`}
-                      onClick={() => toggleTechnicianSelection(tech.id)}
-                    >
-                      <Checkbox
-                        checked={selectedTechnicianIds.includes(tech.id)}
-                        onCheckedChange={() => toggleTechnicianSelection(tech.id)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <div className="flex-1">
-                        <p className="font-medium">
-                          {tech.first_name} {tech.last_name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{tech.email}</p>
+                  {technicians.map((tech) => {
+                    const isSelected = selectedTechnicianIds.includes(tech.id);
+                    const isDisabled = tech.hasPendingPayout;
+                    
+                    return (
+                      <div
+                        key={tech.id}
+                        className={`border rounded-lg p-3 flex items-center gap-3 transition-colors ${
+                          isDisabled 
+                            ? 'bg-muted/30 opacity-60 cursor-not-allowed' 
+                            : isSelected 
+                              ? 'bg-primary/5 border-primary/30 cursor-pointer' 
+                              : 'hover:bg-accent/50 cursor-pointer'
+                        }`}
+                        onClick={() => !isDisabled && toggleTechnicianSelection(tech.id)}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          disabled={isDisabled}
+                          onCheckedChange={() => !isDisabled && toggleTechnicianSelection(tech.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">
+                              {tech.first_name} {tech.last_name}
+                            </p>
+                            {tech.hasPendingPayout && (
+                              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                                <Check className="h-3 w-3 mr-1" />
+                                {tech.existingPayoutStatus === 'paid' ? 'Versé' : 'Enregistré'}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{tech.email}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-primary">
+                            {formatCurrency(tech.previousMonthRevenue)}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Net à verser</p>
+                        </div>
+                        {isSelected && !isDisabled && (
+                          <div className="w-32" onClick={(e) => e.stopPropagation()}>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={payoutAmounts[tech.id] || ''}
+                              onChange={(e) => setPayoutAmounts(prev => ({ ...prev, [tech.id]: e.target.value }))}
+                              placeholder="Montant"
+                              className="text-right"
+                            />
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Pagination */}
@@ -429,72 +584,63 @@ export function PayoutsTab() {
 
       {/* Create Payout Dialog */}
       <Dialog open={showDialog} onOpenChange={(open) => { setShowDialog(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Créer un versement</DialogTitle>
+            <DialogTitle>Confirmer les versements</DialogTitle>
             <DialogDescription>
-              Versement pour {selectedTechnicianIds.length} technicien(s) sélectionné(s)
+              Période : {format(periodStart, 'dd MMMM', { locale: fr })} - {format(periodEnd, 'dd MMMM yyyy', { locale: fr })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="p-3 bg-muted/50 rounded-lg">
-              <p className="text-sm font-medium mb-2">Techniciens sélectionnés :</p>
-              <div className="flex flex-wrap gap-1">
-                {selectedTechnicianIds.slice(0, 5).map((id) => {
+            {/* Summary of selected technicians */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Techniciens sélectionnés ({selectedTechnicianIds.length}) :</p>
+              <div className="max-h-48 overflow-y-auto space-y-2">
+                {selectedTechnicianIds.map((id) => {
                   const tech = technicians.find((t) => t.id === id);
+                  const amount = payoutAmounts[id] || '0';
                   return tech ? (
-                    <Badge key={id} variant="secondary">
-                      {tech.first_name} {tech.last_name}
-                    </Badge>
+                    <div key={id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                      <span className="text-sm">
+                        {tech.first_name} {tech.last_name}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          (Généré: {formatCurrency(tech.previousMonthRevenue)})
+                        </span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={amount}
+                          onChange={(e) => setPayoutAmounts(prev => ({ ...prev, [id]: e.target.value }))}
+                          className="w-28 text-right h-8"
+                        />
+                        <span className="text-sm">€</span>
+                      </div>
+                    </div>
                   ) : null;
                 })}
-                {selectedTechnicianIds.length > 5 && (
-                  <Badge variant="outline">
-                    +{selectedTechnicianIds.length - 5} autres
-                  </Badge>
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="p-3 bg-primary/5 rounded-lg flex items-center justify-between">
+              <span className="font-medium">Total des versements :</span>
+              <span className="text-lg font-bold text-primary">
+                {formatCurrency(
+                  selectedTechnicianIds.reduce((sum, id) => sum + (parseFloat(payoutAmounts[id] || '0') || 0), 0)
                 )}
-              </div>
+              </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Montant (€)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Date de versement</label>
-                <Input
-                  type="date"
-                  value={payoutDate}
-                  onChange={(e) => setPayoutDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Début période</label>
-                <Input
-                  type="date"
-                  value={periodStart}
-                  onChange={(e) => setPeriodStart(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Fin période</label>
-                <Input
-                  type="date"
-                  value={periodEnd}
-                  onChange={(e) => setPeriodEnd(e.target.value)}
-                />
-              </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Date de versement</label>
+              <Input
+                type="date"
+                value={payoutDate}
+                onChange={(e) => setPayoutDate(e.target.value)}
+              />
             </div>
 
             <div className="space-y-2">
@@ -514,7 +660,7 @@ export function PayoutsTab() {
             </Button>
             <Button onClick={handleCreatePayout} disabled={processing}>
               {processing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Créer {selectedTechnicianIds.length > 1 ? `${selectedTechnicianIds.length} versements` : 'le versement'}
+              Valider {selectedTechnicianIds.length > 1 ? `${selectedTechnicianIds.length} versements` : 'le versement'}
             </Button>
           </DialogFooter>
         </DialogContent>
