@@ -169,6 +169,7 @@ export function ProfileImagesTab() {
             description="Votre visage clairement visible"
             isRequired
             shape="circle"
+            allowCamera
           />
 
           <TechnicianPhotoUpload

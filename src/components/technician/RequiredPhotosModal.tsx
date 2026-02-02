@@ -163,6 +163,7 @@ export function RequiredPhotosModal({ open, onComplete }: RequiredPhotosModalPro
                 description="Votre visage clairement visible"
                 isRequired
                 shape="circle"
+                allowCamera
               />
 
               <TechnicianPhotoUpload
