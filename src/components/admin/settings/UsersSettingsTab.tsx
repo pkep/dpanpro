@@ -110,40 +110,22 @@ export function UsersSettingsTab() {
 
   const createUserMutation = useMutation({
     mutationFn: async ({ form, role }: { form: CreateUserForm; role: 'manager' | 'admin' }) => {
-      // Hash a temporary password
-      const tempPassword = crypto.randomUUID().slice(0, 12);
-      const { data: hashData, error: hashError } = await supabase.functions.invoke('hash-password', {
-        body: { password: tempPassword },
-      });
-
-      if (hashError) throw hashError;
-
-      // Create user
-      const { data: newUser, error: userError } = await supabase
-        .from('users')
-        .insert({
-          first_name: form.firstName,
-          last_name: form.lastName,
+      // Use edge function to create admin/manager with service role
+      const { data, error } = await supabase.functions.invoke('create-admin-user', {
+        body: {
+          firstName: form.firstName,
+          lastName: form.lastName,
           email: form.email,
           phone: form.phone || null,
-          password_hash: hashData.hash,
           role: role,
-        })
-        .select('id')
-        .single();
-
-      if (userError) throw userError;
-
-      // Add role
-      const { error: roleError } = await supabase.from('user_roles').insert({
-        user_id: newUser.id,
-        role: role,
-        created_by: user?.id,
+          createdBy: user?.id,
+        },
       });
 
-      if (roleError) throw roleError;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      return { userId: newUser.id, tempPassword };
+      return { userId: data.userId, tempPassword: data.tempPassword };
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['managers-with-permissions'] });
@@ -165,23 +147,23 @@ export function UsersSettingsTab() {
 
   const updatePermissionMutation = useMutation({
     mutationFn: async ({ userId, canCreateManagers }: { userId: string; canCreateManagers: boolean }) => {
-      const { error } = await supabase.from('manager_permissions').upsert(
-        {
-          user_id: userId,
-          can_create_managers: canCreateManagers,
-          granted_by: user?.id,
+      const { data, error } = await supabase.functions.invoke('update-manager-permissions', {
+        body: {
+          userId,
+          canCreateManagers,
+          grantedBy: user?.id,
         },
-        { onConflict: 'user_id' }
-      );
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['managers-with-permissions'] });
       toast.success('Permissions mises à jour');
     },
-    onError: () => {
-      toast.error('Erreur lors de la mise à jour des permissions');
+    onError: (error: Error) => {
+      toast.error(`Erreur: ${error.message}`);
     },
   });
 
