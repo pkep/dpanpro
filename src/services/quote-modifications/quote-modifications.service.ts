@@ -241,15 +241,21 @@ class QuoteModificationsService {
   }
 
   /**
-   * Decline a quote modification
+   * Decline a quote modification with reason
    */
-  async declineModification(id: string): Promise<void> {
+  async declineModification(id: string, reason?: string): Promise<void> {
+    const updateData: Record<string, unknown> = {
+      status: 'declined',
+      client_responded_at: new Date().toISOString(),
+    };
+    
+    if (reason) {
+      updateData.decline_reason = reason;
+    }
+
     const { error } = await supabase
       .from('quote_modifications')
-      .update({
-        status: 'declined',
-        client_responded_at: new Date().toISOString(),
-      } as Record<string, unknown>)
+      .update(updateData)
       .eq('id', id);
 
     if (error) throw error;
