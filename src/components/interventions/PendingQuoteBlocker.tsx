@@ -12,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { AlertTriangle, FileText, ExternalLink, Euro } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertTriangle, FileText, ExternalLink, Euro, X, Bell } from 'lucide-react';
 
 interface PendingQuoteBlockerProps {
   interventionId: string;
@@ -22,12 +23,17 @@ interface PendingQuoteBlockerProps {
 export function PendingQuoteBlocker({ interventionId, onQuoteResolved }: PendingQuoteBlockerProps) {
   const [pendingQuote, setPendingQuote] = useState<QuoteModification | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDismissed, setIsDismissed] = useState(false);
 
   // Fetch pending quote modification
   const fetchPendingQuote = async () => {
     try {
       const modification = await quoteModificationsService.getPendingModification(interventionId);
       setPendingQuote(modification);
+      // Reset dismissed state when a new quote comes in
+      if (modification) {
+        setIsDismissed(false);
+      }
     } catch (error) {
       console.error('Error fetching pending quote:', error);
     } finally {
@@ -57,9 +63,11 @@ export function PendingQuoteBlocker({ interventionId, onQuoteResolved }: Pending
           // If status changed from pending to approved/declined
           if (newData && newData.status !== 'pending') {
             setPendingQuote(null);
+            setIsDismissed(false);
             onQuoteResolved?.();
           } else if (payload.eventType === 'INSERT' && newData?.status === 'pending') {
-            // New pending modification created
+            // New pending modification created - show modal again
+            setIsDismissed(false);
             fetchPendingQuote();
           }
         }
@@ -75,18 +83,57 @@ export function PendingQuoteBlocker({ interventionId, onQuoteResolved }: Pending
     return null;
   }
 
+  // If dismissed, show a compact reminder banner instead of blocking modal
+  if (isDismissed) {
+    return (
+      <Alert className="mb-4 border-warning/50 bg-warning/10">
+        <Bell className="h-4 w-4 text-warning" />
+        <AlertDescription className="flex items-center justify-between">
+          <span className="text-sm">
+            Un devis en attente nécessite votre validation ({pendingQuote.totalAdditionalAmount.toFixed(2)} €)
+          </span>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsDismissed(false)}
+            >
+              Voir
+            </Button>
+            <Button asChild size="sm">
+              <Link to={`/quote-approval/${pendingQuote.notificationToken}`}>
+                Traiter
+              </Link>
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <AlertDialog open={true}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
-          <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-warning/10">
-            <AlertTriangle className="h-6 w-6 text-warning" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-warning/10">
+              <AlertTriangle className="h-6 w-6 text-warning" />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setIsDismissed(true)}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Fermer</span>
+            </Button>
           </div>
-          <AlertDialogTitle className="text-center">
+          <AlertDialogTitle className="text-center mt-2">
             Action requise
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            Le technicien a proposé des prestations supplémentaires. Vous devez valider ou refuser cette modification avant de continuer.
+            Le technicien a proposé des prestations supplémentaires. Vous devez valider ou refuser cette modification pour finaliser l'intervention.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -139,9 +186,13 @@ export function PendingQuoteBlocker({ interventionId, onQuoteResolved }: Pending
               Voir et traiter le devis
             </Link>
           </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            Vous ne pourrez pas continuer tant que le devis n'aura pas été traité.
-          </p>
+          <Button
+            variant="ghost"
+            className="w-full text-muted-foreground"
+            onClick={() => setIsDismissed(true)}
+          >
+            Me le rappeler plus tard
+          </Button>
         </div>
       </AlertDialogContent>
     </AlertDialog>
