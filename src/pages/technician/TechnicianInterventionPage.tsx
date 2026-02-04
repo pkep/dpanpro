@@ -40,6 +40,7 @@ import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
 import { StartInterventionDialog } from '@/components/technician/StartInterventionDialog';
 import { FinalizePhotosDialog } from '@/components/technician/FinalizePhotosDialog';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
+import { quoteModificationsService } from '@/services/quote-modifications/quote-modifications.service';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -171,7 +172,23 @@ export default function TechnicianInterventionPage() {
     setAfterPhotos(photos);
   };
 
-  const handleFinalizeClick = () => {
+  const handleFinalizeClick = async () => {
+    if (!intervention) return;
+    
+    // Check for pending quote modification
+    try {
+      const pendingMod = await quoteModificationsService.getPendingModification(intervention.id);
+      if (pendingMod) {
+        toast.warning('Action client requise', {
+          description: 'Une modification de devis est en attente de validation. Vous pourrez finaliser une fois que le client aura répondu.',
+          duration: 5000,
+        });
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking pending modifications:', err);
+    }
+    
     // If no after photos, show photo capture dialog first
     if (afterPhotos.length === 0) {
       setShowFinalizePhotosDialog(true);
