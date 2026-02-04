@@ -17,6 +17,7 @@ export interface Service {
   repairPrice: number;
   vatRateIndividual: number;
   vatRateProfessional: number;
+  targetArrivalTimeMinutes: number;
 }
 
 interface DbService {
@@ -36,6 +37,7 @@ interface DbService {
   repair_price: number;
   vat_rate_individual: number;
   vat_rate_professional: number;
+  target_arrival_time_minutes: number;
 }
 
 class ServicesService {
@@ -82,6 +84,7 @@ class ServicesService {
     if (updates.vatRateIndividual !== undefined) dbUpdates.vat_rate_individual = updates.vatRateIndividual;
     if (updates.vatRateProfessional !== undefined) dbUpdates.vat_rate_professional = updates.vatRateProfessional;
     if (updates.displayOrder !== undefined) dbUpdates.display_order = updates.displayOrder;
+    if (updates.targetArrivalTimeMinutes !== undefined) dbUpdates.target_arrival_time_minutes = updates.targetArrivalTimeMinutes;
     
     // Recalculate base_price as sum of components
     if (updates.displacementPrice !== undefined || updates.securityPrice !== undefined || updates.repairPrice !== undefined) {
@@ -134,6 +137,7 @@ class ServicesService {
       repairPrice: data.repair_price,
       vatRateIndividual: data.vat_rate_individual,
       vatRateProfessional: data.vat_rate_professional,
+      targetArrivalTimeMinutes: data.target_arrival_time_minutes || 30,
     };
   }
 }

@@ -1113,6 +1113,7 @@ export type Database = {
           name: string
           repair_price: number
           security_price: number
+          target_arrival_time_minutes: number | null
           updated_at: string
           vat_rate_individual: number
           vat_rate_professional: number
@@ -1131,6 +1132,7 @@ export type Database = {
           name: string
           repair_price?: number
           security_price?: number
+          target_arrival_time_minutes?: number | null
           updated_at?: string
           vat_rate_individual?: number
           vat_rate_professional?: number
@@ -1149,6 +1151,7 @@ export type Database = {
           name?: string
           repair_price?: number
           security_price?: number
+          target_arrival_time_minutes?: number | null
           updated_at?: string
           vat_rate_individual?: number
           vat_rate_professional?: number

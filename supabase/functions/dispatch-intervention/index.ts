@@ -632,6 +632,22 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
     console.error('[Dispatch] Failed to send notification:', err);
   });
 
+  // Schedule arrival reminders based on service target time (non-blocking)
+  fetch(`${supabaseUrl}/functions/v1/schedule-arrival-reminders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${serviceRoleKey}`,
+    },
+    body: JSON.stringify({
+      interventionId,
+      technicianId,
+      acceptedAt: now.toISOString(),
+    }),
+  }).catch(err => {
+    console.error('[Dispatch] Failed to schedule arrival reminders:', err);
+  });
+
   return new Response(
     JSON.stringify({ success: true, message: 'Assignment accepted', responseTimeSeconds }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

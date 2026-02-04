@@ -86,6 +86,7 @@ export function ServicesManagement() {
       repairPrice: (s.repair_price as number) || 0,
       vatRateIndividual: (s.vat_rate_individual as number) || 10,
       vatRateProfessional: (s.vat_rate_professional as number) || 20,
+      targetArrivalTimeMinutes: (s.target_arrival_time_minutes as number) || 30,
     }));
   };
 

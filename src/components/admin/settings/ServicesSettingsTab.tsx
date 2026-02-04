@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Wrench, Pencil, Loader2, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
+import { Wrench, Pencil, Loader2, ChevronUp, ChevronDown, GripVertical, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { servicesService, Service } from '@/services/services/services.service';
 
@@ -22,6 +22,7 @@ export function ServicesSettingsTab() {
     repairPrice: 0,
     vatRateIndividual: 10,
     vatRateProfessional: 20,
+    targetArrivalTimeMinutes: 30,
   });
 
   const { data: services, isLoading } = useQuery({
@@ -76,6 +77,7 @@ export function ServicesSettingsTab() {
       repairPrice: service.repairPrice,
       vatRateIndividual: service.vatRateIndividual,
       vatRateProfessional: service.vatRateProfessional,
+      targetArrivalTimeMinutes: service.targetArrivalTimeMinutes || 30,
     });
   };
 
@@ -92,6 +94,7 @@ export function ServicesSettingsTab() {
         repairPrice: formData.repairPrice,
         vatRateIndividual: formData.vatRateIndividual,
         vatRateProfessional: formData.vatRateProfessional,
+        targetArrivalTimeMinutes: formData.targetArrivalTimeMinutes,
       },
     });
   };
@@ -158,6 +161,7 @@ export function ServicesSettingsTab() {
                 <TableHead className="text-right">Mise en sécurité</TableHead>
                 <TableHead className="text-right">Dépannage</TableHead>
                 <TableHead className="text-right">Total HT</TableHead>
+                <TableHead className="text-center">Temps cible</TableHead>
                 <TableHead className="text-center">Actif</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -214,6 +218,12 @@ export function ServicesSettingsTab() {
                     </TableCell>
                     <TableCell className="text-right font-semibold">
                       {total.toFixed(2)} €
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium">{service.targetArrivalTimeMinutes || 30} min</span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-center">
                       <Switch
@@ -337,6 +347,25 @@ export function ServicesSettingsTab() {
                   onChange={(e) => setFormData({ ...formData, vatRateProfessional: parseFloat(e.target.value) || 0 })}
                 />
               </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="targetArrivalTime" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Temps cible d'arrivée (minutes)
+              </Label>
+              <Input
+                id="targetArrivalTime"
+                type="number"
+                step="5"
+                min="10"
+                max="180"
+                value={formData.targetArrivalTimeMinutes}
+                onChange={(e) => setFormData({ ...formData, targetArrivalTimeMinutes: parseInt(e.target.value) || 30 })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Le technicien recevra des rappels à 50% et 5 min avant ce délai.
+              </p>
             </div>
           </div>
 

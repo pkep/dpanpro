@@ -59,3 +59,15 @@ verify_jwt = false
 
 [functions.send-cancellation-invoice]
 verify_jwt = false
+
+[functions.send-welcome-admin-email]
+verify_jwt = false
+
+[functions.create-admin-user]
+verify_jwt = false
+
+[functions.send-technician-arrival-reminder]
+verify_jwt = false
+
+[functions.schedule-arrival-reminders]
+verify_jwt = false
