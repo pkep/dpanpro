@@ -20,6 +20,7 @@ export interface DbUser {
   vat_number: string | null;
   avatar_url: string | null;
   company_logo_url: string | null;
+  must_change_password: boolean;
   created_at: string;
   updated_at: string;
 }

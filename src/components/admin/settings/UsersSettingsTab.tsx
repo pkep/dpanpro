@@ -119,18 +119,20 @@ export function UsersSettingsTab() {
           phone: form.phone || null,
           role: role,
           createdBy: user?.id,
+          loginUrl: `${window.location.origin}/auth`,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      return { userId: data.userId, tempPassword: data.tempPassword };
+      return { userId: data.userId, tempPassword: data.tempPassword, email: form.email };
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['managers-with-permissions'] });
       toast.success(
-        `${variables.role === 'admin' ? 'Administrateur' : 'Manager'} créé avec succès. Mot de passe temporaire: ${data.tempPassword}`
+        `${variables.role === 'admin' ? 'Administrateur' : 'Manager'} créé avec succès ! Un email a été envoyé à ${data.email} avec ses identifiants de connexion.`,
+        { duration: 8000 }
       );
       if (variables.role === 'manager') {
         setManagerDialogOpen(false);
