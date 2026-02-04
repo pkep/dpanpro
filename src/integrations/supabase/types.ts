@@ -1050,6 +1050,7 @@ export type Database = {
           client_responded_at: string | null
           created_at: string
           created_by: string
+          decline_reason: string | null
           id: string
           intervention_id: string
           notification_token: string | null
@@ -1062,6 +1063,7 @@ export type Database = {
           client_responded_at?: string | null
           created_at?: string
           created_by: string
+          decline_reason?: string | null
           id?: string
           intervention_id: string
           notification_token?: string | null
@@ -1074,6 +1076,7 @@ export type Database = {
           client_responded_at?: string | null
           created_at?: string
           created_by?: string
+          decline_reason?: string | null
           id?: string
           intervention_id?: string
           notification_token?: string | null
