@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { DeclineQuoteDialog } from '@/components/quotes/DeclineQuoteDialog';
 import { 
   CheckCircle, 
   XCircle, 
@@ -72,6 +73,7 @@ export default function QuoteApprovalPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -147,13 +149,14 @@ export default function QuoteApprovalPage() {
     }
   };
 
-  const handleDecline = async () => {
+  const handleDecline = async (reason: string) => {
     if (!modification) return;
     
     setProcessing(true);
     try {
-      await quoteModificationsService.declineModification(modification.id);
+      await quoteModificationsService.declineModification(modification.id, reason);
       setModification({ ...modification, status: 'declined' });
+      setShowDeclineDialog(false);
       toast.success('Modification refusée');
     } catch (err) {
       console.error('Error declining:', err);
@@ -392,7 +395,7 @@ export default function QuoteApprovalPage() {
                 <Button
                   variant="outline"
                   className="flex-1"
-                  onClick={handleDecline}
+                  onClick={() => setShowDeclineDialog(true)}
                   disabled={processing}
                 >
                   <XCircle className="h-4 w-4 mr-2" />
@@ -410,6 +413,14 @@ export default function QuoteApprovalPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Decline Dialog */}
+        <DeclineQuoteDialog
+          open={showDeclineDialog}
+          onOpenChange={setShowDeclineDialog}
+          onConfirm={handleDecline}
+          processing={processing}
+        />
 
         {/* Footer */}
         <div className="text-center space-y-3">
