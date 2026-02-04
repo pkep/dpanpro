@@ -15,6 +15,7 @@ export interface User {
   vatNumber?: string | null;
   avatarUrl?: string | null;
   companyLogoUrl?: string | null;
+  mustChangePassword?: boolean;
   createdAt: string;
   updatedAt: string;
 }

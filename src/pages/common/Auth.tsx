@@ -3,33 +3,58 @@ import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm';
 import { useAuth } from '@/hooks/useAuth';
+import { authService } from '@/services/auth/auth.service';
 import type { User } from '@/types/auth.types';
 import { Wrench } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
-type AuthView = 'login' | 'register' | 'forgot-password';
+type AuthView = 'login' | 'register' | 'forgot-password' | 'change-password';
 
 export default function Auth() {
   const [view, setView] = useState<AuthView>('login');
-  const { isAuthenticated, isLoading } = useAuth();
+  const [pendingUser, setPendingUser] = useState<User | null>(null);
+  const { isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      navigate('/', { replace: true });
+    if (!isLoading && isAuthenticated && user && !user.mustChangePassword) {
+      navigateByRole(user);
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, user, navigate]);
 
-  const handleSuccess = (user?: User) => {
-    if (user?.role === 'technician') {
+  const navigateByRole = (user: User) => {
+    if (user.role === 'technician') {
       navigate('/technician', { replace: true });
-    } else if (user?.role === 'admin') {
+    } else if (user.role === 'admin') {
       navigate('/admin', { replace: true });
-    } else if (user?.role === 'manager') {
+    } else if (user.role === 'manager') {
       navigate('/manager', { replace: true });
     } else {
       navigate('/dashboard', { replace: true });
+    }
+  };
+
+  const handleSuccess = (user?: User) => {
+    if (user?.mustChangePassword) {
+      // User needs to change password first
+      setPendingUser(user);
+      setView('change-password');
+      return;
+    }
+    
+    if (user) {
+      navigateByRole(user);
+    }
+  };
+
+  const handlePasswordChanged = async () => {
+    if (pendingUser) {
+      // Refresh user data from localStorage after password change
+      const updatedUser = { ...pendingUser, mustChangePassword: false };
+      localStorage.setItem('depanpro_user', JSON.stringify(updatedUser));
+      navigateByRole(updatedUser);
     }
   };
 
@@ -113,6 +138,12 @@ export default function Auth() {
           )}
           {view === 'forgot-password' && (
             <ForgotPasswordForm onBack={() => setView('login')} />
+          )}
+          {view === 'change-password' && pendingUser && (
+            <ChangePasswordForm
+              userId={pendingUser.id}
+              onSuccess={handlePasswordChanged}
+            />
           )}
         </div>
       </div>

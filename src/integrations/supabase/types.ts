@@ -1469,6 +1469,7 @@ export type Database = {
           is_active: boolean
           is_company: boolean
           last_name: string
+          must_change_password: boolean | null
           password_hash: string
           phone: string | null
           role: string
@@ -1488,6 +1489,7 @@ export type Database = {
           is_active?: boolean
           is_company?: boolean
           last_name: string
+          must_change_password?: boolean | null
           password_hash: string
           phone?: string | null
           role?: string
@@ -1507,6 +1509,7 @@ export type Database = {
           is_active?: boolean
           is_company?: boolean
           last_name?: string
+          must_change_password?: boolean | null
           password_hash?: string
           phone?: string | null
           role?: string

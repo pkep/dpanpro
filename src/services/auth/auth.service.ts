@@ -52,6 +52,7 @@ class AuthService {
         vatNumber: dbUser.vat_number,
         avatarUrl: dbUser.avatar_url,
         companyLogoUrl: dbUser.company_logo_url,
+        mustChangePassword: dbUser.must_change_password,
         createdAt: dbUser.created_at,
         updatedAt: dbUser.updated_at,
       };
@@ -135,6 +136,7 @@ class AuthService {
         vatNumber: newUser.vat_number,
         avatarUrl: newUser.avatar_url,
         companyLogoUrl: newUser.company_logo_url,
+        mustChangePassword: newUser.must_change_password,
         createdAt: newUser.created_at,
         updatedAt: newUser.updated_at,
       };

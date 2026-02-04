@@ -30,7 +30,7 @@ serve(async (req) => {
   }
 
   try {
-    const { firstName, lastName, email, phone, role, createdBy } = await req.json();
+    const { firstName, lastName, email, phone, role, createdBy, loginUrl } = await req.json();
 
     // Validate required fields
     if (!firstName || !lastName || !email || !role) {
@@ -127,6 +127,7 @@ serve(async (req) => {
         password_hash: passwordHash,
         role: role,
         is_active: true,
+        must_change_password: true,
       })
       .select("id")
       .single();
@@ -157,6 +158,39 @@ serve(async (req) => {
     }
 
     console.log(`Created ${role} user:`, newUser.id);
+
+    // Send welcome email with temporary password
+    try {
+      const emailResponse = await fetch(
+        `${supabaseUrl}/functions/v1/send-welcome-admin-email`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            email: email.toLowerCase(),
+            firstName,
+            lastName,
+            role,
+            tempPassword,
+            loginUrl: loginUrl || `${Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app"}/auth`,
+          }),
+        }
+      );
+
+      if (!emailResponse.ok) {
+        const emailError = await emailResponse.text();
+        console.error("Failed to send welcome email:", emailError);
+        // Don't fail the user creation, just log the error
+      } else {
+        console.log("Welcome email sent successfully");
+      }
+    } catch (emailError) {
+      console.error("Error sending welcome email:", emailError);
+      // Don't fail the user creation if email fails
+    }
 
     return new Response(
       JSON.stringify({
