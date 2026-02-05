@@ -27,7 +27,9 @@ export function NotificationsDropdown() {
 
   const handleNotificationClick = (notification: typeof notifications[0]) => {
     markAsRead(notification.id);
-    navigate(`/intervention/${notification.interventionId}`);
+    // Use action URL if available, otherwise default to intervention page
+    const url = notification.actionUrl || `/intervention/${notification.interventionId}`;
+    navigate(url);
   };
 
   const getNotificationIcon = (type: string) => {
@@ -38,6 +40,14 @@ export function NotificationsDropdown() {
         return '🔄';
       case 'new_intervention':
         return '🚨';
+      case 'quote_modification':
+        return '📋';
+      case 'new_message':
+        return '💬';
+      case 'new_photo':
+        return '📷';
+      case 'client_cancellation':
+        return '❌';
       default:
         return '📢';
     }

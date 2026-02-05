@@ -29,6 +29,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { ClientCancelDialog } from '@/components/interventions/ClientCancelDialog';
+import { PendingQuotesBanner } from '@/components/client/PendingQuotesBanner';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -191,6 +192,9 @@ export default function ClientDashboardPage() {
   return (
     <ClientLayout title={`Bonjour, ${user.firstName} 👋`} subtitle="Voici le récapitulatif de vos interventions">
       <div className="space-y-4 md:space-y-6">
+        {/* Pending Quotes Banner - Shows alerts for quotes needing action */}
+        <PendingQuotesBanner />
+        
         {/* Quick Action - Full width on mobile */}
         <div className="flex justify-center sm:justify-end">
           <Button asChild size="default" className="w-full sm:w-auto">

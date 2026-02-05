@@ -5,12 +5,13 @@ import { toast } from 'sonner';
 
 interface Notification {
   id: string;
-  type: 'new_message' | 'new_photo' | 'client_cancellation' | 'new_intervention';
+  type: 'new_message' | 'new_photo' | 'client_cancellation' | 'new_intervention' | 'quote_modification' | 'status_change' | 'assignment';
   title: string;
   message: string;
   interventionId: string;
   createdAt: string;
   read: boolean;
+  actionUrl?: string;
 }
 
 export function useRealtimeNotifications() {
@@ -29,12 +30,15 @@ export function useRealtimeNotifications() {
     setNotifications((prev) => [newNotification, ...prev].slice(0, 50));
     setUnreadCount((prev) => prev + 1);
 
+    // Determine the navigation URL based on role and action URL
+    const navigateUrl = notification.actionUrl || `/intervention/${notification.interventionId}`;
+
     toast.info(notification.title, {
       description: notification.message,
       action: {
         label: 'Voir',
         onClick: () => {
-          window.location.href = `/technician/intervention/${notification.interventionId}`;
+          window.location.href = navigateUrl;
         },
       },
     });
@@ -61,9 +65,12 @@ export function useRealtimeNotifications() {
     if (!user) return;
 
     const isTechnician = user.role === 'technician' || user.role === 'admin';
-    if (!isTechnician) return;
+    const isClient = user.role === 'client';
 
-    console.log('Setting up technician notifications for user:', user.id);
+    // Exit if neither technician/admin nor client
+    if (!isTechnician && !isClient) return;
+
+    console.log('Setting up notifications for user:', user.id, 'role:', user.role);
 
     // Listen for new messages from clients
     const messagesChannel = supabase
@@ -172,12 +179,52 @@ export function useRealtimeNotifications() {
         .subscribe();
     }
 
+    // Listen for quote modifications (for clients)
+    let quoteModificationChannel: ReturnType<typeof supabase.channel> | null = null;
+    
+    if (isClient) {
+      quoteModificationChannel = supabase
+        .channel('client-quote-modifications')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'quote_modifications',
+          },
+          async (payload) => {
+            const newMod = payload.new as any;
+            
+            // Check if this intervention belongs to the current client
+            const { data: intervention } = await supabase
+              .from('interventions')
+              .select('id, title, client_id')
+              .eq('id', newMod.intervention_id)
+              .single();
+
+            if (intervention && intervention.client_id === user.id && newMod.status === 'pending') {
+              addNotification({
+                type: 'quote_modification',
+                title: '📋 Devis en attente',
+                message: `Le technicien propose des prestations supplémentaires (${newMod.total_additional_amount?.toFixed(2) || '0.00'} €)`,
+                interventionId: newMod.intervention_id,
+                actionUrl: newMod.notification_token ? `/quote-approval/${newMod.notification_token}` : undefined,
+              });
+            }
+          }
+        )
+        .subscribe();
+    }
+
     return () => {
-      console.log('Cleaning up technician notifications');
+      console.log('Cleaning up notifications');
       supabase.removeChannel(messagesChannel);
       supabase.removeChannel(interventionsChannel);
       if (urgentChannel) {
         supabase.removeChannel(urgentChannel);
+      }
+      if (quoteModificationChannel) {
+        supabase.removeChannel(quoteModificationChannel);
       }
     };
   }, [user, addNotification]);
