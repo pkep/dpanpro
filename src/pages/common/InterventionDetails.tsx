@@ -7,6 +7,9 @@ import { cancellationService } from '@/services/cancellation/cancellation.servic
 import { historyService } from '@/services/history/history.service';
 import { usersService } from '@/services/users/users.service';
 import { invoiceService } from '@/services/invoice/invoice.service';
+import { quotesService, QuoteLine } from '@/services/quotes/quotes.service';
+import { quoteModificationsService, QuoteModification } from '@/services/quote-modifications/quote-modifications.service';
+import { servicesService } from '@/services/services/services.service';
 import type { InterventionStatus } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { STATUS_LABELS, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';
@@ -36,6 +39,7 @@ import { PushNotificationSetup } from '@/components/notifications/PushNotificati
 import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
 import { PendingQuoteBlocker } from '@/components/interventions/PendingQuoteBlocker';
 import { ClientCancelDialog } from '@/components/interventions/ClientCancelDialog';
+import { SignedQuoteCard } from '@/components/quotes/SignedQuoteCard';
 import {
   Home,
   ArrowLeft,
@@ -80,6 +84,10 @@ export default function InterventionDetails() {
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [quoteLines, setQuoteLines] = useState<QuoteLine[]>([]);
+  const [approvedModifications, setApprovedModifications] = useState<QuoteModification[]>([]);
+  const [vatRate, setVatRate] = useState(10);
+  const [quoteDataLoading, setQuoteDataLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleDownloadInvoice = async () => {
@@ -165,6 +173,35 @@ export default function InterventionDetails() {
       setPhotos([]);
     }
   }, [intervention?.photos]);
+
+  // Load quote data
+  useEffect(() => {
+    const loadQuoteData = async () => {
+      if (!intervention) return;
+      setQuoteDataLoading(true);
+      try {
+        const [lines, modifications] = await Promise.all([
+          quotesService.getQuoteLines(intervention.id),
+          quoteModificationsService.getModificationsByIntervention(intervention.id),
+        ]);
+        setQuoteLines(lines);
+        setApprovedModifications(modifications.filter(m => m.status === 'approved'));
+
+        // Get VAT rate
+        const services = await servicesService.getActiveServices();
+        const service = services.find(s => s.code === intervention.category);
+        if (service) {
+          // Determine if client is company - default to individual rate
+          setVatRate(service.vatRateIndividual);
+        }
+      } catch (err) {
+        console.error('Error loading quote data:', err);
+      } finally {
+        setQuoteDataLoading(false);
+      }
+    };
+    loadQuoteData();
+  }, [intervention?.id, intervention?.category]);
 
   const handleStatusChange = async (newStatus: InterventionStatus) => {
     if (!intervention || !user) return;
@@ -541,6 +578,17 @@ export default function InterventionDetails() {
               <WorkPhotosGallery 
                 interventionId={intervention.id}
                 canDelete={canEdit}
+              />
+            )}
+
+            {/* Signed Quote Section - Show if quote has lines */}
+            {quoteLines.length > 0 && (
+              <SignedQuoteCard
+                intervention={intervention}
+                quoteLines={quoteLines}
+                approvedModifications={approvedModifications}
+                vatRate={vatRate}
+                isLoading={quoteDataLoading}
               />
             )}
 

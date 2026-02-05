@@ -278,6 +278,9 @@ class InterventionsService {
       trackingCode: data.tracking_code,
       clientEmail: data.client_email,
       clientPhone: data.client_phone,
+      quoteSignedAt: (data as any).quote_signed_at,
+      quoteSignatureData: (data as any).quote_signature_data,
+      quotePdfUrl: (data as any).quote_pdf_url,
     };
   }
 }
