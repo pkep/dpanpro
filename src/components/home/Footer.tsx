@@ -14,8 +14,8 @@ export function Footer() {
           {/* Brand */}
           <div>
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="DépanPro" className="h-8 w-auto" />
-              <span className="text-xl font-bold text-foreground">DépanPro</span>
+              <img src={logo} alt="Dépan.Pro" className="h-8 w-auto" />
+              <span className="text-xl font-bold text-foreground">Dépan.Pro</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
               Votre partenaire de confiance pour tous vos dépannages d'urgence, 24h/24 et 7j/7 partout en France.
@@ -106,7 +106,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t border-border pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Dépan.Pro Tous droits réservés.</p>
+          <p>&copy; {new Date().getFullYear()} DépanPro. Tous droits réservés.</p>
         </div>
       </div>
     </footer>
