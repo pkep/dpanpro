@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { DeclineQuoteDialog } from '@/components/quotes/DeclineQuoteDialog';
+import { SignatureCanvas } from '@/components/quotes/SignatureCanvas';
 import { 
   CheckCircle, 
   XCircle, 
@@ -25,6 +26,7 @@ import {
   Truck,
   Shield,
   Settings,
+  AlertTriangle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -74,6 +76,7 @@ export default function QuoteApprovalPage() {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [showDeclineDialog, setShowDeclineDialog] = useState(false);
+  const [signature, setSignature] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -130,9 +133,14 @@ export default function QuoteApprovalPage() {
   const handleApprove = async () => {
     if (!modification) return;
     
+    if (!signature) {
+      toast.error('Veuillez signer le devis pour confirmer votre approbation');
+      return;
+    }
+    
     setProcessing(true);
     try {
-      const result = await quoteModificationsService.approveModification(modification.id);
+      const result = await quoteModificationsService.approveModification(modification.id, signature);
       setModification({ ...modification, status: 'approved' });
       
       if (result.incrementResult) {
@@ -386,32 +394,49 @@ export default function QuoteApprovalPage() {
 
         {/* Actions */}
         {isPending && (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-center text-muted-foreground mb-4">
-                En approuvant, vous acceptez que ces travaux soient ajoutés à votre facture finale.
-              </p>
-              <div className="flex gap-3 w-full">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowDeclineDialog(true)}
-                  disabled={processing}
-                >
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Refuser
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handleApprove}
-                  disabled={processing}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Approuver
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <>
+            {/* Signature Canvas */}
+            <SignatureCanvas 
+              onSignatureChange={setSignature}
+              disabled={processing}
+            />
+
+            <Card>
+              <CardContent className="pt-6">
+                {!signature && (
+                  <Alert className="mb-4 border-warning/50 bg-warning/10">
+                    <AlertTriangle className="h-4 w-4 text-warning" />
+                    <AlertDescription className="text-sm">
+                      Vous devez signer le devis ci-dessus pour pouvoir l'approuver.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                <p className="text-sm text-center text-muted-foreground mb-4">
+                  En approuvant et signant, vous acceptez que ces travaux soient ajoutés à votre facture finale.
+                </p>
+                <div className="flex gap-3 w-full">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowDeclineDialog(true)}
+                    disabled={processing}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Refuser
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleApprove}
+                    disabled={processing || !signature}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approuver
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </>
         )}
 
         {/* Decline Dialog */}
