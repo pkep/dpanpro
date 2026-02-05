@@ -43,6 +43,9 @@ export interface Intervention {
   trackingCode?: string | null;
   clientEmail?: string | null;
   clientPhone?: string | null;
+  quoteSignedAt?: string | null;
+  quoteSignatureData?: string | null;
+  quotePdfUrl?: string | null;
 }
 
 export interface InterventionFormData {

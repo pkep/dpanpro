@@ -556,6 +556,9 @@ export type Database = {
           photos: string[] | null
           postal_code: string
           priority: string
+          quote_pdf_url: string | null
+          quote_signature_data: string | null
+          quote_signed_at: string | null
           response_time_seconds: number | null
           scheduled_at: string | null
           started_at: string | null
@@ -588,6 +591,9 @@ export type Database = {
           photos?: string[] | null
           postal_code: string
           priority?: string
+          quote_pdf_url?: string | null
+          quote_signature_data?: string | null
+          quote_signed_at?: string | null
           response_time_seconds?: number | null
           scheduled_at?: string | null
           started_at?: string | null
@@ -620,6 +626,9 @@ export type Database = {
           photos?: string[] | null
           postal_code?: string
           priority?: string
+          quote_pdf_url?: string | null
+          quote_signature_data?: string | null
+          quote_signed_at?: string | null
           response_time_seconds?: number | null
           scheduled_at?: string | null
           started_at?: string | null

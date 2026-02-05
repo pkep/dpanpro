@@ -37,7 +37,7 @@ import { TechnicianRatingDialog } from '@/components/technician/TechnicianRating
 import { ConfirmActionDialog } from '@/components/interventions/ConfirmActionDialog';
 import { WorkPhotoCapture } from '@/components/technician/WorkPhotoCapture';
 import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
-import { StartInterventionDialog } from '@/components/technician/StartInterventionDialog';
+import { StartInterventionDialog } from '@/components/technician/StartInterventionDialog/index';
 import { FinalizePhotosDialog } from '@/components/technician/FinalizePhotosDialog';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
 import { quoteModificationsService } from '@/services/quote-modifications/quote-modifications.service';
@@ -564,13 +564,17 @@ export default function TechnicianInterventionPage() {
         onConfirm={handleCancelIntervention}
       />
 
-      {/* Start Intervention Dialog with photo capture */}
+      {/* Start Intervention Dialog with photo capture + quote signature */}
       {user && (
         <StartInterventionDialog
           open={showStartDialog}
           onOpenChange={setShowStartDialog}
           interventionId={intervention.id}
           userId={user.id}
+          category={intervention.category}
+          clientEmail={intervention.clientEmail}
+          clientPhone={intervention.clientPhone}
+          clientId={intervention.clientId}
           onSuccess={handleStartInterventionSuccess}
         />
       )}
