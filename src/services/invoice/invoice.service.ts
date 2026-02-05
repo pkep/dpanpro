@@ -5,6 +5,7 @@ import { CATEGORY_LABELS } from '@/types/intervention.types';
 import { quotesService, QuoteLine } from '@/services/quotes/quotes.service';
 import { quoteModificationsService, QuoteModification } from '@/services/quote-modifications/quote-modifications.service';
 import { supabase } from '@/integrations/supabase/client';
+import { servicesService } from '@/services/services/services.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -16,20 +17,30 @@ export interface InvoiceData {
   clientName: string;
   clientEmail: string | null;
   clientPhone: string | null;
+  clientAddress: string | null;
+  isCompany: boolean;
+  companyName: string | null;
+  siren: string | null;
+  vatNumber: string | null;
   invoiceNumber: string;
   invoiceDate: Date;
   finalAmount: number;
+  vatRate: number;
 }
 
 const COMPANY_INFO = {
-  name: 'Dépan\'Express',
-  address: '123 Avenue des Dépanneurs',
-  city: '75001 Paris',
-  phone: '01 23 45 67 89',
-  email: 'contact@depanexpress.fr',
-  siret: '123 456 789 00012',
-  tva: 'FR12 345678901',
+  name: 'Depan.Pro',
+  address: '7, place du 11 Novembre 1918',
+  city: '93000 Bobigny',
+  phone: '01 84 60 86 30',
+  email: 'contact@depan-pro.com',
+  siren: '992 525 576',
+  siret: '992 525 576 00011',
+  tva: 'FR41 992 525 576',
 };
+
+// Depan.Pro brand color (green)
+const BRAND_GREEN: [number, number, number] = [15, 184, 127]; // #0FB87F
 
 class InvoiceService {
   /**
@@ -66,15 +77,38 @@ class InvoiceService {
       }
     }
 
-    // Get client name
+    // Get client info (name, company status, etc.)
     let clientName = 'Client';
+    let isCompany = false;
+    let companyName: string | null = null;
+    let clientAddress: string | null = null;
+    let siren: string | null = null;
+    let vatNumber: string | null = null;
+
     const { data: clientData } = await supabase
       .from('users')
-      .select('first_name, last_name')
+      .select('first_name, last_name, is_company, company_name, company_address, siren, vat_number')
       .eq('id', intervention.clientId)
       .single();
     if (clientData) {
       clientName = `${clientData.first_name} ${clientData.last_name}`;
+      isCompany = clientData.is_company || false;
+      companyName = clientData.company_name;
+      clientAddress = clientData.company_address;
+      siren = clientData.siren;
+      vatNumber = clientData.vat_number;
+    }
+
+    // Get VAT rate based on client type and service
+    let vatRate = isCompany ? 20 : 10; // Default rates
+    try {
+      const services = await servicesService.getActiveServices();
+      const service = services.find(s => s.code === intervention.category);
+      if (service) {
+        vatRate = isCompany ? service.vatRateProfessional : service.vatRateIndividual;
+      }
+    } catch (err) {
+      console.error('Error fetching service for VAT rate:', err);
     }
 
     // Calculate final amount
@@ -94,9 +128,15 @@ class InvoiceService {
       clientName,
       clientEmail: intervention.clientEmail,
       clientPhone: intervention.clientPhone,
+      clientAddress,
+      isCompany,
+      companyName,
+      siren,
+      vatNumber,
       invoiceNumber: this.generateInvoiceNumber(intervention.id, invoiceDate),
       invoiceDate,
       finalAmount: baseTotal + additionalTotal,
+      vatRate,
     };
   }
 
@@ -108,22 +148,26 @@ class InvoiceService {
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // Colors
-    const primaryColor: [number, number, number] = [59, 130, 246]; // Blue
+    const primaryColor: [number, number, number] = BRAND_GREEN; // Depan.Pro green
     const textDark: [number, number, number] = [31, 41, 55];
     const textMuted: [number, number, number] = [107, 114, 128];
 
     let yPos = 20;
 
-    // Header - Company Info
-    doc.setFontSize(24);
+    // Header - Logo and Company Info
+    // Draw a colored header bar
+    doc.setFillColor(...primaryColor);
+    doc.rect(0, 0, pageWidth, 8, 'F');
+
+    doc.setFontSize(22);
     doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
-    doc.text(COMPANY_INFO.name, 20, yPos);
+    doc.text(COMPANY_INFO.name, 20, yPos + 5);
 
     doc.setFontSize(10);
     doc.setTextColor(...textMuted);
     doc.setFont('helvetica', 'normal');
-    yPos += 8;
+    yPos += 13;
     doc.text(COMPANY_INFO.address, 20, yPos);
     yPos += 5;
     doc.text(COMPANY_INFO.city, 20, yPos);
@@ -132,50 +176,68 @@ class InvoiceService {
     yPos += 5;
     doc.text(`Email: ${COMPANY_INFO.email}`, 20, yPos);
     yPos += 5;
+    doc.text(`SIREN: ${COMPANY_INFO.siren}`, 20, yPos);
+    yPos += 5;
     doc.text(`SIRET: ${COMPANY_INFO.siret}`, 20, yPos);
     yPos += 5;
-    doc.text(`TVA: ${COMPANY_INFO.tva}`, 20, yPos);
+    doc.text(`N° TVA: ${COMPANY_INFO.tva}`, 20, yPos);
 
     // Invoice Title
     doc.setFontSize(28);
     doc.setTextColor(...textDark);
     doc.setFont('helvetica', 'bold');
-    doc.text('FACTURE', pageWidth - 20, 25, { align: 'right' });
+    doc.text('FACTURE', pageWidth - 20, 28, { align: 'right' });
 
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text(`N° ${data.invoiceNumber}`, pageWidth - 20, 35, { align: 'right' });
+    doc.text(`N° ${data.invoiceNumber}`, pageWidth - 20, 38, { align: 'right' });
     doc.text(
       `Date: ${format(data.invoiceDate, 'dd MMMM yyyy', { locale: fr })}`,
       pageWidth - 20,
-      42,
+      45,
       { align: 'right' }
     );
 
     // Separator line
-    yPos = 65;
+    yPos = 70;
     doc.setDrawColor(...primaryColor);
     doc.setLineWidth(0.5);
     doc.line(20, yPos, pageWidth - 20, yPos);
 
     // Client Info Box
     yPos = 75;
-    doc.setFillColor(249, 250, 251);
-    doc.roundedRect(pageWidth - 90, yPos, 70, 35, 3, 3, 'F');
+    const clientBoxHeight = data.isCompany ? 50 : 40;
+    doc.setFillColor(240, 253, 244); // Light green tint
+    doc.roundedRect(pageWidth - 95, yPos, 75, clientBoxHeight, 3, 3, 'F');
     
     doc.setFontSize(10);
     doc.setTextColor(...primaryColor);
     doc.setFont('helvetica', 'bold');
-    doc.text('FACTURER À', pageWidth - 85, yPos + 8);
+    doc.text('FACTURER À', pageWidth - 90, yPos + 8);
     
     doc.setTextColor(...textDark);
     doc.setFont('helvetica', 'normal');
-    doc.text(data.clientName, pageWidth - 85, yPos + 16);
+    
+    let clientYPos = yPos + 16;
+    if (data.isCompany && data.companyName) {
+      doc.setFont('helvetica', 'bold');
+      doc.text(data.companyName, pageWidth - 90, clientYPos);
+      clientYPos += 6;
+      doc.setFont('helvetica', 'normal');
+    }
+    doc.text(data.clientName, pageWidth - 90, clientYPos);
+    clientYPos += 6;
+    
     if (data.clientEmail) {
-      doc.text(data.clientEmail, pageWidth - 85, yPos + 22);
+      doc.text(data.clientEmail, pageWidth - 90, clientYPos);
+      clientYPos += 6;
     }
     if (data.clientPhone) {
-      doc.text(data.clientPhone, pageWidth - 85, yPos + 28);
+      doc.text(data.clientPhone, pageWidth - 90, clientYPos);
+      clientYPos += 6;
+    }
+    if (data.isCompany && data.siren) {
+      doc.text(`SIREN: ${data.siren}`, pageWidth - 90, clientYPos);
     }
 
     // Intervention Info
@@ -197,7 +259,7 @@ class InvoiceService {
     }
 
     // Quote Lines Table
-    yPos = 135;
+    yPos = 140;
 
     // Build table data
     const tableData: (string | number)[][] = [];
@@ -266,10 +328,10 @@ class InvoiceService {
       0
     );
     const totalHT = baseTotal + additionalTotal;
-    const tva = totalHT * 0.20;
+    const tva = totalHT * (data.vatRate / 100);
     const totalTTC = totalHT + tva;
 
-    doc.setFillColor(249, 250, 251);
+    doc.setFillColor(240, 253, 244); // Light green tint
     doc.roundedRect(totalsBoxX, yPos, totalsBoxWidth, 45, 3, 3, 'F');
 
     doc.setFontSize(9);
@@ -277,7 +339,7 @@ class InvoiceService {
     doc.text('Sous-total HT:', totalsBoxX + 5, yPos + 10);
     doc.text(`${totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 10, { align: 'right' });
 
-    doc.text('TVA (20%):', totalsBoxX + 5, yPos + 20);
+    doc.text(`TVA (${data.vatRate}%):`, totalsBoxX + 5, yPos + 20);
     doc.text(`${tva.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 20, { align: 'right' });
 
     doc.setDrawColor(200, 200, 200);
@@ -292,7 +354,7 @@ class InvoiceService {
 
     // Payment Status
     yPos += 55;
-    doc.setFillColor(220, 252, 231); // Green background
+    doc.setFillColor(220, 252, 231); // Light green background
     doc.roundedRect(20, yPos, pageWidth - 40, 20, 3, 3, 'F');
     
     doc.setFontSize(11);
@@ -306,13 +368,13 @@ class InvoiceService {
     doc.setTextColor(...textMuted);
     doc.setFont('helvetica', 'normal');
     doc.text(
-      'Merci pour votre confiance ! Pour toute question, contactez-nous à contact@depanexpress.fr',
+      `Merci pour votre confiance ! Pour toute question, contactez-nous à ${COMPANY_INFO.email}`,
       pageWidth / 2,
       yPos,
       { align: 'center' }
     );
     doc.text(
-      `${COMPANY_INFO.name} - ${COMPANY_INFO.siret} - TVA ${COMPANY_INFO.tva}`,
+      `${COMPANY_INFO.name} - SIRET ${COMPANY_INFO.siret} - N° TVA ${COMPANY_INFO.tva}`,
       pageWidth / 2,
       yPos + 6,
       { align: 'center' }
