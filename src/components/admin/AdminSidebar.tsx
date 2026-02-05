@@ -67,7 +67,7 @@ export function AdminSidebar() {
         <div className="flex items-center justify-between px-2 py-3">
           <Link to="/" className="flex items-center gap-2">
             <img src={logo} alt="Dépan.Pro" className="h-8 w-8 shrink-0" />
-            {!collapsed && <span className="font-bold text-lg">DépanPro</span>}
+            {!collapsed && <span className="font-bold text-lg">Dépan.Pro</span>}
           </Link>
           <SidebarTrigger className={collapsed ? "hidden" : ""} />
         </div>
