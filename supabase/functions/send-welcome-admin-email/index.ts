@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "noreply@depanpro.com";
+const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "noreply@depan-pro.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,10 +30,10 @@ serve(async (req) => {
 
     // Validate required fields
     if (!email || !firstName || !lastName || !role || !tempPassword) {
-      return new Response(
-        JSON.stringify({ error: "Champs requis manquants" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Champs requis manquants" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const roleLabel = role === "admin" ? "Administrateur" : "Manager";
@@ -126,15 +126,15 @@ serve(async (req) => {
 
     console.log("Welcome email sent successfully:", emailResponse);
 
-    return new Response(
-      JSON.stringify({ success: true, messageId: emailResponse.data?.id }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, messageId: emailResponse.data?.id }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: any) {
     console.error("Error sending welcome email:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "Erreur lors de l'envoi de l'email" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error.message || "Erreur lors de l'envoi de l'email" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
