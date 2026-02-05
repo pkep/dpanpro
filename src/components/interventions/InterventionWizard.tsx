@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ArrowRight, Loader2, Send, Key, Wrench, Zap, Grid3X3, Flame, Snowflake } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Send, Key, Wrench, Zap, Grid3X3, Flame, Snowflake, Settings, MessageSquare, User, CreditCard, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { StepServiceSelection } from './steps/StepServiceSelection';
 import { StepProblemDescription } from './steps/StepProblemDescription';
@@ -30,11 +30,11 @@ const categoryIcons: Record<InterventionCategory, React.ReactNode> = {
 };
 
 const STEPS = [
-  { id: 1, title: '1. Service' },
-  { id: 2, title: '2. Problème' },
-  { id: 3, title: '3. Contact' },
-  { id: 4, title: '4. Paiement' },
-  { id: 5, title: '5. Validation' },
+  { id: 1, title: 'Service', icon: <Settings className="h-4 w-4" /> },
+  { id: 2, title: 'Problème', icon: <MessageSquare className="h-4 w-4" /> },
+  { id: 3, title: 'Contact', icon: <User className="h-4 w-4" /> },
+  { id: 4, title: 'Paiement', icon: <CreditCard className="h-4 w-4" /> },
+  { id: 5, title: 'Validation', icon: <CheckCircle className="h-4 w-4" /> },
 ];
 
 interface InterventionWizardProps {
@@ -421,20 +421,21 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
           {/* Progress */}
           {!isSubmitted && (
             <div className={embedded ? "" : "mt-6"}>
-              <div className="flex justify-between text-sm mb-2">
+              <div className="flex justify-between items-center mb-2">
                 {STEPS.map((step) => (
-                  <span
+                  <div
                     key={step.id}
-                    className={
+                    className={`flex flex-col items-center gap-1 ${
                       step.id === currentStep
                         ? 'text-primary font-medium'
                         : step.id < currentStep
                         ? 'text-muted-foreground'
                         : 'text-muted-foreground/50'
-                    }
+                    }`}
                   >
-                    {step.title}
-                  </span>
+                    {step.icon}
+                    <span className="text-xs hidden sm:inline">{step.title}</span>
+                  </div>
                 ))}
               </div>
               <Progress value={progress} className="h-2" />
