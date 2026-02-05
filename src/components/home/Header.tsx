@@ -119,13 +119,42 @@ export function Header() {
             <hr className="my-2 border-border" />
             {isAuthenticated && user ? (
               <>
-                <Link
-                  to="/dashboard"
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Mon espace
-                </Link>
+                {user.role === 'client' && (
+                  <Link
+                    to="/dashboard"
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Mon espace
+                  </Link>
+                )}
+                {user.role === 'technician' && (
+                  <Link
+                    to="/technician"
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Espace technicien
+                  </Link>
+                )}
+                {user.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Administration
+                  </Link>
+                )}
+                {user.role === 'manager' && (
+                  <Link
+                    to="/manager"
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Gestion
+                  </Link>
+                )}
                 <button
                   onClick={() => {
                     handleLogout();
