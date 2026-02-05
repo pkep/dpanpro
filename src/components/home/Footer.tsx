@@ -78,6 +78,11 @@ export function Footer() {
                   Créer un compte
                 </Link>
               </li>
+              <li>
+                <Link to="/comprendre-nos-tarifs" className="hover:text-foreground">
+                  Comprendre nos tarifs
+                </Link>
+              </li>
             </ul>
           </div>
 

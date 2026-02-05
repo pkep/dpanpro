@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import {
   Accordion,
   AccordionContent,
@@ -5,14 +6,15 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 
-const faqItems = [
+const faqItems: { question: string; answer: string; link?: string }[] = [
   {
     question: "Quels sont vos délais d'intervention ?",
     answer: "Nous intervenons généralement sous 30 à 60 minutes pour les urgences. Pour les interventions programmées, nous fixons un créneau qui vous convient."
   },
   {
     question: "Comment sont calculés vos tarifs ?",
-    answer: "Nos tarifs comprennent le déplacement, la mise en sécurité et le dépannage. Un devis détaillé vous est fourni avant toute intervention, sans frais cachés."
+    answer: "Nos tarifs comprennent le déplacement, la mise en sécurité et le dépannage. Un devis détaillé vous est fourni avant toute intervention, sans frais cachés.",
+    link: "/comprendre-nos-tarifs"
   },
   {
     question: "Intervenez-vous 24h/24 ?",
@@ -52,6 +54,11 @@ export function FAQSection() {
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
                   {item.answer}
+                  {item.link && (
+                    <Link to={item.link} className="mt-2 inline-block text-sm font-medium text-primary hover:underline">
+                      En savoir plus →
+                    </Link>
+                  )}
                 </AccordionContent>
               </AccordionItem>
             ))}

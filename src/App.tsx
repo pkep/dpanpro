@@ -19,6 +19,7 @@ import LiveTrackingPage from "./pages/common/LiveTrackingPage";
 import QuoteApprovalPage from "./pages/common/QuoteApprovalPage";
 import TrackInterventionPage from "./pages/common/TrackInterventionPage";
 import ResetPassword from "./pages/common/ResetPassword";
+import PricingExplanationPage from "./pages/common/PricingExplanationPage";
 import NotFound from "./pages/common/NotFound";
 
 // Client pages
@@ -106,6 +107,7 @@ const App = () => (
             <Route path="/quote-approval/:token" element={<QuoteApprovalPage />} />
             <Route path="/track/:tracking_code" element={<TrackInterventionPage />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/comprendre-nos-tarifs" element={<PricingExplanationPage />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
