@@ -1,6 +1,6 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { NavLink } from '@/components/NavLink';
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
   SidebarContent,
@@ -14,8 +14,8 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
-} from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+} from "@/components/ui/sidebar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   LayoutDashboard,
   Users,
@@ -27,26 +27,26 @@ import {
   History,
   Home,
   LogOut,
-} from 'lucide-react';
-import logo from '@/assets/logo.png';
+} from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const menuItems = [
-  { title: 'Tableau de bord', url: '/admin', icon: LayoutDashboard, end: true },
-  { title: 'Gestion Techniciens', url: '/admin/technicians', icon: Users },
-  { title: 'Dashboard Performance', url: '/admin/performance', icon: BarChart3 },
-  { title: 'Carte Techniciens', url: '/admin/map', icon: Map },
-  { title: 'Planning', url: '/admin/planning', icon: Calendar },
+  { title: "Tableau de bord", url: "/admin", icon: LayoutDashboard, end: true },
+  { title: "Gestion Techniciens", url: "/admin/technicians", icon: Users },
+  { title: "Dashboard Performance", url: "/admin/performance", icon: BarChart3 },
+  { title: "Carte Techniciens", url: "/admin/map", icon: Map },
+  { title: "Planning", url: "/admin/planning", icon: Calendar },
 ];
 
 const adminOnlyItems = [
-  { title: 'Administration', url: '/admin/settings', icon: Settings },
-  { title: 'Historique Config', url: '/admin/config-history', icon: History },
+  { title: "Administration", url: "/admin/settings", icon: Settings },
+  { title: "Historique Config", url: "/admin/config-history", icon: History },
 ];
 
 export function AdminSidebar() {
   const { user, logout } = useAuth();
   const { state } = useSidebar();
-  const collapsed = state === 'collapsed';
+  const collapsed = state === "collapsed";
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -56,7 +56,7 @@ export function AdminSidebar() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
+    navigate("/");
   };
 
   if (!user) return null;
@@ -66,7 +66,7 @@ export function AdminSidebar() {
       <SidebarHeader className="border-b">
         <div className="flex items-center justify-between px-2 py-3">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="DépanPro" className="h-8 w-8 shrink-0" />
+            <img src={logo} alt="Dépan.Pro" className="h-8 w-8 shrink-0" />
             {!collapsed && <span className="font-bold text-lg">DépanPro</span>}
           </Link>
           <SidebarTrigger className={collapsed ? "hidden" : ""} />
@@ -84,7 +84,9 @@ export function AdminSidebar() {
             </Avatar>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{user.firstName} {user.lastName}</p>
+                <p className="font-medium truncate">
+                  {user.firstName} {user.lastName}
+                </p>
                 <div className="flex items-center gap-1">
                   <Shield className="h-3 w-3 text-red-600" />
                   <span className="text-xs text-red-600 font-medium">Administrateur</span>
@@ -103,9 +105,13 @@ export function AdminSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
-                    isActive={item.end 
-                      ? location.pathname === item.url 
-                      : location.pathname.startsWith(item.url) && !location.pathname.startsWith('/admin/settings') && !location.pathname.startsWith('/admin/config')}
+                    isActive={
+                      item.end
+                        ? location.pathname === item.url
+                        : location.pathname.startsWith(item.url) &&
+                          !location.pathname.startsWith("/admin/settings") &&
+                          !location.pathname.startsWith("/admin/config")
+                    }
                     tooltip={collapsed ? item.title : undefined}
                   >
                     <NavLink
@@ -162,7 +168,7 @@ export function AdminSidebar() {
             </SidebarMenuItem>
           )}
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={collapsed ? 'Accueil' : undefined}>
+            <SidebarMenuButton asChild tooltip={collapsed ? "Accueil" : undefined}>
               <Link to="/" className="flex items-center gap-3">
                 <Home className="h-4 w-4" />
                 {!collapsed && <span>Accueil</span>}
@@ -172,7 +178,7 @@ export function AdminSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}
-              tooltip={collapsed ? 'Déconnexion' : undefined}
+              tooltip={collapsed ? "Déconnexion" : undefined}
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
             >
               <LogOut className="h-4 w-4" />
