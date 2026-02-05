@@ -94,7 +94,7 @@ export function Footer() {
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />
                 <a href="mailto:contact@depan-pro.com" className="hover:text-foreground">
-                  contact@depanpro.fr
+                  contact@depan-pro.com
                 </a>
               </li>
               <li className="flex items-start gap-2">
@@ -106,7 +106,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t border-border pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} DépanPro. Tous droits réservés.</p>
+          <p>&copy; {new Date().getFullYear()} Dépan.Pro Tous droits réservés.</p>
         </div>
       </div>
     </footer>
