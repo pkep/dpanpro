@@ -74,18 +74,23 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   const [interventionId, setInterventionId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [isCompany, setIsCompany] = useState(false);
+  const [isMultiplierEnabled, setIsMultiplierEnabled] = useState(true);
 
-  // Load services on mount
+  // Load services and settings on mount
   useEffect(() => {
-    const loadServices = async () => {
+    const loadInitialData = async () => {
       try {
-        const activeServices = await servicesService.getActiveServices();
+        const [activeServices, multiplierEnabled] = await Promise.all([
+          servicesService.getActiveServices(),
+          quotesService.isMultiplierEnabled(),
+        ]);
         setServices(activeServices);
+        setIsMultiplierEnabled(multiplierEnabled);
       } catch (error) {
-        console.error('Error loading services:', error);
+        console.error('Error loading initial data:', error);
       }
     };
-    loadServices();
+    loadInitialData();
   }, []);
 
   // Load service from URL params
@@ -141,8 +146,8 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
           const clientIsCompany = user?.isCompany || false;
           setIsCompany(clientIsCompany);
 
-          // Generate quote summary with HT, VAT, TTC
-          const summary = quotesService.calculateQuoteSummary(service, mult, clientIsCompany);
+          // Generate quote summary with HT, VAT, TTC - respecting multiplier setting
+          const summary = quotesService.calculateQuoteSummary(service, mult, clientIsCompany, isMultiplierEnabled);
           setQuoteSummary(summary);
         } catch (error) {
           console.error('Error generating quote:', error);
@@ -152,7 +157,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
     };
 
     generateQuote();
-  }, [currentStep, category, services, isPaymentAuthorized, user]);
+  }, [currentStep, category, services, isPaymentAuthorized, user, isMultiplierEnabled]);
 
   const progress = (currentStep / STEPS.length) * 100;
 

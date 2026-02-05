@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Settings, Edit2, Save, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,6 +49,38 @@ export function PriorityMultipliersTab() {
     },
   });
 
+  const { data: isMultiplierEnabled = true, isLoading: isLoadingSetting } = useQuery({
+    queryKey: ['priority-multiplier-enabled'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('setting_value')
+        .eq('setting_key', 'priority_multiplier_enabled')
+        .maybeSingle();
+
+      if (error) throw error;
+      return data?.setting_value === 'true';
+    },
+  });
+
+  const toggleMultiplierMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const { error } = await supabase
+        .from('site_settings')
+        .update({ setting_value: enabled ? 'true' : 'false' })
+        .eq('setting_key', 'priority_multiplier_enabled');
+
+      if (error) throw error;
+    },
+    onSuccess: (_, enabled) => {
+      queryClient.invalidateQueries({ queryKey: ['priority-multiplier-enabled'] });
+      toast.success(enabled ? 'Coefficient multiplicateur activé' : 'Coefficient multiplicateur désactivé');
+    },
+    onError: () => {
+      toast.error('Erreur lors de la mise à jour');
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: async ({ id, label, multiplier }: { id: string; label: string; multiplier: number }) => {
       const { error } = await supabase
@@ -83,7 +116,7 @@ export function PriorityMultipliersTab() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingSetting) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-8">
@@ -105,6 +138,23 @@ export function PriorityMultipliersTab() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Toggle for enabling/disabling multiplier */}
+        <div className="flex items-center justify-between p-4 mb-6 border rounded-lg bg-muted/30">
+          <div>
+            <Label htmlFor="multiplier-toggle" className="text-base font-medium">
+              Appliquer le coefficient multiplicateur
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Lorsque désactivé, les prix de base sont utilisés sans multiplication
+            </p>
+          </div>
+          <Switch
+            id="multiplier-toggle"
+            checked={isMultiplierEnabled}
+            onCheckedChange={(checked) => toggleMultiplierMutation.mutate(checked)}
+            disabled={toggleMultiplierMutation.isPending}
+          />
+        </div>
         <div className="space-y-4">
           {multipliers.map((multiplier) => (
             <div
