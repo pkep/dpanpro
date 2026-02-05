@@ -5,6 +5,7 @@ import { ServicesSection } from '@/components/home/ServicesSection';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import { BecomePartner } from '@/components/home/BecomePartner';
 import { FAQSection } from '@/components/home/FAQSection';
+import { InstallAppSection } from '@/components/home/InstallAppSection';
 import { Footer } from '@/components/home/Footer';
 
 const Home = () => {
@@ -20,6 +21,7 @@ const Home = () => {
         <HowItWorks />
         <BecomePartner />
         <FAQSection />
+        <InstallAppSection />
       </main>
       <Footer />
     </div>
