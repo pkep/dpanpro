@@ -49,40 +49,34 @@ const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label
 class QuotesService {
   /**
    * Generate quote lines for an intervention based on service prices and multiplier
-   * Only includes lines with a price > 0
+   * Includes all service lines (displacement, security, repair) to show full pricing breakdown
    */
   generateQuoteLines(service: Service, multiplier: number): QuoteInput[] {
     const lines: QuoteInput[] = [];
 
-    // Add displacement line if price > 0
-    if (service.displacementPrice > 0) {
-      lines.push({
-        lineType: 'displacement',
-        label: QUOTE_LINES_CONFIG.displacement.label,
-        basePrice: service.displacementPrice,
-        multiplier,
-      });
-    }
+    // Always add displacement line
+    lines.push({
+      lineType: 'displacement',
+      label: QUOTE_LINES_CONFIG.displacement.label,
+      basePrice: service.displacementPrice,
+      multiplier,
+    });
 
-    // Add security line if price > 0
-    if (service.securityPrice > 0) {
-      lines.push({
-        lineType: 'security',
-        label: QUOTE_LINES_CONFIG.security.label,
-        basePrice: service.securityPrice,
-        multiplier,
-      });
-    }
+    // Always add security line
+    lines.push({
+      lineType: 'security',
+      label: QUOTE_LINES_CONFIG.security.label,
+      basePrice: service.securityPrice,
+      multiplier,
+    });
 
-    // Add repair line if price > 0
-    if (service.repairPrice > 0) {
-      lines.push({
-        lineType: 'repair',
-        label: QUOTE_LINES_CONFIG.repair.label,
-        basePrice: service.repairPrice,
-        multiplier,
-      });
-    }
+    // Always add repair line
+    lines.push({
+      lineType: 'repair',
+      label: QUOTE_LINES_CONFIG.repair.label,
+      basePrice: service.repairPrice,
+      multiplier,
+    });
 
     return lines;
   }
