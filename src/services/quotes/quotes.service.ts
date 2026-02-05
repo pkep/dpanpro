@@ -48,11 +48,30 @@ const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label
 
 class QuotesService {
   /**
+   * Check if priority multiplier is enabled in site settings
+   */
+  async isMultiplierEnabled(): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('setting_value')
+      .eq('setting_key', 'priority_multiplier_enabled')
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching multiplier setting:', error);
+      return true; // Default to enabled
+    }
+
+    return data?.setting_value !== 'false';
+  }
+
+  /**
    * Generate quote lines for an intervention based on service prices and multiplier
    * Only includes lines with a price > 0
    */
-  generateQuoteLines(service: Service, multiplier: number): QuoteInput[] {
+  generateQuoteLines(service: Service, multiplier: number, isMultiplierEnabled: boolean = true): QuoteInput[] {
     const lines: QuoteInput[] = [];
+    const effectiveMultiplier = isMultiplierEnabled ? multiplier : 1;
 
     // Add displacement line if price > 0
     if (service.displacementPrice > 0) {
@@ -60,7 +79,7 @@ class QuotesService {
         lineType: 'displacement',
         label: QUOTE_LINES_CONFIG.displacement.label,
         basePrice: service.displacementPrice,
-        multiplier,
+        multiplier: effectiveMultiplier,
       });
     }
 
@@ -70,7 +89,7 @@ class QuotesService {
         lineType: 'security',
         label: QUOTE_LINES_CONFIG.security.label,
         basePrice: service.securityPrice,
-        multiplier,
+        multiplier: effectiveMultiplier,
       });
     }
 
@@ -80,7 +99,7 @@ class QuotesService {
         lineType: 'repair',
         label: QUOTE_LINES_CONFIG.repair.label,
         basePrice: service.repairPrice,
-        multiplier,
+        multiplier: effectiveMultiplier,
       });
     }
 
@@ -106,8 +125,8 @@ class QuotesService {
   /**
    * Calculate complete quote summary with HT, VAT and TTC
    */
-  calculateQuoteSummary(service: Service, multiplier: number, isCompany: boolean): QuoteSummary {
-    const lines = this.generateQuoteLines(service, multiplier);
+  calculateQuoteSummary(service: Service, multiplier: number, isCompany: boolean, isMultiplierEnabled: boolean = true): QuoteSummary {
+    const lines = this.generateQuoteLines(service, multiplier, isMultiplierEnabled);
     const totalHT = this.calculateTotalHT(lines);
     const vatRate = this.getVatRate(service, isCompany);
     const vatAmount = Math.round(totalHT * (vatRate / 100) * 100) / 100;
