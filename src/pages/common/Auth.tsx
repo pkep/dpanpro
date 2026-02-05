@@ -71,8 +71,8 @@ export default function Auth() {
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-secondary p-12 text-secondary-foreground">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="DépanPro" className="h-10 w-10 object-contain" />
-          <span className="text-2xl font-bold">DépanPro</span>
+          <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
+          <span className="text-2xl font-bold">Dépan.Pro</span>
         </div>
         
         <div className="space-y-6">
@@ -110,7 +110,7 @@ export default function Auth() {
         </div>
 
         <p className="text-sm text-secondary-foreground/60">
-          © 2024 DépanPro. Tous droits réservés.
+          © 2024 Dépan.Pro. Tous droits réservés.
         </p>
       </div>
 
@@ -119,8 +119,8 @@ export default function Auth() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
-            <img src={logo} alt="DépanPro" className="h-10 w-10 object-contain" />
-            <span className="text-2xl font-bold text-foreground">DépanPro</span>
+            <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
+            <span className="text-2xl font-bold text-foreground">Dépan.Pro</span>
           </div>
 
           {view === 'login' && (

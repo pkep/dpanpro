@@ -39,9 +39,9 @@ serve(async (req) => {
     const roleLabel = role === "admin" ? "Administrateur" : "Manager";
 
     const emailResponse = await resend.emails.send({
-      from: `DépanPro <${fromEmail}>`,
+      from: `Dépan.Pro <${fromEmail}>`,
       to: [email],
-      subject: `Bienvenue sur DépanPro - Votre compte ${roleLabel}`,
+      subject: `Bienvenue sur Dépan.Pro - Votre compte ${roleLabel}`,
       html: `
         <!DOCTYPE html>
         <html lang="fr">
@@ -57,7 +57,7 @@ serve(async (req) => {
                   <!-- Header -->
                   <tr>
                     <td style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center;">
-                      <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">DépanPro</h1>
+                      <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 700;">Dépan.Pro</h1>
                     </td>
                   </tr>
                   
@@ -69,7 +69,7 @@ serve(async (req) => {
                       </h2>
                       
                       <p style="margin: 0 0 24px; color: #52525b; font-size: 16px; line-height: 1.6;">
-                        Votre compte <strong>${roleLabel}</strong> a été créé sur la plateforme DépanPro. Vous pouvez maintenant accéder à votre espace de gestion.
+                        Votre compte <strong>${roleLabel}</strong> a été créé sur la plateforme Dépan.Pro. Vous pouvez maintenant accéder à votre espace de gestion.
                       </p>
                       
                       <!-- Credentials Box -->
@@ -111,7 +111,7 @@ serve(async (req) => {
                   <tr>
                     <td style="background-color: #f4f4f5; padding: 24px 32px; text-align: center;">
                       <p style="margin: 0; color: #71717a; font-size: 12px;">
-                        © ${new Date().getFullYear()} DépanPro. Tous droits réservés.
+                        © ${new Date().getFullYear()} Dépan.Pro. Tous droits réservés.
                       </p>
                     </td>
                   </tr>

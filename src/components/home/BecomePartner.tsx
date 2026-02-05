@@ -32,7 +32,7 @@ export function BecomePartner() {
         <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
           <div>
             <h2 className="text-3xl font-bold text-secondary-foreground sm:text-4xl">
-              Devenez partenaire DépanPro
+              Devenez partenaire Dépan.Pro
             </h2>
             <p className="mt-4 text-lg text-secondary-foreground/80">
               Rejoignez notre réseau d'artisans qualifiés et développez votre activité 

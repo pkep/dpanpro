@@ -272,7 +272,7 @@ const JoinPage = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Devenir partenaire DépanPro</CardTitle>
+              <CardTitle>Devenir partenaire Dépan.Pro</CardTitle>
               <CardDescription>
                 Étape {currentStep} sur 4 : {stepTitles[currentStep - 1]}
               </CardDescription>
@@ -669,7 +669,7 @@ const JoinPage = () => {
                           <FormLabel>Motivation *</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Décrivez pourquoi vous souhaitez rejoindre DépanPro..."
+                              placeholder="Décrivez pourquoi vous souhaitez rejoindre Dépan.Pro..."
                               className="min-h-[120px]"
                               {...field}
                             />

@@ -106,7 +106,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t border-border pt-8 text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} DépanPro. Tous droits réservés.</p>
+          <p>&copy; {new Date().getFullYear()} Dépan.Pro. Tous droits réservés.</p>
         </div>
       </div>
     </footer>

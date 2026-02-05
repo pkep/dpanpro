@@ -94,8 +94,8 @@ export default function ResetPassword() {
       <div className="flex min-h-screen items-center justify-center bg-background p-8">
         <div className="w-full max-w-md space-y-6">
           <div className="flex items-center justify-center gap-3">
-            <img src={logo} alt="DépanPro" className="h-10 w-10 object-contain" />
-            <span className="text-2xl font-bold text-foreground">DépanPro</span>
+            <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
+            <span className="text-2xl font-bold text-foreground">Dépan.Pro</span>
           </div>
 
           <div className="space-y-2 text-center">
@@ -121,8 +121,8 @@ export default function ResetPassword() {
       <div className="flex min-h-screen items-center justify-center bg-background p-8">
         <div className="w-full max-w-md space-y-6">
           <div className="flex items-center justify-center gap-3">
-            <img src={logo} alt="DépanPro" className="h-10 w-10 object-contain" />
-            <span className="text-2xl font-bold text-foreground">DépanPro</span>
+            <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
+            <span className="text-2xl font-bold text-foreground">Dépan.Pro</span>
           </div>
 
           <div className="space-y-2 text-center">
@@ -147,8 +147,8 @@ export default function ResetPassword() {
     <div className="flex min-h-screen items-center justify-center bg-background p-8">
       <div className="w-full max-w-md space-y-6">
         <div className="flex items-center justify-center gap-3">
-          <img src={logo} alt="DépanPro" className="h-10 w-10 object-contain" />
-          <span className="text-2xl font-bold text-foreground">DépanPro</span>
+          <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
+          <span className="text-2xl font-bold text-foreground">Dépan.Pro</span>
         </div>
 
         <div className="space-y-2 text-center">
