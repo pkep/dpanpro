@@ -195,21 +195,33 @@ class QuoteModificationsService {
 
   /**
    * Approve a quote modification and increment payment authorization
+   * @param id - The modification ID
+   * @param signatureData - Optional base64 signature data from client
    */
-  async approveModification(id: string): Promise<{ incrementResult?: unknown }> {
+  async approveModification(id: string, signatureData?: string): Promise<{ incrementResult?: unknown }> {
     // First get the modification to get intervention ID and amount
     const modification = await this.getModification(id);
     if (!modification) {
       throw new Error('Modification not found');
     }
 
+    // Build update data
+    const updateData: Record<string, unknown> = {
+      status: 'approved',
+      client_responded_at: new Date().toISOString(),
+    };
+
+    // Store signature if provided (could be stored in metadata or a separate field)
+    // For now we just log it - in production you'd want to store this
+    if (signatureData) {
+      console.log('Client signature received for modification:', id);
+      // Could add: updateData.client_signature = signatureData;
+    }
+
     // Update the modification status
     const { error } = await supabase
       .from('quote_modifications')
-      .update({
-        status: 'approved',
-        client_responded_at: new Date().toISOString(),
-      } as Record<string, unknown>)
+      .update(updateData)
       .eq('id', id);
 
     if (error) throw error;
