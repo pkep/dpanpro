@@ -387,7 +387,6 @@ export default function QuoteApprovalPage() {
             </div>
             <div className="mt-2 text-sm text-muted-foreground flex justify-between">
               <span>Devis initial : {formatPrice(initialTotal)}</span>
-              <span>Suppléments : {formatPrice(additionalTotal)}</span>
             </div>
           </CardContent>
         </Card>
