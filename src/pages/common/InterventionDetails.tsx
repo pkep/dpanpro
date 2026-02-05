@@ -96,14 +96,15 @@ export default function InterventionDetails() {
     }
   };
 
-  const handleCancelIntervention = async (reason: string) => {
+  const handleCancelIntervention = async (reason: string, hasFees: boolean) => {
     if (!intervention || !user) return;
     
     setIsCancelling(true);
     try {
       const result = await cancellationService.cancelInterventionWithFees(
         intervention.id,
-        reason
+        reason,
+        hasFees
       );
 
       if (result.success) {

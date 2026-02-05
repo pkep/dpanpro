@@ -75,14 +75,15 @@ export default function ClientDashboardPage() {
     setCancelDialogOpen(true);
   };
 
-  const handleCancelConfirm = async (reason: string) => {
+  const handleCancelConfirm = async (reason: string, hasFees: boolean) => {
     if (!selectedIntervention) return;
     
     setIsCancelling(true);
     try {
       const result = await cancellationService.cancelInterventionWithFees(
         selectedIntervention.id,
-        reason
+        reason,
+        hasFees
       );
 
       if (result.success) {

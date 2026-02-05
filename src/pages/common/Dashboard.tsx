@@ -80,12 +80,12 @@ const Dashboard = () => {
     setCancelDialogOpen(true);
   };
 
-  const handleCancelConfirm = async (reason: string) => {
+  const handleCancelConfirm = async (reason: string, hasFees: boolean) => {
     if (!selectedIntervention) return;
     
     setIsCancelling(true);
     try {
-      const result = await cancellationService.cancelInterventionWithFees(selectedIntervention.id, reason);
+      const result = await cancellationService.cancelInterventionWithFees(selectedIntervention.id, reason, hasFees);
       if (result.success) {
         if (result.hasFees) {
           toast.success('Demande annulée', {

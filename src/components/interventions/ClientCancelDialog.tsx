@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,24 +13,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useCancellationFeeCheck } from '@/hooks/useCancellationFeeCheck';
 
 interface ClientCancelDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (reason: string) => void;
+  onConfirm: (reason: string, hasFees: boolean) => void;
   interventionId: string;
   interventionStatus: string;
   interventionCategory: string;
   isProcessing?: boolean;
-}
-
-interface DisplacementFeeInfo {
-  displacementPriceHT: number;
-  vatRate: number;
-  vatAmount: number;
-  totalTTC: number;
-  isCompany: boolean;
 }
 
 export function ClientCancelDialog({
@@ -43,73 +35,19 @@ export function ClientCancelDialog({
   isProcessing = false,
 }: ClientCancelDialogProps) {
   const [reason, setReason] = useState('');
-  const [feeInfo, setFeeInfo] = useState<DisplacementFeeInfo | null>(null);
-  const [loadingFees, setLoadingFees] = useState(false);
 
-  // Check if displacement fees apply
-  const hasDisplacementFees = ['arrived', 'in_progress'].includes(interventionStatus);
+  // Use the hook to check for cancellation fees
+  const { feeInfo, loading: loadingFees } = useCancellationFeeCheck({
+    interventionId,
+    interventionStatus,
+    interventionCategory,
+    enabled: open,
+  });
 
-  // Load displacement fee info when dialog opens and fees apply
-  useEffect(() => {
-    if (!open || !hasDisplacementFees) {
-      setFeeInfo(null);
-      return;
-    }
-
-    const loadFeeInfo = async () => {
-      setLoadingFees(true);
-      try {
-        // Get intervention details to check if client is company
-        const { data: intervention } = await supabase
-          .from('interventions')
-          .select('client_id')
-          .eq('id', interventionId)
-          .single();
-
-        // Check if client is company
-        let isCompany = false;
-        if (intervention?.client_id) {
-          const { data: user } = await supabase
-            .from('users')
-            .select('is_company')
-            .eq('id', intervention.client_id)
-            .single();
-          isCompany = user?.is_company ?? false;
-        }
-
-        // Get service displacement price
-        const { data: service } = await supabase
-          .from('services')
-          .select('displacement_price, vat_rate_individual, vat_rate_professional')
-          .eq('code', interventionCategory)
-          .single();
-
-        if (service) {
-          const displacementPriceHT = service.displacement_price;
-          const vatRate = isCompany ? service.vat_rate_professional : service.vat_rate_individual;
-          const vatAmount = Math.round(displacementPriceHT * (vatRate / 100) * 100) / 100;
-          const totalTTC = Math.round((displacementPriceHT + vatAmount) * 100) / 100;
-
-          setFeeInfo({
-            displacementPriceHT,
-            vatRate,
-            vatAmount,
-            totalTTC,
-            isCompany,
-          });
-        }
-      } catch (err) {
-        console.error('Error loading displacement fee info:', err);
-      } finally {
-        setLoadingFees(false);
-      }
-    };
-
-    loadFeeInfo();
-  }, [open, hasDisplacementFees, interventionId, interventionCategory]);
+  const hasDisplacementFees = feeInfo?.hasFees ?? false;
 
   const handleConfirm = () => {
-    onConfirm(reason);
+    onConfirm(reason, hasDisplacementFees);
     setReason('');
   };
 
@@ -123,6 +61,9 @@ export function ClientCancelDialog({
   const isConfirmDisabled = reason.trim().length < 5 || isProcessing;
 
   const getStatusLabel = () => {
+    if (feeInfo?.reason === 'proximity') {
+      return `Le technicien est à moins de ${feeInfo.etaMinutes ?? 5} minute(s) de votre adresse.`;
+    }
     switch (interventionStatus) {
       case 'arrived':
         return 'Le technicien est arrivé sur les lieux.';
@@ -144,34 +85,32 @@ export function ClientCancelDialog({
         </AlertDialogHeader>
 
         {/* Displacement Fee Warning */}
-        {hasDisplacementFees && (
+        {(hasDisplacementFees || loadingFees) && (
           <Alert variant="destructive" className="my-2">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="space-y-2">
-              <p className="font-semibold">{getStatusLabel()}</p>
               {loadingFees ? (
-                <p className="text-sm">Calcul des frais en cours...</p>
+                <p className="text-sm">Vérification des frais en cours...</p>
               ) : feeInfo ? (
-                <div className="text-sm space-y-1">
-                  <p>
-                    Les <strong>frais de déplacement</strong> seront facturés :
-                  </p>
-                  <ul className="list-disc list-inside ml-2 space-y-0.5">
-                    <li>Déplacement HT : {feeInfo.displacementPriceHT.toFixed(2)} €</li>
-                    <li>TVA ({feeInfo.vatRate}%) : {feeInfo.vatAmount.toFixed(2)} €</li>
-                    <li className="font-semibold">
-                      Total TTC : {feeInfo.totalTTC.toFixed(2)} €
-                    </li>
-                  </ul>
-                  <p className="mt-2 italic">
-                    Une facture vous sera envoyée par email.
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm">
-                  Les frais de déplacement seront facturés conformément à notre politique tarifaire.
-                </p>
-              )}
+                <>
+                  <p className="font-semibold">{getStatusLabel()}</p>
+                  <div className="text-sm space-y-1">
+                    <p>
+                      Conformément à nos <strong>conditions générales d'utilisation</strong>, les <strong>frais de déplacement</strong> seront facturés :
+                    </p>
+                    <ul className="list-disc list-inside ml-2 space-y-0.5">
+                      <li>Déplacement HT : {feeInfo.displacementPriceHT.toFixed(2)} €</li>
+                      <li>TVA ({feeInfo.vatRate}%) : {feeInfo.vatAmount.toFixed(2)} €</li>
+                      <li className="font-semibold">
+                        Total TTC : {feeInfo.totalTTC.toFixed(2)} €
+                      </li>
+                    </ul>
+                    <p className="mt-2 italic">
+                      Le montant sera débité immédiatement et une facture vous sera envoyée par email.
+                    </p>
+                  </div>
+                </>
+              ) : null}
             </AlertDescription>
           </Alert>
         )}
@@ -205,8 +144,8 @@ export function ClientCancelDialog({
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Traitement...
               </>
-            ) : hasDisplacementFees ? (
-              `Confirmer et payer ${feeInfo?.totalTTC?.toFixed(2) ?? ''} €`
+            ) : hasDisplacementFees && feeInfo ? (
+              `Confirmer et payer ${feeInfo.totalTTC.toFixed(2)} €`
             ) : (
               "Confirmer l'annulation"
             )}

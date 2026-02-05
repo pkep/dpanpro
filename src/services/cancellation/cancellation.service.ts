@@ -20,11 +20,13 @@ interface CancellationFeeInfo {
 class CancellationService {
   /**
    * Cancel an intervention with potential displacement fees
-   * If status is 'arrived' or 'in_progress', displacement fees are charged
+   * If status is 'arrived', 'in_progress', or 'on_route' with proximity < 5 min,
+   * displacement fees are charged
    */
   async cancelInterventionWithFees(
     interventionId: string,
-    reason: string
+    reason: string,
+    forceChargeFees: boolean = false
   ): Promise<CancellationResult> {
     try {
       // Get intervention details
@@ -39,7 +41,14 @@ class CancellationService {
       }
 
       const status = intervention.status;
-      const hasDisplacementFees = ['arrived', 'in_progress'].includes(status);
+      
+      // Check if displacement fees apply based on status or proximity
+      let hasDisplacementFees = ['arrived', 'in_progress'].includes(status);
+      
+      // For on_route, check proximity if forceChargeFees is true (already verified by frontend)
+      if (status === 'on_route' && forceChargeFees) {
+        hasDisplacementFees = true;
+      }
 
       if (hasDisplacementFees) {
         // Calculate and capture displacement fees
