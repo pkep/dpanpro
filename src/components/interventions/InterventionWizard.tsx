@@ -74,23 +74,18 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   const [interventionId, setInterventionId] = useState<string | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [isCompany, setIsCompany] = useState(false);
-  const [isMultiplierEnabled, setIsMultiplierEnabled] = useState(true);
 
-  // Load services and settings on mount
+  // Load services on mount
   useEffect(() => {
-    const loadInitialData = async () => {
+    const loadServices = async () => {
       try {
-        const [activeServices, multiplierEnabled] = await Promise.all([
-          servicesService.getActiveServices(),
-          quotesService.isMultiplierEnabled(),
-        ]);
+        const activeServices = await servicesService.getActiveServices();
         setServices(activeServices);
-        setIsMultiplierEnabled(multiplierEnabled);
       } catch (error) {
-        console.error('Error loading initial data:', error);
+        console.error('Error loading services:', error);
       }
     };
-    loadInitialData();
+    loadServices();
   }, []);
 
   // Load service from URL params
@@ -146,8 +141,11 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
           const clientIsCompany = user?.isCompany || false;
           setIsCompany(clientIsCompany);
 
-          // Generate quote summary with HT, VAT, TTC - respecting multiplier setting
-          const summary = quotesService.calculateQuoteSummary(service, mult, clientIsCompany, isMultiplierEnabled);
+          // Get effective multiplier (respecting both global and individual settings)
+          const effectiveMultiplier = await quotesService.getEffectiveMultiplier(servicePriority, mult);
+
+          // Generate quote summary with HT, VAT, TTC
+          const summary = quotesService.calculateQuoteSummary(service, effectiveMultiplier, clientIsCompany, true);
           setQuoteSummary(summary);
         } catch (error) {
           console.error('Error generating quote:', error);
@@ -157,7 +155,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
     };
 
     generateQuote();
-  }, [currentStep, category, services, isPaymentAuthorized, user, isMultiplierEnabled]);
+  }, [currentStep, category, services, isPaymentAuthorized, user]);
 
   const progress = (currentStep / STEPS.length) * 100;
 
