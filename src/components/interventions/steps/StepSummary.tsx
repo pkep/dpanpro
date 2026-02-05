@@ -109,7 +109,7 @@ export function StepSummary({
             <AlertDescription className="text-sm">
               <strong className="text-amber-700 dark:text-amber-400">En cas d'annulation :</strong>
               <br />
-              Si le technicien est arrivé sur le lieu ou a commencé l'intervention, les frais de déplacement seront automatiquement prélevés.
+              Si le technicien est arrivé sur le lieu ou est en route à moins de 5 minutes du lieu de l'intervention, les frais de déplacement seront automatiquement prélevés.
             </AlertDescription>
           </Alert>
         </div>
@@ -274,7 +274,7 @@ export function StepSummary({
                 <AlertDescription className="text-sm">
                   <strong className="text-amber-700 dark:text-amber-400">En cas d'annulation :</strong>
                   <br />
-                  Si le technicien est arrivé sur le lieu ou a commencé l'intervention, les frais de déplacement seront automatiquement prélevés.
+                  Si le technicien est arrivé sur le lieu ou est en route à moins de 5 minutes du lieu de l'intervention, les frais de déplacement seront automatiquement prélevés.
                 </AlertDescription>
               </Alert>
             </CardContent>
