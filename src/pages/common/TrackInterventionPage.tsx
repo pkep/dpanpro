@@ -332,21 +332,21 @@ export default function TrackInterventionPage() {
         {/* Status Card */}
         <Card>
           <CardHeader className="pb-2">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-2xl sm:text-3xl shrink-0">
                   {CATEGORY_ICONS[intervention.category] || '🔧'}
                 </span>
-                <div>
-                  <CardTitle className="text-lg">
+                <div className="min-w-0">
+                  <CardTitle className="text-base sm:text-lg truncate">
                     {CATEGORY_LABELS[intervention.category] || intervention.category}
                   </CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     {format(new Date(intervention.created_at), "d MMMM yyyy 'à' HH:mm", { locale: fr })}
                   </p>
                 </div>
               </div>
-              <Badge className={`${STATUS_COLORS[intervention.status]} text-white`}>
+              <Badge className={`${STATUS_COLORS[intervention.status]} text-white shrink-0 self-start`}>
                 {STATUS_LABELS[intervention.status] || intervention.status}
               </Badge>
             </div>

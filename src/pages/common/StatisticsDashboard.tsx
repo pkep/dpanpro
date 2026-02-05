@@ -137,19 +137,27 @@ export default function StatisticsDashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BarChart3 className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-xl font-bold">Statistiques</h1>
-              <p className="text-sm text-muted-foreground">
-                Analyse des performances
-              </p>
+        <div className="container mx-auto px-4 py-3 sm:py-4 space-y-2 sm:space-y-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" />
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold">Statistiques</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Analyse des performances
+                </p>
+              </div>
             </div>
+            <Button variant="outline" size="sm" asChild className="hidden sm:flex">
+              <Link to="/admin">
+                <Home className="mr-2 h-4 w-4" />
+                Admin
+              </Link>
+            </Button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Select value={period} onValueChange={(v) => setPeriod(v as typeof period)}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-[140px] sm:w-36 h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -158,18 +166,17 @@ export default function StatisticsDashboard() {
                 <SelectItem value="30">30 derniers jours</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" asChild>
+            <ExportButton interventions={interventions} disabled={loading} />
+            <Button variant="outline" size="sm" asChild className="sm:hidden">
               <Link to="/admin">
-                <Home className="mr-2 h-4 w-4" />
-                Admin
+                <Home className="h-4 w-4" />
               </Link>
             </Button>
-            <ExportButton interventions={interventions} disabled={loading} />
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* KPI Cards */}
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -246,10 +253,10 @@ export default function StatisticsDashboard() {
 
         {/* Charts */}
         <Tabs defaultValue="evolution" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="evolution">Évolution</TabsTrigger>
-            <TabsTrigger value="categories">Catégories</TabsTrigger>
-            <TabsTrigger value="technicians">Techniciens</TabsTrigger>
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="evolution" className="flex-1 sm:flex-none text-xs sm:text-sm">Évolution</TabsTrigger>
+            <TabsTrigger value="categories" className="flex-1 sm:flex-none text-xs sm:text-sm">Catégories</TabsTrigger>
+            <TabsTrigger value="technicians" className="flex-1 sm:flex-none text-xs sm:text-sm">Techniciens</TabsTrigger>
           </TabsList>
 
           <TabsContent value="evolution" className="space-y-4">
@@ -334,11 +341,11 @@ export default function StatisticsDashboard() {
                           data={formattedStatusStats}
                           cx="50%"
                           cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
+                          innerRadius={50}
+                          outerRadius={80}
                           dataKey="count"
                           nameKey="label"
-                          label={({ label, percentage }) => `${label} (${percentage}%)`}
+                          label={({ percentage }) => `${percentage}%`}
                           labelLine={false}
                         >
                           {formattedStatusStats.map((entry, index) => (

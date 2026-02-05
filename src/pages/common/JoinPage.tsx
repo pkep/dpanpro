@@ -243,17 +243,17 @@ const JoinPage = () => {
       <main className="flex-1 bg-muted/30 py-12">
         <div className="container mx-auto max-w-2xl px-4">
           {/* Progress */}
-          <div className="mb-8">
-            <div className="mb-4 flex justify-between text-sm">
+          <div className="mb-6 sm:mb-8">
+            <div className="mb-3 sm:mb-4 flex justify-between text-sm">
               {stepTitles.map((title, i) => (
                 <div
                   key={i}
-                  className={`flex items-center gap-2 ${
+                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 ${
                     i + 1 <= currentStep ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
                   <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+                    className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full text-xs sm:text-sm font-medium shrink-0 ${
                       i + 1 < currentStep
                         ? 'bg-primary text-primary-foreground'
                         : i + 1 === currentStep
@@ -261,9 +261,9 @@ const JoinPage = () => {
                         : 'border-2 border-muted-foreground text-muted-foreground'
                     }`}
                   >
-                    {i + 1 < currentStep ? <Check className="h-4 w-4" /> : i + 1}
+                    {i + 1 < currentStep ? <Check className="h-3 w-3 sm:h-4 sm:w-4" /> : i + 1}
                   </div>
-                  <span className="hidden sm:inline">{title}</span>
+                  <span className="hidden sm:inline text-xs">{title}</span>
                 </div>
               ))}
             </div>

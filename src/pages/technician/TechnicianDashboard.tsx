@@ -75,20 +75,22 @@ const TechnicianDashboard = () => {
       {/* Active Intervention Banner */}
       {activeIntervention && (
         <Card className="mb-6 border-primary bg-primary/5">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <Wrench className="h-5 w-5 text-primary" />
+          <CardContent className="py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <Wrench className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium">Intervention en cours</p>
+                  <p className="text-sm text-muted-foreground truncate">{activeIntervention.title}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium">Intervention en cours</p>
-                <p className="text-sm text-muted-foreground">{activeIntervention.title}</p>
-              </div>
+              <Button onClick={() => navigate(`/technician/intervention/${activeIntervention.id}`)} className="w-full sm:w-auto shrink-0">
+                <Play className="h-4 w-4 mr-2" />
+                Reprendre
+              </Button>
             </div>
-            <Button onClick={() => navigate(`/technician/intervention/${activeIntervention.id}`)}>
-              <Play className="h-4 w-4 mr-2" />
-              Reprendre
-            </Button>
           </CardContent>
         </Card>
       )}

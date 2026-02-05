@@ -323,35 +323,33 @@ export default function InterventionDetails() {
       )}
       {/* Header */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
+        <div className="container mx-auto px-4 py-3 sm:py-4">
+          <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-0">
+            <Button variant="ghost" size="sm" asChild className="shrink-0">
               <Link to="/dashboard">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Retour
+                <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Retour</span>
               </Link>
             </Button>
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">{CATEGORY_ICONS[intervention.category]}</span>
-                <h1 className="text-xl font-bold">{intervention.title}</h1>
+                <span className="text-xl sm:text-2xl shrink-0">{CATEGORY_ICONS[intervention.category]}</span>
+                <h1 className="text-base sm:text-xl font-bold truncate">{intervention.title}</h1>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 {CATEGORY_LABELS[intervention.category]}
               </p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="flex items-center gap-1">
+            <Badge variant="outline" className="flex items-center gap-1 shrink-0 text-xs">
               <Radio className="h-3 w-3 text-green-500 animate-pulse" />
-              Temps réel
+              <span className="hidden sm:inline">Temps réel</span>
             </Badge>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-3 gap-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main Info */}
           <div className="lg:col-span-2 space-y-6">
             {/* Status & Details Card */}
