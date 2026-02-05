@@ -15,6 +15,7 @@ interface PriorityMultiplier {
   label: string;
   multiplier: number;
   displayOrder: number;
+  isEnabled: boolean;
 }
 
 interface DbPriorityMultiplier {
@@ -23,6 +24,7 @@ interface DbPriorityMultiplier {
   label: string;
   multiplier: number;
   display_order: number;
+  is_enabled: boolean;
 }
 
 export function PriorityMultipliersTab() {
@@ -45,6 +47,7 @@ export function PriorityMultipliersTab() {
         label: m.label,
         multiplier: m.multiplier,
         displayOrder: m.display_order,
+        isEnabled: m.is_enabled,
       }));
     },
   });
@@ -94,6 +97,24 @@ export function PriorityMultipliersTab() {
       queryClient.invalidateQueries({ queryKey: ['priority-multipliers'] });
       toast.success('Multiplicateur mis à jour');
       setEditingId(null);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la mise à jour');
+    },
+  });
+
+  const toggleLineMutation = useMutation({
+    mutationFn: async ({ id, isEnabled }: { id: string; isEnabled: boolean }) => {
+      const { error } = await supabase
+        .from('priority_multipliers')
+        .update({ is_enabled: isEnabled })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, { isEnabled }) => {
+      queryClient.invalidateQueries({ queryKey: ['priority-multipliers'] });
+      toast.success(isEnabled ? 'Multiplicateur activé' : 'Multiplicateur désactivé');
     },
     onError: () => {
       toast.error('Erreur lors de la mise à jour');
@@ -159,7 +180,9 @@ export function PriorityMultipliersTab() {
           {multipliers.map((multiplier) => (
             <div
               key={multiplier.id}
-              className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              className={`flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
+                !multiplier.isEnabled ? 'opacity-50' : ''
+              }`}
             >
               {editingId === multiplier.id ? (
                 <>
@@ -197,6 +220,13 @@ export function PriorityMultipliersTab() {
                 </>
               ) : (
                 <>
+                  <Switch
+                    checked={multiplier.isEnabled}
+                    onCheckedChange={(checked) =>
+                      toggleLineMutation.mutate({ id: multiplier.id, isEnabled: checked })
+                    }
+                    disabled={toggleLineMutation.isPending}
+                  />
                   <div className="flex-1 grid grid-cols-3 gap-4">
                     <div>
                       <span className="text-sm text-muted-foreground">Code</span>

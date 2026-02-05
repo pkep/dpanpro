@@ -48,7 +48,7 @@ const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label
 
 class QuotesService {
   /**
-   * Check if priority multiplier is enabled in site settings
+   * Check if priority multiplier is enabled globally in site settings
    */
   async isMultiplierEnabled(): Promise<boolean> {
     const { data, error } = await supabase
@@ -63,6 +63,39 @@ class QuotesService {
     }
 
     return data?.setting_value !== 'false';
+  }
+
+  /**
+   * Check if a specific priority multiplier is enabled
+   */
+  async isPriorityMultiplierEnabled(priority: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('priority_multipliers')
+      .select('is_enabled')
+      .eq('priority', priority)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching priority multiplier:', error);
+      return true; // Default to enabled
+    }
+
+    return data?.is_enabled !== false;
+  }
+
+  /**
+   * Get the effective multiplier for a priority (returns 1 if disabled at any level)
+   */
+  async getEffectiveMultiplier(priority: string, multiplierValue: number): Promise<number> {
+    // Check global setting first
+    const globalEnabled = await this.isMultiplierEnabled();
+    if (!globalEnabled) return 1;
+
+    // Check individual priority setting
+    const priorityEnabled = await this.isPriorityMultiplierEnabled(priority);
+    if (!priorityEnabled) return 1;
+
+    return multiplierValue;
   }
 
   /**
