@@ -381,6 +381,14 @@ export function StartInterventionDialog({
                 pendingItems={pendingItems}
                 vatRate={vatRate}
               />
+              {pendingItems.length > 0 && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    En signant, vous acceptez les prestations complémentaires ci-dessus et autorisez Depan.Pro à procéder à l'augmentation de l'autorisation bancaire du montant correspondant à ces prestations/services ajoutés.
+                  </AlertDescription>
+                </Alert>
+              )}
               <SignatureCanvas
                 onSignatureChange={setSignatureData}
                 disabled={isLoading}
