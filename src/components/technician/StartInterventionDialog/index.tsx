@@ -223,13 +223,19 @@ export function StartInterventionDialog({
         // Auto-approve since client signed on-site
         await quoteModificationsService.approveModification(modification.id, signatureData || undefined);
 
-        // Try to increment authorization
-        try {
-          await supabase.functions.invoke('increment-authorization', {
-            body: { interventionId },
-          });
-        } catch (authErr) {
-          console.warn('Authorization increment failed, will be handled at capture:', authErr);
+        // Try to increment authorization with the additional amount
+        const totalAdditional = pendingItems.reduce(
+          (sum, item) => sum + item.unitPrice * item.quantity,
+          0
+        );
+        if (totalAdditional > 0) {
+          try {
+            await supabase.functions.invoke('increment-authorization', {
+              body: { interventionId, additionalAmount: totalAdditional },
+            });
+          } catch (authErr) {
+            console.warn('Authorization increment failed, will be handled at capture:', authErr);
+          }
         }
       }
 

@@ -186,6 +186,79 @@ serve(async (req) => {
 
     console.log("Payment captured successfully");
 
+    // Notify technician about successful payment
+    try {
+      const { data: interventionData } = await supabase
+        .from("interventions")
+        .select("technician_id, title, category, client_email, client_phone")
+        .eq("id", interventionId)
+        .single();
+
+      if (interventionData?.technician_id) {
+        const { data: techData } = await supabase
+          .from("users")
+          .select("email, phone, first_name")
+          .eq("id", interventionData.technician_id)
+          .single();
+
+        const capturedAmountEuros = (amount / 100).toFixed(2);
+
+        // Send email notification to technician
+        const resendApiKey = Deno.env.get("RESEND_API_KEY");
+        const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL");
+        if (resendApiKey && resendFromEmail && techData?.email) {
+          try {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${resendApiKey}`,
+              },
+              body: JSON.stringify({
+                from: resendFromEmail,
+                to: [techData.email],
+                subject: `✅ Paiement confirmé - ${capturedAmountEuros} €`,
+                html: `<p>Bonjour ${techData.first_name || ""},</p>
+                  <p>Le paiement de <strong>${capturedAmountEuros} €</strong> pour l'intervention <strong>${interventionData.title || interventionData.category}</strong> a été débité avec succès.</p>
+                  <p>Merci pour votre travail !</p>
+                  <p>L'équipe Depan.Pro</p>`,
+              }),
+            });
+            console.log("Technician payment email sent");
+          } catch (emailErr) {
+            console.error("Failed to send technician email:", emailErr);
+          }
+        }
+
+        // Send SMS notification to technician
+        const twilioSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+        const twilioAuth = Deno.env.get("TWILIO_AUTH_TOKEN");
+        const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
+        if (twilioSid && twilioAuth && twilioPhone && techData?.phone) {
+          try {
+            const smsBody = `Depan.Pro: Paiement de ${capturedAmountEuros} € confirmé pour l'intervention ${interventionData.title || interventionData.category}.`;
+            await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Authorization": `Basic ${btoa(`${twilioSid}:${twilioAuth}`)}`,
+              },
+              body: new URLSearchParams({
+                To: techData.phone,
+                From: twilioPhone,
+                Body: smsBody,
+              }),
+            });
+            console.log("Technician payment SMS sent");
+          } catch (smsErr) {
+            console.error("Failed to send technician SMS:", smsErr);
+          }
+        }
+      }
+    } catch (notifyErr) {
+      console.error("Failed to notify technician:", notifyErr);
+    }
+
     return new Response(
       JSON.stringify({ success: true }),
       {

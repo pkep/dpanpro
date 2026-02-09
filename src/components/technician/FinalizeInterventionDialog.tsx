@@ -251,24 +251,18 @@ export function FinalizeInterventionDialog({
         comment: `Intervention finalisée avec signature client. Montant débité : ${finalAmount.toFixed(2)} €`,
       });
 
+      // Payment captured successfully - show toast
+      toast.success('💳 Paiement débité avec succès !', {
+        description: `Montant de ${finalAmount.toFixed(2)} € débité. Facture envoyée au client.`,
+        duration: 6000,
+      });
+
       // Send invoice by email (no automatic download)
       try {
-        const emailSent = await invoiceService.sendInvoiceByEmail(intervention);
-        
-        if (emailSent) {
-          toast.success('Intervention finalisée !', {
-            description: 'Facture envoyée par email au client.',
-          });
-        } else {
-          toast.success('Intervention finalisée !', {
-            description: 'L\'envoi de la facture par email n\'a pas pu être effectué.',
-          });
-        }
+        await invoiceService.sendInvoiceByEmail(intervention);
       } catch (invoiceErr) {
         console.error('Error sending invoice:', invoiceErr);
-        toast.success('Intervention finalisée !', {
-          description: 'La facture n\'a pas pu être envoyée automatiquement.',
-        });
+        toast.info('La facture n\'a pas pu être envoyée automatiquement par email.');
       }
 
       onOpenChange(false);
