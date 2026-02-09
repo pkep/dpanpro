@@ -287,13 +287,16 @@ export function StartInterventionDialog({
 
   const handleClose = useCallback(() => {
     if (!isLoading) {
-      setStep('photos');
-      setSelectedFiles([]);
-      setPreviews([]);
-      setPendingItems([]);
-      setSignatureData(null);
-      setError(null);
       onOpenChange(false);
+      // Reset state after dialog closes to avoid flashing the photo step
+      setTimeout(() => {
+        setStep('photos');
+        setSelectedFiles([]);
+        setPreviews([]);
+        setPendingItems([]);
+        setSignatureData(null);
+        setError(null);
+      }, 300);
     }
   }, [isLoading, onOpenChange]);
 

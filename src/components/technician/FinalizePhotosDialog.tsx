@@ -104,10 +104,13 @@ export function FinalizePhotosDialog({
 
   const handleClose = () => {
     if (!isUploading) {
-      setSelectedFiles([]);
-      setPreviews([]);
-      setUploadError(null);
       onOpenChange(false);
+      // Reset state after dialog animation to avoid flashing
+      setTimeout(() => {
+        setSelectedFiles([]);
+        setPreviews([]);
+        setUploadError(null);
+      }, 300);
     }
   };
 
