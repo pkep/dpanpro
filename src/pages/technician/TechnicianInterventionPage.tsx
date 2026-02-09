@@ -411,18 +411,28 @@ export default function TechnicianInterventionPage() {
         </Card>
       )}
 
-      {showAfterPhotos && user && (
-        <div className="mb-4">
-          <WorkPhotoCapture
-            interventionId={intervention.id}
-            userId={user.id}
-            photoType="after"
-            title="📷 Photos après intervention"
-            description="Prenez des photos de la panne résolue pour documenter le travail effectué (obligatoire avant de finaliser)"
-            onPhotosCaptured={handleAfterPhotosCaptured}
-            existingPhotos={afterPhotos}
-          />
-        </div>
+      {showAfterPhotos && user && afterPhotos.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              📷 Photos après intervention
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-2">
+              {afterPhotos.map((photo) => (
+                <div key={photo.id} className="relative aspect-square">
+                  <img
+                    src={photo.photoUrl}
+                    alt="Photo après"
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Quote Modification Status (shows pending approval) */}
