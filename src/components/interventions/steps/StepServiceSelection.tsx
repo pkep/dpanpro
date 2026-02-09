@@ -82,9 +82,6 @@ export function StepServiceSelection({ selectedCategory, onSelect }: StepService
                   <p className="text-sm font-medium text-primary">
                     À partir de {priceTTC.toFixed(2)}€ TTC
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    dont TVA {service.vatRateIndividual}% ({vatAmount.toFixed(2)}€)
-                  </p>
                 </div>
                 {service.description && (
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
