@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { servicesService } from '@/services/services/services.service';
-import { CATEGORY_ICONS, CATEGORY_LABELS, InterventionCategory } from '@/types/intervention.types';
+import { servicesService, Service } from '@/services/services/services.service';
+import { InterventionCategory } from '@/types/intervention.types';
 import { Loader2, Wrench, Key, Zap, Flame, Snowflake, Grid3X3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,7 +20,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
 };
 
 export function StepServiceSelection({ selectedCategory, onSelect }: StepServiceSelectionProps) {
-  const [services, setServices] = useState<Array<{ code: string; name: string; description: string | null; basePrice: number; defaultPriority: string }>>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -58,6 +58,8 @@ export function StepServiceSelection({ selectedCategory, onSelect }: StepService
         {services.map((service) => {
           const category = service.code as InterventionCategory;
           const isSelected = selectedCategory === category;
+          const priceTTC = Math.round(service.basePrice * (1 + service.vatRateIndividual / 100) * 100) / 100;
+          const vatAmount = Math.round((priceTTC - service.basePrice) * 100) / 100;
           
           return (
             <Card
@@ -76,9 +78,14 @@ export function StepServiceSelection({ selectedCategory, onSelect }: StepService
                   {categoryIcons[service.code] || <Wrench className="h-8 w-8" />}
                 </div>
                 <h3 className="font-semibold">{service.name}</h3>
-                <p className="text-sm font-medium text-primary mt-1">
-                  À partir de {service.basePrice}€
-                </p>
+                <div className="mt-1 text-center">
+                  <p className="text-sm font-medium text-primary">
+                    À partir de {priceTTC.toFixed(2)}€ TTC
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    dont TVA {service.vatRateIndividual}% ({vatAmount.toFixed(2)}€)
+                  </p>
+                </div>
                 {service.description && (
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                     {service.description}
