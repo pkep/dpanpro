@@ -291,13 +291,12 @@ export function StartInterventionDialog({
       }
 
       toast.success('Devis validé, intervention démarrée');
+      onOpenChange(false);
       onSuccess(uploadedPhotos);
-      handleClose();
     } catch (err: any) {
       console.error('Error processing intervention:', err);
       setError(err?.message || 'Erreur lors du traitement');
       setStep('signature');
-    } finally {
       setIsLoading(false);
     }
   };
