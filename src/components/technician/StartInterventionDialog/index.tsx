@@ -71,9 +71,15 @@ export function StartInterventionDialog({
   const [vatRate, setVatRate] = useState(10);
   const [isCompany, setIsCompany] = useState(false);
 
-  // Load quote lines when dialog opens
+  // Reset state and load data when dialog opens
   useEffect(() => {
     if (open && interventionId) {
+      setStep('photos');
+      setSelectedFiles([]);
+      setPreviews([]);
+      setPendingItems([]);
+      setSignatureData(null);
+      setError(null);
       loadQuoteData();
     }
   }, [open, interventionId]);
@@ -288,15 +294,6 @@ export function StartInterventionDialog({
   const handleClose = useCallback(() => {
     if (!isLoading) {
       onOpenChange(false);
-      // Reset state after dialog closes to avoid flashing the photo step
-      setTimeout(() => {
-        setStep('photos');
-        setSelectedFiles([]);
-        setPreviews([]);
-        setPendingItems([]);
-        setSignatureData(null);
-        setError(null);
-      }, 300);
     }
   }, [isLoading, onOpenChange]);
 
