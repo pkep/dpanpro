@@ -79,12 +79,11 @@ export function FinalizePhotosDialog({
       );
 
       toast.success(`${uploadedPhotos.length} photo(s) enregistrée(s)`);
+      onOpenChange(false);
       onSuccess(uploadedPhotos);
-      handleClose();
     } catch (error: any) {
       console.error('Error uploading photos:', error);
       
-      // Parse the error to show detailed debug info
       const errorMessage = error?.message || 'Erreur inconnue';
       let debugInfo = '';
       
@@ -97,7 +96,6 @@ export function FinalizePhotosDialog({
       }
       
       setUploadError(debugInfo);
-    } finally {
       setIsUploading(false);
     }
   };
