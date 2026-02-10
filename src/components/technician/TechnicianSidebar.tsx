@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { TechnicianRating } from '@/components/ratings/TechnicianRating';
 import {
   Home,
+  ClipboardList,
   LayoutDashboard,
   BarChart3,
   Wallet,
@@ -35,6 +36,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const menuItems = [
   { title: 'Tableau de bord', url: '/technician', icon: LayoutDashboard, end: true },
+  { title: 'Interventions', url: '/technician/interventions', icon: ClipboardList },
   { title: 'Statistiques', url: '/technician/stats', icon: BarChart3 },
   { title: 'Revenus', url: '/technician/revenue', icon: Wallet },
   { title: 'Planning', url: '/technician/schedule', icon: CalendarDays },

@@ -35,6 +35,7 @@ import TechnicianStatsPage from "./pages/technician/TechnicianStatsPage";
 import TechnicianRevenuePage from "./pages/technician/TechnicianRevenuePage";
 import TechnicianSchedulePage from "./pages/technician/TechnicianSchedulePage";
 import TechnicianProfilePage from "./pages/technician/TechnicianProfilePage";
+import TechnicianInterventionsPage from "./pages/technician/TechnicianInterventionsPage";
 
 // Manager pages
 import ManagerDashboardPage from "./pages/manager/ManagerDashboardPage";
@@ -76,6 +77,7 @@ const App = () => (
             
             {/* Technician routes */}
             <Route path="/technician" element={<TechnicianDashboard />} />
+            <Route path="/technician/interventions" element={<TechnicianInterventionsPage />} />
             <Route path="/technician/stats" element={<TechnicianStatsPage />} />
             <Route path="/technician/revenue" element={<TechnicianRevenuePage />} />
             <Route path="/technician/schedule" element={<TechnicianSchedulePage />} />
