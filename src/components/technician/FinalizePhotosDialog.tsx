@@ -102,12 +102,17 @@ export function FinalizePhotosDialog({
     }
   };
 
-  // Reset state when dialog opens
+  // Reset state only on fresh open, not during processing
+  const [initialized, setInitialized] = useState(false);
   useEffect(() => {
-    if (open) {
+    if (open && !initialized) {
       setSelectedFiles([]);
       setPreviews([]);
       setUploadError(null);
+      setInitialized(true);
+    }
+    if (!open) {
+      setInitialized(false);
     }
   }, [open]);
 

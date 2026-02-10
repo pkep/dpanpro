@@ -71,16 +71,27 @@ export function StartInterventionDialog({
   const [vatRate, setVatRate] = useState(10);
   const [isCompany, setIsCompany] = useState(false);
 
+  // Track if dialog has been opened to avoid resetting during close
+  const [initialized, setInitialized] = useState(false);
+
   // Reset state and load data when dialog opens
   useEffect(() => {
     if (open && interventionId) {
-      setStep('photos');
-      setSelectedFiles([]);
-      setPreviews([]);
-      setPendingItems([]);
-      setSignatureData(null);
-      setError(null);
+      // Only reset on fresh open
+      if (!initialized) {
+        setStep('photos');
+        setSelectedFiles([]);
+        setPreviews([]);
+        setPendingItems([]);
+        setSignatureData(null);
+        setError(null);
+        setInitialized(true);
+      }
       loadQuoteData();
+    }
+    if (!open) {
+      // Mark as not initialized so next open resets
+      setInitialized(false);
     }
   }, [open, interventionId]);
 
