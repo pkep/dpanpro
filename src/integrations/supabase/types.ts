@@ -890,7 +890,7 @@ export type Database = {
           created_at: string
           currency: string
           id: string
-          intervention_id: string
+          intervention_id: string | null
           metadata: Json | null
           payment_provider: string
           provider_customer_id: string | null
@@ -909,7 +909,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
-          intervention_id: string
+          intervention_id?: string | null
           metadata?: Json | null
           payment_provider?: string
           provider_customer_id?: string | null
@@ -928,7 +928,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
-          intervention_id?: string
+          intervention_id?: string | null
           metadata?: Json | null
           payment_provider?: string
           provider_customer_id?: string | null

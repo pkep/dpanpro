@@ -28,7 +28,7 @@ serve(async (req) => {
     const { authorizationId, amount, currency, customerEmail, interventionId } = await req.json();
     logStep("Request body parsed", { authorizationId, amount, currency, customerEmail, interventionId });
 
-    if (!authorizationId || !amount || !customerEmail || !interventionId) {
+    if (!authorizationId || !amount || !customerEmail) {
       throw new Error("Missing required parameters");
     }
 
@@ -57,7 +57,7 @@ serve(async (req) => {
         enabled: true,
       },
       metadata: {
-        intervention_id: interventionId,
+        ...(interventionId ? { intervention_id: interventionId } : {}),
         authorization_id: authorizationId,
       },
       description: "Autorisation de paiement - Intervention",

@@ -77,15 +77,14 @@ class PaymentService {
    * Create a payment authorization request and get client secret for Stripe Elements
    */
   async createPaymentIntent(params: {
-    interventionId: string;
+    interventionId: string | null;
     amount: number;
     currency?: string;
     clientEmail: string;
     clientPhone?: string;
   }): Promise<{ id: string; clientSecret: string }> {
     // First, save the authorization request to database
-    const insertPayload = {
-      intervention_id: params.interventionId,
+    const insertPayload: Record<string, unknown> = {
       payment_provider: this.currentProvider,
       amount_authorized: params.amount,
       currency: params.currency || 'eur',
@@ -94,10 +93,13 @@ class PaymentService {
       client_phone: params.clientPhone || null,
       metadata: {},
     };
+    if (params.interventionId) {
+      insertPayload.intervention_id = params.interventionId;
+    }
     
     const { data, error } = await supabase
       .from('payment_authorizations')
-      .insert(insertPayload)
+      .insert(insertPayload as any)
       .select()
       .single();
 
@@ -215,6 +217,18 @@ class PaymentService {
     const { error } = await supabase
       .from('payment_authorizations')
       .update(updateData)
+      .eq('id', authorizationId);
+
+    if (error) throw error;
+  }
+
+  /**
+   * Link an existing authorization to an intervention (after intervention is created)
+   */
+  async linkAuthorizationToIntervention(authorizationId: string, interventionId: string): Promise<void> {
+    const { error } = await supabase
+      .from('payment_authorizations')
+      .update({ intervention_id: interventionId } as Record<string, unknown>)
       .eq('id', authorizationId);
 
     if (error) throw error;
