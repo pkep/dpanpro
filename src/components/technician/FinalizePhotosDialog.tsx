@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -102,15 +102,18 @@ export function FinalizePhotosDialog({
     }
   };
 
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSelectedFiles([]);
+      setPreviews([]);
+      setUploadError(null);
+    }
+  }, [open]);
+
   const handleClose = () => {
     if (!isUploading) {
       onOpenChange(false);
-      // Reset state after dialog animation to avoid flashing
-      setTimeout(() => {
-        setSelectedFiles([]);
-        setPreviews([]);
-        setUploadError(null);
-      }, 300);
     }
   };
 
