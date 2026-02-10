@@ -197,30 +197,9 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
 
     setIsPaymentProcessing(true);
     try {
-      // Create a temporary intervention to get an ID
-      // For guest users, pass null as clientId (DB allows nullable client_id)
-      const clientId = user?.id || null;
-
-      const intervention = await interventionsService.createIntervention(clientId, {
-        category,
-        description,
-        address,
-        city,
-        postalCode,
-        priority: priority as 'urgent' | 'high' | 'normal' | 'low',
-        clientEmail: email,
-        clientPhone: phone,
-        photos: photos.length > 0 ? photos : undefined,
-      });
-
-      setInterventionId(intervention.id);
-
-      // Save quote lines to database
-      await quotesService.saveQuoteLines(intervention.id, quoteSummary.lines);
-
-      // Create payment intent with TTC amount and get client secret for Stripe Elements
+      // Create payment authorization WITHOUT an intervention (intervention created after authorization)
       const result = await paymentService.createPaymentIntent({
-        interventionId: intervention.id,
+        interventionId: null,
         amount: quoteSummary.totalTTC,
         clientEmail: email,
         clientPhone: phone,
@@ -251,33 +230,46 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   };
 
   const handleSubmit = async () => {
-    if (!isPaymentAuthorized) {
+    if (!isPaymentAuthorized || !category || !quoteSummary) {
       toast.error('Veuillez d\'abord autoriser le paiement');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Update authorization status to authorized
+      // NOW create the intervention (after payment is authorized)
+      const clientId = user?.id || null;
+
+      const intervention = await interventionsService.createIntervention(clientId, {
+        category,
+        description,
+        address,
+        city,
+        postalCode,
+        priority: priority as 'urgent' | 'high' | 'normal' | 'low',
+        clientEmail: email,
+        clientPhone: phone,
+        photos: photos.length > 0 ? photos : undefined,
+      });
+
+      setInterventionId(intervention.id);
+
+      // Save quote lines to database
+      await quotesService.saveQuoteLines(intervention.id, quoteSummary.lines);
+
+      // Link payment authorization to the intervention
       if (authorizationId) {
-        await paymentService.updateAuthorizationStatus(authorizationId, 'authorized');
+        await paymentService.linkAuthorizationToIntervention(authorizationId, intervention.id);
       }
 
-      // Get the intervention that was created during payment
-      const auth = authorizationId ? await paymentService.getAuthorization(authorizationId) : null;
-      
-      if (auth) {
-        const intervention = await interventionsService.getIntervention(auth.interventionId);
-        setTrackingCode(intervention?.trackingCode || null);
-        
-        // Send notifications to technicians now that intervention is confirmed
-        try {
-          await dispatchService.notifyTechnicians(auth.interventionId);
-          console.log('Technician notifications sent after confirmation');
-        } catch (notifyError) {
-          console.error('Error sending technician notifications:', notifyError);
-          // Non-blocking - don't fail the whole submission
-        }
+      setTrackingCode(intervention.trackingCode || null);
+
+      // Send notifications to technicians now that intervention is confirmed
+      try {
+        await dispatchService.notifyTechnicians(intervention.id);
+        console.log('Technician notifications sent after confirmation');
+      } catch (notifyError) {
+        console.error('Error sending technician notifications:', notifyError);
       }
 
       setIsSubmitted(true);
