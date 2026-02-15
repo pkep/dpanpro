@@ -20,6 +20,11 @@ import QuoteApprovalPage from "./pages/common/QuoteApprovalPage";
 import TrackInterventionPage from "./pages/common/TrackInterventionPage";
 import ResetPassword from "./pages/common/ResetPassword";
 import PricingExplanationPage from "./pages/common/PricingExplanationPage";
+import CGUPage from "./pages/common/CGUPage";
+import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage";
+import CookiePolicyPage from "./pages/common/CookiePolicyPage";
+import LegalNoticePage from "./pages/common/LegalNoticePage";
+import ContactPage from "./pages/common/ContactPage";
 import NotFound from "./pages/common/NotFound";
 
 // Client pages
@@ -110,6 +115,11 @@ const App = () => (
             <Route path="/track/:tracking_code" element={<TrackInterventionPage />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/comprendre-nos-tarifs" element={<PricingExplanationPage />} />
+            <Route path="/cgu" element={<CGUPage />} />
+            <Route path="/politique-de-confidentialite" element={<PrivacyPolicyPage />} />
+            <Route path="/politique-cookies" element={<CookiePolicyPage />} />
+            <Route path="/mentions-legales" element={<LegalNoticePage />} />
+            <Route path="/contact" element={<ContactPage />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

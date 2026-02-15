@@ -10,7 +10,7 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-card">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div>
             <Link to="/" className="flex items-center gap-2">
@@ -74,13 +74,40 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/auth?register=true" className="hover:text-foreground">
-                  Créer un compte
+                <Link to="/comprendre-nos-tarifs" className="hover:text-foreground">
+                  Comprendre nos tarifs
                 </Link>
               </li>
               <li>
-                <Link to="/comprendre-nos-tarifs" className="hover:text-foreground">
-                  Comprendre nos tarifs
+                <Link to="/contact" className="hover:text-foreground">
+                  Contact
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Legal */}
+          <div className="lg:col-span-1">
+            <h3 className="mb-4 font-semibold text-foreground">Informations légales</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>
+                <Link to="/cgu" className="hover:text-foreground">
+                  CGU
+                </Link>
+              </li>
+              <li>
+                <Link to="/politique-de-confidentialite" className="hover:text-foreground">
+                  Politique de confidentialité
+                </Link>
+              </li>
+              <li>
+                <Link to="/politique-cookies" className="hover:text-foreground">
+                  Cookies
+                </Link>
+              </li>
+              <li>
+                <Link to="/mentions-legales" className="hover:text-foreground">
+                  Mentions légales
                 </Link>
               </li>
             </ul>
