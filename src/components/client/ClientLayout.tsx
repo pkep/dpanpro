@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { ClientSidebar } from './ClientSidebar';
+import { PendingActionsModal } from './PendingActionsModal';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -83,6 +84,7 @@ export function ClientLayout({ children, title, subtitle }: ClientLayoutProps) {
           </main>
         </div>
       </div>
+      <PendingActionsModal />
     </SidebarProvider>
   );
 }
