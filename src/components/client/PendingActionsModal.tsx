@@ -134,7 +134,7 @@ export function PendingActionsModal() {
     fetchPendingActions();
   }, [fetchPendingActions]);
 
-  // Realtime: listen for changes
+  // Realtime: listen for changes + polling fallback
   useEffect(() => {
     if (!user) return;
 
@@ -148,7 +148,13 @@ export function PendingActionsModal() {
       })
       .subscribe();
 
+    // Polling fallback every 10s in case realtime fails silently
+    const pollId = setInterval(() => {
+      fetchPendingActions();
+    }, 10000);
+
     return () => {
+      clearInterval(pollId);
       supabase.removeChannel(channel);
     };
   }, [user, fetchPendingActions]);
