@@ -205,31 +205,49 @@ export function FinalizeInterventionDialog({
       const finalAmount = baseQuoteTotal + additionalAmount;
 
       // Capture the payment
-      const { error: captureError } = await supabase.functions.invoke('capture-payment', {
+      const { data: captureData, error: captureError } = await supabase.functions.invoke('capture-payment', {
         body: {
           interventionId: intervention.id,
           amount: Math.round(finalAmount * 100),
         },
       });
 
+      // Extract the real error message from the edge function response
+      let errorMsg = '';
       if (captureError) {
-        const msg = captureError.message || '';
-        const clientNotified = msg.includes('notification has been sent') || msg.includes('A notification has been sent');
+        // Try to read the response body from the FunctionsHttpError context
+        try {
+          const ctx = (captureError as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            errorMsg = body?.error || captureError.message || '';
+          } else {
+            errorMsg = captureError.message || '';
+          }
+        } catch {
+          errorMsg = captureError.message || '';
+        }
+      } else if (captureData?.error) {
+        errorMsg = captureData.error;
+      }
+
+      if (errorMsg) {
+        const clientNotified = errorMsg.includes('notification has been sent') || errorMsg.includes('A notification has been sent');
         const notificationNote = clientNotified 
           ? "\n\n✅ Le client a été notifié par SMS pour autoriser sa carte."
           : "";
         
-        if (msg.includes('requires_payment_method') || msg.includes('Payment not authorized')) {
+        if (errorMsg.includes('requires_payment_method') || errorMsg.includes('Payment not authorized')) {
           throw new Error(
             `Paiement impossible : aucune autorisation carte valide n'est disponible. Le client doit autoriser (ou ré-autoriser) sa carte avant la finalisation.${notificationNote}`
           );
         }
-        if (msg.includes('requires_action')) {
+        if (errorMsg.includes('requires_action')) {
           throw new Error(
             `Paiement impossible : authentification bancaire requise. Le client doit finaliser l'autorisation de paiement.${notificationNote}`
           );
         }
-        throw new Error(msg || 'Erreur lors du débit de la carte');
+        throw new Error(errorMsg || 'Erreur lors du débit de la carte');
       }
 
       // Update intervention status
