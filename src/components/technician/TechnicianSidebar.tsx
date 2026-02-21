@@ -26,8 +26,6 @@ import {
   Wallet,
   CalendarDays,
   User,
-  Map,
-  Radio,
   LogOut,
   Play,
 } from 'lucide-react';
@@ -43,10 +41,6 @@ const menuItems = [
   { title: 'Profil', url: '/technician/profile', icon: User },
 ];
 
-const toolsItems = [
-  { title: 'Carte', url: '/map', icon: Map },
-  { title: 'Suivi GPS', url: '/live-tracking', icon: Radio },
-];
 
 export function TechnicianSidebar() {
   const { user, logout } = useAuth();
@@ -175,32 +169,6 @@ export function TechnicianSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Tools */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Outils</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {toolsItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.url}
-                    tooltip={collapsed ? item.title : undefined}
-                  >
-                    <NavLink
-                      to={item.url}
-                      className="flex items-center gap-3"
-                      activeClassName="bg-primary/10 text-primary"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t">
