@@ -317,12 +317,10 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
             </Button>
 
             {currentStep < STEPS.length ? (
-              !(currentStep === 2 && !questionnaireResult) ? (
-                <Button onClick={handleNext} disabled={!canProceed()}>
-                  Suivant
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : <div />
+              <Button onClick={handleNext} disabled={!canProceed()}>
+                Suivant
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             ) : (
               <Button onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? (
