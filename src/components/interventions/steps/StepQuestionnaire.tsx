@@ -1,18 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Clock, Shield, AlertTriangle, Camera, Upload, X } from 'lucide-react';
+import { ArrowLeft, Clock, Shield, AlertTriangle, Camera, Upload, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InterventionCategory } from '@/types/intervention.types';
 import { 
-  QUESTIONNAIRE_TREE, 
   QuestionnaireNode, 
   QuestionnaireOption, 
   QuestionnaireResult, 
   QuestionnaireDomain 
 } from '@/data/questionnaire-tree';
+import { questionnaireService } from '@/services/questionnaire/questionnaire.service';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { storageService } from '@/services/storage/storage.service';
@@ -51,12 +51,44 @@ export function StepQuestionnaire({
   photos,
   onPhotosChange,
 }: StepQuestionnaireProps) {
-  const domain = QUESTIONNAIRE_TREE[category];
+  const [domain, setDomain] = useState<QuestionnaireDomain | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [currentNode, setCurrentNode] = useState<QuestionnaireNode | null>(domain || null);
+  const [currentNode, setCurrentNode] = useState<QuestionnaireNode | null>(null);
   const [result, setResult] = useState<QuestionnaireResult | null>(selectedResult);
   const [answers, setAnswers] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Load questionnaire from DB
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const tree = await questionnaireService.getQuestionnaireTree();
+        if (cancelled) return;
+        const d = tree[category] || null;
+        setDomain(d);
+        setCurrentNode(d);
+      } catch (error) {
+        console.error('Error loading questionnaire:', error);
+        toast.error('Erreur lors du chargement du questionnaire');
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [category]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Chargement du questionnaire...</p>
+      </div>
+    );
+  }
 
   if (!domain) {
     return (
