@@ -68,12 +68,15 @@ export function StepQuestionnaire({
     const newAnswers = [...answers, option.label];
     setAnswers(newAnswers);
 
+    // Always save current node to history before navigating
+    const newHistory = [...history, { answer: option.label, node: currentNode! }];
+    setHistory(newHistory);
+
     if (option.result) {
       setResult(option.result);
       setCurrentNode(null);
       onResult(option.result, newAnswers);
     } else if (option.next) {
-      setHistory([...history, { answer: option.label, node: currentNode! }]);
       setCurrentNode(option.next);
     }
   };
