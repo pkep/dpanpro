@@ -26,6 +26,7 @@ interface HistoryEntry {
 interface StepQuestionnaireProps {
   category: InterventionCategory;
   onResult: (result: QuestionnaireResult, answers: string[]) => void;
+  onResultClear?: () => void;
   selectedResult: QuestionnaireResult | null;
   description: string;
   onDescriptionChange: (value: string) => void;
@@ -43,6 +44,7 @@ const TIER_COLORS: Record<string, string> = {
 export function StepQuestionnaire({
   category,
   onResult,
+  onResultClear,
   selectedResult,
   description,
   onDescriptionChange,
@@ -91,12 +93,6 @@ export function StepQuestionnaire({
     }
   };
 
-  const handleReset = () => {
-    setHistory([]);
-    setCurrentNode(domain);
-    setResult(null);
-    setAnswers([]);
-  };
 
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -138,6 +134,15 @@ export function StepQuestionnaire({
       setAnswers([]);
     }
     setResult(null);
+    onResultClear?.();
+  };
+
+  const handleReset = () => {
+    setHistory([]);
+    setCurrentNode(domain);
+    setResult(null);
+    setAnswers([]);
+    onResultClear?.();
   };
 
   // Show result card
