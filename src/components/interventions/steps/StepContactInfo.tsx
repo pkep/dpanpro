@@ -1,14 +1,23 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
-import { User, Mail, Phone } from 'lucide-react';
+import { User, Mail, Phone, MapPin } from 'lucide-react';
 
 interface StepContactInfoProps {
   email: string;
   onEmailChange: (value: string) => void;
   phone: string;
   onPhoneChange: (value: string) => void;
+  address: string;
+  onAddressChange: (value: string) => void;
+  postalCode: string;
+  onPostalCodeChange: (value: string) => void;
+  city: string;
+  onCityChange: (value: string) => void;
+  additionalInfo: string;
+  onAdditionalInfoChange: (value: string) => void;
 }
 
 export function StepContactInfo({
@@ -16,6 +25,14 @@ export function StepContactInfo({
   onEmailChange,
   phone,
   onPhoneChange,
+  address,
+  onAddressChange,
+  postalCode,
+  onPostalCodeChange,
+  city,
+  onCityChange,
+  additionalInfo,
+  onAdditionalInfoChange,
 }: StepContactInfoProps) {
   const { user, isAuthenticated } = useAuth();
 
@@ -33,9 +50,9 @@ export function StepContactInfo({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Vos coordonnées</h2>
+        <h2 className="text-2xl font-bold">Vos coordonnées & adresse</h2>
         <p className="text-muted-foreground mt-2">
-          Pour vous contacter et vous tenir informé de l'intervention
+          Pour vous contacter et localiser l'intervention
         </p>
       </div>
 
@@ -49,6 +66,7 @@ export function StepContactInfo({
         </div>
       )}
 
+      {/* Contact Info */}
       <div className="space-y-4">
         <div>
           <Label htmlFor="email" className="flex items-center gap-2">
@@ -84,6 +102,60 @@ export function StepContactInfo({
           <p className="text-xs text-muted-foreground mt-1">
             Le technicien vous contactera à ce numéro
           </p>
+        </div>
+      </div>
+
+      {/* Address Section */}
+      <div className="space-y-4 pt-4 border-t">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <MapPin className="h-4 w-4" />
+          Adresse d'intervention
+        </div>
+
+        <div>
+          <Label htmlFor="address">Adresse *</Label>
+          <Input
+            id="address"
+            placeholder="123 rue de la Paix"
+            className="mt-2"
+            value={address}
+            onChange={(e) => onAddressChange(e.target.value)}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="postalCode">Code postal *</Label>
+            <Input
+              id="postalCode"
+              placeholder="75001"
+              maxLength={5}
+              className="mt-2"
+              value={postalCode}
+              onChange={(e) => onPostalCodeChange(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="city">Ville *</Label>
+            <Input
+              id="city"
+              placeholder="Paris"
+              className="mt-2"
+              value={city}
+              onChange={(e) => onCityChange(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="additionalInfo">Informations complémentaires (optionnel)</Label>
+          <Textarea
+            id="additionalInfo"
+            placeholder="Digicode, étage, bâtiment, instructions d'accès..."
+            className="min-h-[80px] mt-2"
+            value={additionalInfo}
+            onChange={(e) => onAdditionalInfoChange(e.target.value)}
+          />
         </div>
       </div>
     </div>
