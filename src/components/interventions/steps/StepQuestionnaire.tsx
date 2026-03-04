@@ -125,9 +125,27 @@ export function StepQuestionnaire({
   };
 
   // Show result card
+  const handleGoBackFromResult = () => {
+    if (history.length > 0) {
+      const prev = history[history.length - 1];
+      setHistory(history.slice(0, -1));
+      setCurrentNode(prev.node);
+      setAnswers(answers.slice(0, -1));
+      setResult(null);
+    } else {
+      handleReset();
+    }
+  };
+
   if (result) {
     return (
       <div className="space-y-6">
+        {/* Back button */}
+        <Button variant="ghost" size="sm" onClick={handleGoBackFromResult}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Retour
+        </Button>
+
         {/* Breadcrumb */}
         <div className="flex flex-wrap items-center gap-1 text-sm">
           <button onClick={handleReset} className="text-primary hover:underline font-medium">
@@ -233,10 +251,6 @@ export function StepQuestionnaire({
             </div>
           )}
         </div>
-
-        <Button variant="outline" onClick={handleReset} className="w-full">
-          ↩ Modifier ma sélection
-        </Button>
       </div>
     );
   }
