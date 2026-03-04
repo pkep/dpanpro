@@ -1,14 +1,15 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { CATEGORY_LABELS, InterventionCategory } from '@/types/intervention.types';
-import { CheckCircle2, Copy, MapPin, Mail, Phone, FileText, Image, CreditCard, Info } from 'lucide-react';
+import { CheckCircle2, Copy, MapPin, Mail, Phone, FileText, Image, Info, Clock, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { QuoteInput } from '@/services/quotes/quotes.service';
 import { NextStepsCard } from './NextStepsCard';
 import { NearbyTechniciansCard } from './NearbyTechniciansCard';
+import type { QuestionnaireResult } from '@/data/questionnaire-tree';
+import { cn } from '@/lib/utils';
+
 interface StepSummaryProps {
   category: InterventionCategory;
   description: string;
@@ -20,13 +21,16 @@ interface StepSummaryProps {
   photos: string[];
   trackingCode?: string;
   isSubmitted?: boolean;
-  quoteLines?: QuoteInput[];
-  totalHT?: number;
-  vatRate?: number;
-  vatAmount?: number;
-  totalTTC?: number;
-  isPaymentAuthorized?: boolean;
+  questionnaireResult?: QuestionnaireResult | null;
+  questionnaireAnswers?: string[];
 }
+
+const TIER_COLORS: Record<string, string> = {
+  low: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  mid: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  high: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  xhigh: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+};
 
 export function StepSummary({
   category,
@@ -39,25 +43,14 @@ export function StepSummary({
   photos,
   trackingCode,
   isSubmitted = false,
-  quoteLines = [],
-  totalHT = 0,
-  vatRate = 10,
-  vatAmount = 0,
-  totalTTC = 0,
-  isPaymentAuthorized = false,
+  questionnaireResult,
+  questionnaireAnswers = [],
 }: StepSummaryProps) {
   const copyTrackingCode = () => {
     if (trackingCode) {
       navigator.clipboard.writeText(trackingCode);
       toast.success('Code de suivi copié !');
     }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(price);
   };
 
   if (isSubmitted && trackingCode) {
@@ -81,13 +74,9 @@ export function StepSummary({
 
           <Card className="bg-primary/5 border-primary/20 mt-6">
             <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground mb-2">
-                Votre code de suivi
-              </p>
+              <p className="text-sm text-muted-foreground mb-2">Votre code de suivi</p>
               <div className="flex items-center justify-center gap-2">
-                <span className="text-3xl font-mono font-bold tracking-wider">
-                  {trackingCode}
-                </span>
+                <span className="text-3xl font-mono font-bold tracking-wider">{trackingCode}</span>
                 <Button variant="ghost" size="icon" onClick={copyTrackingCode}>
                   <Copy className="h-5 w-5" />
                 </Button>
@@ -103,7 +92,6 @@ export function StepSummary({
             <p className="mt-1">Un technicien vous contactera rapidement au <strong>{phone}</strong></p>
           </div>
 
-          {/* Cancellation notice */}
           <Alert className="mt-4 border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
             <Info className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-sm">
@@ -114,15 +102,8 @@ export function StepSummary({
           </Alert>
         </div>
 
-        {/* Next Steps Card */}
         <NextStepsCard />
-
-        {/* Nearby Technicians Card */}
-        <NearbyTechniciansCard 
-          address={address}
-          postalCode={postalCode}
-          city={city}
-        />
+        <NearbyTechniciansCard address={address} postalCode={postalCode} city={city} />
       </div>
     );
   }
@@ -130,7 +111,7 @@ export function StepSummary({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">5. Récapitulatif</h2>
+        <h2 className="text-2xl font-bold">Récapitulatif</h2>
         <p className="text-muted-foreground mt-2">
           Vérifiez les informations avant de valider
         </p>
@@ -147,18 +128,73 @@ export function StepSummary({
           </CardContent>
         </Card>
 
-        {/* Description */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
-              <div>
-                <span className="text-sm text-muted-foreground">Description</span>
-                <p className="mt-1">{description}</p>
+        {/* Questionnaire Result */}
+        {questionnaireResult && (
+          <Card className="border-primary/30">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Prestation identifiée</p>
+                  <p className="font-semibold mt-1">{questionnaireResult.nom}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{questionnaireResult.desc}</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              
+              {/* Price range */}
+              <div className={cn('inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold', TIER_COLORS[questionnaireResult.tier])}>
+                {questionnaireResult.prix} <span className="text-sm font-normal">TTC</span>
+              </div>
+
+              {/* Parcours */}
+              {questionnaireAnswers.length > 0 && (
+                <div className="flex flex-wrap gap-1 text-xs text-muted-foreground">
+                  {questionnaireAnswers.map((a, i) => (
+                    <span key={i} className="flex items-center gap-1">
+                      {i > 0 && <span>›</span>}
+                      <span>{a}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Meta */}
+              {questionnaireResult.meta && (
+                <div className="flex flex-wrap gap-2">
+                  {questionnaireResult.meta.map((m, i) => (
+                    <Badge key={i} variant="outline" className="text-xs">
+                      {m.includes('Urgence') && <AlertTriangle className="h-3 w-3 mr-1" />}
+                      {m.includes('Garantie') && <Shield className="h-3 w-3 mr-1" />}
+                      {(m.includes('min') || m.includes('h') || m.includes('journée')) && <Clock className="h-3 w-3 mr-1" />}
+                      {m}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <Alert className="bg-muted/50">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  Ce prix est indicatif. Le technicien vous fournira un devis définitif avant de commencer l'intervention. Le paiement sera demandé à ce moment-là.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Description */}
+        {description && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <span className="text-sm text-muted-foreground">Informations complémentaires</span>
+                  <p className="mt-1">{description}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Photos */}
         {photos.length > 0 && (
@@ -167,17 +203,10 @@ export function StepSummary({
               <div className="flex items-start gap-3">
                 <Image className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div className="flex-1">
-                  <span className="text-sm text-muted-foreground">
-                    {photos.length} photo(s) jointe(s)
-                  </span>
+                  <span className="text-sm text-muted-foreground">{photos.length} photo(s) jointe(s)</span>
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {photos.map((photo, index) => (
-                      <img
-                        key={index}
-                        src={photo}
-                        alt={`Photo ${index + 1}`}
-                        className="w-full aspect-square object-cover rounded"
-                      />
+                      <img key={index} src={photo} alt={`Photo ${index + 1}`} className="w-full aspect-square object-cover rounded" />
                     ))}
                   </div>
                 </div>
@@ -220,66 +249,15 @@ export function StepSummary({
           </CardContent>
         </Card>
 
-        {/* Payment Authorization Summary */}
-        {isPaymentAuthorized && quoteLines.length > 0 && (
-          <Card className="border-green-500/30 bg-green-50/50 dark:bg-green-900/10">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-green-600" />
-                <span className="text-green-700 dark:text-green-400">Autorisation de paiement confirmée</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {quoteLines.map((line, index) => (
-                <div key={index} className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">{line.label}</span>
-                  <span>{formatPrice(line.basePrice * line.multiplier)}</span>
-                </div>
-              ))}
-              
-              <Separator />
-              
-              {/* Total HT */}
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Total HT</span>
-                <span>{formatPrice(totalHT)}</span>
-              </div>
-              
-              {/* TVA */}
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">TVA ({vatRate}%)</span>
-                <span>{formatPrice(vatAmount)}</span>
-              </div>
-              
-              <Separator />
-              
-              <div className="flex justify-between items-center">
-                <span className="font-semibold">Montant TTC autorisé</span>
-                <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                  {formatPrice(totalTTC)}
-                </span>
-              </div>
-
-              <Alert className="mt-4 bg-white/50 dark:bg-background/50">
-                <Info className="h-4 w-4" />
-                <AlertDescription className="text-sm">
-                  <strong>Le paiement sera effectué qu'à la fin de l'intervention.</strong>
-                  <br />
-                  Les fonds sont bloqués en garantie et seront prélevés uniquement après validation du service.
-                </AlertDescription>
-              </Alert>
-
-              <Alert className="mt-3 border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
-                <Info className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-sm">
-                  <strong className="text-amber-700 dark:text-amber-400">En cas d'annulation :</strong>
-                  <br />
-                  Si le technicien est arrivé sur le lieu ou est en route à moins de 5 minutes du lieu de l'intervention, les frais de déplacement seront automatiquement prélevés.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        )}
+        {/* Cancellation notice */}
+        <Alert className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
+          <Info className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-sm">
+            <strong className="text-amber-700 dark:text-amber-400">En cas d'annulation :</strong>
+            <br />
+            Si le technicien est arrivé sur le lieu ou est en route à moins de 5 minutes du lieu de l'intervention, les frais de déplacement seront automatiquement prélevés.
+          </AlertDescription>
+        </Alert>
       </div>
     </div>
   );

@@ -61,7 +61,13 @@ class InterventionsService {
 
   async createIntervention(
     clientId: string | null,
-    formData: InterventionFormData
+    formData: InterventionFormData,
+    questionnaireData?: {
+      questionnaireAnswers?: string[];
+      questionnaireResultName?: string;
+      prixMin?: number | null;
+      prixMax?: number | null;
+    }
   ): Promise<Intervention> {
     // Auto-generate title from category + address + postal code
     const categoryLabel = {
@@ -97,7 +103,7 @@ class InterventionsService {
       console.error('Geocoding failed for intervention:', error);
     }
 
-    const insertData: DbInterventionInsert = {
+    const insertData: Record<string, unknown> = {
       client_id: clientId,
       category: formData.category as DbInterventionCategory,
       title: generatedTitle,
@@ -114,6 +120,19 @@ class InterventionsService {
       client_phone: formData.clientPhone || null,
       photos: formData.photos || null,
     };
+
+    // Add questionnaire data if provided
+    if (questionnaireData) {
+      if (questionnaireData.questionnaireAnswers) {
+        insertData.questionnaire_answers = questionnaireData.questionnaireAnswers;
+      }
+      if (questionnaireData.prixMin !== undefined) {
+        insertData.prix_min = questionnaireData.prixMin;
+      }
+      if (questionnaireData.prixMax !== undefined) {
+        insertData.prix_max = questionnaireData.prixMax;
+      }
+    }
 
     const { data, error } = await supabase
       .from('interventions')

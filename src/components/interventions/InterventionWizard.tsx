@@ -3,22 +3,19 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/interventions/interventions.service';
 import { dispatchService } from '@/services/dispatch/dispatch.service';
-import { quotesService, QuoteInput, QuoteSummary } from '@/services/quotes/quotes.service';
-import { paymentService } from '@/services/payment/payment.service';
-import { pricingService } from '@/services/pricing/pricing.service';
 import { servicesService, Service } from '@/services/services/services.service';
 import { InterventionCategory, CATEGORY_LABELS } from '@/types/intervention.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ArrowRight, Loader2, Send, Key, Wrench, Zap, Grid3X3, Flame, Snowflake, Settings, MessageSquare, User, CreditCard, CheckCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Send, Key, Wrench, Zap, Grid3X3, Flame, Snowflake, Settings, MessageSquare, User, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { StepServiceSelection } from './steps/StepServiceSelection';
-import { StepProblemDescription } from './steps/StepProblemDescription';
+import { StepQuestionnaire } from './steps/StepQuestionnaire';
 import { StepContactInfo } from './steps/StepContactInfo';
-import { StepPayment } from './steps/StepPayment';
 import { StepSummary } from './steps/StepSummary';
+import type { QuestionnaireResult } from '@/data/questionnaire-tree';
 
 const categoryIcons: Record<InterventionCategory, React.ReactNode> = {
   locksmith: <Key className="h-5 w-5" />,
@@ -31,10 +28,9 @@ const categoryIcons: Record<InterventionCategory, React.ReactNode> = {
 
 const STEPS = [
   { id: 1, title: 'Service', icon: <Settings className="h-4 w-4" /> },
-  { id: 2, title: 'Problème', icon: <MessageSquare className="h-4 w-4" /> },
+  { id: 2, title: 'Diagnostic', icon: <MessageSquare className="h-4 w-4" /> },
   { id: 3, title: 'Contact', icon: <User className="h-4 w-4" /> },
-  { id: 4, title: 'Paiement', icon: <CreditCard className="h-4 w-4" /> },
-  { id: 5, title: 'Validation', icon: <CheckCircle className="h-4 w-4" /> },
+  { id: 4, title: 'Validation', icon: <CheckCircle className="h-4 w-4" /> },
 ];
 
 interface InterventionWizardProps {
@@ -53,7 +49,6 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
 
   // Form state
   const [category, setCategory] = useState<InterventionCategory | null>(null);
-  const [priority, setPriority] = useState<string>('normal');
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [address, setAddress] = useState('');
@@ -63,17 +58,11 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  // Payment state
-  const [quoteSummary, setQuoteSummary] = useState<QuoteSummary | null>(null);
-  const [multiplier, setMultiplier] = useState(1.0);
-  const [multiplierLabel, setMultiplierLabel] = useState('Normal');
-  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
-  const [isPaymentAuthorized, setIsPaymentAuthorized] = useState(false);
-  const [authorizationId, setAuthorizationId] = useState<string | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [interventionId, setInterventionId] = useState<string | null>(null);
+  // Questionnaire result
+  const [questionnaireResult, setQuestionnaireResult] = useState<QuestionnaireResult | null>(null);
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState<string[]>([]);
+
   const [services, setServices] = useState<Service[]>([]);
-  const [isCompany, setIsCompany] = useState(false);
 
   // Load services on mount
   useEffect(() => {
@@ -95,67 +84,10 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
       const validCategories: InterventionCategory[] = ['locksmith', 'plumbing', 'electricity', 'glazing', 'heating', 'aircon'];
       if (validCategories.includes(serviceParam as InterventionCategory)) {
         setCategory(serviceParam as InterventionCategory);
-        setCurrentStep(2); // Skip to step 2 if service is pre-selected
+        setCurrentStep(2);
       }
-    }
-    
-    // Check for payment callback
-    const paymentStatus = searchParams.get('payment');
-    const returnedAuthId = searchParams.get('authorization_id');
-    
-    if (paymentStatus === 'success' && returnedAuthId) {
-      setIsPaymentAuthorized(true);
-      setAuthorizationId(returnedAuthId);
-      setCurrentStep(5); // Move to validation step
-      toast.success('Autorisation de paiement confirmée !');
-    } else if (paymentStatus === 'cancelled') {
-      toast.error('Autorisation de paiement annulée');
-      setCurrentStep(4);
     }
   }, [searchParams]);
-
-  // Generate quote when moving to payment step
-  useEffect(() => {
-    const generateQuote = async () => {
-      if (currentStep === 4 && category && !isPaymentAuthorized) {
-        try {
-          // Get service details
-          const service = services.find(s => s.code === category);
-          if (!service) {
-            toast.error('Service non trouvé');
-            return;
-          }
-
-          // Use the service's default priority
-          const servicePriority = service.defaultPriority || 'normal';
-          setPriority(servicePriority);
-
-          // Get multiplier based on service's default priority
-          const multipliers = await pricingService.getPriorityMultipliers();
-          const priorityMultiplier = multipliers.find(m => m.priority === servicePriority);
-          const mult = priorityMultiplier?.multiplier || 1.0;
-          setMultiplier(mult);
-          setMultiplierLabel(priorityMultiplier?.label || 'Normal');
-
-          // Determine if client is a company (for logged-in users)
-          const clientIsCompany = user?.isCompany || false;
-          setIsCompany(clientIsCompany);
-
-          // Get effective multiplier (respecting both global and individual settings)
-          const effectiveMultiplier = await quotesService.getEffectiveMultiplier(servicePriority, mult);
-
-          // Generate quote summary with HT, VAT, TTC
-          const summary = quotesService.calculateQuoteSummary(service, effectiveMultiplier, clientIsCompany, true);
-          setQuoteSummary(summary);
-        } catch (error) {
-          console.error('Error generating quote:', error);
-          toast.error('Erreur lors de la génération du devis');
-        }
-      }
-    };
-
-    generateQuote();
-  }, [currentStep, category, services, isPaymentAuthorized, user]);
 
   const progress = (currentStep / STEPS.length) * 100;
 
@@ -164,17 +96,15 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
       case 1:
         return category !== null;
       case 2:
-        return description.trim().length >= 10 && 
+        return questionnaireResult !== null;
+      case 3:
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
+               phone.trim().length >= 10 &&
                address.trim().length >= 5 && 
                /^\d{5}$/.test(postalCode) && 
                city.trim().length >= 2;
-      case 3:
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
-               phone.trim().length >= 10;
       case 4:
-        return isPaymentAuthorized;
-      case 5:
-        return isPaymentAuthorized;
+        return true;
       default:
         return false;
     }
@@ -192,91 +122,49 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
     }
   };
 
-  const handleInitializePayment = async () => {
-    if (!category || !email || isPaymentProcessing || clientSecret || !quoteSummary) return;
-
-    setIsPaymentProcessing(true);
-    try {
-      // Create payment authorization WITHOUT an intervention (intervention created after authorization)
-      const result = await paymentService.createPaymentIntent({
-        interventionId: null,
-        amount: quoteSummary.totalTTC,
-        clientEmail: email,
-        clientPhone: phone,
-      });
-
-      setAuthorizationId(result.id);
-      setClientSecret(result.clientSecret);
-    } catch (error) {
-      console.error('Error initializing payment:', error);
-      toast.error('Erreur lors de l\'initialisation du paiement');
-    } finally {
-      setIsPaymentProcessing(false);
-    }
-  };
-
-  const handlePaymentSuccess = async () => {
-    setIsPaymentAuthorized(true);
-    if (authorizationId) {
-      await paymentService.updateAuthorizationStatus(authorizationId, 'authorized');
-    }
-    toast.success('Autorisation de paiement confirmée !');
-    // Auto advance to next step
-    setCurrentStep(5);
-  };
-
-  const handlePaymentError = (error: string) => {
-    toast.error(`Erreur de paiement: ${error}`);
+  const handleQuestionnaireResult = (result: QuestionnaireResult, answers: string[]) => {
+    setQuestionnaireResult(result);
+    setQuestionnaireAnswers(answers);
   };
 
   const handleSubmit = async () => {
-    if (!isPaymentAuthorized || !category || !quoteSummary) {
-      toast.error('Veuillez d\'abord autoriser le paiement');
+    if (!category || !questionnaireResult) {
+      toast.error('Veuillez compléter le questionnaire');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // NOW create the intervention (after payment is authorized)
       const clientId = user?.id || null;
+
+      // Parse prix_min/prix_max from result
+      const priceMatch = questionnaireResult.prix.match(/(\d+)\s*[–-]\s*(\d+)/);
+      const prixMin = priceMatch ? parseFloat(priceMatch[1]) : null;
+      const prixMax = priceMatch ? parseFloat(priceMatch[2]) : null;
 
       const intervention = await interventionsService.createIntervention(clientId, {
         category,
-        description,
+        description: `${questionnaireResult.nom}${description ? `\n\n${description}` : ''}`,
         address,
         city,
         postalCode,
-        priority: priority as 'urgent' | 'high' | 'normal' | 'low',
+        priority: 'normal',
         clientEmail: email,
         clientPhone: phone,
         photos: photos.length > 0 ? photos : undefined,
+      }, {
+        questionnaireAnswers,
+        questionnaireResultName: questionnaireResult.nom,
+        prixMin,
+        prixMax,
       });
 
-      setInterventionId(intervention.id);
-
-      // Save quote lines to database
-      await quotesService.saveQuoteLines(intervention.id, quoteSummary.lines);
-
-      // Link payment authorization to the intervention
-      if (authorizationId) {
-        await paymentService.linkAuthorizationToIntervention(authorizationId, intervention.id);
-      }
-
       setTrackingCode(intervention.trackingCode || null);
-
-      // Send notifications to technicians now that intervention is confirmed
-      try {
-        await dispatchService.notifyTechnicians(intervention.id);
-        console.log('Technician notifications sent after confirmation');
-      } catch (notifyError) {
-        console.error('Error sending technician notifications:', notifyError);
-      }
-
       setIsSubmitted(true);
       toast.success('Demande envoyée avec succès !');
     } catch (error) {
-      console.error('Error finalizing intervention:', error);
-      toast.error('Erreur lors de la finalisation de la demande');
+      console.error('Error creating intervention:', error);
+      toast.error('Erreur lors de la création de la demande');
     } finally {
       setIsSubmitting(false);
     }
@@ -290,6 +178,9 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
             selectedCategory={category}
             onSelect={(cat, autoAdvance) => {
               setCategory(cat);
+              // Reset questionnaire when changing category
+              setQuestionnaireResult(null);
+              setQuestionnaireAnswers([]);
               if (autoAdvance) {
                 setCurrentStep(2);
               }
@@ -297,12 +188,24 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
           />
         );
       case 2:
-        return (
-          <StepProblemDescription
+        return category ? (
+          <StepQuestionnaire
+            category={category}
+            onResult={handleQuestionnaireResult}
+            selectedResult={questionnaireResult}
             description={description}
             onDescriptionChange={setDescription}
             photos={photos}
             onPhotosChange={setPhotos}
+          />
+        ) : null;
+      case 3:
+        return (
+          <StepContactInfo
+            email={email}
+            onEmailChange={setEmail}
+            phone={phone}
+            onPhoneChange={setPhone}
             address={address}
             onAddressChange={setAddress}
             postalCode={postalCode}
@@ -313,33 +216,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
             onAdditionalInfoChange={setAdditionalInfo}
           />
         );
-      case 3:
-        return (
-          <StepContactInfo
-            email={email}
-            onEmailChange={setEmail}
-            phone={phone}
-            onPhoneChange={setPhone}
-          />
-        );
       case 4:
-        return (
-          <StepPayment
-            quoteLines={quoteSummary?.lines || []}
-            totalHT={quoteSummary?.totalHT || 0}
-            vatRate={quoteSummary?.vatRate || 10}
-            vatAmount={quoteSummary?.vatAmount || 0}
-            totalTTC={quoteSummary?.totalTTC || 0}
-            multiplierLabel={multiplierLabel}
-            isProcessing={isPaymentProcessing}
-            isAuthorized={isPaymentAuthorized}
-            clientSecret={clientSecret}
-            onInitializePayment={handleInitializePayment}
-            onPaymentSuccess={handlePaymentSuccess}
-            onPaymentError={handlePaymentError}
-          />
-        );
-      case 5:
         return (
           <StepSummary
             category={category!}
@@ -352,12 +229,8 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
             photos={photos}
             trackingCode={trackingCode || undefined}
             isSubmitted={isSubmitted}
-            quoteLines={quoteSummary?.lines || []}
-            totalHT={quoteSummary?.totalHT || 0}
-            vatRate={quoteSummary?.vatRate || 10}
-            vatAmount={quoteSummary?.vatAmount || 0}
-            totalTTC={quoteSummary?.totalTTC || 0}
-            isPaymentAuthorized={isPaymentAuthorized}
+            questionnaireResult={questionnaireResult}
+            questionnaireAnswers={questionnaireAnswers}
           />
         );
       default:
@@ -365,26 +238,16 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
     }
   };
 
-  // Container styles based on embedded mode
-  const containerClass = embedded 
-    ? "" 
-    : "min-h-screen bg-background";
-  
-  const innerContainerClass = embedded 
-    ? "" 
-    : "max-w-2xl mx-auto px-4 py-8";
+  const containerClass = embedded ? "" : "min-h-screen bg-background";
+  const innerContainerClass = embedded ? "" : "max-w-2xl mx-auto px-4 py-8";
 
   return (
     <div className={containerClass}>
       <div className={innerContainerClass}>
-        {/* Header - only show back button when not embedded */}
+        {/* Header */}
         <div className={embedded ? "mb-6" : "mb-8"}>
           {!embedded && (
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/')}
-              className="mb-4"
-            >
+            <Button variant="ghost" onClick={() => navigate('/')} className="mb-4">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Retour à l'accueil
             </Button>
@@ -402,7 +265,6 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
             </div>
           )}
 
-          {/* Selected category badge for embedded mode */}
           {embedded && category && currentStep > 1 && (
             <Badge variant="secondary" className="flex items-center gap-2 text-base py-1.5 px-3 w-fit mb-4">
               {categoryIcons[category]}
@@ -445,33 +307,18 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
         {/* Navigation */}
         {!isSubmitted && (
           <div className="flex justify-between mt-6">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={currentStep === 1}
-            >
+            <Button variant="outline" onClick={handleBack} disabled={currentStep === 1}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Précédent
             </Button>
 
             {currentStep < STEPS.length ? (
-              currentStep === 4 && !isPaymentAuthorized ? (
-                // Payment step - button handled inside StepPayment
-                <div />
-              ) : (
-                <Button
-                  onClick={handleNext}
-                  disabled={!canProceed()}
-                >
-                  Suivant
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              )
+              <Button onClick={handleNext} disabled={!canProceed()}>
+                Suivant
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting || !isPaymentAuthorized}
-              >
+              <Button onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
