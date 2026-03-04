@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
 import { User, Mail, Phone, MapPin, Lock } from 'lucide-react';
+import { AddressAutocomplete } from './AddressAutocomplete';
 
 interface StepContactInfoProps {
   email: string;
@@ -178,40 +179,14 @@ export function StepContactInfo({
           Adresse d'intervention
         </div>
 
-        <div>
-          <Label htmlFor="address">Adresse *</Label>
-          <Input
-            id="address"
-            placeholder="123 rue de la Paix"
-            className="mt-2"
-            value={address}
-            onChange={(e) => onAddressChange(e.target.value)}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="postalCode">Code postal *</Label>
-            <Input
-              id="postalCode"
-              placeholder="75001"
-              maxLength={5}
-              className="mt-2"
-              value={postalCode}
-              onChange={(e) => onPostalCodeChange(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="city">Ville *</Label>
-            <Input
-              id="city"
-              placeholder="Paris"
-              className="mt-2"
-              value={city}
-              onChange={(e) => onCityChange(e.target.value)}
-            />
-          </div>
-        </div>
+        <AddressAutocomplete
+          address={address}
+          onAddressChange={onAddressChange}
+          postalCode={postalCode}
+          onPostalCodeChange={onPostalCodeChange}
+          city={city}
+          onCityChange={onCityChange}
+        />
 
         <div>
           <Label htmlFor="additionalInfo">Informations complémentaires (optionnel)</Label>
