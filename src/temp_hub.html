@@ -1,0 +1,3027 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MesDépanneurs — V1 / V2</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f0f2f7; }
+
+#hub-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 99999;
+  height: 46px;
+  background: #ffffff;
+  border-bottom: 1px solid #dde0ea;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.hub-label { font-size: 11px; color: #9099b0; font-family: 'DM Mono', monospace; letter-spacing: 0.5px; margin-right: 4px; }
+.hub-btn {
+  padding: 5px 16px; border-radius: 7px; border: 1.5px solid #dde0ea;
+  background: transparent; font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 13px; font-weight: 700; color: #6b7a99; cursor: pointer; transition: all 0.18s;
+  display: flex; align-items: center; gap: 6px;
+}
+.vbadge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 1px 5px; border-radius: 3px; background: #edf0f5; }
+.hub-btn:hover { color: #1a1d2e; border-color: #b0b8cc; }
+.hub-btn.on-v1 { color: #d97706; border-color: rgba(217,119,6,0.4); background: rgba(217,119,6,0.07); }
+.hub-btn.on-v1 .vbadge { background: rgba(217,119,6,0.12); color: #d97706; }
+.hub-btn.on-v2 { color: #3b6bfa; border-color: rgba(59,107,250,0.4); background: rgba(59,107,250,0.07); }
+.hub-btn.on-v2 .vbadge { background: rgba(59,107,250,0.12); color: #3b6bfa; }
+
+#v1-app, #v2-app { padding-top: 46px; min-height: 100vh; }
+#v2-app { display: none; }
+
+
+  #v1-app {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface2: #eef0f4;
+    --border: #dde0e8;
+    --text: #1a1d2e;
+    --muted: #6b7080;
+    --accent: #e03d1e;
+    --accent2: #f06040;
+    --green: #16a34a;
+    --blue: #2563eb;
+    --purple: #9333ea;
+    --yellow: #f59e0b;
+    --cyan: #0891b2;
+    --orange: #f97316;
+
+    /* Service colors */
+    --plomberie: #3b82f6;
+    --electricite: #f59e0b;
+    --serrurerie: #a855f7;
+    --vitrerie: #06b6d4;
+    --chauffage: #ef4444;
+    --clim: #22c55e;
+  }
+
+  #v1-app { box-sizing: border-box; margin: 0; padding: 0; }
+
+  #v1-app {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  #v1-app header {
+    border-bottom: 1px solid var(--border);
+    padding: 24px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    position: sticky;
+    top: 46px;
+    z-index: 100;
+  }
+
+  #v1-app .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  #v1-app .logo-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 16px var(--accent);
+  }
+  #v1-app .logo-text { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  #v1-app .logo-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+  #v1-app .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 4px;
+    border: 1px solid var(--border);
+  }
+  #v1-app .tab {
+    padding: 8px 18px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: all 0.2s;
+    border: none;
+    background: transparent;
+    font-family: 'Syne', sans-serif;
+  }
+  #v1-app .tab.active {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* MAIN LAYOUT */
+  #v1-app main { padding: 40px; max-width: 1600px; margin: 0 auto; }
+
+  /* ==================== TREE VIEW ==================== */
+  #v1-app #view-tree { display: block; }
+  #v1-app #view-sql { display: none; }
+
+  #v1-app .section-title {
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #v1-app .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Service Grid */
+  #v1-app .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  @media (max-width: 1200px) {
+    .services-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .services-grid { grid-template-columns: 1fr; }
+    main { padding: 20px; }
+  }
+
+  /* Service Card */
+  #v1-app .service-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  #v1-app .service-card:hover { transform: translateY(-2px); }
+
+  #v1-app .card-header {
+    padding: 18px 22px 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  #v1-app .card-header:hover { border-color: var(--border); }
+
+  #v1-app .card-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  #v1-app .card-meta { flex: 1; }
+  #v1-app .card-name { font-size: 16px; font-weight: 800; }
+  #v1-app .card-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  #v1-app .card-toggle {
+    font-size: 18px;
+    color: var(--muted);
+    transition: transform 0.3s;
+    flex-shrink: 0;
+  }
+  #v1-app .service-card.open .card-toggle { transform: rotate(90deg); }
+  #v1-app .service-card.open .card-header { border-color: var(--border); }
+
+  #v1-app .card-body {
+    display: none;
+    padding: 0 22px 18px;
+  }
+  #v1-app .service-card.open .card-body { display: block; }
+
+  /* Category */
+  #v1-app .cat-block { margin-top: 14px; }
+  #v1-app .cat-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  #v1-app .cat-title::before {
+    content: '';
+    width: 3px; height: 12px;
+    border-radius: 2px;
+  }
+
+  /* Intervention item */
+  #v1-app .intervention {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+  #v1-app .intervention:hover { border-color: rgba(255,85,51,0.4); background: #eaecf4; }
+
+  #v1-app .int-name { font-size: 13px; font-weight: 600; line-height: 1.4; }
+  #v1-app .int-detail { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: 'DM Mono', monospace; }
+  #v1-app .int-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    padding: 3px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* Sub-items */
+  #v1-app .sub-items {
+    display: none;
+    margin-top: 8px;
+    padding-left: 12px;
+    border-left: 2px solid var(--border);
+  }
+  #v1-app .intervention.expanded .sub-items { display: block; }
+  #v1-app .intervention.has-subs { cursor: pointer; }
+  #v1-app .sub-item {
+    padding: 7px 10px;
+    margin-bottom: 4px;
+    background: var(--bg);
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  #v1-app .sub-item-name { font-size: 12px; font-weight: 500; }
+  #v1-app .sub-item-price { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* ==================== SQL VIEW ==================== */
+  #v1-app .sql-container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  #v1-app .sql-block {
+    background: #f8f9fc;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  #v1-app .sql-block-header {
+    background: var(--surface2);
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  #v1-app .sql-block-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  #v1-app .sql-block-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: rgba(255,85,51,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(255,85,51,0.3);
+  }
+
+  #v1-app pre { color: #2a2d3e;
+    padding: 22px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+    color: #c9d1e0;
+  }
+
+  #v1-app .sql-keyword { color: #d63384; }
+  #v1-app .sql-type { color: #9a6c00; }
+  #v1-app .sql-comment { color: #6b7280; font-style: italic; }
+  #v1-app .sql-string { color: #0e7a5a; }
+  #v1-app .sql-number { color: #1a5faa; }
+  #v1-app .sql-table { color: #7c3aed; }
+  #v1-app .sql-constraint { color: #c05a10; }
+
+  /* Copy button */
+  #v1-app .copy-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  #v1-app .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  #v1-app .copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+  /* Diagram */
+  #v1-app .erd-diagram {
+    padding: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  #v1-app .erd-table {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    min-width: 220px;
+    overflow: hidden;
+  }
+  #v1-app .erd-table-name {
+    background: var(--surface2);
+    padding: 8px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+  }
+  #v1-app .erd-field {
+    padding: 6px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  #v1-app .erd-field:last-child { border-bottom: none; }
+  #v1-app .erd-field-pk { color: #f59e0b; }
+  #v1-app .erd-field-fk { color: #3b82f6; }
+  #v1-app .erd-field-type { color: var(--surface2); font-size: 10px; background: var(--border); padding: 1px 5px; border-radius: 3px; color: var(--muted); }
+
+  /* PRICE legend */
+  #v1-app .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  #v1-app .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+  #v1-app .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+
+
+#v2-app {
+  --bg: #f4f5f8;
+  --bg2: #ffffff;
+  --bg3: #edf0f5;
+  --border: #dde0ea;
+  --border2: #c8ccd8;
+  --text: #1a1d2e;
+  --text2: #5a6077;
+  --text3: #9099b0;
+  --accent: #3b6bfa;
+  --accent2: #6b4e97;
+  --green: #16a34a;
+  --blue: #2563eb;
+  --orange: #d97706;
+  --red: #dc2626;
+  --cyan: #0891b2;
+  --purple: #9333ea;
+  --emerald: #059669;
+  --font: 'Bricolage Grotesque', sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+#v2-app { box-sizing: border-box; margin: 0; padding: 0; }
+
+#v2-app {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ── HEADER ── */
+#v2-app header {
+  padding: 28px 40px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg2);
+  position: sticky;
+  top: 46px;
+  z-index: 100;
+}
+#v2-app .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+#v2-app .logo span { color: var(--accent); }
+
+/* ── TABS ── */
+#v2-app .tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 4px;
+}
+#v2-app .tab {
+  padding: 8px 20px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#v2-app .tab.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+/* ── PANELS ── */
+#v2-app .panel { display: none; }
+#v2-app .panel.active { display: block; }
+
+/* ════════════════════════════════
+   ONGLET 1 — PARCOURS INTERACTIF
+   ════════════════════════════════ */
+#v2-app .simulator {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+#v2-app .sim-header {
+  margin-bottom: 32px;
+}
+#v2-app .sim-header h1 {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+#v2-app .sim-header p { color: var(--text2); font-size: 15px; }
+
+/* Breadcrumb */
+#v2-app .breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+  min-height: 32px;
+}
+#v2-app .crumb {
+  font-size: 13px;
+  color: var(--text3);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+#v2-app .crumb:hover { color: var(--text2); border-color: var(--border2); }
+#v2-app .crumb.active { color: var(--text); border-color: var(--accent); background: rgba(79,124,255,0.08); }
+#v2-app .crumb-sep { color: var(--text3); font-size: 12px; }
+
+/* Step card */
+#v2-app .step-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 16px;
+  animation: fadeUp 0.25s ease;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#v2-app .step-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+  font-family: var(--mono);
+}
+#v2-app .step-question {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 24px;
+  line-height: 1.3;
+}
+
+/* Options grid */
+#v2-app .options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+#v2-app .option-btn {
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s;
+  font-family: var(--font);
+  color: var(--text);
+}
+#v2-app .option-btn:hover {
+  border-color: var(--accent);
+  background: rgba(79,124,255,0.06);
+  transform: translateY(-1px);
+}
+#v2-app .option-icon { font-size: 24px; margin-bottom: 8px; display: block; }
+#v2-app .option-label { font-size: 14px; font-weight: 600; display: block; margin-bottom: 2px; }
+#v2-app .option-sub { font-size: 12px; color: var(--text2); display: block; }
+
+/* Domain colors */
+#v2-app .domain-plomberie { --dc: var(--blue); }
+#v2-app .domain-electricite { --dc: var(--orange); }
+#v2-app .domain-serrurerie { --dc: var(--purple); }
+#v2-app .domain-vitrerie { --dc: var(--cyan); }
+#v2-app .domain-chauffage { --dc: var(--red); }
+#v2-app .domain-clim { --dc: var(--emerald); }
+
+#v2-app .option-btn.domain-btn:hover {
+  border-color: var(--dc);
+  background: color-mix(in srgb, var(--dc) 8%, transparent);
+}
+
+/* Result card */
+#v2-app .result-card {
+  background: var(--bg2);
+  border: 1.5px solid var(--accent);
+  border-radius: 16px;
+  padding: 28px 32px;
+  animation: fadeUp 0.3s ease;
+}
+#v2-app .result-card.domain-plomberie { border-color: var(--blue); }
+#v2-app .result-card.domain-electricite { border-color: var(--orange); }
+#v2-app .result-card.domain-serrurerie { border-color: var(--purple); }
+#v2-app .result-card.domain-vitrerie { border-color: var(--cyan); }
+#v2-app .result-card.domain-chauffage { border-color: var(--red); }
+#v2-app .result-card.domain-clim { border-color: var(--emerald); }
+
+#v2-app .result-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: var(--mono);
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+  background: rgba(79,124,255,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(79,124,255,0.25);
+}
+#v2-app .result-title { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+#v2-app .result-desc { color: var(--text2); font-size: 14px; margin-bottom: 20px; }
+
+#v2-app .price-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+#v2-app .price-badge.low { background: rgba(34,197,94,0.12); color: var(--green); }
+#v2-app .price-badge.mid { background: rgba(59,130,246,0.12); color: var(--blue); }
+#v2-app .price-badge.high { background: rgba(245,158,11,0.12); color: var(--orange); }
+#v2-app .price-badge.xhigh { background: rgba(239,68,68,0.12); color: var(--red); }
+#v2-app .price-num { font-size: 26px; font-family: var(--mono); }
+#v2-app .price-unit { font-size: 13px; opacity: 0.8; }
+
+/* Variants */
+#v2-app .variants-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-bottom: 10px;
+}
+#v2-app .variants-list { display: flex; flex-direction: column; gap: 6px; }
+#v2-app .variant-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+#v2-app .variant-name { color: var(--text); font-weight: 500; }
+#v2-app .variant-price { color: var(--text2); font-family: var(--mono); font-size: 12px; }
+
+#v2-app .result-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+#v2-app .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text2);
+}
+#v2-app .meta-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+#v2-app .btn-reset {
+  margin-top: 24px;
+  padding: 12px 24px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+#v2-app .btn-reset:hover { background: var(--border); }
+
+/* ════════════════════
+   ONGLET 2 — SQL
+   ════════════════════ */
+#v2-app .sql-view {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+#v2-app .sql-section { margin-bottom: 40px; }
+#v2-app .sql-section-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#v2-app .sql-section-desc { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+
+#v2-app .sql-block {
+  background: #f8f9fc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+#v2-app .sql-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+#v2-app .sql-filename {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+}
+#v2-app .copy-btn {
+  font-size: 11px;
+  font-family: var(--mono);
+  padding: 4px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#v2-app .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+#v2-app .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+#v2-app pre {
+  padding: 20px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.8;
+  tab-size: 2;
+  color: #2a2d3e;
+}
+
+/* SQL highlighting */
+#v2-app .kw { color: #d63384; font-weight: 500; }
+#v2-app .ty { color: #9a6c00; }
+#v2-app .cm { color: #6b7a99; font-style: italic; }
+#v2-app .st { color: #0e7a5a; }
+#v2-app .nu { color: #1a5faa; }
+#v2-app .fn { color: #7c3aed; }
+
+/* ERD diagram */
+#v2-app .erd {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+#v2-app .erd-table {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+#v2-app .erd-table-name {
+  background: var(--bg3);
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+}
+#v2-app .erd-field {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text2);
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+#v2-app .erd-field:last-child { border-bottom: none; }
+#v2-app .erd-field.pk { color: var(--orange); }
+#v2-app .erd-field.fk { color: var(--purple); }
+#v2-app .erd-type { color: var(--text3); font-size: 10px; }
+
+#v2-app .relation-note {
+  font-size: 12px;
+  color: var(--text2);
+  font-family: var(--mono);
+  padding: 12px 16px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+#v2-app .relation-note span { color: var(--accent); }
+
+/* Flow diagram */
+#v2-app .flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding: 20px 0;
+  margin-bottom: 32px;
+}
+#v2-app .flow-node {
+  background: var(--bg2);
+  border: 1.5px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-align: center;
+  min-width: 130px;
+  flex-shrink: 0;
+}
+#v2-app .flow-node-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-bottom: 4px;
+}
+#v2-app .flow-node-name { font-size: 13px; font-weight: 600; color: var(--text); }
+#v2-app .flow-node-table { font-size: 10px; color: var(--accent); font-family: var(--mono); margin-top: 3px; }
+#v2-app .flow-arrow {
+  font-size: 20px;
+  color: var(--text3);
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+/* responsive */
+@media (max-width: 640px) {
+  header { padding: 16px 20px; flex-direction: column; gap: 12px; }
+  .simulator, .sql-view { padding: 24px 16px; }
+  .options-grid { grid-template-columns: 1fr 1fr; }
+  .step-question { font-size: 18px; }
+}
+
+
+/* ════════════════════════════════════════
+   RESPONSIVE — HUB + V1 + V2
+   Breakpoints: 768px (tablet), 480px (mobile)
+   ════════════════════════════════════════ */
+
+/* ── HUB BAR ── */
+@media (max-width: 600px) {
+  #hub-bar { gap: 6px; padding: 0 8px; }
+  .hub-label { display: none; }
+  .hub-btn { padding: 5px 10px; font-size: 12px; gap: 4px; }
+  .hub-btn span:not(.vbadge) { display: none; }
+}
+
+/* ── V1 : ARBRE DES SERVICES ── */
+@media (max-width: 768px) {
+  #v1-app header { padding: 16px 20px; flex-wrap: wrap; gap: 12px; top: 46px; }
+  #v1-app .nav-tabs { gap: 6px; }
+  #v1-app .nav-tab { padding: 7px 14px; font-size: 12px; }
+  #v1-app main { padding: 20px 16px; }
+  #v1-app .services-grid { grid-template-columns: 1fr; gap: 12px; }
+  #v1-app .card-header { padding: 14px 16px; }
+  #v1-app .card-icon { width: 38px; height: 38px; font-size: 18px; }
+  #v1-app .card-name { font-size: 15px; }
+  #v1-app .card-body { padding: 0 16px 14px; }
+  #v1-app .cat-title { font-size: 11px; padding: 6px 10px; }
+  #v1-app .intervention { padding: 9px 12px; }
+  #v1-app .int-name { font-size: 13px; }
+  #v1-app .int-detail { font-size: 11px; }
+  #v1-app .sub-item { padding: 7px 10px; font-size: 12px; }
+  /* SQL view */
+  #v1-app .sql-tabs { flex-wrap: wrap; gap: 6px; }
+  #v1-app pre { color: #2a2d3e; font-size: 11px; padding: 14px; }
+  #v1-app .sql-block-header { padding: 8px 14px; }
+  #v1-app .schema-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 480px) {
+  #v1-app header { padding: 12px 14px; }
+  #v1-app .logo-text { font-size: 15px; }
+  #v1-app .logo-sub { display: none; }
+  #v1-app .nav-tabs { overflow-x: auto; width: 100%; }
+  #v1-app .nav-tab { white-space: nowrap; flex-shrink: 0; }
+  #v1-app main { padding: 14px 12px; }
+  #v1-app .schema-grid { grid-template-columns: 1fr; }
+  #v1-app pre { color: #2a2d3e; font-size: 10px; }
+}
+
+/* ── V2 : PARCOURS INTERACTIF ── */
+@media (max-width: 768px) {
+  #v2-app header { padding: 14px 20px; flex-wrap: wrap; gap: 10px; top: 46px; }
+  #v2-app .tabs { order: 2; width: 100%; justify-content: center; }
+  #v2-app .tab { font-size: 12px; padding: 7px 14px; }
+  #v2-app .simulator,
+  #v2-app .sql-view { padding: 20px 16px; }
+  #v2-app .sim-header h1 { font-size: 22px; }
+  #v2-app .step-card { padding: 20px 18px; }
+  #v2-app .step-question { font-size: 17px; }
+  #v2-app .options-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #v2-app .option-btn { padding: 12px 14px; }
+  #v2-app .option-icon { font-size: 20px; margin-bottom: 6px; }
+  #v2-app .option-label { font-size: 13px; }
+  #v2-app .result-card { padding: 20px 18px; }
+  #v2-app .result-title { font-size: 18px; }
+  #v2-app .price-num { font-size: 20px; }
+  #v2-app .variant-item { padding: 8px 12px; font-size: 12px; }
+  #v2-app .result-meta { gap: 10px; }
+  #v2-app .meta-item { font-size: 11px; }
+  /* SQL */
+  #v2-app .erd { grid-template-columns: 1fr 1fr; }
+  #v2-app .flow { gap: 0; }
+  #v2-app .flow-node { min-width: 90px; padding: 8px 10px; }
+  #v2-app .flow-node-name { font-size: 11px; }
+  #v2-app pre { font-size: 11px; padding: 14px; }
+  #v2-app .sql-block-header { padding: 8px 14px; }
+}
+
+@media (max-width: 480px) {
+  #v2-app header { padding: 10px 14px; }
+  #v2-app .logo { font-size: 14px; }
+  #v2-app .tab { font-size: 11px; padding: 6px 10px; }
+  #v2-app .simulator,
+  #v2-app .sql-view { padding: 14px 12px; }
+  #v2-app .options-grid { grid-template-columns: 1fr; }
+  #v2-app .step-card { padding: 16px 14px; }
+  #v2-app .step-question { font-size: 15px; }
+  #v2-app .breadcrumb { gap: 4px; }
+  #v2-app .crumb { font-size: 11px; padding: 3px 8px; }
+  #v2-app .erd { grid-template-columns: 1fr; }
+  #v2-app .flow { flex-direction: column; align-items: flex-start; gap: 4px; }
+  #v2-app .flow-arrow { transform: rotate(90deg); }
+  #v2-app pre { font-size: 10px; }
+  #v2-app .result-meta { flex-direction: column; gap: 6px; }
+  #v2-app .btn-reset { width: 100%; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<div id="hub-bar">
+  <span class="hub-label">MesDépanneurs.fr</span>
+  <button class="hub-btn on-v1" id="btn-v1" onclick="showV(1)">Arbre des services <span class="vbadge">V1</span></button>
+  <button class="hub-btn" id="btn-v2" onclick="showV(2)">Parcours interactif <span class="vbadge">V2</span></button>
+</div>
+
+<div id="v1-app">
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <div>
+      <div class="logo-text">MesDépanneurs.fr</div>
+      <div class="logo-sub">Cartographie des services & prix</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showView('tree', this)">🌳 Arbre des services</button>
+    <button class="tab" onclick="showView('sql', this)">🗄️ Schéma SQL</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ========================= TREE VIEW ========================= -->
+<div id="view-tree">
+  <div class="section-title">6 domaines d'intervention · 400+ services référencés</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Plomberie</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Électricité</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>Serrurerie</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#06b6d4"></div>Vitrerie</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Chauffage</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Clim & PAC</div>
+    <div style="margin-left:auto;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">💡 Cliquez sur un service pour expand</div>
+  </div>
+
+  <div class="services-grid" id="services-grid"></div>
+</div>
+
+<!-- ========================= SQL VIEW ========================= -->
+<div id="view-sql">
+  <div class="section-title">Schéma relationnel — Configuration des services</div>
+
+  <div class="sql-container">
+
+    <!-- ERD Diagram -->
+    <div class="sql-block">
+      <div class="sql-block-header">
+        <span class="sql-block-title">📊 Diagramme ERD simplifié</span>
+      </div>
+      <div class="erd-diagram">
+        <div class="erd-table">
+          <div class="erd-table-name">services_domaines</div>
+          <div class="erd-field"><span class="erd-field-pk">🔑 id</span><span class="erd-field-type">INT PK</span></div>
+          <div class="erd-field"><span>slug</span><span class="erd-field-type">VARCHAR</span></div>
+          <div class="erd-field"><span>nom</span><span class="erd-field-type">VARCHAR</span></div>
+          <div class="erd-field"><span>icone</span><span class="erd-field-type">VARCHAR</span></div>
+          <div class="erd-field"><span>couleur_hex</span><span class="erd-field-type">CHAR(7)</span></div>
+          <div class="erd-field"><span>image_url</span><span class="erd-field-type">TEXT</span></div>
+          <div class="erd-field"><span>description</span><span class="erd-field-type">TEXT</span></div>
+          <div class="erd-field"><span>actif</span><span class="erd-field-type">BOOL</span></div>
+          <div class="erd-field"><span>ordre_affichage</span><span class="erd-field-type">INT</span></div>
+        </div>
+        <div style="font-size:24px;color:var(--muted);align-self:center">→</div>
+        <div class="erd-table">
+          <div class="erd-table-name">services_categories</div>
+          <div class="erd-field"><span class="erd-field-pk">🔑 id</span><span class="erd-field-type">INT PK</span></div>
+          <div class="erd-field"><span class="erd-field-fk">🔗 domaine_id</span><span class="erd-field-type">INT FK</span></div>
+          <div class="erd-field"><span>slug</span><span class="erd-field-type">VARCHAR</span></div>
+          <div class="erd-field"><span>nom</span><span class="erd-field-type">VARCHAR</span></div>
+          <div class="erd-field"><span>description</span><span class="erd-field-type">TEXT</span></div>
+          <div class="erd-field"><span>image_url</span><span class="erd-field-type">TEXT</span></div>
+          <div class="erd-field"><span>ordre</span><span class="erd-field-type">INT</span></div>
+        </div>
+        <div style="font-size:24px;color:var(--muted);align-self:center">→</div>
+        <div class="erd-table">
+          <div class="erd-table-name">services_interventions</div>
+          <div class="erd-field"><span class="erd-field-pk">🔑 id</span><span class="erd-field-type">INT PK</span></div>
+          <div class="erd-field"><span class="erd-field-fk">🔗 categorie_id</span><span class="erd-field-type">INT FK</span></div>
+          <div class="erd-field"><span>slug</span><span class="erd-field-type">VARCHAR</span></div>
+          <div class="erd-field"><span>nom</span><span class="erd-field-type">VARCHAR</span></div>
+          <div class="erd-field"><span>description</span><span class="erd-field-type">TEXT</span></div>
+          <div class="erd-field"><span>prix_min</span><span class="erd-field-type">DECIMAL</span></div>
+          <div class="erd-field"><span>prix_max</span><span class="erd-field-type">DECIMAL</span></div>
+          <div class="erd-field"><span>unite_prix</span><span class="erd-field-type">ENUM</span></div>
+          <div class="erd-field"><span>duree_min_min</span><span class="erd-field-type">INT</span></div>
+          <div class="erd-field"><span>duree_max_min</span><span class="erd-field-type">INT</span></div>
+          <div class="erd-field"><span>type_intervention</span><span class="erd-field-type">ENUM</span></div>
+          <div class="erd-field"><span>urgence_disponible</span><span class="erd-field-type">BOOL</span></div>
+          <div class="erd-field"><span>image_url</span><span class="erd-field-type">TEXT</span></div>
+          <div class="erd-field"><span>actif</span><span class="erd-field-type">BOOL</span></div>
+          <div class="erd-field"><span>ordre</span><span class="erd-field-type">INT</span></div>
+        </div>
+        <div style="font-size:24px;color:var(--muted);align-self:center">→</div>
+        <div class="erd-table">
+          <div class="erd-table-name">services_variantes</div>
+          <div class="erd-field"><span class="erd-field-pk">🔑 id</span><span class="erd-field-type">INT PK</span></div>
+          <div class="erd-field"><span class="erd-field-fk">🔗 intervention_id</span><span class="erd-field-type">INT FK</span></div>
+          <div class="erd-field"><span>nom</span><span class="erd-field-type">VARCHAR</span></div>
+          <div class="erd-field"><span>description</span><span class="erd-field-type">TEXT</span></div>
+          <div class="erd-field"><span>prix_min</span><span class="erd-field-type">DECIMAL</span></div>
+          <div class="erd-field"><span>prix_max</span><span class="erd-field-type">DECIMAL</span></div>
+          <div class="erd-field"><span>image_url</span><span class="erd-field-type">TEXT</span></div>
+        </div>
+        <div style="font-size:24px;color:var(--muted);align-self:center">→</div>
+        <div class="erd-table">
+          <div class="erd-table-name">services_questions</div>
+          <div class="erd-field"><span class="erd-field-pk">🔑 id</span><span class="erd-field-type">INT PK</span></div>
+          <div class="erd-field"><span class="erd-field-fk">🔗 intervention_id</span><span class="erd-field-type">INT FK</span></div>
+          <div class="erd-field"><span>libelle</span><span class="erd-field-type">TEXT</span></div>
+          <div class="erd-field"><span>type_champ</span><span class="erd-field-type">ENUM</span></div>
+          <div class="erd-field"><span>options_json</span><span class="erd-field-type">JSON</span></div>
+          <div class="erd-field"><span>obligatoire</span><span class="erd-field-type">BOOL</span></div>
+          <div class="erd-field"><span>image_url</span><span class="erd-field-type">TEXT</span></div>
+          <div class="erd-field"><span>ordre</span><span class="erd-field-type">INT</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SQL CREATE TABLES -->
+    <div class="sql-block">
+      <div class="sql-block-header">
+        <span class="sql-block-title">CREATE TABLE — Structure complète</span>
+        <button class="copy-btn" onclick="copySql(this, 'sql-create')">Copier</button>
+      </div>
+      <pre id="sql-create"><span class="sql-comment">-- ============================================================
+-- MesDépanneurs.fr — Schéma SQL de configuration des services
+-- Version 1.0 | Compatible MySQL 8.0+ / PostgreSQL 14+
+-- ============================================================</span>
+
+<span class="sql-comment">-- 1. DOMAINES (niveau 1 : Plomberie, Électricité, etc.)</span>
+<span class="sql-keyword">CREATE TABLE</span> <span class="sql-table">services_domaines</span> (
+    id                <span class="sql-type">INT UNSIGNED</span>     <span class="sql-keyword">NOT NULL AUTO_INCREMENT</span>,
+    slug              <span class="sql-type">VARCHAR(80)</span>      <span class="sql-keyword">NOT NULL</span>,
+    nom               <span class="sql-type">VARCHAR(120)</span>     <span class="sql-keyword">NOT NULL</span>,
+    icone             <span class="sql-type">VARCHAR(10)</span>      <span class="sql-keyword">NULL</span>,           <span class="sql-comment">-- emoji ou code icon</span>
+    couleur_hex       <span class="sql-type">CHAR(7)</span>          <span class="sql-keyword">NULL</span>,           <span class="sql-comment">-- ex: #3b82f6</span>
+    image_url         <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,           <span class="sql-comment">-- image illustrative</span>
+    description       <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,
+    actif             <span class="sql-type">TINYINT(1)</span>       <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">1</span>,
+    ordre_affichage   <span class="sql-type">SMALLINT</span>         <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">0</span>,
+    created_at        <span class="sql-type">DATETIME</span>         <span class="sql-keyword">DEFAULT CURRENT_TIMESTAMP</span>,
+    <span class="sql-constraint">PRIMARY KEY</span> (id),
+    <span class="sql-constraint">UNIQUE KEY</span> uq_domaine_slug (slug)
+) <span class="sql-keyword">ENGINE</span>=InnoDB <span class="sql-keyword">DEFAULT CHARSET</span>=utf8mb4;
+
+<span class="sql-comment">-- 2. CATÉGORIES (niveau 2 : Fuite, Débouchage, etc.)</span>
+<span class="sql-keyword">CREATE TABLE</span> <span class="sql-table">services_categories</span> (
+    id                <span class="sql-type">INT UNSIGNED</span>     <span class="sql-keyword">NOT NULL AUTO_INCREMENT</span>,
+    domaine_id        <span class="sql-type">INT UNSIGNED</span>     <span class="sql-keyword">NOT NULL</span>,
+    slug              <span class="sql-type">VARCHAR(100)</span>     <span class="sql-keyword">NOT NULL</span>,
+    nom               <span class="sql-type">VARCHAR(150)</span>     <span class="sql-keyword">NOT NULL</span>,
+    description       <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,
+    image_url         <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,
+    actif             <span class="sql-type">TINYINT(1)</span>       <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">1</span>,
+    ordre             <span class="sql-type">SMALLINT</span>         <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">0</span>,
+    created_at        <span class="sql-type">DATETIME</span>         <span class="sql-keyword">DEFAULT CURRENT_TIMESTAMP</span>,
+    <span class="sql-constraint">PRIMARY KEY</span> (id),
+    <span class="sql-constraint">UNIQUE KEY</span> uq_cat_slug (slug),
+    <span class="sql-constraint">FOREIGN KEY</span> (domaine_id) <span class="sql-keyword">REFERENCES</span> <span class="sql-table">services_domaines</span>(id)
+        <span class="sql-keyword">ON DELETE CASCADE ON UPDATE CASCADE</span>
+) <span class="sql-keyword">ENGINE</span>=InnoDB <span class="sql-keyword">DEFAULT CHARSET</span>=utf8mb4;
+
+<span class="sql-comment">-- 3. INTERVENTIONS (niveau 3 : la prestation précise + prix)</span>
+<span class="sql-keyword">CREATE TABLE</span> <span class="sql-table">services_interventions</span> (
+    id                    <span class="sql-type">INT UNSIGNED</span>     <span class="sql-keyword">NOT NULL AUTO_INCREMENT</span>,
+    categorie_id          <span class="sql-type">INT UNSIGNED</span>     <span class="sql-keyword">NOT NULL</span>,
+    slug                  <span class="sql-type">VARCHAR(150)</span>     <span class="sql-keyword">NOT NULL</span>,
+    nom                   <span class="sql-type">VARCHAR(250)</span>     <span class="sql-keyword">NOT NULL</span>,
+    description           <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,
+    prix_min              <span class="sql-type">DECIMAL(8,2)</span>     <span class="sql-keyword">NULL</span>,
+    prix_max              <span class="sql-type">DECIMAL(8,2)</span>     <span class="sql-keyword">NULL</span>,
+    unite_prix            <span class="sql-type">ENUM</span>(<span class="sql-string">'TTC_forfait'</span>,<span class="sql-string">'TTC_heure'</span>,<span class="sql-string">'TTC_m2'</span>,<span class="sql-string">'sur_devis'</span>)
+                                           <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-string">'TTC_forfait'</span>,
+    duree_min_min         <span class="sql-type">SMALLINT</span>         <span class="sql-keyword">NULL</span>,    <span class="sql-comment">-- durée minimale en minutes</span>
+    duree_max_min         <span class="sql-type">SMALLINT</span>         <span class="sql-keyword">NULL</span>,    <span class="sql-comment">-- durée maximale en minutes</span>
+    type_intervention     <span class="sql-type">ENUM</span>(<span class="sql-string">'depannage'</span>,<span class="sql-string">'installation'</span>,<span class="sql-string">'entretien'</span>,<span class="sql-string">'renovation'</span>,<span class="sql-string">'diagnostic'</span>)
+                                           <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-string">'depannage'</span>,
+    urgence_disponible    <span class="sql-type">TINYINT(1)</span>       <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">1</span>,
+    garantie_jours        <span class="sql-type">SMALLINT</span>         <span class="sql-keyword">NULL</span>,    <span class="sql-comment">-- ex: 730 = 2 ans</span>
+    image_url             <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,    <span class="sql-comment">-- image illustrative step</span>
+    notes_internes        <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,
+    actif                 <span class="sql-type">TINYINT(1)</span>       <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">1</span>,
+    ordre                 <span class="sql-type">SMALLINT</span>         <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">0</span>,
+    created_at            <span class="sql-type">DATETIME</span>         <span class="sql-keyword">DEFAULT CURRENT_TIMESTAMP</span>,
+    updated_at            <span class="sql-type">DATETIME</span>         <span class="sql-keyword">DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP</span>,
+    <span class="sql-constraint">PRIMARY KEY</span> (id),
+    <span class="sql-constraint">UNIQUE KEY</span> uq_intervention_slug (slug),
+    <span class="sql-constraint">FOREIGN KEY</span> (categorie_id) <span class="sql-keyword">REFERENCES</span> <span class="sql-table">services_categories</span>(id)
+        <span class="sql-keyword">ON DELETE CASCADE ON UPDATE CASCADE</span>
+) <span class="sql-keyword">ENGINE</span>=InnoDB <span class="sql-keyword">DEFAULT CHARSET</span>=utf8mb4;
+
+<span class="sql-comment">-- 4. VARIANTES (niveau 4 : déclinaisons de la même prestation)</span>
+<span class="sql-comment">-- Ex: Serrure 1pt / 3pts / 5pts, Ballon 50L / 100L / 150L, etc.</span>
+<span class="sql-keyword">CREATE TABLE</span> <span class="sql-table">services_variantes</span> (
+    id                <span class="sql-type">INT UNSIGNED</span>     <span class="sql-keyword">NOT NULL AUTO_INCREMENT</span>,
+    intervention_id   <span class="sql-type">INT UNSIGNED</span>     <span class="sql-keyword">NOT NULL</span>,
+    nom               <span class="sql-type">VARCHAR(200)</span>     <span class="sql-keyword">NOT NULL</span>,
+    description       <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,
+    prix_min          <span class="sql-type">DECIMAL(8,2)</span>     <span class="sql-keyword">NULL</span>,
+    prix_max          <span class="sql-type">DECIMAL(8,2)</span>     <span class="sql-keyword">NULL</span>,
+    image_url         <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,
+    actif             <span class="sql-type">TINYINT(1)</span>       <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">1</span>,
+    ordre             <span class="sql-type">SMALLINT</span>         <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">0</span>,
+    <span class="sql-constraint">PRIMARY KEY</span> (id),
+    <span class="sql-constraint">FOREIGN KEY</span> (intervention_id) <span class="sql-keyword">REFERENCES</span> <span class="sql-table">services_interventions</span>(id)
+        <span class="sql-keyword">ON DELETE CASCADE ON UPDATE CASCADE</span>
+) <span class="sql-keyword">ENGINE</span>=InnoDB <span class="sql-keyword">DEFAULT CHARSET</span>=utf8mb4;
+
+<span class="sql-comment">-- 5. QUESTIONS DU QUESTIONNAIRE (étapes de diagnostic)</span>
+<span class="sql-comment">-- Chaque intervention peut avoir N questions avec image optionnelle</span>
+<span class="sql-keyword">CREATE TABLE</span> <span class="sql-table">services_questions</span> (
+    id                <span class="sql-type">INT UNSIGNED</span>     <span class="sql-keyword">NOT NULL AUTO_INCREMENT</span>,
+    intervention_id   <span class="sql-type">INT UNSIGNED</span>     <span class="sql-keyword">NOT NULL</span>,
+    libelle           <span class="sql-type">TEXT</span>             <span class="sql-keyword">NOT NULL</span>,
+    sous_libelle      <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>,
+    type_champ        <span class="sql-type">ENUM</span>(<span class="sql-string">'radio'</span>,<span class="sql-string">'checkbox'</span>,<span class="sql-string">'select'</span>,<span class="sql-string">'textarea'</span>,<span class="sql-string">'photo'</span>)
+                                       <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-string">'radio'</span>,
+    options_json      <span class="sql-type">JSON</span>             <span class="sql-keyword">NULL</span>, <span class="sql-comment">-- [{label, value, prix_ajout, image_url}]</span>
+    obligatoire       <span class="sql-type">TINYINT(1)</span>       <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">1</span>,
+    image_url         <span class="sql-type">TEXT</span>             <span class="sql-keyword">NULL</span>, <span class="sql-comment">-- illustration de l'étape</span>
+    ordre             <span class="sql-type">SMALLINT</span>         <span class="sql-keyword">NOT NULL DEFAULT</span> <span class="sql-number">0</span>,
+    <span class="sql-constraint">PRIMARY KEY</span> (id),
+    <span class="sql-constraint">FOREIGN KEY</span> (intervention_id) <span class="sql-keyword">REFERENCES</span> <span class="sql-table">services_interventions</span>(id)
+        <span class="sql-keyword">ON DELETE CASCADE ON UPDATE CASCADE</span>
+) <span class="sql-keyword">ENGINE</span>=InnoDB <span class="sql-keyword">DEFAULT CHARSET</span>=utf8mb4;</pre>
+    </div>
+
+    <!-- SQL INSERT DATA -->
+    <div class="sql-block">
+      <div class="sql-block-header">
+        <span class="sql-block-title">INSERT — Données de référence (6 domaines)</span>
+        <button class="copy-btn" onclick="copySql(this, 'sql-insert')">Copier</button>
+      </div>
+      <pre id="sql-insert"><span class="sql-comment">-- ============================================================
+-- SEED : Les 6 domaines cibles de MesDépanneurs.fr
+-- ============================================================</span>
+
+<span class="sql-keyword">INSERT INTO</span> <span class="sql-table">services_domaines</span> (id, slug, nom, icone, couleur_hex, ordre_affichage) <span class="sql-keyword">VALUES</span>
+(<span class="sql-number">1</span>,  <span class="sql-string">'plomberie'</span>,    <span class="sql-string">'Plomberie'</span>,             <span class="sql-string">'💧'</span>, <span class="sql-string">'#3b82f6'</span>, <span class="sql-number">1</span>),
+(<span class="sql-number">2</span>,  <span class="sql-string">'electricite'</span>,  <span class="sql-string">'Électricité'</span>,           <span class="sql-string">'⚡'</span>, <span class="sql-string">'#f59e0b'</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">3</span>,  <span class="sql-string">'serrurerie'</span>,   <span class="sql-string">'Serrurerie'</span>,            <span class="sql-string">'🔑'</span>, <span class="sql-string">'#a855f7'</span>, <span class="sql-number">3</span>),
+(<span class="sql-number">4</span>,  <span class="sql-string">'vitrerie'</span>,     <span class="sql-string">'Vitrerie'</span>,              <span class="sql-string">'🪟'</span>, <span class="sql-string">'#06b6d4'</span>, <span class="sql-number">4</span>),
+(<span class="sql-number">5</span>,  <span class="sql-string">'chauffage'</span>,    <span class="sql-string">'Chauffage'</span>,             <span class="sql-string">'🔥'</span>, <span class="sql-string">'#ef4444'</span>, <span class="sql-number">5</span>),
+(<span class="sql-number">6</span>,  <span class="sql-string">'clim-pac'</span>,     <span class="sql-string">'Clim & Pompe à chaleur'</span>,<span class="sql-string">'❄️'</span>, <span class="sql-string">'#22c55e'</span>, <span class="sql-number">6</span>);
+
+<span class="sql-comment">-- CATÉGORIES — PLOMBERIE (domaine_id=1)</span>
+<span class="sql-keyword">INSERT INTO</span> <span class="sql-table">services_categories</span> (id, domaine_id, slug, nom, ordre) <span class="sql-keyword">VALUES</span>
+(<span class="sql-number">101</span>, <span class="sql-number">1</span>, <span class="sql-string">'plomberie-fuites'</span>,       <span class="sql-string">'Fuites d\'eau'</span>,              <span class="sql-number">1</span>),
+(<span class="sql-number">102</span>, <span class="sql-number">1</span>, <span class="sql-string">'plomberie-debouchage'</span>,   <span class="sql-string">'Débouchage'</span>,                <span class="sql-number">2</span>),
+(<span class="sql-number">103</span>, <span class="sql-number">1</span>, <span class="sql-string">'plomberie-wc'</span>,          <span class="sql-string">'WC & Sanitaires'</span>,           <span class="sql-number">3</span>),
+(<span class="sql-number">104</span>, <span class="sql-number">1</span>, <span class="sql-string">'plomberie-ballon'</span>,      <span class="sql-string">'Ballon d\'eau chaude'</span>,       <span class="sql-number">4</span>),
+(<span class="sql-number">105</span>, <span class="sql-number">1</span>, <span class="sql-string">'plomberie-robinetterie'</span>,'Robinetterie',               <span class="sql-number">5</span>),
+(<span class="sql-number">106</span>, <span class="sql-number">1</span>, <span class="sql-string">'plomberie-installation'</span>,'Installation & rénovation',  <span class="sql-number">6</span>);
+
+<span class="sql-comment">-- CATÉGORIES — ÉLECTRICITÉ (domaine_id=2)</span>
+<span class="sql-keyword">INSERT INTO</span> <span class="sql-table">services_categories</span> (id, domaine_id, slug, nom, ordre) <span class="sql-keyword">VALUES</span>
+(<span class="sql-number">201</span>, <span class="sql-number">2</span>, <span class="sql-string">'elec-tableau'</span>,     <span class="sql-string">'Tableau électrique'</span>,    <span class="sql-number">1</span>),
+(<span class="sql-number">202</span>, <span class="sql-number">2</span>, <span class="sql-string">'elec-prises'</span>,      <span class="sql-string">'Prises & interrupteurs'</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">203</span>, <span class="sql-number">2</span>, <span class="sql-string">'elec-eclairage'</span>,   <span class="sql-string">'Éclairage'</span>,              <span class="sql-number">3</span>),
+(<span class="sql-number">204</span>, <span class="sql-number">2</span>, <span class="sql-string">'elec-mise-normes'</span>, <span class="sql-string">'Mise aux normes'</span>,        <span class="sql-number">4</span>),
+(<span class="sql-number">205</span>, <span class="sql-number">2</span>, <span class="sql-string">'elec-installation'</span>,'Installation'</span>,          <span class="sql-number">5</span>);
+
+<span class="sql-comment">-- CATÉGORIES — SERRURERIE (domaine_id=3)</span>
+<span class="sql-keyword">INSERT INTO</span> <span class="sql-table">services_categories</span> (id, domaine_id, slug, nom, ordre) <span class="sql-keyword">VALUES</span>
+(<span class="sql-number">301</span>, <span class="sql-number">3</span>, <span class="sql-string">'serr-ouverture'</span>,  <span class="sql-string">'Ouverture de porte'</span>,    <span class="sql-number">1</span>),
+(<span class="sql-number">302</span>, <span class="sql-number">3</span>, <span class="sql-string">'serr-serrure'</span>,    <span class="sql-string">'Serrures & cylindres'</span>,  <span class="sql-number">2</span>),
+(<span class="sql-number">303</span>, <span class="sql-number">3</span>, <span class="sql-string">'serr-blindage'</span>,   <span class="sql-string">'Blindage & sécurité'</span>,  <span class="sql-number">3</span>),
+(<span class="sql-number">304</span>, <span class="sql-number">3</span>, <span class="sql-string">'serr-divers'</span>,     <span class="sql-string">'Divers (boîte aux lettres, portail...)'</span>, <span class="sql-number">4</span>);
+
+<span class="sql-comment">-- CATÉGORIES — VITRERIE (domaine_id=4)</span>
+<span class="sql-keyword">INSERT INTO</span> <span class="sql-table">services_categories</span> (id, domaine_id, slug, nom, ordre) <span class="sql-keyword">VALUES</span>
+(<span class="sql-number">401</span>, <span class="sql-number">4</span>, <span class="sql-string">'vitr-vitrage'</span>,     <span class="sql-string">'Remplacement de vitrage'</span>,  <span class="sql-number">1</span>),
+(<span class="sql-number">402</span>, <span class="sql-number">4</span>, <span class="sql-string">'vitr-fenetres'</span>,    <span class="sql-string">'Fenêtres & portes-fenêtres'</span>,<span class="sql-number">2</span>),
+(<span class="sql-number">403</span>, <span class="sql-number">4</span>, <span class="sql-string">'vitr-mecanique'</span>,   <span class="sql-string">'Mécanismes & crémones'</span>,   <span class="sql-number">3</span>),
+(<span class="sql-number">404</span>, <span class="sql-number">4</span>, <span class="sql-string">'vitr-etancheite'</span>,  <span class="sql-string">'Étanchéité & joints'</span>,     <span class="sql-number">4</span>);
+
+<span class="sql-comment">-- CATÉGORIES — CHAUFFAGE (domaine_id=5)</span>
+<span class="sql-keyword">INSERT INTO</span> <span class="sql-table">services_categories</span> (id, domaine_id, slug, nom, ordre) <span class="sql-keyword">VALUES</span>
+(<span class="sql-number">501</span>, <span class="sql-number">5</span>, <span class="sql-string">'chauf-chaudiere-gaz'</span>,  <span class="sql-string">'Chaudière à gaz'</span>,      <span class="sql-number">1</span>),
+(<span class="sql-number">502</span>, <span class="sql-number">5</span>, <span class="sql-string">'chauf-chaudiere-elec'</span>, <span class="sql-string">'Chaudière électrique'</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">503</span>, <span class="sql-number">5</span>, <span class="sql-string">'chauf-chaudiere-fioul'</span>,<span class="sql-string">'Chaudière fioul'</span>,      <span class="sql-number">3</span>),
+(<span class="sql-number">504</span>, <span class="sql-number">5</span>, <span class="sql-string">'chauf-radiateurs'</span>,    <span class="sql-string">'Radiateurs'</span>,           <span class="sql-number">4</span>),
+(<span class="sql-number">505</span>, <span class="sql-number">5</span>, <span class="sql-string">'chauf-ballon-chaud'</span>,  <span class="sql-string">'Chauffe-eau & ballons'</span>, <span class="sql-number">5</span>);
+
+<span class="sql-comment">-- CATÉGORIES — CLIM & PAC (domaine_id=6)</span>
+<span class="sql-keyword">INSERT INTO</span> <span class="sql-table">services_categories</span> (id, domaine_id, slug, nom, ordre) <span class="sql-keyword">VALUES</span>
+(<span class="sql-number">601</span>, <span class="sql-number">6</span>, <span class="sql-string">'clim-installation'</span>,  <span class="sql-string">'Installation climatisation'</span>,    <span class="sql-number">1</span>),
+(<span class="sql-number">602</span>, <span class="sql-number">6</span>, <span class="sql-string">'clim-entretien'</span>,     <span class="sql-string">'Entretien & maintenance'</span>,       <span class="sql-number">2</span>),
+(<span class="sql-number">603</span>, <span class="sql-number">6</span>, <span class="sql-string">'clim-depannage'</span>,     <span class="sql-string">'Dépannage climatisation'</span>,       <span class="sql-number">3</span>),
+(<span class="sql-number">604</span>, <span class="sql-number">6</span>, <span class="sql-string">'pac-installation'</span>,   <span class="sql-string">'Installation pompe à chaleur'</span>,  <span class="sql-number">4</span>),
+(<span class="sql-number">605</span>, <span class="sql-number">6</span>, <span class="sql-string">'pac-entretien'</span>,      <span class="sql-string">'Entretien pompe à chaleur'</span>,     <span class="sql-number">5</span>),
+(<span class="sql-number">606</span>, <span class="sql-number">6</span>, <span class="sql-string">'pac-depannage'</span>,      <span class="sql-string">'Dépannage pompe à chaleur'</span>,     <span class="sql-number">6</span>);
+
+<span class="sql-comment">-- INTERVENTIONS — PLOMBERIE (exemple exhaustif, cat 101-106)</span>
+<span class="sql-keyword">INSERT INTO</span> <span class="sql-table">services_interventions</span>
+  (id, categorie_id, slug, nom, prix_min, prix_max, unite_prix, duree_min_min, duree_max_min, type_intervention, urgence_disponible, garantie_jours)
+<span class="sql-keyword">VALUES</span>
+<span class="sql-comment">-- Fuites</span>
+(<span class="sql-number">1001</span>, <span class="sql-number">101</span>, <span class="sql-string">'recherche-fuite-simple'</span>,           <span class="sql-string">'Recherche de fuite simple'</span>,                   <span class="sql-number">100</span>, <span class="sql-number">220</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">120</span>, <span class="sql-string">'diagnostic'</span>,   <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">1002</span>, <span class="sql-number">101</span>, <span class="sql-string">'fuite-canalisation-apparente'</span>,     <span class="sql-string">'Réparation fuite canalisation apparente'</span>,     <span class="sql-number">100</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">1003</span>, <span class="sql-number">101</span>, <span class="sql-string">'fuite-canalisation-encastree'</span>,     <span class="sql-string">'Recherche & réparation fuite encastrée'</span>,      <span class="sql-number">500</span>, <span class="sql-number">1000</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">120</span>,<span class="sql-number">480</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">1004</span>, <span class="sql-number">101</span>, <span class="sql-string">'fuite-robinet-joint'</span>,             <span class="sql-string">'Réparation fuite robinet / joint'</span>,            <span class="sql-number">80</span>,  <span class="sql-number">150</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">60</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">1005</span>, <span class="sql-number">101</span>, <span class="sql-string">'fuite-wc'</span>,                        <span class="sql-string">'Réparation fuite WC (mécanisme chasse)'</span>,      <span class="sql-number">80</span>,  <span class="sql-number">150</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">60</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">1006</span>, <span class="sql-number">101</span>, <span class="sql-string">'degat-des-eaux'</span>,                  <span class="sql-string">'Intervention dégât des eaux (urgence)'</span>,       <span class="sql-number">150</span>, <span class="sql-number">450</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">240</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+<span class="sql-comment">-- Débouchage</span>
+(<span class="sql-number">1007</span>, <span class="sql-number">102</span>, <span class="sql-string">'debouchage-wc-manuel'</span>,            <span class="sql-string">'Débouchage WC (furet/ventouse manuel)'</span>,        <span class="sql-number">100</span>, <span class="sql-number">180</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">1008</span>, <span class="sql-number">102</span>, <span class="sql-string">'debouchage-wc-sanibroyeur'</span>,       <span class="sql-string">'Débouchage WC avec sanibroyeur'</span>,              <span class="sql-number">100</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">1009</span>, <span class="sql-number">102</span>, <span class="sql-string">'debouchage-lavabo-evier'</span>,         <span class="sql-string">'Débouchage lavabo / évier'</span>,                   <span class="sql-number">100</span>, <span class="sql-number">180</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">90</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">1010</span>, <span class="sql-number">102</span>, <span class="sql-string">'debouchage-douche-baignoire'</span>,     <span class="sql-string">'Débouchage douche / baignoire'</span>,               <span class="sql-number">100</span>, <span class="sql-number">180</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">90</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">1011</span>, <span class="sql-number">102</span>, <span class="sql-string">'debouchage-colonne-immeuble'</span>,     <span class="sql-string">'Débouchage colonne générale d\'immeuble'</span>,      <span class="sql-number">700</span>, <span class="sql-number">900</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">120</span>,<span class="sql-number">240</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">1012</span>, <span class="sql-number">102</span>, <span class="sql-string">'debouchage-haute-pression'</span>,       <span class="sql-string">'Débouchage haute pression (camion hydrocureur)'</span>,<span class="sql-number">300</span>, <span class="sql-number">900</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">240</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">2</span>),
+<span class="sql-comment">-- Ballon eau chaude</span>
+(<span class="sql-number">1020</span>, <span class="sql-number">104</span>, <span class="sql-string">'fuite-ballon-reparation'</span>,         <span class="sql-string">'Réparation fuite ballon eau chaude'</span>,          <span class="sql-number">100</span>, <span class="sql-number">220</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">1021</span>, <span class="sql-number">104</span>, <span class="sql-string">'reparation-ballon-electrique'</span>,    <span class="sql-string">'Réparation ballon eau chaude électrique'</span>,     <span class="sql-number">100</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">1022</span>, <span class="sql-number">104</span>, <span class="sql-string">'pose-ballon-50l'</span>,                 <span class="sql-string">'Fourniture & pose ballon 50L'</span>,                <span class="sql-number">350</span>, <span class="sql-number">600</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">120</span>,<span class="sql-number">240</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">1023</span>, <span class="sql-number">104</span>, <span class="sql-string">'pose-ballon-100l'</span>,                <span class="sql-string">'Fourniture & pose ballon 100L'</span>,               <span class="sql-number">400</span>, <span class="sql-number">700</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">120</span>,<span class="sql-number">240</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">1024</span>, <span class="sql-number">104</span>, <span class="sql-string">'pose-ballon-200l'</span>,                <span class="sql-string">'Fourniture & pose ballon 200L+'</span>,              <span class="sql-number">600</span>, <span class="sql-number">1000</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">180</span>,<span class="sql-number">360</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+<span class="sql-comment">-- Robinetterie</span>
+(<span class="sql-number">1030</span>, <span class="sql-number">105</span>, <span class="sql-string">'changement-robinet'</span>,             <span class="sql-string">'Changement de robinet'</span>,                       <span class="sql-number">80</span>,  <span class="sql-number">150</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">90</span>,  <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">1031</span>, <span class="sql-number">105</span>, <span class="sql-string">'pose-mitigeur-thermostatique'</span>,   <span class="sql-string">'Pose mitigeur thermostatique'</span>,                <span class="sql-number">100</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">45</span>, <span class="sql-number">90</span>,  <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+
+<span class="sql-comment">-- INTERVENTIONS — ÉLECTRICITÉ</span>
+(<span class="sql-number">2001</span>, <span class="sql-number">201</span>, <span class="sql-string">'panne-tableau-electrique'</span>,       <span class="sql-string">'Réparation panne tableau électrique'</span>,         <span class="sql-number">150</span>, <span class="sql-number">250</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">180</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">2002</span>, <span class="sql-number">201</span>, <span class="sql-string">'remplacement-tableau-elec'</span>,      <span class="sql-string">'Remplacement tableau électrique complet'</span>,     <span class="sql-number">800</span>, <span class="sql-number">2500</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">240</span>,<span class="sql-number">480</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">2003</span>, <span class="sql-number">201</span>, <span class="sql-string">'disjoncteur-differentiel'</span>,      <span class="sql-string">'Remplacement disjoncteur différentiel'</span>,       <span class="sql-number">150</span>, <span class="sql-number">300</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">2010</span>, <span class="sql-number">202</span>, <span class="sql-string">'panne-plusieurs-prises'</span>,         <span class="sql-string">'Réparation panne plusieurs prises'</span>,           <span class="sql-number">150</span>, <span class="sql-number">300</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">2011</span>, <span class="sql-number">202</span>, <span class="sql-string">'pose-prise-electrique'</span>,          <span class="sql-string">'Pose prise électrique'</span>,                       <span class="sql-number">80</span>,  <span class="sql-number">150</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">60</span>,  <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">2012</span>, <span class="sql-number">202</span>, <span class="sql-string">'pose-prise-arrachee'</span>,            <span class="sql-string">'Remplacement prise arrachée'</span>,                 <span class="sql-number">150</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">60</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">2020</span>, <span class="sql-number">203</span>, <span class="sql-string">'probleme-eclairage'</span>,             <span class="sql-string">'Dépannage éclairage (circuit)'</span>,               <span class="sql-number">150</span>, <span class="sql-number">250</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">45</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">2030</span>, <span class="sql-number">204</span>, <span class="sql-string">'diagnostic-installation'</span>,        <span class="sql-string">'Diagnostic installation électrique'</span>,          <span class="sql-number">150</span>, <span class="sql-number">300</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">120</span>, <span class="sql-string">'diagnostic'</span>,   <span class="sql-number">1</span>, <span class="sql-number">0</span>),
+(<span class="sql-number">2031</span>, <span class="sql-number">205</span>, <span class="sql-string">'installation-borne-recharge'</span>,    <span class="sql-string">'Installation borne de recharge VE'</span>,           <span class="sql-number">800</span>, <span class="sql-number">2000</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">180</span>,<span class="sql-number">360</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+
+<span class="sql-comment">-- INTERVENTIONS — SERRURERIE</span>
+(<span class="sql-number">3001</span>, <span class="sql-number">301</span>, <span class="sql-string">'ouverture-porte-claquee'</span>,        <span class="sql-string">'Ouverture porte claquée (non verrouillée)'</span>,   <span class="sql-number">130</span>, <span class="sql-number">180</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">15</span>, <span class="sql-number">60</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">0</span>),
+(<span class="sql-number">3002</span>, <span class="sql-number">301</span>, <span class="sql-string">'ouverture-porte-verrouillee'</span>,    <span class="sql-string">'Ouverture porte verrouillée (sans clé)'</span>,      <span class="sql-number">150</span>, <span class="sql-number">250</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">90</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">0</span>),
+(<span class="sql-number">3003</span>, <span class="sql-number">301</span>, <span class="sql-string">'ouverture-porte-blindee-claquee'</span>, <span class="sql-string">'Ouverture porte blindée claquée'</span>,             <span class="sql-number">150</span>, <span class="sql-number">250</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">90</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">0</span>),
+(<span class="sql-number">3004</span>, <span class="sql-number">301</span>, <span class="sql-string">'ouverture-porte-blindee-verrou'</span>, <span class="sql-string">'Ouverture porte blindée verrouillée'</span>,         <span class="sql-number">200</span>, <span class="sql-number">400</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">45</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">0</span>),
+(<span class="sql-number">3010</span>, <span class="sql-number">302</span>, <span class="sql-string">'changement-cylindre'</span>,            <span class="sql-string">'Changement de cylindre'</span>,                      <span class="sql-number">120</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">60</span>,  <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">3011</span>, <span class="sql-number">302</span>, <span class="sql-string">'pose-serrure-1-point'</span>,           <span class="sql-string">'Fourniture & pose serrure 1 point'</span>,           <span class="sql-number">250</span>, <span class="sql-number">450</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">120</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">3012</span>, <span class="sql-number">302</span>, <span class="sql-string">'pose-serrure-3-points'</span>,          <span class="sql-string">'Fourniture & pose serrure 3 points'</span>,          <span class="sql-number">400</span>, <span class="sql-number">800</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">180</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">3013</span>, <span class="sql-number">302</span>, <span class="sql-string">'pose-serrure-5-points-plus'</span>,     <span class="sql-string">'Fourniture & pose serrure 5 points ou +'</span>,     <span class="sql-number">600</span>, <span class="sql-number">1000</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">90</span>, <span class="sql-number">240</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">3014</span>, <span class="sql-number">302</span>, <span class="sql-string">'pose-verrou-applique'</span>,           <span class="sql-string">'Pose verrou en applique'</span>,                     <span class="sql-number">130</span>, <span class="sql-number">180</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">60</span>,  <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">3020</span>, <span class="sql-number">303</span>, <span class="sql-string">'blindage-porte-existante'</span>,       <span class="sql-string">'Blindage sur porte existante (tôle + serrure)'</span>,<span class="sql-number">500</span>, <span class="sql-number">900</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">180</span>,<span class="sql-number">360</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">3021</span>, <span class="sql-number">303</span>, <span class="sql-string">'porte-blindee-complete'</span>,         <span class="sql-string">'Installation porte blindée certifiée A2P'</span>,    <span class="sql-number">1000</span>,<span class="sql-number">1800</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">240</span>,<span class="sql-number">480</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">3030</span>, <span class="sql-number">304</span>, <span class="sql-string">'serrure-boite-lettres'</span>,          <span class="sql-string">'Remplacement serrure boîte aux lettres'</span>,      <span class="sql-number">70</span>,  <span class="sql-number">150</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">20</span>, <span class="sql-number">45</span>,  <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+
+<span class="sql-comment">-- INTERVENTIONS — VITRERIE</span>
+(<span class="sql-number">4001</span>, <span class="sql-number">401</span>, <span class="sql-string">'remplacement-vitre-simple'</span>,      <span class="sql-string">'Remplacement vitre simple'</span>,                   <span class="sql-number">100</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_m2'</span>,     <span class="sql-number">60</span>, <span class="sql-number">180</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">4002</span>, <span class="sql-number">401</span>, <span class="sql-string">'remplacement-double-vitrage'</span>,    <span class="sql-string">'Remplacement double vitrage'</span>,                 <span class="sql-number">150</span>, <span class="sql-number">280</span>, <span class="sql-string">'TTC_m2'</span>,     <span class="sql-number">90</span>, <span class="sql-number">240</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">1</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">4003</span>, <span class="sql-number">401</span>, <span class="sql-string">'remplacement-triple-vitrage'</span>,   <span class="sql-string">'Remplacement triple vitrage'</span>,                 <span class="sql-number">200</span>, <span class="sql-number">400</span>, <span class="sql-string">'TTC_m2'</span>,     <span class="sql-number">90</span>, <span class="sql-number">240</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">4010</span>, <span class="sql-number">402</span>, <span class="sql-string">'remplacement-fenetre-simple'</span>,    <span class="sql-string">'Remplacement fenêtre simple vitrage'</span>,         <span class="sql-number">300</span>, <span class="sql-number">500</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">120</span>,<span class="sql-number">240</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">4011</span>, <span class="sql-number">402</span>, <span class="sql-string">'remplacement-fenetre-double'</span>,    <span class="sql-string">'Remplacement fenêtre double vitrage'</span>,         <span class="sql-number">500</span>, <span class="sql-number">800</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">120</span>,<span class="sql-number">240</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">4020</span>, <span class="sql-number">403</span>, <span class="sql-string">'remplacement-cremone'</span>,          <span class="sql-string">'Remplacement crémone de fenêtre'</span>,             <span class="sql-number">80</span>,  <span class="sql-number">150</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">60</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">4030</span>, <span class="sql-number">404</span>, <span class="sql-string">'remplacement-joints-fenetre'</span>,   <span class="sql-string">'Remplacement joints d\'étanchéité fenêtre'</span>,   <span class="sql-number">50</span>,  <span class="sql-number">150</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">30</span>, <span class="sql-number">60</span>,  <span class="sql-string">'entretien'</span>,   <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">4031</span>, <span class="sql-number">404</span>, <span class="sql-string">'calfeutrage-porte-fenetre'</span>,     <span class="sql-string">'Reprise calfeutrage porte-fenêtre'</span>,           <span class="sql-number">100</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">45</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+
+<span class="sql-comment">-- INTERVENTIONS — CHAUFFAGE</span>
+(<span class="sql-number">5001</span>, <span class="sql-number">501</span>, <span class="sql-string">'entretien-chaudiere-gaz'</span>,        <span class="sql-string">'Entretien annuel chaudière gaz (obligatoire)'</span>, <span class="sql-number">150</span>, <span class="sql-number">180</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">45</span>, <span class="sql-number">90</span>,  <span class="sql-string">'entretien'</span>,   <span class="sql-number">0</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">5002</span>, <span class="sql-number">501</span>, <span class="sql-string">'contrat-entretien-chaudiere'</span>,    <span class="sql-string">'Contrat entretien chaudière (annuel)'</span>,         <span class="sql-number">100</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">0</span>,  <span class="sql-number">0</span>,   <span class="sql-string">'entretien'</span>,   <span class="sql-number">0</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">5003</span>, <span class="sql-number">501</span>, <span class="sql-string">'reparation-chaudiere-gaz'</span>,       <span class="sql-string">'Réparation chaudière gaz (marque diverse)'</span>,   <span class="sql-number">150</span>, <span class="sql-number">500</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">240</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">5004</span>, <span class="sql-number">501</span>, <span class="sql-string">'remplacement-chaudiere-gaz'</span>,     <span class="sql-string">'Remplacement chaudière gaz (fourniture+pose)'</span>, <span class="sql-number">2000</span>,<span class="sql-number">5000</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">240</span>,<span class="sql-number">480</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">5010</span>, <span class="sql-number">504</span>, <span class="sql-string">'purge-radiateur'</span>,                <span class="sql-string">'Purge de radiateur'</span>,                          <span class="sql-number">80</span>,  <span class="sql-number">150</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">20</span>, <span class="sql-number">45</span>,  <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">5011</span>, <span class="sql-number">504</span>, <span class="sql-string">'reparation-circuit-radiateurs'</span>,  <span class="sql-string">'Réparation circuit de radiateurs'</span>,            <span class="sql-number">150</span>, <span class="sql-number">400</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">180</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">5012</span>, <span class="sql-number">504</span>, <span class="sql-string">'desembouage-installation'</span>,       <span class="sql-string">'Désembouage installation de chauffage'</span>,       <span class="sql-number">300</span>, <span class="sql-number">600</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">120</span>,<span class="sql-number">240</span>, <span class="sql-string">'entretien'</span>,   <span class="sql-number">0</span>, <span class="sql-number">365</span>),
+
+<span class="sql-comment">-- INTERVENTIONS — CLIM & PAC</span>
+(<span class="sql-number">6001</span>, <span class="sql-number">601</span>, <span class="sql-string">'installation-clim-monosplit'</span>,    <span class="sql-string">'Installation climatisation monosplit'</span>,        <span class="sql-number">1200</span>,<span class="sql-number">2500</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">240</span>,<span class="sql-number">480</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">6002</span>, <span class="sql-number">601</span>, <span class="sql-string">'installation-clim-multisplit-2'</span>, <span class="sql-string">'Installation multisplit 2 unités'</span>,            <span class="sql-number">2000</span>,<span class="sql-number">3500</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">360</span>,<span class="sql-number">600</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">6003</span>, <span class="sql-number">601</span>, <span class="sql-string">'installation-clim-multisplit-3'</span>, <span class="sql-string">'Installation multisplit 3 unités'</span>,            <span class="sql-number">2800</span>,<span class="sql-number">5000</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">480</span>,<span class="sql-number">720</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">6010</span>, <span class="sql-number">602</span>, <span class="sql-string">'entretien-clim-monosplit'</span>,       <span class="sql-string">'Entretien annuel climatisation monosplit'</span>,    <span class="sql-number">150</span>, <span class="sql-number">200</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">90</span>,  <span class="sql-string">'entretien'</span>,   <span class="sql-number">0</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">6011</span>, <span class="sql-number">602</span>, <span class="sql-string">'entretien-clim-bisplit'</span>,         <span class="sql-string">'Entretien climatisation bisplit (2 unités)'</span>,  <span class="sql-number">200</span>, <span class="sql-number">300</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">90</span>, <span class="sql-number">150</span>, <span class="sql-string">'entretien'</span>,   <span class="sql-number">0</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">6012</span>, <span class="sql-number">602</span>, <span class="sql-string">'entretien-clim-trisplit'</span>,        <span class="sql-string">'Entretien climatisation trisplit (3 unités)'</span>, <span class="sql-number">280</span>, <span class="sql-number">400</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">120</span>,<span class="sql-number">180</span>, <span class="sql-string">'entretien'</span>,   <span class="sql-number">0</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">6020</span>, <span class="sql-number">603</span>, <span class="sql-string">'depannage-clim-plus-froid'</span>,      <span class="sql-string">'Dépannage clim ne refroidit plus'</span>,            <span class="sql-number">200</span>, <span class="sql-number">400</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">180</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">6021</span>, <span class="sql-number">603</span>, <span class="sql-string">'recharge-gaz-clim'</span>,              <span class="sql-string">'Recharge gaz climatisation (fréon)'</span>,          <span class="sql-number">150</span>, <span class="sql-number">400</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">120</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">6030</span>, <span class="sql-number">604</span>, <span class="sql-string">'installation-pac-air-air'</span>,       <span class="sql-string">'Installation PAC air/air'</span>,                    <span class="sql-number">3000</span>,<span class="sql-number">8000</span>,<span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">480</span>,<span class="sql-number">720</span>, <span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">6031</span>, <span class="sql-number">604</span>, <span class="sql-string">'installation-pac-air-eau'</span>,       <span class="sql-string">'Installation PAC air/eau'</span>,                    <span class="sql-number">7000</span>,<span class="sql-number">15000</span>,<span class="sql-string">'TTC_forfait'</span>,<span class="sql-number">480</span>,<span class="sql-number">1440</span>,<span class="sql-string">'installation'</span>, <span class="sql-number">0</span>, <span class="sql-number">730</span>),
+(<span class="sql-number">6040</span>, <span class="sql-number">605</span>, <span class="sql-string">'entretien-pac'</span>,                  <span class="sql-string">'Entretien pompe à chaleur'</span>,                   <span class="sql-number">150</span>, <span class="sql-number">250</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">120</span>, <span class="sql-string">'entretien'</span>,   <span class="sql-number">0</span>, <span class="sql-number">365</span>),
+(<span class="sql-number">6050</span>, <span class="sql-number">606</span>, <span class="sql-string">'depannage-pac'</span>,                  <span class="sql-string">'Dépannage pompe à chaleur'</span>,                   <span class="sql-number">200</span>, <span class="sql-number">600</span>, <span class="sql-string">'TTC_forfait'</span>, <span class="sql-number">60</span>, <span class="sql-number">240</span>, <span class="sql-string">'depannage'</span>,    <span class="sql-number">1</span>, <span class="sql-number">365</span>);
+
+<span class="sql-comment">-- VARIANTES (exemples)</span>
+<span class="sql-keyword">INSERT INTO</span> <span class="sql-table">services_variantes</span> (intervention_id, nom, prix_min, prix_max, ordre) <span class="sql-keyword">VALUES</span>
+<span class="sql-comment">-- Ballon eau chaude variantes</span>
+(<span class="sql-number">1022</span>, <span class="sql-string">'Ballon électrique 50L'</span>,          <span class="sql-number">350</span>, <span class="sql-number">500</span>, <span class="sql-number">1</span>),
+(<span class="sql-number">1022</span>, <span class="sql-string">'Ballon électrique 80L'</span>,          <span class="sql-number">400</span>, <span class="sql-number">600</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">1022</span>, <span class="sql-string">'Ballon thermodynamique'</span>,         <span class="sql-number">800</span>, <span class="sql-number">1500</span>,<span class="sql-number">3</span>),
+(<span class="sql-number">1022</span>, <span class="sql-string">'Chauffe-eau gaz'</span>,               <span class="sql-number">500</span>, <span class="sql-number">1000</span>,<span class="sql-number">4</span>),
+<span class="sql-comment">-- Serrure 3 points variantes</span>
+(<span class="sql-number">3012</span>, <span class="sql-string">'Serrure 3 pts standard'</span>,         <span class="sql-number">400</span>, <span class="sql-number">600</span>, <span class="sql-number">1</span>),
+(<span class="sql-number">3012</span>, <span class="sql-string">'Serrure 3 pts haute sécurité A2P'</span>,<span class="sql-number">600</span>, <span class="sql-number">800</span>, <span class="sql-number">2</span>),
+<span class="sql-comment">-- Fenêtre double vitrage matériaux</span>
+(<span class="sql-number">4011</span>, <span class="sql-string">'Fenêtre PVC double vitrage'</span>,      <span class="sql-number">350</span>, <span class="sql-number">600</span>, <span class="sql-number">1</span>),
+(<span class="sql-number">4011</span>, <span class="sql-string">'Fenêtre aluminium double vitrage'</span>, <span class="sql-number">500</span>, <span class="sql-number">800</span>, <span class="sql-number">2</span>),
+(<span class="sql-number">4011</span>, <span class="sql-string">'Fenêtre bois double vitrage'</span>,     <span class="sql-number">500</span>, <span class="sql-number">900</span>, <span class="sql-number">3</span>),
+<span class="sql-comment">-- PAC variantes</span>
+(<span class="sql-number">6030</span>, <span class="sql-string">'PAC air/air réversible monosplit'</span>,<span class="sql-number">2500</span>,<span class="sql-number">5000</span>,<span class="sql-number">1</span>),
+(<span class="sql-number">6030</span>, <span class="sql-string">'PAC air/air réversible multisplit'</span>,<span class="sql-number">4000</span>,<span class="sql-number">8000</span>,<span class="sql-number">2</span>),
+(<span class="sql-number">6031</span>, <span class="sql-string">'PAC air/eau (radiateurs existants)'</span>,<span class="sql-number">7000</span>,<span class="sql-number">12000</span>,<span class="sql-number">1</span>),
+(<span class="sql-number">6031</span>, <span class="sql-string">'PAC air/eau (plancher chauffant)'</span>, <span class="sql-number">10000</span>,<span class="sql-number">15000</span>,<span class="sql-number">2</span>);
+
+<span class="sql-comment">-- VUE PRATIQUE : Résumé prix par domaine</span>
+<span class="sql-keyword">CREATE VIEW</span> <span class="sql-table">v_services_avec_prix</span> <span class="sql-keyword">AS</span>
+<span class="sql-keyword">SELECT</span>
+    d.nom                              <span class="sql-keyword">AS</span> domaine,
+    c.nom                              <span class="sql-keyword">AS</span> categorie,
+    i.nom                              <span class="sql-keyword">AS</span> intervention,
+    i.type_intervention,
+    i.prix_min,
+    i.prix_max,
+    i.unite_prix,
+    i.duree_min_min,
+    i.duree_max_min,
+    i.urgence_disponible,
+    i.garantie_jours,
+    i.image_url
+<span class="sql-keyword">FROM</span>   <span class="sql-table">services_interventions</span> i
+<span class="sql-keyword">JOIN</span>   <span class="sql-table">services_categories</span>    c <span class="sql-keyword">ON</span> i.categorie_id = c.id
+<span class="sql-keyword">JOIN</span>   <span class="sql-table">services_domaines</span>      d <span class="sql-keyword">ON</span> c.domaine_id   = d.id
+<span class="sql-keyword">WHERE</span>  i.actif = <span class="sql-number">1</span> <span class="sql-keyword">AND</span> c.actif = <span class="sql-number">1</span> <span class="sql-keyword">AND</span> d.actif = <span class="sql-number">1</span>
+<span class="sql-keyword">ORDER BY</span> d.ordre_affichage, c.ordre, i.ordre;</pre>
+    </div>
+
+  </div>
+</div>
+
+</main>
+</div>
+
+<div id="v2-app">
+<header>
+  <div class="logo">Mes<span>Dépanneurs</span>.fr — Services</div>
+  <div class="tabs">
+    <button class="tab active" onclick="v2_switchTab('parcours')">🧭 Parcours interactif</button>
+    <button class="tab" onclick="v2_switchTab('sql')">🗄️ Schéma SQL</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════ -->
+<!--         ONGLET 1 — PARCOURS            -->
+<!-- ═══════════════════════════════════════ -->
+<div id="panel-parcours" class="panel active">
+<div class="simulator">
+  <div class="sim-header">
+    <h1>Parcours de diagnostic</h1>
+    <p>Pilotez le questionnaire étape par étape — chaque réponse affine le besoin jusqu'au résultat tarifé.</p>
+  </div>
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <div id="step-container"></div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--           ONGLET 2 — SQL               -->
+<!-- ═══════════════════════════════════════ -->
+<div id="panel-sql" class="panel">
+<div class="sql-view">
+
+  <div class="sql-section">
+    <div class="sql-section-title">📊 Flux de navigation</div>
+    <div class="sql-section-desc">Chaque étape est une question rattachée à un nœud de l'arbre. La réponse détermine le nœud suivant.</div>
+    <div class="flow">
+      <div class="flow-node">
+        <div class="flow-node-title">Étape 0</div>
+        <div class="flow-node-name">Domaine</div>
+        <div class="flow-node-table">domaines</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-title">Étape 1</div>
+        <div class="flow-node-name">Question</div>
+        <div class="flow-node-table">questions</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-title">Étape 2</div>
+        <div class="flow-node-name">Réponse → Nœud</div>
+        <div class="flow-node-table">reponses</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-title">Étape N</div>
+        <div class="flow-node-name">Intervention</div>
+        <div class="flow-node-table">interventions</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">
+        <div class="flow-node-title">Résultat</div>
+        <div class="flow-node-name">Prix + Variantes</div>
+        <div class="flow-node-table">variantes</div>
+      </div>
+    </div>
+
+    <div class="relation-note">
+      domaines <span>1→N</span> questions &nbsp;|&nbsp; questions <span>1→N</span> reponses &nbsp;|&nbsp; reponses <span>N→1</span> questions (next) ou interventions (terminal) &nbsp;|&nbsp; interventions <span>1→N</span> variantes
+    </div>
+  </div>
+
+  <div class="sql-section">
+    <div class="sql-section-title">🗂️ ERD — Tables</div>
+    <div class="erd">
+      <div class="erd-table">
+        <div class="erd-table-name">domaines</div>
+        <div class="erd-field pk"><span>id</span><span class="erd-type">INT PK</span></div>
+        <div class="erd-field"><span>slug</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>nom</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>icone</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>couleur_hex</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>image_url</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>actif</span><span class="erd-type">BOOL</span></div>
+        <div class="erd-field"><span>ordre</span><span class="erd-type">INT</span></div>
+      </div>
+      <div class="erd-table">
+        <div class="erd-table-name">questions</div>
+        <div class="erd-field pk"><span>id</span><span class="erd-type">INT PK</span></div>
+        <div class="erd-field fk"><span>domaine_id</span><span class="erd-type">FK</span></div>
+        <div class="erd-field fk"><span>parent_reponse_id</span><span class="erd-type">FK NULL</span></div>
+        <div class="erd-field"><span>libelle</span><span class="erd-type">TEXT</span></div>
+        <div class="erd-field"><span>sous_libelle</span><span class="erd-type">TEXT</span></div>
+        <div class="erd-field"><span>type_champ</span><span class="erd-type">ENUM</span></div>
+        <div class="erd-field"><span>image_url</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>est_racine</span><span class="erd-type">BOOL</span></div>
+        <div class="erd-field"><span>ordre</span><span class="erd-type">INT</span></div>
+      </div>
+      <div class="erd-table">
+        <div class="erd-table-name">reponses</div>
+        <div class="erd-field pk"><span>id</span><span class="erd-type">INT PK</span></div>
+        <div class="erd-field fk"><span>question_id</span><span class="erd-type">FK</span></div>
+        <div class="erd-field fk"><span>next_question_id</span><span class="erd-type">FK NULL</span></div>
+        <div class="erd-field fk"><span>intervention_id</span><span class="erd-type">FK NULL</span></div>
+        <div class="erd-field"><span>label</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>icone</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>image_url</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>ordre</span><span class="erd-type">INT</span></div>
+      </div>
+      <div class="erd-table">
+        <div class="erd-table-name">interventions</div>
+        <div class="erd-field pk"><span>id</span><span class="erd-type">INT PK</span></div>
+        <div class="erd-field fk"><span>domaine_id</span><span class="erd-type">FK</span></div>
+        <div class="erd-field"><span>slug</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>nom</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>description</span><span class="erd-type">TEXT</span></div>
+        <div class="erd-field"><span>prix_min</span><span class="erd-type">DECIMAL</span></div>
+        <div class="erd-field"><span>prix_max</span><span class="erd-type">DECIMAL</span></div>
+        <div class="erd-field"><span>unite_prix</span><span class="erd-type">ENUM</span></div>
+        <div class="erd-field"><span>urgence_disponible</span><span class="erd-type">BOOL</span></div>
+        <div class="erd-field"><span>garantie_jours</span><span class="erd-type">INT</span></div>
+        <div class="erd-field"><span>image_url</span><span class="erd-type">VARCHAR</span></div>
+      </div>
+      <div class="erd-table">
+        <div class="erd-table-name">variantes</div>
+        <div class="erd-field pk"><span>id</span><span class="erd-type">INT PK</span></div>
+        <div class="erd-field fk"><span>intervention_id</span><span class="erd-type">FK</span></div>
+        <div class="erd-field"><span>nom</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>description</span><span class="erd-type">TEXT</span></div>
+        <div class="erd-field"><span>prix_min</span><span class="erd-type">DECIMAL</span></div>
+        <div class="erd-field"><span>prix_max</span><span class="erd-type">DECIMAL</span></div>
+        <div class="erd-field"><span>image_url</span><span class="erd-type">VARCHAR</span></div>
+        <div class="erd-field"><span>ordre</span><span class="erd-type">INT</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sql-section">
+    <div class="sql-section-title">📝 CREATE TABLES</div>
+    <div class="sql-block">
+      <div class="sql-block-header">
+        <span class="sql-filename">schema.sql</span>
+        <button class="copy-btn" onclick="copyBlock(this, 'sql-create')">Copier</button>
+      </div>
+      <pre id="sql-create"><span class="cm">-- ═══════════════════════════════════════════════════
+-- MesDépanneurs.fr — Schéma piloté par questions
+-- Compatible MySQL 8.0+ / PostgreSQL 14+
+-- ═══════════════════════════════════════════════════</span>
+
+<span class="kw">CREATE TABLE</span> domaines (
+  id            <span class="ty">INT</span> <span class="kw">AUTO_INCREMENT PRIMARY KEY</span>,
+  slug          <span class="ty">VARCHAR(80)</span>  <span class="kw">NOT NULL UNIQUE</span>,
+  nom           <span class="ty">VARCHAR(120)</span> <span class="kw">NOT NULL</span>,
+  icone         <span class="ty">VARCHAR(10)</span>,
+  couleur_hex   <span class="ty">VARCHAR(7)</span>,
+  image_url     <span class="ty">VARCHAR(500)</span>,
+  description   <span class="ty">TEXT</span>,
+  actif         <span class="ty">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="nu">TRUE</span>,
+  ordre         <span class="ty">INT</span>     <span class="kw">DEFAULT</span> <span class="nu">0</span>
+);
+
+<span class="cm">-- Une question appartient à un domaine.
+-- Si parent_reponse_id IS NULL c'est la question racine du domaine.
+-- Si parent_reponse_id IS NOT NULL, cette question s'affiche
+-- après que l'utilisateur a choisi cette réponse.</span>
+<span class="kw">CREATE TABLE</span> questions (
+  id                  <span class="ty">INT</span> <span class="kw">AUTO_INCREMENT PRIMARY KEY</span>,
+  domaine_id          <span class="ty">INT</span> <span class="kw">NOT NULL REFERENCES</span> domaines(id) <span class="kw">ON DELETE CASCADE</span>,
+  parent_reponse_id   <span class="ty">INT</span> <span class="kw">NULL REFERENCES</span> reponses(id),
+  libelle             <span class="ty">TEXT</span> <span class="kw">NOT NULL</span>,
+  sous_libelle        <span class="ty">TEXT</span>,
+  type_champ          <span class="ty">ENUM</span>(<span class="st">'radio'</span>, <span class="st">'select'</span>, <span class="st">'photo'</span>) <span class="kw">DEFAULT</span> <span class="st">'radio'</span>,
+  image_url           <span class="ty">VARCHAR(500)</span>,
+  est_racine          <span class="ty">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="nu">FALSE</span>,
+  ordre               <span class="ty">INT</span> <span class="kw">DEFAULT</span> <span class="nu">0</span>
+);
+
+<span class="cm">-- Une réponse appartient à une question.
+-- next_question_id : pointe vers la prochaine question (nœud intermédiaire)
+-- intervention_id  : pointe vers le résultat final (nœud terminal)
+-- Contrainte : next_question_id XOR intervention_id doit être non null</span>
+<span class="kw">CREATE TABLE</span> reponses (
+  id                <span class="ty">INT</span> <span class="kw">AUTO_INCREMENT PRIMARY KEY</span>,
+  question_id       <span class="ty">INT</span> <span class="kw">NOT NULL REFERENCES</span> questions(id) <span class="kw">ON DELETE CASCADE</span>,
+  next_question_id  <span class="ty">INT</span> <span class="kw">NULL REFERENCES</span> questions(id),
+  intervention_id   <span class="ty">INT</span> <span class="kw">NULL REFERENCES</span> interventions(id),
+  label             <span class="ty">VARCHAR(200)</span> <span class="kw">NOT NULL</span>,
+  icone             <span class="ty">VARCHAR(10)</span>,
+  image_url         <span class="ty">VARCHAR(500)</span>,
+  ordre             <span class="ty">INT</span> <span class="kw">DEFAULT</span> <span class="nu">0</span>,
+  <span class="kw">CHECK</span> (
+    (next_question_id <span class="kw">IS NOT NULL AND</span> intervention_id <span class="kw">IS NULL</span>)
+    <span class="kw">OR</span>
+    (next_question_id <span class="kw">IS NULL AND</span> intervention_id <span class="kw">IS NOT NULL</span>)
+  )
+);
+
+<span class="kw">CREATE TABLE</span> interventions (
+  id                  <span class="ty">INT</span> <span class="kw">AUTO_INCREMENT PRIMARY KEY</span>,
+  domaine_id          <span class="ty">INT</span> <span class="kw">NOT NULL REFERENCES</span> domaines(id),
+  slug                <span class="ty">VARCHAR(120)</span> <span class="kw">NOT NULL UNIQUE</span>,
+  nom                 <span class="ty">VARCHAR(200)</span> <span class="kw">NOT NULL</span>,
+  description         <span class="ty">TEXT</span>,
+  prix_min            <span class="ty">DECIMAL(8,2)</span>,
+  prix_max            <span class="ty">DECIMAL(8,2)</span>,
+  unite_prix          <span class="ty">ENUM</span>(<span class="st">'TTC_forfait'</span>, <span class="st">'TTC_heure'</span>, <span class="st">'TTC_m2'</span>, <span class="st">'sur_devis'</span>) <span class="kw">DEFAULT</span> <span class="st">'TTC_forfait'</span>,
+  duree_min_min       <span class="ty">INT</span>,
+  duree_max_min       <span class="ty">INT</span>,
+  urgence_disponible  <span class="ty">BOOLEAN</span> <span class="kw">DEFAULT</span> <span class="nu">TRUE</span>,
+  garantie_jours      <span class="ty">INT</span>,
+  image_url           <span class="ty">VARCHAR(500)</span>,
+  notes_internes      <span class="ty">TEXT</span>
+);
+
+<span class="kw">CREATE TABLE</span> variantes (
+  id              <span class="ty">INT</span> <span class="kw">AUTO_INCREMENT PRIMARY KEY</span>,
+  intervention_id <span class="ty">INT</span> <span class="kw">NOT NULL REFERENCES</span> interventions(id) <span class="kw">ON DELETE CASCADE</span>,
+  nom             <span class="ty">VARCHAR(200)</span> <span class="kw">NOT NULL</span>,
+  description     <span class="ty">TEXT</span>,
+  prix_min        <span class="ty">DECIMAL(8,2)</span>,
+  prix_max        <span class="ty">DECIMAL(8,2)</span>,
+  image_url       <span class="ty">VARCHAR(500)</span>,
+  ordre           <span class="ty">INT</span> <span class="kw">DEFAULT</span> <span class="nu">0</span>
+);</pre>
+    </div>
+  </div>
+
+  <div class="sql-section">
+    <div class="sql-section-title">🌱 INSERT — Données de référence (Plomberie)</div>
+    <div class="sql-section-desc">Exemple complet sur le domaine Plomberie illustrant le pattern questions → réponses → interventions → variantes.</div>
+    <div class="sql-block">
+      <div class="sql-block-header">
+        <span class="sql-filename">seed_plomberie.sql</span>
+        <button class="copy-btn" onclick="copyBlock(this, 'sql-seed')">Copier</button>
+      </div>
+      <pre id="sql-seed"><span class="cm">-- ── DOMAINES ────────────────────────────────────────</span>
+<span class="kw">INSERT INTO</span> domaines (slug, nom, icone, couleur_hex, ordre) <span class="kw">VALUES</span>
+  (<span class="st">'plomberie'</span>,   <span class="st">'Plomberie'</span>,           <span class="st">'💧'</span>, <span class="st">'#3b82f6'</span>, <span class="nu">1</span>),
+  (<span class="st">'electricite'</span>, <span class="st">'Électricité'</span>,         <span class="st">'⚡'</span>, <span class="st">'#f59e0b'</span>, <span class="nu">2</span>),
+  (<span class="st">'serrurerie'</span>,  <span class="st">'Serrurerie'</span>,          <span class="st">'🔑'</span>, <span class="st">'#a855f7'</span>, <span class="nu">3</span>),
+  (<span class="st">'vitrerie'</span>,    <span class="st">'Vitrerie'</span>,            <span class="st">'🪟'</span>, <span class="st">'#06b6d4'</span>, <span class="nu">4</span>),
+  (<span class="st">'chauffage'</span>,   <span class="st">'Chauffage'</span>,           <span class="st">'🔥'</span>, <span class="st">'#ef4444'</span>, <span class="nu">5</span>),
+  (<span class="st">'clim-pac'</span>,    <span class="st">'Clim & Pompe à chaleur'</span>,<span class="st">'❄️'</span>, <span class="st">'#22c55e'</span>, <span class="nu">6</span>);
+
+<span class="cm">-- ── INTERVENTIONS (plomberie) ────────────────────────</span>
+<span class="kw">INSERT INTO</span> interventions (domaine_id, slug, nom, prix_min, prix_max, garantie_jours, urgence_disponible) <span class="kw">VALUES</span>
+  (<span class="nu">1</span>, <span class="st">'fuite-robinet'</span>,           <span class="st">'Fuite robinet / joint'</span>,          <span class="nu">80</span>,  <span class="nu">150</span>, <span class="nu">365</span>, <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'fuite-canalisation'</span>,       <span class="st">'Fuite canalisation apparente'</span>,   <span class="nu">100</span>, <span class="nu">200</span>, <span class="nu">365</span>, <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'fuite-encastree'</span>,          <span class="st">'Fuite canalisation encastrée'</span>,   <span class="nu">500</span>, <span class="nu">1000</span>,<span class="nu">365</span>, <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'fuite-wc'</span>,                 <span class="st">'Fuite WC / joint de cuvette'</span>,    <span class="nu">80</span>,  <span class="nu">150</span>, <span class="nu">365</span>, <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'fuite-chauffe-eau'</span>,        <span class="st">'Fuite chauffe-eau / ballon'</span>,     <span class="nu">100</span>, <span class="nu">220</span>, <span class="nu">365</span>, <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'debouchage-wc'</span>,            <span class="st">'Débouchage WC'</span>,                  <span class="nu">100</span>, <span class="nu">200</span>, <span class="nu">2</span>,   <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'debouchage-wc-sanibroyeur'</span>,<span class="st">'Débouchage WC sanibroyeur'</span>,      <span class="nu">100</span>, <span class="nu">200</span>, <span class="nu">2</span>,   <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'debouchage-evier'</span>,         <span class="st">'Débouchage évier / lavabo'</span>,      <span class="nu">100</span>, <span class="nu">180</span>, <span class="nu">2</span>,   <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'debouchage-douche'</span>,        <span class="st">'Débouchage douche / baignoire'</span>,  <span class="nu">100</span>, <span class="nu">180</span>, <span class="nu">2</span>,   <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'debouchage-colonne'</span>,       <span class="st">'Débouchage colonne générale'</span>,    <span class="nu">700</span>, <span class="nu">900</span>, <span class="nu">2</span>,   <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'reparation-chasse'</span>,        <span class="st">'Réparation chasse d\'eau'</span>,       <span class="nu">80</span>,  <span class="nu">150</span>, <span class="nu">365</span>, <span class="nu">TRUE</span>),
+  (<span class="nu">1</span>, <span class="st">'pose-wc-standard'</span>,         <span class="st">'Pose WC standard'</span>,               <span class="nu">150</span>, <span class="nu">300</span>, <span class="nu">730</span>, <span class="nu">FALSE</span>),
+  (<span class="nu">1</span>, <span class="st">'pose-wc-suspendu'</span>,         <span class="st">'Pose WC suspendu'</span>,               <span class="nu">200</span>, <span class="nu">400</span>, <span class="nu">730</span>, <span class="nu">FALSE</span>),
+  (<span class="nu">1</span>, <span class="st">'pose-sanibroyeur'</span>,         <span class="st">'Fourniture + pose sanibroyeur'</span>,  <span class="nu">900</span>, <span class="nu">1100</span>,<span class="nu">730</span>, <span class="nu">FALSE</span>),
+  (<span class="nu">1</span>, <span class="st">'ballon-electrique'</span>,        <span class="st">'Remplacement ballon électrique'</span>, <span class="nu">350</span>, <span class="nu">1000</span>,<span class="nu">730</span>, <span class="nu">FALSE</span>),
+  (<span class="nu">1</span>, <span class="st">'reparation-robinet'</span>,       <span class="st">'Changement robinet / mitigeur'</span>,  <span class="nu">80</span>,  <span class="nu">200</span>, <span class="nu">365</span>, <span class="nu">TRUE</span>);
+
+<span class="cm">-- ── QUESTIONS PLOMBERIE (arbre) ──────────────────────
+-- Q1 (racine) : localisation du problème</span>
+<span class="kw">INSERT INTO</span> questions (domaine_id, libelle, sous_libelle, est_racine, ordre) <span class="kw">VALUES</span>
+  (<span class="nu">1</span>, <span class="st">'Où se situe votre problème ?'</span>, <span class="st">'Indiquez la zone concernée dans votre logement'</span>, <span class="nu">TRUE</span>, <span class="nu">1</span>);
+  <span class="cm">-- → id = 1</span>
+
+<span class="cm">-- Q2 : type de problème sur WC</span>
+<span class="kw">INSERT INTO</span> questions (domaine_id, parent_reponse_id, libelle, est_racine, ordre) <span class="kw">VALUES</span>
+  (<span class="nu">1</span>, <span class="nu">2</span>, <span class="st">'Dans quel domaine avez-vous besoin d\'aide ?'</span>, <span class="nu">FALSE</span>, <span class="nu">1</span>);
+  <span class="cm">-- → id = 2  (parent_reponse_id=2 = réponse "WC")</span>
+
+<span class="cm">-- Q3 : type de problème sur évier/lavabo</span>
+<span class="kw">INSERT INTO</span> questions (domaine_id, parent_reponse_id, libelle, est_racine, ordre) <span class="kw">VALUES</span>
+  (<span class="nu">1</span>, <span class="nu">3</span>, <span class="st">'Quel est le problème ?'</span>, <span class="nu">FALSE</span>, <span class="nu">1</span>);
+  <span class="cm">-- → id = 3  (parent_reponse_id=3 = réponse "Évier / lavabo")</span>
+
+<span class="cm">-- Q4 : type de ballon</span>
+<span class="kw">INSERT INTO</span> questions (domaine_id, parent_reponse_id, libelle, est_racine, ordre) <span class="kw">VALUES</span>
+  (<span class="nu">1</span>, <span class="nu">6</span>, <span class="st">'Quel est votre type de chauffe-eau ?'</span>, <span class="nu">FALSE</span>, <span class="nu">1</span>);
+  <span class="cm">-- → id = 4  (parent_reponse_id=6 = réponse "Chauffe-eau / ballon")</span>
+
+<span class="cm">-- ── RÉPONSES ─────────────────────────────────────────
+-- Réponses de Q1 (localisation)</span>
+<span class="kw">INSERT INTO</span> reponses (question_id, next_question_id, label, icone, ordre) <span class="kw">VALUES</span>
+  (<span class="nu">1</span>, <span class="nu">2</span>, <span class="st">'WC'</span>,                <span class="st">'🚽'</span>, <span class="nu">1</span>),  <span class="cm">-- id=1, mène à Q2</span>
+  (<span class="nu">1</span>, <span class="nu">2</span>, <span class="st">'Évier / lavabo'</span>,   <span class="st">'🚿'</span>, <span class="nu">2</span>),  <span class="cm">-- id=2, mène à Q3</span>
+  (<span class="nu">1</span>, <span class="nu">3</span>, <span class="st">'Douche / baignoire'</span>,<span class="st">'🛁'</span>, <span class="nu">3</span>),  <span class="cm">-- id=3, mène à Q3</span>
+  (<span class="nu">1</span>, <span class="nu">4</span>, <span class="st">'Chauffe-eau / ballon'</span>,<span class="st">'♨️'</span>,<span class="nu">4</span>), <span class="cm">-- id=4, mène à Q4</span>
+  (<span class="nu">1</span>, <span class="nu">NULL</span>, <span class="st">'Canalisation'</span>,    <span class="st">'🔧'</span>, <span class="nu">5</span>); <span class="cm">-- terminal → voir ci-dessous</span>
+
+<span class="cm">-- Réponses de Q2 (problème WC) — toutes terminales</span>
+<span class="kw">INSERT INTO</span> reponses (question_id, intervention_id, label, icone, ordre) <span class="kw">VALUES</span>
+  (<span class="nu">2</span>, <span class="nu">6</span>,  <span class="st">'Engorgement / bouchon'</span>, <span class="st">'💩'</span>, <span class="nu">1</span>),
+  (<span class="nu">2</span>, <span class="nu">4</span>,  <span class="st">'Fuite au sol'</span>,          <span class="st">'💧'</span>, <span class="nu">2</span>),
+  (<span class="nu">2</span>, <span class="nu">11</span>, <span class="st">'Chasse ne fonctionne plus'</span>,<span class="st">'🔄'</span>,<span class="nu">3</span>),
+  (<span class="nu">2</span>, <span class="nu">12</span>, <span class="st">'Remplacement WC complet'</span>,<span class="st">'🔩'</span>,<span class="nu">4</span>);
+
+<span class="cm">-- Réponses de Q3 (problème évier/douche) — terminales</span>
+<span class="kw">INSERT INTO</span> reponses (question_id, intervention_id, label, icone, ordre) <span class="kw">VALUES</span>
+  (<span class="nu">3</span>, <span class="nu">8</span>, <span class="st">'Bouchon / eau stagnante'</span>, <span class="st">'🚫'</span>, <span class="nu">1</span>),
+  (<span class="nu">3</span>, <span class="nu">2</span>, <span class="st">'Fuite sous le meuble'</span>,    <span class="st">'💧'</span>, <span class="nu">2</span>),
+  (<span class="nu">3</span>, <span class="nu">16</span>,<span class="st">'Robinet à changer'</span>,        <span class="st">'🔧'</span>, <span class="nu">3</span>);
+
+<span class="cm">-- Réponses de Q4 (type chauffe-eau) — terminales</span>
+<span class="kw">INSERT INTO</span> reponses (question_id, intervention_id, label, icone, ordre) <span class="kw">VALUES</span>
+  (<span class="nu">4</span>, <span class="nu">15</span>,<span class="st">'Électrique'</span>, <span class="st">'⚡'</span>, <span class="nu">1</span>),
+  (<span class="nu">4</span>, <span class="nu">5</span>, <span class="st">'Fuite visible'</span>,<span class="st">'💧'</span>, <span class="nu">2</span>);
+
+<span class="cm">-- ── VARIANTES ────────────────────────────────────────</span>
+<span class="kw">INSERT INTO</span> variantes (intervention_id, nom, prix_min, prix_max, ordre) <span class="kw">VALUES</span>
+  (<span class="nu">6</span>,  <span class="st">'WC standard (furet)'</span>,             <span class="nu">100</span>, <span class="nu">150</span>, <span class="nu">1</span>),
+  (<span class="nu">6</span>,  <span class="st">'WC sanibroyeur'</span>,                  <span class="nu">130</span>, <span class="nu">200</span>, <span class="nu">2</span>),
+  (<span class="nu">6</span>,  <span class="st">'Débouchage haute pression'</span>,        <span class="nu">300</span>, <span class="nu">500</span>, <span class="nu">3</span>),
+  (<span class="nu">15</span>, <span class="st">'50 L (studio/T1)'</span>,                <span class="nu">350</span>, <span class="nu">500</span>, <span class="nu">1</span>),
+  (<span class="nu">15</span>, <span class="st">'80 L (T2/T3)'</span>,                    <span class="nu">400</span>, <span class="nu">600</span>, <span class="nu">2</span>),
+  (<span class="nu">15</span>, <span class="st">'150–200 L (maison)'</span>,              <span class="nu">600</span>, <span class="nu">1000</span>,<span class="nu">3</span>),
+  (<span class="nu">15</span>, <span class="st">'Thermodynamique'</span>,                 <span class="nu">800</span>, <span class="nu">1500</span>,<span class="nu">4</span>),
+  (<span class="nu">12</span>, <span class="st">'WC standard à poser'</span>,             <span class="nu">150</span>, <span class="nu">300</span>, <span class="nu">1</span>),
+  (<span class="nu">12</span>, <span class="st">'WC suspendu'</span>,                     <span class="nu">200</span>, <span class="nu">400</span>, <span class="nu">2</span>),
+  (<span class="nu">12</span>, <span class="st">'Sanibroyeur complet'</span>,             <span class="nu">900</span>, <span class="nu">1100</span>,<span class="nu">3</span>);</pre>
+    </div>
+  </div>
+
+  <div class="sql-section">
+    <div class="sql-section-title">🔍 Vue — Navigation parcours</div>
+    <div class="sql-block">
+      <div class="sql-block-header">
+        <span class="sql-filename">views.sql</span>
+        <button class="copy-btn" onclick="copyBlock(this, 'sql-view-code')">Copier</button>
+      </div>
+      <pre id="sql-view-code"><span class="cm">-- Reconstitue le chemin complet pour chaque intervention</span>
+<span class="kw">CREATE VIEW</span> v_parcours_interventions <span class="kw">AS</span>
+<span class="kw">WITH RECURSIVE</span> parcours <span class="kw">AS</span> (
+  <span class="cm">-- Ancre : questions racines</span>
+  <span class="kw">SELECT</span>
+    q.id              <span class="kw">AS</span> question_id,
+    q.domaine_id,
+    q.libelle         <span class="kw">AS</span> chemin,
+    <span class="nu">1</span>               <span class="kw">AS</span> profondeur
+  <span class="kw">FROM</span> questions q
+  <span class="kw">WHERE</span> q.est_racine = <span class="nu">TRUE</span>
+
+  <span class="kw">UNION ALL</span>
+
+  <span class="cm">-- Récursion : suivre les réponses vers les questions suivantes</span>
+  <span class="kw">SELECT</span>
+    q2.id,
+    q2.domaine_id,
+    <span class="fn">CONCAT</span>(p.chemin, <span class="st">' → '</span>, r.label, <span class="st">' → '</span>, q2.libelle),
+    p.profondeur + <span class="nu">1</span>
+  <span class="kw">FROM</span> parcours p
+  <span class="kw">JOIN</span> reponses r   <span class="kw">ON</span> r.question_id      = p.question_id
+  <span class="kw">JOIN</span> questions q2 <span class="kw">ON</span> q2.id              = r.next_question_id
+)
+<span class="kw">SELECT</span>
+  p.chemin <span class="kw">AS</span> parcours_complet,
+  r.label  <span class="kw">AS</span> derniere_reponse,
+  i.nom    <span class="kw">AS</span> intervention,
+  i.prix_min,
+  i.prix_max,
+  d.nom    <span class="kw">AS</span> domaine
+<span class="kw">FROM</span> parcours p
+<span class="kw">JOIN</span> reponses r    <span class="kw">ON</span> r.question_id   = p.question_id
+<span class="kw">JOIN</span> interventions i <span class="kw">ON</span> i.id          = r.intervention_id
+<span class="kw">JOIN</span> domaines d    <span class="kw">ON</span> d.id            = p.domaine_id
+<span class="kw">ORDER BY</span> d.nom, p.profondeur;</pre>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<script>
+
+// ===================== DATA =====================
+const SERVICES = [
+  {
+    id: 'plomberie', name: 'Plomberie', icon: '💧', color: '#3b82f6',
+    priceRange: '80–1000 €',
+    categories: [
+      {
+        name: 'Fuites d\'eau', interventions: [
+          { name: 'Recherche de fuite simple', price: '100–220 €', detail: 'Diagnostic complet · 1–2h', subs: [
+            { name: 'Fuite visible (robinet, joint)', price: '80–150 €' },
+            { name: 'Fuite canalisation apparente', price: '100–200 €' },
+            { name: 'Fuite encastrée (mur/sol)', price: '500–1000 €' },
+          ]},
+          { name: 'Réparation fuite rapide', price: '80–200 €', detail: 'Intervention urgence · 30min–2h' },
+          { name: 'Dégât des eaux', price: '150–450 €', detail: 'Urgence · inclut colmatage' },
+          { name: 'Fuite WC (mécanisme chasse)', price: '80–150 €', detail: '30–60 min' },
+          { name: 'Fuite ballon eau chaude', price: '100–220 €', detail: 'Raccords, groupe sécurité' },
+        ]
+      },
+      {
+        name: 'Débouchage', interventions: [
+          { name: 'Débouchage WC', price: '100–180 €', detail: 'Ventouse / furet · 30min–2h', subs: [
+            { name: 'WC sans sanibroyeur (furet manuel)', price: '100–150 €' },
+            { name: 'WC avec sanibroyeur', price: '100–200 €' },
+            { name: 'WC haute pression', price: '150–250 €' },
+          ]},
+          { name: 'Débouchage lavabo / évier', price: '100–180 €', detail: '30–90 min' },
+          { name: 'Débouchage douche / baignoire', price: '100–180 €', detail: '30–90 min' },
+          { name: 'Débouchage colonne générale', price: '700–900 €', detail: 'Camion hydrocureur · 2–4h' },
+          { name: 'Débouchage haute pression', price: '300–900 €', detail: 'Selon longueur canalisations' },
+        ]
+      },
+      {
+        name: 'WC & Sanitaires', interventions: [
+          { name: 'Réparation chasse d\'eau', price: '80–150 €', detail: '30–60 min' },
+          { name: 'Pose WC standard', price: '150–300 €', detail: 'Hors fourniture' },
+          { name: 'Pose WC suspendu', price: '200–400 €', detail: 'Hors fourniture' },
+          { name: 'Fourniture + pose sanibroyeur', price: '900–1100 €', detail: 'Tout inclus' },
+          { name: 'Refaire joints baignoire/douche', price: '80–150 €', detail: '45–90 min' },
+        ]
+      },
+      {
+        name: 'Ballon eau chaude', interventions: [
+          { name: 'Réparation ballon électrique', price: '100–200 €', detail: '1–2h · résistance / thermostat' },
+          { name: 'Fourniture & pose ballon', price: '350–1000 €', detail: 'Selon capacité', subs: [
+            { name: 'Ballon électrique 50L', price: '350–500 €' },
+            { name: 'Ballon électrique 80L', price: '400–600 €' },
+            { name: 'Ballon électrique 150–200L', price: '600–1000 €' },
+            { name: 'Ballon thermodynamique', price: '800–1500 €' },
+            { name: 'Chauffe-eau gaz', price: '500–1000 €' },
+          ]},
+          { name: 'Remplacement groupe sécurité', price: '80–150 €', detail: '30–60 min' },
+        ]
+      },
+      {
+        name: 'Robinetterie', interventions: [
+          { name: 'Changement robinet', price: '80–150 €', detail: '30–90 min' },
+          { name: 'Pose mitigeur thermostatique', price: '100–200 €', detail: '45–90 min' },
+          { name: 'Remplacement vanne d\'arrêt', price: '180–250 €', detail: 'Hors plombier certifié gaz' },
+          { name: 'Réducteur de pression', price: '150–300 €', detail: 'Fourniture + pose' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'electricite', name: 'Électricité', icon: '⚡', color: '#f59e0b',
+    priceRange: '80–2500 €',
+    categories: [
+      {
+        name: 'Tableau électrique', interventions: [
+          { name: 'Réparation panne tableau', price: '150–250 €', detail: 'Diagnostic + réarmement · 1–3h' },
+          { name: 'Remplacement disjoncteur différentiel', price: '150–300 €', detail: '1–2h' },
+          { name: 'Remplacement tableau complet', price: '800–2500 €', detail: 'Selon taille logement', subs: [
+            { name: 'Studio / T1 (6–8 circuits)', price: '800–1200 €' },
+            { name: 'T2/T3 (10–12 circuits)', price: '1200–1800 €' },
+            { name: 'T4/Maison (14+ circuits)', price: '1800–2500 €' },
+          ]},
+          { name: 'Mise aux normes NF C 15-100', price: 'Sur devis', detail: 'Selon état installation' },
+        ]
+      },
+      {
+        name: 'Prises & interrupteurs', interventions: [
+          { name: 'Panne de plusieurs prises', price: '150–300 €', detail: '1–2h' },
+          { name: 'Remplacement prise arrachée', price: '150–200 €', detail: '30–60 min' },
+          { name: 'Pose prise électrique', price: '80–150 €', detail: '30–60 min' },
+          { name: 'Pose interrupteur / variateur', price: '80–150 €', detail: '30–60 min' },
+          { name: 'Problème tout l\'appartement', price: '150–300 €', detail: 'Diagnostic général' },
+        ]
+      },
+      {
+        name: 'Éclairage', interventions: [
+          { name: 'Dépannage circuit éclairage', price: '150–250 €', detail: '45–120 min' },
+          { name: 'Pose luminaire / plafonnier', price: '80–150 €', detail: '30–60 min' },
+          { name: 'Installation spots encastrés', price: '150–300 €', detail: 'Par pièce, câblage inclus' },
+          { name: 'Branchement détecteur mouvement', price: '100–200 €', detail: '45–90 min' },
+        ]
+      },
+      {
+        name: 'Installations', interventions: [
+          { name: 'Installation borne de recharge VE', price: '800–2000 €', detail: 'IRVE certifié · 3–6h' },
+          { name: 'Domotique (volets, éclairage)', price: 'Sur devis', detail: 'Selon périmètre' },
+          { name: 'Diagnostic installation complète', price: '150–300 €', detail: '1–2h · rapport fourni' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'serrurerie', name: 'Serrurerie', icon: '🔑', color: '#a855f7',
+    priceRange: '70–1800 €',
+    categories: [
+      {
+        name: 'Ouverture de porte', interventions: [
+          { name: 'Porte claquée (non verrouillée)', price: '130–180 €', detail: '15–60 min · sans destruction', subs: [
+            { name: 'Porte simple claquée', price: '130–150 €' },
+            { name: 'Porte blindée claquée', price: '150–200 €' },
+          ]},
+          { name: 'Porte verrouillée (clé perdue)', price: '150–260 €', detail: '30–90 min · crochetage', subs: [
+            { name: 'Porte simple verrouillée', price: '150–220 €' },
+            { name: 'Porte blindée verrouillée', price: '200–350 €' },
+          ]},
+          { name: 'Après cambriolage / effraction', price: '200–400 €', detail: 'Réparation provisoire incluse' },
+        ]
+      },
+      {
+        name: 'Serrures & cylindres', interventions: [
+          { name: 'Changement cylindre', price: '120–200 €', detail: '30–60 min · fourniture incluse' },
+          { name: 'Pose serrure 1 point', price: '250–450 €', detail: '1–2h · fourniture incluse' },
+          { name: 'Pose serrure 3 points', price: '400–800 €', detail: '1–3h · fourniture incluse', subs: [
+            { name: 'Serrure 3 pts standard', price: '400–600 €' },
+            { name: 'Serrure 3 pts haute sécurité A2P★', price: '600–800 €' },
+          ]},
+          { name: 'Pose serrure 5 points +', price: '600–1000 €', detail: '2–4h · haute sécurité' },
+          { name: 'Pose verrou en applique', price: '130–180 €', detail: '30–60 min' },
+        ]
+      },
+      {
+        name: 'Blindage & sécurité', interventions: [
+          { name: 'Blindage porte existante', price: '500–900 €', detail: 'Tôle + serrure 3pts A2P + cornières', subs: [
+            { name: 'Blindage simple (tôle)', price: '500–700 €' },
+            { name: 'Blindage pivot + serrure 5pts', price: '700–900 €' },
+          ]},
+          { name: 'Porte blindée complète A2P BP', price: '1000–1800 €', detail: 'Bloc-porte certifié A2P', subs: [
+            { name: 'Porte armée simple', price: '850–1500 €' },
+            { name: 'Porte blindée A2P 1★ (BP1)', price: '1000–1500 €' },
+            { name: 'Porte blindée A2P 2★ (BP2)', price: '1200–1800 €' },
+            { name: 'Porte blindée A2P 3★ (BP3)', price: '1500–3500 €' },
+          ]},
+          { name: 'Cornière anti-pince (option)', price: '50–150 €', detail: 'En supplément' },
+        ]
+      },
+      {
+        name: 'Divers', interventions: [
+          { name: 'Serrure boîte aux lettres', price: '70–150 €', detail: '20–45 min' },
+          { name: 'Serrure portail / garage', price: '150–350 €', detail: '1–2h selon complexité' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'vitrerie', name: 'Vitrerie', icon: '🪟', color: '#06b6d4',
+    priceRange: '50–800 €',
+    categories: [
+      {
+        name: 'Remplacement de vitrage', interventions: [
+          { name: 'Vitre simple brisée', price: '100–200 €/m²', detail: '1–2h · urgence possible', subs: [
+            { name: 'Vitrage simple 65 €/m² + MO', price: '80–150 €' },
+            { name: 'Vitrage feuilleté (sécurité)', price: '150–280 €/m²' },
+            { name: 'Vitrage anti-effraction', price: '200–350 €/m²' },
+          ]},
+          { name: 'Double vitrage cassé', price: '150–280 €/m²', detail: '90min–4h · devis sur place' },
+          { name: 'Triple vitrage', price: '200–400 €/m²', detail: 'Sur devis · haute performance' },
+          { name: 'Vitrage occultant (électrochrome)', price: '500 €+/m²', detail: 'Sur devis' },
+        ]
+      },
+      {
+        name: 'Fenêtres & portes-fenêtres', interventions: [
+          { name: 'Remplacement fenêtre simple vitrage', price: '300–500 €', detail: 'Fourniture + pose · 2–4h', subs: [
+            { name: 'Fenêtre PVC simple vitrage', price: '300–400 €' },
+            { name: 'Fenêtre bois simple vitrage', price: '400–500 €' },
+          ]},
+          { name: 'Remplacement fenêtre double vitrage', price: '500–800 €', detail: 'Fourniture + pose · 2–4h', subs: [
+            { name: 'Fenêtre PVC double vitrage', price: '350–600 €' },
+            { name: 'Fenêtre aluminium double vitrage', price: '500–800 €' },
+            { name: 'Fenêtre bois double vitrage', price: '500–900 €' },
+          ]},
+          { name: 'Remplacement porte-fenêtre', price: '800–2000 €', detail: 'Sur devis · 3–5h' },
+          { name: 'Pose fenêtre de toit (Velux)', price: '600–1200 €', detail: 'Fourniture + pose' },
+        ]
+      },
+      {
+        name: 'Mécanismes & crémones', interventions: [
+          { name: 'Remplacement crémone', price: '80–150 €', detail: '30–60 min' },
+          { name: 'Réparation poignée fenêtre', price: '60–120 €', detail: '20–45 min' },
+          { name: 'Rabotage fenêtre coinçée', price: '80–150 €', detail: '30–90 min' },
+        ]
+      },
+      {
+        name: 'Étanchéité & joints', interventions: [
+          { name: 'Remplacement joints fenêtre', price: '50–150 €', detail: '30–60 min par baie' },
+          { name: 'Reprise calfeutrage baie vitrée', price: '100–200 €', detail: '45–120 min' },
+          { name: 'Refaire joints silicone douche', price: '80–150 €', detail: '45–90 min · attente 24h' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'chauffage', name: 'Chauffage', icon: '🔥', color: '#ef4444',
+    priceRange: '80–5000 €',
+    categories: [
+      {
+        name: 'Chaudière à gaz', interventions: [
+          { name: 'Entretien annuel chaudière gaz', price: '150–180 €', detail: 'Obligatoire légalement · 1h' },
+          { name: 'Contrat entretien annuel', price: '100–200 €/an', detail: 'Entretien + assistance panne' },
+          { name: 'Réparation chaudière gaz', price: '150–500 €', detail: '1–4h · selon pièces', subs: [
+            { name: 'Carte électronique', price: '200–500 €' },
+            { name: 'Brûleur / vanne gaz', price: '150–350 €' },
+            { name: 'Circulateur / pompe', price: '150–300 €' },
+            { name: 'Thermocouple / électrode', price: '100–200 €' },
+            { name: 'Sonde température', price: '100–250 €' },
+          ]},
+          { name: 'Remplacement chaudière gaz', price: '2000–5000 €', detail: 'Fourniture + pose · 1 journée', subs: [
+            { name: 'Chaudière murale standard', price: '2000–3500 €' },
+            { name: 'Chaudière à condensation', price: '2500–5000 €' },
+            { name: 'Chaudière hybride (PAC+gaz)', price: '4000–8000 €' },
+          ]},
+        ]
+      },
+      {
+        name: 'Chaudière électrique', interventions: [
+          { name: 'Réparation chaudière électrique', price: '150–400 €', detail: '1–3h' },
+          { name: 'Remplacement chaudière électrique', price: '1500–4000 €', detail: 'Fourniture + pose' },
+        ]
+      },
+      {
+        name: 'Chaudière fioul', interventions: [
+          { name: 'Entretien annuel chaudière fioul', price: '150–200 €', detail: 'Obligatoire · 1–2h' },
+          { name: 'Réparation chaudière fioul', price: '200–600 €', detail: 'Selon panne' },
+        ]
+      },
+      {
+        name: 'Radiateurs', interventions: [
+          { name: 'Purge radiateur', price: '80–150 €', detail: '20–45 min' },
+          { name: 'Remplacement robinet thermostatique', price: '100–200 €', detail: '30–60 min · pièce incluse' },
+          { name: 'Purge & réparation circuit complet', price: '150–400 €', detail: '1–3h' },
+          { name: 'Désembouage installation', price: '300–600 €', detail: '2–4h · produit inclus' },
+          { name: 'Pose radiateur', price: '250–400 €', detail: 'Hors fourniture · 1–2h' },
+        ]
+      },
+      {
+        name: 'Chauffe-eau & ballons', interventions: [
+          { name: 'Réparation ballon eau chaude', price: '100–220 €', detail: '1–2h' },
+          { name: 'Réparation chauffe-eau gaz', price: '150–350 €', detail: '1–3h' },
+          { name: 'Pose chauffe-eau électrique', price: '350–600 €', detail: 'Fourniture + pose' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'clim-pac', name: 'Clim & Pompe à chaleur', icon: '❄️', color: '#22c55e',
+    priceRange: '150–15000 €',
+    categories: [
+      {
+        name: 'Installation climatisation', interventions: [
+          { name: 'Installation monosplit', price: '1200–2500 €', detail: 'Groupe ext. + unité int. + pose · 4–8h', subs: [
+            { name: 'Monosplit 2,5 kW (25m²)', price: '1200–1800 €' },
+            { name: 'Monosplit 3,5 kW (35m²)', price: '1400–2000 €' },
+            { name: 'Monosplit 5 kW (50m²)', price: '1800–2500 €' },
+          ]},
+          { name: 'Installation bisplit (2 unités)', price: '2000–3500 €', detail: '6–10h' },
+          { name: 'Installation trisplit (3 unités)', price: '2800–5000 €', detail: '8–12h' },
+          { name: 'Installation multisplit 4+', price: 'Sur devis', detail: 'Selon configuration' },
+        ]
+      },
+      {
+        name: 'Entretien & maintenance', interventions: [
+          { name: 'Entretien monosplit', price: '150–200 €', detail: 'Nettoyage complet · 1h · obligatoire si >5kW', subs: [
+            { name: 'Nettoyage filtres + unité int.', price: '150–180 €' },
+            { name: 'Nettoyage groupe ext. + gaz', price: '170–220 €' },
+          ]},
+          { name: 'Entretien bisplit', price: '200–300 €', detail: '1,5h' },
+          { name: 'Entretien trisplit', price: '280–400 €', detail: '2–3h' },
+          { name: 'Contrat maintenance annuel', price: '150–350 €/an', detail: 'Selon nb unités' },
+        ]
+      },
+      {
+        name: 'Dépannage climatisation', interventions: [
+          { name: 'Clim ne refroidit plus', price: '200–400 €', detail: '1–3h · diagnostic inclus', subs: [
+            { name: 'Fuite de gaz frigorigène', price: '200–400 €' },
+            { name: 'Compresseur défaillant', price: '300–800 €' },
+            { name: 'Carte électronique', price: '200–500 €' },
+          ]},
+          { name: 'Recharge gaz (fréon R410A/R32)', price: '150–400 €', detail: 'Selon quantité · leaktest inclus' },
+          { name: 'Fuite d\'eau unité intérieure', price: '150–300 €', detail: '1–2h · nettoyage bac condensat' },
+          { name: 'Bruit anormal / vibration', price: '150–300 €', detail: 'Diagnostic + réglage' },
+        ]
+      },
+      {
+        name: 'Installation PAC', interventions: [
+          { name: 'PAC air/air réversible', price: '2500–8000 €', detail: 'Selon puissance et nb unités', subs: [
+            { name: 'PAC air/air monosplit (petite surf.)', price: '2500–4000 €' },
+            { name: 'PAC air/air multisplit', price: '4000–8000 €' },
+          ]},
+          { name: 'PAC air/eau (eau chaude + chauffage)', price: '7000–15000 €', detail: 'Selon puissance · aides MaPrimeRénov\'', subs: [
+            { name: 'PAC air/eau radiateurs existants', price: '7000–12000 €' },
+            { name: 'PAC air/eau plancher chauffant', price: '10000–15000 €' },
+          ]},
+          { name: 'PAC géothermique air/sol', price: '12000–25000 €', detail: 'Capteurs enterrés · sur devis' },
+        ]
+      },
+      {
+        name: 'Entretien & dépannage PAC', interventions: [
+          { name: 'Entretien annuel PAC', price: '150–250 €', detail: '1–2h · obligatoire si >5kW' },
+          { name: 'Dépannage PAC en panne', price: '200–600 €', detail: '1–4h selon pièces' },
+          { name: 'Recharge fluide PAC', price: '200–500 €', detail: 'Selon type et quantité' },
+        ]
+      },
+    ]
+  },
+];
+
+// ===================== RENDER TREE =====================
+function getPriceColor(priceStr) {
+  if (!priceStr || priceStr === 'Sur devis') return 'rgba(120,128,150,0.2)';
+  const nums = priceStr.match(/\d+/g);
+  if (!nums) return 'rgba(120,128,150,0.2)';
+  const max = parseInt(nums[nums.length-1]);
+  if (max <= 200) return 'rgba(34,197,94,0.15)';
+  if (max <= 500) return 'rgba(59,130,246,0.15)';
+  if (max <= 1000) return 'rgba(245,158,11,0.15)';
+  return 'rgba(239,68,68,0.15)';
+}
+
+function renderTree() {
+  const grid = document.getElementById('services-grid');
+  grid.innerHTML = '';
+
+  SERVICES.forEach(service => {
+    const card = document.createElement('div');
+    card.className = 'service-card';
+    card.style.setProperty('--svc-color', service.color);
+
+    let catsHtml = '';
+    service.categories.forEach(cat => {
+      let intsHtml = '';
+      cat.interventions.forEach(int => {
+        const priceColor = getPriceColor(int.price);
+        let subsHtml = '';
+        if (int.subs && int.subs.length) {
+          const subItems = int.subs.map(s =>
+            `<div class="sub-item">
+              <span class="sub-item-name">${s.name}</span>
+              <span class="sub-item-price">${s.price}</span>
+            </div>`
+          ).join('');
+          subsHtml = `<div class="sub-items">${subItems}</div>`;
+        }
+        intsHtml += `
+          <div class="intervention ${int.subs ? 'has-subs' : ''}" onclick="${int.subs ? 'toggleSub(this)' : ''}">
+            <div style="flex:1">
+              <div class="int-name">${int.name} ${int.subs ? '<span style="font-size:10px;color:var(--muted)">▾ variantes</span>' : ''}</div>
+              ${int.detail ? `<div class="int-detail">${int.detail}</div>` : ''}
+              ${subsHtml}
+            </div>
+            <span class="int-price" style="background:${priceColor};color:${service.color}">${int.price}</span>
+          </div>`;
+      });
+      catsHtml += `
+        <div class="cat-block">
+          <div class="cat-title" style="--c:${service.color}"><span style="background:${service.color};width:3px;height:12px;border-radius:2px;display:inline-block"></span>${cat.name}</div>
+          ${intsHtml}
+        </div>`;
+    });
+
+    card.innerHTML = `
+      <div class="card-header" onclick="toggleCard(this.parentElement)">
+        <div class="card-icon" style="background:${service.color}22;color:${service.color}">${service.icon}</div>
+        <div class="card-meta">
+          <div class="card-name" style="color:${service.color}">${service.name}</div>
+          <div class="card-price">Fourchette : ${service.priceRange}</div>
+        </div>
+        <div class="card-toggle" style="color:${service.color}">›</div>
+      </div>
+      <div class="card-body">${catsHtml}</div>`;
+
+    grid.appendChild(card);
+  });
+}
+
+function toggleCard(card) {
+  card.classList.toggle('open');
+}
+
+function toggleSub(el) {
+  el.classList.toggle('expanded');
+}
+
+// ===================== VIEW SWITCHING =====================
+function showView(view, btn) {
+  document.getElementById('view-tree').style.display = view === 'tree' ? 'block' : 'none';
+  document.getElementById('view-sql').style.display = view === 'sql' ? 'block' : 'none';
+  document.getElementById('v1-app').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ===================== COPY =====================
+function copySql(btn, id) {
+  const pre = document.getElementById(id);
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copié !';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copier';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+// INIT
+renderTree();
+
+</script>
+
+<script>
+
+// ═══════════════════════════════════════════════════════
+// DATA — Arbre complet piloté par questions
+// Structure : chaque nœud est soit une question (avec
+// options cliquables) soit un résultat terminal.
+// ═══════════════════════════════════════════════════════
+
+const TREE = {
+
+  // ══════════════════ PLOMBERIE ══════════════════
+  plomberie: {
+    id: 'plomberie', label: 'Plomberie', icon: '💧', color: '#3b82f6',
+    question: 'Où se situe votre problème ?',
+    sub: 'Indiquez la zone concernée dans votre logement',
+    options: [
+      { label: 'WC', icon: '🚽',
+        next: {
+          question: 'Dans quel domaine avez-vous besoin d\'aide ?',
+          options: [
+            { label: 'Engorgement / bouchon', icon: '💩',
+              result: { nom: 'Débouchage WC', prix: '100 – 200 €', tier: 'mid',
+                desc: 'Intervention avec furet ou pression selon l\'obstruction.',
+                variantes: [['WC standard (furet)', '100 – 150 €'], ['WC sanibroyeur', '130 – 200 €'], ['Haute pression', '300 – 500 €']],
+                meta: ['Urgence 24/7', 'Garantie 48h', '30–90 min'] } },
+            { label: 'Fuite au sol', icon: '💧',
+              result: { nom: 'Fuite WC / joint de cuvette', prix: '80 – 150 €', tier: 'low',
+                desc: 'Remplacement joint ou flexible de raccordement.',
+                variantes: [['Joint simple', '80 – 100 €'], ['Flexible + joint', '100 – 150 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '30–60 min'] } },
+            { label: 'Chasse défaillante', icon: '🔄',
+              result: { nom: 'Réparation chasse d\'eau', prix: '80 – 150 €', tier: 'low',
+                desc: 'Remplacement mécanisme de chasse (flotteur, clapet, cloche).',
+                variantes: [['Remplacement clapet/flotteur', '80 – 120 €'], ['Mécanisme complet', '100 – 150 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '30–60 min'] } },
+            { label: 'Remplacement WC', icon: '🔩',
+              next: {
+                question: 'Quel type de WC souhaitez-vous ?',
+                options: [
+                  { label: 'WC standard à poser', icon: '🚽',
+                    result: { nom: 'Pose WC standard', prix: '150 – 300 €', tier: 'mid',
+                      desc: 'Dépose ancien WC + fourniture et pose WC posé.',
+                      variantes: [['Main d\'œuvre seule', '100 – 150 €'], ['Fourniture + pose', '150 – 300 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '1–2h'] } },
+                  { label: 'WC suspendu', icon: '🪣',
+                    result: { nom: 'Pose WC suspendu', prix: '200 – 400 €', tier: 'mid',
+                      desc: 'Bâti support + cuvette suspendue + plaque de commande.',
+                      variantes: [['Bâti + cuvette entrée de gamme', '200 – 300 €'], ['Bâti + cuvette haut de gamme', '300 – 400 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '2–4h'] } },
+                  { label: 'Sanibroyeur', icon: '⚙️',
+                    result: { nom: 'Fourniture + pose sanibroyeur', prix: '900 – 1100 €', tier: 'xhigh',
+                      desc: 'Installation complète avec évacuation broyée.',
+                      variantes: [['Sanibroyeur standard', '900 – 1000 €'], ['Sanibroyeur silencieux', '1000 – 1100 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '3–5h'] } }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      { label: 'Évier / lavabo', icon: '🚿',
+        next: {
+          question: 'Quel est le problème ?',
+          options: [
+            { label: 'Bouchon / eau stagnante', icon: '🚫',
+              result: { nom: 'Débouchage évier / lavabo', prix: '100 – 180 €', tier: 'mid',
+                desc: 'Débouchage par furet spirale ou aspiration haute pression.',
+                variantes: [['Furet manuel', '100 – 130 €'], ['Haute pression', '130 – 180 €']],
+                meta: ['Urgence 24/7', 'Garantie 48h', '30–60 min'] } },
+            { label: 'Fuite sous le meuble', icon: '💧',
+              result: { nom: 'Fuite canalisation apparente', prix: '100 – 200 €', tier: 'mid',
+                desc: 'Remplacement siphon, joint ou section de canalisation visible.',
+                variantes: [['Siphon + joints', '80 – 120 €'], ['Remplacement section tuyau', '120 – 200 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '30–90 min'] } },
+            { label: 'Robinet à changer', icon: '🔧',
+              result: { nom: 'Changement robinet / mitigeur', prix: '80 – 200 €', tier: 'low',
+                desc: 'Remplacement robinet simple ou mitigeur standard.',
+                variantes: [['Robinet simple', '80 – 120 €'], ['Mitigeur standard', '100 – 150 €'], ['Mitigeur thermostatique', '150 – 200 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '30–60 min'] } }
+          ]
+        }
+      },
+      { label: 'Douche / baignoire', icon: '🛁',
+        next: {
+          question: 'Quel est le problème ?',
+          options: [
+            { label: 'Évacuation bouchée', icon: '🚫',
+              result: { nom: 'Débouchage douche / baignoire', prix: '100 – 180 €', tier: 'mid',
+                desc: 'Nettoyage du siphon et traitement de l\'obstruction.',
+                variantes: [['Siphon + furet', '100 – 140 €'], ['Haute pression', '140 – 180 €']],
+                meta: ['Urgence 24/7', 'Garantie 48h', '30–60 min'] } },
+            { label: 'Fuite robinet / mitigeur', icon: '💧',
+              result: { nom: 'Changement robinet / mitigeur', prix: '80 – 200 €', tier: 'low',
+                desc: 'Remplacement mitigeur de douche ou de baignoire.',
+                variantes: [['Mitigeur douche standard', '100 – 150 €'], ['Mitigeur thermostatique', '150 – 200 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '30–60 min'] } }
+          ]
+        }
+      },
+      { label: 'Chauffe-eau', icon: '♨️',
+        next: {
+          question: 'Quel est votre type de chauffe-eau ?',
+          options: [
+            { label: 'Électrique', icon: '⚡',
+              next: {
+                question: 'Quel est le problème ?',
+                options: [
+                  { label: 'Fuite visible', icon: '💧',
+                    result: { nom: 'Fuite chauffe-eau électrique', prix: '100 – 220 €', tier: 'mid',
+                      desc: 'Remplacement groupe de sécurité, joint ou anode.',
+                      variantes: [['Groupe sécurité + joint', '100 – 150 €'], ['Anode + vérification', '120 – 180 €'], ['Intervention si remplacement nécessaire', '350 – 1000 €']],
+                      meta: ['Urgence 24/7', 'Garantie 1 an', '1–2h'] } },
+                  { label: 'Plus d\'eau chaude', icon: '🌡️',
+                    result: { nom: 'Réparation ballon électrique', prix: '100 – 200 €', tier: 'mid',
+                      desc: 'Diagnostic résistance, thermostat ou corrosion.',
+                      variantes: [['Remplacement résistance', '100 – 160 €'], ['Thermostat défaillant', '100 – 150 €'], ['Remplacement ballon 80L', '400 – 600 €']],
+                      meta: ['Urgence 24/7', 'Garantie 1 an', '1–3h'] } },
+                  { label: 'Remplacement complet', icon: '🔄',
+                    result: { nom: 'Remplacement ballon électrique', prix: '350 – 1500 €', tier: 'high',
+                      desc: 'Fourniture et pose d\'un nouveau ballon selon capacité.',
+                      variantes: [['50 L (studio)', '350 – 500 €'], ['80 L (T2/T3)', '400 – 600 €'], ['150–200 L (maison)', '600 – 1000 €'], ['Thermodynamique', '800 – 1500 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '2–4h'] } }
+                ]
+              }
+            },
+            { label: 'Gaz', icon: '🔥',
+              result: { nom: 'Chauffe-eau gaz — diagnostic', prix: '150 – 350 €', tier: 'mid',
+                desc: 'Intervention sur chauffe-eau gaz instantané ou à accumulation.',
+                variantes: [['Réparation pièce', '150 – 250 €'], ['Remplacement veilleuse/thermocouple', '100 – 200 €'], ['Remplacement complet', '500 – 1000 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '1–3h'] } }
+          ]
+        }
+      },
+      { label: 'Canalisation', icon: '🔧',
+        next: {
+          question: 'De quel type de fuite s\'agit-il ?',
+          options: [
+            { label: 'Fuite visible / apparente', icon: '💧',
+              result: { nom: 'Fuite canalisation apparente', prix: '100 – 200 €', tier: 'mid',
+                desc: 'Réparation ou remplacement d\'une section de canalisation accessible.',
+                variantes: [['Collier + joint provisoire', '80 – 120 €'], ['Remplacement section PER/PVC', '120 – 200 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '1–2h'] } },
+            { label: 'Fuite encastrée / mur', icon: '🏗️',
+              result: { nom: 'Fuite canalisation encastrée', prix: '500 – 1000 €', tier: 'xhigh',
+                desc: 'Recherche de fuite non destructive + réparation nécessitant ouverture.',
+                variantes: [['Recherche électronique seule', '150 – 300 €'], ['Recherche + réparation', '500 – 800 €'], ['Réfection carrelage incluse', '700 – 1000 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '2–8h'] } },
+            { label: 'Colonne d\'immeuble', icon: '🏢',
+              result: { nom: 'Débouchage colonne générale', prix: '700 – 900 €', tier: 'xhigh',
+                desc: 'Intervention sur colonne collective avec camion hydrocureur.',
+                variantes: [['Hydrocurage standard', '700 – 800 €'], ['Hydrocurage + inspection caméra', '800 – 900 €']],
+                meta: ['Sur RDV syndic', 'Garantie 48h', '2–4h'] } }
+          ]
+        }
+      }
+    ]
+  },
+
+  // ══════════════════ ÉLECTRICITÉ ══════════════════
+  electricite: {
+    id: 'electricite', label: 'Électricité', icon: '⚡', color: '#f59e0b',
+    question: 'Quel est le problème électrique ?',
+    sub: 'Décrivez la panne ou l\'installation souhaitée',
+    options: [
+      { label: 'Panne électrique', icon: '🔌',
+        next: {
+          question: 'Que se passe-t-il exactement ?',
+          options: [
+            { label: 'Disjoncteur qui saute', icon: '⚡',
+              next: {
+                question: 'Quelle est la situation ?',
+                options: [
+                  { label: 'Disjoncteur différentiel seul', icon: '🔘',
+                    result: { nom: 'Remplacement disjoncteur différentiel', prix: '150 – 300 €', tier: 'mid',
+                      desc: 'Diagnostic + remplacement du différentiel défaillant.',
+                      variantes: [['Diagnostic + réarmement', '80 – 120 €'], ['Remplacement différentiel 25A', '150 – 220 €'], ['Remplacement différentiel 40A+', '200 – 300 €']],
+                      meta: ['Urgence 24/7', 'Garantie 1 an', '1–2h'] } },
+                  { label: 'Tableau complet obsolète', icon: '🗃️',
+                    result: { nom: 'Remplacement tableau électrique', prix: '800 – 2500 €', tier: 'xhigh',
+                      desc: 'Dépose ancien tableau + pose nouveau tableau NF C 15-100.',
+                      variantes: [['Studio / T1 (4–6 circuits)', '800 – 1200 €'], ['T2/T3 (6–10 circuits)', '1200 – 1800 €'], ['T4 / maison (10+ circuits)', '1800 – 2500 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '4–8h'] } }
+                ]
+              }
+            },
+            { label: 'Prises / zone sans courant', icon: '🔌',
+              result: { nom: 'Panne circuit prises', prix: '150 – 300 €', tier: 'mid',
+                desc: 'Diagnostic et réparation d\'un circuit de prises défaillant.',
+                variantes: [['Diagnostic + réarmement', '80 – 120 €'], ['Réparation fusible/disjoncteur', '150 – 200 €'], ['Remplacement câble section', '200 – 300 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '1–3h'] } },
+            { label: 'Plus de lumière', icon: '💡',
+              result: { nom: 'Dépannage circuit éclairage', prix: '150 – 250 €', tier: 'mid',
+                desc: 'Vérification circuit éclairage, remplacement interrupteur ou câble.',
+                variantes: [['Remplacement interrupteur', '80 – 130 €'], ['Réparation circuit complet', '150 – 250 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '1–2h'] } }
+          ]
+        }
+      },
+      { label: 'Installation / équipement', icon: '🔧',
+        next: {
+          question: 'Que souhaitez-vous installer ?',
+          options: [
+            { label: 'Prise ou interrupteur', icon: '🔌',
+              result: { nom: 'Pose prise / interrupteur', prix: '80 – 150 €', tier: 'low',
+                desc: 'Pose d\'une prise 16A ou d\'un interrupteur va-et-vient.',
+                variantes: [['Prise simple 16A', '80 – 100 €'], ['Prise 2P+T 20A (électroménager)', '100 – 130 €'], ['Interrupteur double / va-et-vient', '100 – 150 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '30–60 min'] } },
+            { label: 'Point lumineux', icon: '💡',
+              result: { nom: 'Pose luminaire / spots', prix: '80 – 300 €', tier: 'low',
+                desc: 'Branchement luminaire ou création de circuit spots encastrés.',
+                variantes: [['Pose lustre/plafonnier', '80 – 130 €'], ['Kit 3 spots encastrés', '150 – 250 €'], ['Kit 6 spots + variateur', '200 – 300 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '1–3h'] } },
+            { label: 'Borne recharge VE', icon: '🚗',
+              result: { nom: 'Installation borne IRVE', prix: '800 – 2000 €', tier: 'xhigh',
+                desc: 'Pose borne de recharge véhicule électrique avec mise en service.',
+                variantes: [['Wallbox 7 kW (mono)', '800 – 1200 €'], ['Wallbox 11 kW (tri)', '1000 – 1500 €'], ['Borne avec délestage domotique', '1400 – 2000 €']],
+                meta: ['Sur RDV', 'Garantie 2 ans', '3–6h'] } },
+            { label: 'Diagnostic installation', icon: '📋',
+              result: { nom: 'Diagnostic électrique', prix: '150 – 300 €', tier: 'mid',
+                desc: 'Contrôle conformité NF C 15-100, rapport détaillé.',
+                variantes: [['Appartement < 60 m²', '150 – 200 €'], ['Appartement 60–100 m²', '180 – 250 €'], ['Maison > 100 m²', '250 – 300 €']],
+                meta: ['Sur RDV', 'Rapport fourni', '2–4h'] } }
+          ]
+        }
+      }
+    ]
+  },
+
+  // ══════════════════ SERRURERIE ══════════════════
+  serrurerie: {
+    id: 'serrurerie', label: 'Serrurerie', icon: '🔑', color: '#a855f7',
+    question: 'Quel est votre besoin en serrurerie ?',
+    sub: 'Urgence ou sécurisation',
+    options: [
+      { label: 'Je suis bloqué dehors', icon: '🚪',
+        next: {
+          question: 'Décrivez votre porte',
+          options: [
+            { label: 'Porte claquée (clé à l\'intérieur)', icon: '😰',
+              next: {
+                question: 'Quel type de porte ?',
+                options: [
+                  { label: 'Porte standard', icon: '🚪',
+                    result: { nom: 'Ouverture porte claquée — standard', prix: '130 – 150 €', tier: 'low',
+                      desc: 'Ouverture sans dommage par crochetage ou carte.',
+                      variantes: [['Ouverture simple', '130 – 150 €']],
+                      meta: ['Urgence 24/7', '15–30 min', 'Sans dégât garanti'] } },
+                  { label: 'Porte blindée / 3 points', icon: '🛡️',
+                    result: { nom: 'Ouverture porte blindée claquée', prix: '150 – 200 €', tier: 'mid',
+                      desc: 'Technique non destructive adaptée aux portes renforcées.',
+                      variantes: [['Blindage standard', '150 – 175 €'], ['Blindage haute sécurité', '175 – 200 €']],
+                      meta: ['Urgence 24/7', '30–60 min', 'Sans dégât garanti'] } }
+                ]
+              }
+            },
+            { label: 'Porte verrouillée (clé perdue)', icon: '🔐',
+              next: {
+                question: 'Quel type de porte ?',
+                options: [
+                  { label: 'Porte standard', icon: '🚪',
+                    result: { nom: 'Ouverture porte verrouillée — standard', prix: '150 – 220 €', tier: 'mid',
+                      desc: 'Crochetage ou cylindre sacrifié selon serrure.',
+                      variantes: [['Ouverture sans casse', '150 – 180 €'], ['Avec remplacement cylindre', '180 – 220 €']],
+                      meta: ['Urgence 24/7', '30–60 min'] } },
+                  { label: 'Porte blindée', icon: '🛡️',
+                    result: { nom: 'Ouverture porte blindée verrouillée', prix: '200 – 350 €', tier: 'mid',
+                      desc: 'Intervention longue sur serrure multipoints.',
+                      variantes: [['3 points', '200 – 280 €'], ['5 points A2P', '280 – 350 €']],
+                      meta: ['Urgence 24/7', '1–2h'] } }
+                ]
+              }
+            },
+            { label: 'Suite à cambriolage', icon: '🚨',
+              result: { nom: 'Ouverture + sécurisation urgence', prix: '200 – 400 €', tier: 'mid',
+                desc: 'Ouverture immédiate + condamnation provisoire de la porte.',
+                variantes: [['Ouverture + condamnation', '200 – 300 €'], ['+ Remplacement serrure urgence', '300 – 400 €']],
+                meta: ['Urgence 24/7', '30–90 min'] } }
+          ]
+        }
+      },
+      { label: 'Changer / renforcer la serrure', icon: '🔧',
+        next: {
+          question: 'Que souhaitez-vous changer ?',
+          options: [
+            { label: 'Cylindre seul', icon: '🔩',
+              result: { nom: 'Changement de cylindre', prix: '120 – 200 €', tier: 'mid',
+                desc: 'Dépose ancien cylindre + pose cylindre A2P selon niveau de sécurité.',
+                variantes: [['Cylindre standard', '120 – 150 €'], ['Cylindre A2P 1★', '150 – 180 €'], ['Cylindre A2P 2★ anti-crochetage', '180 – 200 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '30–60 min'] } },
+            { label: 'Serrure multipoints', icon: '🔐',
+              next: {
+                question: 'Quel niveau de sécurité ?',
+                options: [
+                  { label: 'Serrure 3 points standard', icon: '🔒',
+                    result: { nom: 'Serrure 3 points', prix: '400 – 600 €', tier: 'high',
+                      desc: 'Dépose + pose serrure 3 points avec cylindre inclus.',
+                      variantes: [['Entrée de gamme', '400 – 500 €'], ['Avec cylindre A2P', '500 – 600 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '1–2h'] } },
+                  { label: 'Serrure 5 points A2P', icon: '🛡️',
+                    result: { nom: 'Serrure 5 points haute sécurité', prix: '600 – 1000 €', tier: 'xhigh',
+                      desc: 'Serrure multipoints avec certification A2P BP.',
+                      variantes: [['5 pts A2P BP1', '600 – 750 €'], ['5 pts A2P BP2', '750 – 900 €'], ['5 pts A2P BP3', '900 – 1000 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '2–3h'] } }
+                ]
+              }
+            },
+            { label: 'Blindage de porte', icon: '🛡️',
+              next: {
+                question: 'Type de blindage souhaité ?',
+                options: [
+                  { label: 'Blindage porte existante', icon: '🔨',
+                    result: { nom: 'Blindage porte existante', prix: '500 – 900 €', tier: 'high',
+                      desc: 'Pose de plaques acier sur porte existante + serrure renforcée.',
+                      variantes: [['Blindage simple acier', '500 – 700 €'], ['Blindage + pivot renforcé + 5pts', '700 – 900 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '3–6h'] } },
+                  { label: 'Porte blindée complète', icon: '🚪',
+                    result: { nom: 'Porte blindée A2P BP', prix: '1000 – 3500 €', tier: 'xhigh',
+                      desc: 'Remplacement complet par porte certifiée A2P Burglar Protection.',
+                      variantes: [['A2P 1★ BP1', '1000 – 1500 €'], ['A2P 2★ BP2', '1200 – 1800 €'], ['A2P 3★ BP3', '1500 – 3500 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '1 journée'] } }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      { label: 'Autre serrurerie', icon: '🔩',
+        next: {
+          question: 'Quel équipement ?',
+          options: [
+            { label: 'Boîte aux lettres', icon: '📬',
+              result: { nom: 'Serrure boîte aux lettres', prix: '70 – 150 €', tier: 'low',
+                desc: 'Remplacement serrure ou cylindre BAL normalisé.',
+                variantes: [['Serrure standard', '70 – 100 €'], ['Cylindre sécurisé', '100 – 150 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '30 min'] } },
+            { label: 'Portail / garage', icon: '🏠',
+              result: { nom: 'Serrure portail / garage', prix: '150 – 350 €', tier: 'mid',
+                desc: 'Remplacement serrure ou motorisation portail/porte de garage.',
+                variantes: [['Serrure portail simple', '150 – 200 €'], ['Motorisation portail', '250 – 350 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '1–2h'] } }
+          ]
+        }
+      }
+    ]
+  },
+
+  // ══════════════════ VITRERIE ══════════════════
+  vitrerie: {
+    id: 'vitrerie', label: 'Vitrerie', icon: '🪟', color: '#06b6d4',
+    question: 'Quel est votre besoin en vitrerie ?',
+    sub: 'Bris, remplacement ou étanchéité',
+    options: [
+      { label: 'Vitre cassée / fissurée', icon: '💥',
+        next: {
+          question: 'Quel type de vitrage faut-il remplacer ?',
+          options: [
+            { label: 'Vitrage simple (1 seule paroi)', icon: '🪟',
+              result: { nom: 'Remplacement vitre simple', prix: '65 – 200 €/m²', tier: 'low',
+                desc: 'Dépose bris + coupe et pose verre simple.',
+                variantes: [['Simple clair (main d\'œuvre)', '65 – 100 €/m²'], ['Feuilleté sécurité', '150 – 280 €/m²'], ['Anti-effraction', '200 – 350 €/m²']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '1–2h'] } },
+            { label: 'Double vitrage (fenêtre)', icon: '🏠',
+              next: {
+                question: 'Quel matériau de menuiserie ?',
+                options: [
+                  { label: 'PVC', icon: '🟦',
+                    result: { nom: 'Fenêtre double vitrage PVC', prix: '350 – 600 €', tier: 'high',
+                      desc: 'Remplacement fenêtre PVC double vitrage 4/16/4.',
+                      variantes: [['60×90 cm (petite)', '350 – 450 €'], ['90×120 cm (standard)', '450 – 550 €'], ['120×140 cm (grande)', '500 – 600 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '2–4h'] } },
+                  { label: 'Aluminium', icon: '⬜',
+                    result: { nom: 'Fenêtre double vitrage ALU', prix: '500 – 800 €', tier: 'high',
+                      desc: 'Remplacement fenêtre aluminium double vitrage avec rupture de pont thermique.',
+                      variantes: [['Standard', '500 – 650 €'], ['RPT haute performance', '650 – 800 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '2–4h'] } },
+                  { label: 'Bois', icon: '🪵',
+                    result: { nom: 'Fenêtre double vitrage Bois', prix: '500 – 900 €', tier: 'high',
+                      desc: 'Remplacement fenêtre bois lasurée ou peinte, double vitrage.',
+                      variantes: [['Bois pin', '500 – 700 €'], ['Bois chêne / exotique', '700 – 900 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '2–4h'] } }
+                ]
+              }
+            },
+            { label: 'Velux / fenêtre de toit', icon: '🏔️',
+              result: { nom: 'Remplacement Velux / fenêtre toit', prix: '600 – 1200 €', tier: 'xhigh',
+                desc: 'Dépose + pose fenêtre de toit avec raccord étanchéité.',
+                variantes: [['Velux simple vitrage', '600 – 800 €'], ['Velux double vitrage', '800 – 1000 €'], ['Velux triple vitrage', '1000 – 1200 €']],
+                meta: ['Sur RDV', 'Garantie 2 ans', '3–5h'] } }
+          ]
+        }
+      },
+      { label: 'Mécanisme fenêtre défaillant', icon: '🔧',
+        next: {
+          question: 'Quel mécanisme est défaillant ?',
+          options: [
+            { label: 'Crémone (barre de fermeture)', icon: '🔩',
+              result: { nom: 'Remplacement crémone', prix: '80 – 150 €', tier: 'low',
+                desc: 'Dépose ancienne crémone + pose crémone compatible.',
+                variantes: [['Crémone standard', '80 – 120 €'], ['Crémone multipoints', '120 – 150 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '30–60 min'] } },
+            { label: 'Poignée cassée', icon: '✋',
+              result: { nom: 'Remplacement poignée fenêtre', prix: '60 – 120 €', tier: 'low',
+                desc: 'Remplacement poignée avec ou sans cylindre de sécurité.',
+                variantes: [['Poignée standard', '60 – 80 €'], ['Poignée avec clé', '80 – 120 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '30 min'] } },
+            { label: 'Fenêtre qui frotte / coince', icon: '😤',
+              result: { nom: 'Rabotage / réglage fenêtre', prix: '80 – 150 €', tier: 'low',
+                desc: 'Réglage des paumelles, rabotage ou ajustement des joints.',
+                variantes: [['Réglage charnières', '80 – 100 €'], ['Rabotage bois', '100 – 150 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '30–90 min'] } }
+          ]
+        }
+      },
+      { label: 'Problème d\'étanchéité', icon: '💧',
+        next: {
+          question: 'Où est le problème d\'étanchéité ?',
+          options: [
+            { label: 'Joints fenêtre / porte-fenêtre', icon: '🪟',
+              result: { nom: 'Remplacement joints fenêtre', prix: '50 – 150 €', tier: 'low',
+                desc: 'Dépose anciens joints + pose joints EPDM ou silicone.',
+                variantes: [['Joints 1 fenêtre', '50 – 80 €'], ['Joints 3 fenêtres', '100 – 150 €']],
+                meta: ['Sur RDV', 'Garantie 2 ans', '30–90 min'] } },
+            { label: 'Joints douche / salle de bain', icon: '🚿',
+              result: { nom: 'Joints silicone douche / baignoire', prix: '80 – 150 €', tier: 'low',
+                desc: 'Dépose anciens joints moisis + nettoyage + joints silicone sanitaire.',
+                variantes: [['Douche (4 côtés)', '80 – 120 €'], ['Baignoire complète', '100 – 150 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', 'Séchage 24h'] } }
+          ]
+        }
+      }
+    ]
+  },
+
+  // ══════════════════ CHAUFFAGE ══════════════════
+  chauffage: {
+    id: 'chauffage', label: 'Chauffage', icon: '🔥', color: '#ef4444',
+    question: 'Quel est votre système de chauffage ?',
+    sub: 'Identifiez votre équipement',
+    options: [
+      { label: 'Chaudière gaz', icon: '🔥',
+        next: {
+          question: 'Quel est le problème ?',
+          options: [
+            { label: 'Plus de chauffage / eau chaude', icon: '❄️',
+              result: { nom: 'Dépannage chaudière gaz', prix: '150 – 500 €', tier: 'mid',
+                desc: 'Diagnostic + réparation selon pièce défaillante.',
+                variantes: [['Carte électronique', '200 – 500 €'], ['Brûleur / vanne gaz', '150 – 350 €'], ['Circulateur', '150 – 300 €'], ['Sonde / thermocouple', '100 – 250 €']],
+                meta: ['Urgence 24/7', 'Garantie 1 an', '1–3h'] } },
+            { label: 'Entretien annuel obligatoire', icon: '📋',
+              result: { nom: 'Entretien chaudière gaz', prix: '150 – 180 €', tier: 'low',
+                desc: 'Contrôle, nettoyage, réglage combustion + attestation.',
+                variantes: [['Chaudière murale', '150 – 170 €'], ['Chaudière à condensation', '160 – 180 €']],
+                meta: ['Sur RDV', 'Attestation fournie', '1–1h30'] } },
+            { label: 'Remplacement chaudière', icon: '🔄',
+              next: {
+                question: 'Quel type de chaudière souhaitez-vous ?',
+                options: [
+                  { label: 'Murale standard', icon: '📦',
+                    result: { nom: 'Remplacement chaudière gaz standard', prix: '2000 – 3500 €', tier: 'xhigh',
+                      desc: 'Dépose ancienne chaudière + fourniture et pose chaudière murale.',
+                      variantes: [['Chaudière standard 24 kW', '2000 – 2800 €'], ['Chaudière 30 kW', '2500 – 3500 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '1 journée'] } },
+                  { label: 'Condensation (économique)', icon: '💧',
+                    result: { nom: 'Remplacement chaudière condensation', prix: '2500 – 5000 €', tier: 'xhigh',
+                      desc: 'Chaudière à condensation rendement >100% PCI.',
+                      variantes: [['Condensation 24 kW', '2500 – 3500 €'], ['Condensation 30 kW', '3000 – 4500 €'], ['Condensation + régulation', '3500 – 5000 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '1 journée'] } }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      { label: 'Radiateurs', icon: '♨️',
+        next: {
+          question: 'Quel est le problème avec vos radiateurs ?',
+          options: [
+            { label: 'Radiateur froid / peu chaud', icon: '❄️',
+              result: { nom: 'Purge radiateurs + équilibrage circuit', prix: '80 – 400 €', tier: 'low',
+                desc: 'Purge de l\'air emprisonné dans les radiateurs et équilibrage du circuit.',
+                variantes: [['Purge 1 radiateur', '80 – 120 €'], ['Purge circuit complet', '150 – 300 €'], ['Désembouage complet', '300 – 600 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '1–4h'] } },
+            { label: 'Robinet thermostatique HS', icon: '🔧',
+              result: { nom: 'Remplacement robinet thermostatique', prix: '100 – 200 €', tier: 'mid',
+                desc: 'Dépose ancien robinet + pose robinet thermostatique.',
+                variantes: [['Robinet thermostatique standard', '100 – 150 €'], ['Tête thermostatique connectée', '150 – 200 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '30–60 min'] } },
+            { label: 'Pose d\'un nouveau radiateur', icon: '➕',
+              result: { nom: 'Pose radiateur chauffage central', prix: '250 – 400 €', tier: 'mid',
+                desc: 'Raccordement + pose radiateur sur circuit existant.',
+                variantes: [['Radiateur acier standard', '250 – 350 €'], ['Radiateur fonte', '300 – 400 €']],
+                meta: ['Sur RDV', 'Garantie 2 ans', '2–4h'] } }
+          ]
+        }
+      },
+      { label: 'Chaudière fioul', icon: '🛢️',
+        next: {
+          question: 'Quel est le problème ?',
+          options: [
+            { label: 'Entretien annuel', icon: '📋',
+              result: { nom: 'Entretien chaudière fioul', prix: '150 – 200 €', tier: 'mid',
+                desc: 'Contrôle, nettoyage brûleur et échangeur, ramonage + attestation.',
+                variantes: [['Entretien standard', '150 – 180 €'], ['Entretien + ramonage', '180 – 200 €']],
+                meta: ['Sur RDV', 'Attestation fournie', '1h30–2h'] } },
+            { label: 'Panne', icon: '❌',
+              result: { nom: 'Réparation chaudière fioul', prix: '200 – 600 €', tier: 'mid',
+                desc: 'Diagnostic + réparation brûleur, pompe à fioul ou carte.',
+                variantes: [['Brûleur', '200 – 400 €'], ['Pompe à fioul', '200 – 350 €'], ['Carte électronique', '300 – 600 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '1–3h'] } }
+          ]
+        }
+      }
+    ]
+  },
+
+  // ══════════════════ CLIM & PAC ══════════════════
+  'clim-pac': {
+    id: 'clim-pac', label: 'Clim & PAC', icon: '❄️', color: '#22c55e',
+    question: 'Quel est votre équipement ?',
+    sub: 'Climatisation ou pompe à chaleur',
+    options: [
+      { label: 'Climatisation (clim réversible)', icon: '❄️',
+        next: {
+          question: 'Que souhaitez-vous ?',
+          options: [
+            { label: 'Installation d\'une nouvelle clim', icon: '🔧',
+              next: {
+                question: 'Combien de pièces à climatiser ?',
+                options: [
+                  { label: '1 pièce (monosplit)', icon: '1️⃣',
+                    result: { nom: 'Installation clim monosplit', prix: '1200 – 2500 €', tier: 'xhigh',
+                      desc: 'Fourniture + pose 1 unité intérieure + 1 unité extérieure.',
+                      variantes: [['2,5 kW — jusqu\'à 25 m²', '1200 – 1800 €'], ['3,5 kW — jusqu\'à 35 m²', '1400 – 2000 €'], ['5 kW — jusqu\'à 50 m²', '1800 – 2500 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '4–6h'] } },
+                  { label: '2 pièces (bisplit)', icon: '2️⃣',
+                    result: { nom: 'Installation clim bisplit', prix: '2000 – 3500 €', tier: 'xhigh',
+                      desc: '1 groupe extérieur + 2 unités intérieures.',
+                      variantes: [['2×2,5 kW', '2000 – 2800 €'], ['2×3,5 kW', '2500 – 3500 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '6–8h'] } },
+                  { label: '3 pièces et plus (multisplit)', icon: '3️⃣',
+                    result: { nom: 'Installation clim multisplit', prix: '2800 – 5000 €', tier: 'xhigh',
+                      desc: '1 groupe extérieur + 3 unités intérieures ou plus.',
+                      variantes: [['Trisplit 3×2,5 kW', '2800 – 4000 €'], ['Quadrisplit', '3500 – 5000 €']],
+                      meta: ['Sur RDV', 'Garantie 2 ans', '1–2 journées'] } }
+                ]
+              }
+            },
+            { label: 'Entretien / maintenance', icon: '🧹',
+              result: { nom: 'Entretien climatisation', prix: '150 – 400 €', tier: 'mid',
+                desc: 'Nettoyage filtres, unités intérieure et extérieure, contrôle fluide.',
+                variantes: [['Monosplit (filtres + int.)', '150 – 180 €'], ['Monosplit complet + ext.', '170 – 220 €'], ['Bisplit', '200 – 300 €'], ['Trisplit', '280 – 400 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '1–2h'] } },
+            { label: 'Panne / dépannage', icon: '🚨',
+              next: {
+                question: 'Quel symptôme observez-vous ?',
+                options: [
+                  { label: 'Ne refroidit / ne chauffe plus', icon: '🌡️',
+                    result: { nom: 'Dépannage clim — perte de puissance', prix: '200 – 800 €', tier: 'mid',
+                      desc: 'Diagnostic fuite gaz, compresseur ou carte électronique.',
+                      variantes: [['Recharge gaz R410A/R32', '200 – 400 €'], ['Compresseur HS', '300 – 800 €'], ['Carte électronique', '200 – 500 €']],
+                      meta: ['Urgence 24/7', 'Garantie 1 an', '1–3h'] } },
+                  { label: 'Fuite d\'eau unité intérieure', icon: '💧',
+                    result: { nom: 'Fuite eau unité intérieure', prix: '150 – 300 €', tier: 'mid',
+                      desc: 'Nettoyage bac + tuyau de condensats bouché.',
+                      variantes: [['Nettoyage condensats', '150 – 200 €'], ['Remplacement pompe relevage', '200 – 300 €']],
+                      meta: ['Urgence 24/7', 'Garantie 1 an', '1–2h'] } },
+                  { label: 'Bruit anormal', icon: '📢',
+                    result: { nom: 'Diagnostic bruit clim', prix: '150 – 300 €', tier: 'mid',
+                      desc: 'Contrôle fixations, ventilateur et compresseur.',
+                      variantes: [['Resserrage + vibrations', '150 – 180 €'], ['Remplacement ventilateur', '200 – 300 €']],
+                      meta: ['Sur RDV', 'Garantie 1 an', '1–2h'] } }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      { label: 'Pompe à chaleur (PAC)', icon: '🌡️',
+        next: {
+          question: 'Quel type de PAC ?',
+          options: [
+            { label: 'PAC air/air (soufflage)', icon: '💨',
+              result: { nom: 'Installation PAC air/air', prix: '2500 – 8000 €', tier: 'xhigh',
+                desc: 'Pompe à chaleur avec distribution par soufflage d\'air.',
+                variantes: [['Monosplit petite surface', '2500 – 4000 €'], ['Multisplit grande surface', '4000 – 8000 €']],
+                meta: ['Sur RDV', 'Garantie 2 ans', '1–2 journées'] } },
+            { label: 'PAC air/eau (radiateurs)', icon: '♨️',
+              result: { nom: 'Installation PAC air/eau', prix: '7000 – 15000 €', tier: 'xhigh',
+                desc: 'PAC avec distribution via radiateurs ou plancher chauffant.',
+                variantes: [['PAC air/eau sur radiateurs', '7000 – 12000 €'], ['PAC air/eau sur plancher chauffant', '10000 – 15000 €']],
+                meta: ['Sur RDV', 'Garantie 2 ans', '2–3 journées'] } },
+            { label: 'Entretien / dépannage PAC', icon: '🔧',
+              result: { nom: 'Entretien & dépannage PAC', prix: '150 – 600 €', tier: 'mid',
+                desc: 'Entretien annuel ou réparation pompe à chaleur.',
+                variantes: [['Entretien annuel PAC', '150 – 250 €'], ['Dépannage panne', '200 – 600 €'], ['Recharge fluide frigorigène', '200 – 500 €']],
+                meta: ['Sur RDV', 'Garantie 1 an', '1–3h'] } }
+          ]
+        }
+      }
+    ]
+  }
+};
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let history = []; // [{question, answer, node}, ...]
+let currentDomain = null;
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+function getPriceTier(priceStr) {
+  const n = parseInt(priceStr);
+  if (n < 200) return 'low';
+  if (n < 500) return 'mid';
+  if (n < 1000) return 'high';
+  return 'xhigh';
+}
+
+function renderBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  let html = '<span class="crumb active" onclick="reset()">🏠 Accueil</span>';
+  history.forEach((h, i) => {
+    html += '<span class="crumb-sep">›</span>';
+    html += `<span class="crumb" onclick="goBack(${i})">${h.answer}</span>`;
+  });
+  bc.innerHTML = html;
+}
+
+function renderDomainSelection() {
+  const domains = Object.values(TREE);
+  let html = `
+    <div class="step-card">
+      <div class="step-label">Étape 1 / N</div>
+      <div class="step-question">De quel domaine avez-vous besoin ?</div>
+      <div class="options-grid">`;
+  domains.forEach(d => {
+    html += `
+      <button class="option-btn domain-btn domain-${d.id}" onclick="selectDomain('${d.id}')">
+        <span class="option-icon">${d.icon}</span>
+        <span class="option-label">${d.label}</span>
+      </button>`;
+  });
+  html += `</div></div>`;
+  document.getElementById('step-container').innerHTML = html;
+}
+
+function renderQuestion(node, domainId) {
+  const step = history.length + 2;
+  let html = `
+    <div class="step-card">
+      <div class="step-label">Étape ${step} / N</div>
+      <div class="step-question">${node.question}</div>
+      ${node.sub ? `<p style="color:var(--text2);font-size:14px;margin-bottom:20px">${node.sub}</p>` : ''}
+      <div class="options-grid">`;
+  node.options.forEach((opt, i) => {
+    html += `
+      <button class="option-btn" onclick="selectOption(${i})">
+        <span class="option-icon">${opt.icon || '•'}</span>
+        <span class="option-label">${opt.label}</span>
+      </button>`;
+  });
+  html += `</div></div>`;
+  document.getElementById('step-container').innerHTML = html;
+}
+
+function renderResult(result, domainId) {
+  const domain = TREE[domainId];
+  const tier = getPriceTier(result.prix);
+  const tierLabels = { low: '< 200 €', mid: '200 – 500 €', high: '500 – 1000 €', xhigh: '> 1000 €' };
+
+  let variantsHtml = '';
+  if (result.variantes && result.variantes.length) {
+    variantsHtml = `
+      <div class="variants-title">Variantes tarifées</div>
+      <div class="variants-list">`;
+    result.variantes.forEach(v => {
+      variantsHtml += `
+        <div class="variant-item">
+          <span class="variant-name">${v[0]}</span>
+          <span class="variant-price">${v[1]}</span>
+        </div>`;
+    });
+    variantsHtml += `</div>`;
+  }
+
+  let metaHtml = '';
+  if (result.meta) {
+    metaHtml = `<div class="result-meta">`;
+    result.meta.forEach(m => {
+      metaHtml += `<span class="meta-item"><span class="meta-dot"></span>${m}</span>`;
+    });
+    metaHtml += `</div>`;
+  }
+
+  let html = `
+    <div class="result-card domain-${domainId}">
+      <div class="result-tag">✓ Résultat</div>
+      <div class="result-title">${result.nom}</div>
+      <div class="result-desc">${result.desc || ''}</div>
+      <div class="price-badge ${tier}">
+        <span class="price-num">${result.prix}</span>
+        <span class="price-unit">TTC</span>
+      </div>
+      ${variantsHtml}
+      ${metaHtml}
+    </div>
+    <button class="btn-reset" onclick="reset()">↩ Nouvelle recherche</button>
+  `;
+  document.getElementById('step-container').innerHTML = html;
+}
+
+// ═══════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════
+let currentNode = null;
+
+function reset() {
+  history = [];
+  currentDomain = null;
+  currentNode = null;
+  renderBreadcrumb();
+  renderDomainSelection();
+}
+
+function selectDomain(domainId) {
+  currentDomain = domainId;
+  const domain = TREE[domainId];
+  history = [{ answer: domain.label }];
+  currentNode = domain;
+  renderBreadcrumb();
+  renderQuestion(domain, domainId);
+}
+
+function selectOption(i) {
+  const opt = currentNode.options[i];
+  history.push({ answer: opt.label });
+  renderBreadcrumb();
+
+  if (opt.result) {
+    renderResult(opt.result, currentDomain);
+  } else if (opt.next) {
+    currentNode = opt.next;
+    renderQuestion(opt.next, currentDomain);
+  }
+}
+
+function goBack(index) {
+  // Rebuild navigation to that point
+  if (index === 0) {
+    // Go back to domain selection
+    history = [];
+    currentDomain = null;
+    currentNode = null;
+    renderBreadcrumb();
+    renderDomainSelection();
+    return;
+  }
+  // Re-walk the tree
+  const domain = TREE[currentDomain];
+  let node = domain;
+  history = history.slice(0, index + 1);
+
+  // Walk from domain step
+  for (let k = 1; k < history.length; k++) {
+    const ans = history[k].answer;
+    const opt = node.options.find(o => o.label === ans);
+    if (!opt) break;
+    if (opt.next) node = opt.next;
+    else break;
+  }
+
+  currentNode = node;
+  renderBreadcrumb();
+  renderQuestion(node, currentDomain);
+}
+
+// ═══════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════
+function v2_switchTab(name) {
+  const v2 = document.getElementById('v2-app');
+  v2.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  v2.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function copyBlock(btn, id) {
+  const el = document.getElementById(id);
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copié';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+reset();
+
+</script>
+
+<script>
+function showV(n) {
+  document.getElementById('v1-app').style.display = n===1 ? 'block' : 'none';
+  document.getElementById('v2-app').style.display = n===2 ? 'block' : 'none';
+  document.getElementById('btn-v1').className = 'hub-btn' + (n===1 ? ' on-v1' : '');
+  document.getElementById('btn-v2').className = 'hub-btn' + (n===2 ? ' on-v2' : '');
+}
+</script>
+
+</body>
+</html>
