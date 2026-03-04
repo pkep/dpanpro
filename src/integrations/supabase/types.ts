@@ -556,6 +556,10 @@ export type Database = {
           photos: string[] | null
           postal_code: string
           priority: string
+          prix_max: number | null
+          prix_min: number | null
+          questionnaire_answers: Json | null
+          questionnaire_resultat_id: string | null
           quote_pdf_url: string | null
           quote_signature_data: string | null
           quote_signed_at: string | null
@@ -591,6 +595,10 @@ export type Database = {
           photos?: string[] | null
           postal_code: string
           priority?: string
+          prix_max?: number | null
+          prix_min?: number | null
+          questionnaire_answers?: Json | null
+          questionnaire_resultat_id?: string | null
           quote_pdf_url?: string | null
           quote_signature_data?: string | null
           quote_signed_at?: string | null
@@ -626,6 +634,10 @@ export type Database = {
           photos?: string[] | null
           postal_code?: string
           priority?: string
+          prix_max?: number | null
+          prix_min?: number | null
+          questionnaire_answers?: Json | null
+          questionnaire_resultat_id?: string | null
           quote_pdf_url?: string | null
           quote_signature_data?: string | null
           quote_signed_at?: string | null
@@ -640,6 +652,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "interventions_questionnaire_resultat_id_fkey"
+            columns: ["questionnaire_resultat_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_resultats"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "interventions_technician_id_fkey"
             columns: ["technician_id"]
@@ -1011,6 +1030,227 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      questionnaire_questions: {
+        Row: {
+          created_at: string
+          display_order: number
+          domaine_code: string
+          est_racine: boolean
+          id: string
+          image_url: string | null
+          is_active: boolean
+          libelle: string
+          parent_reponse_id: string | null
+          sous_libelle: string | null
+          type_champ: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          domaine_code: string
+          est_racine?: boolean
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          libelle: string
+          parent_reponse_id?: string | null
+          sous_libelle?: string | null
+          type_champ?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          domaine_code?: string
+          est_racine?: boolean
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          libelle?: string
+          parent_reponse_id?: string | null
+          sous_libelle?: string | null
+          type_champ?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_parent_reponse"
+            columns: ["parent_reponse_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_reponses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questionnaire_reponses: {
+        Row: {
+          created_at: string
+          display_order: number
+          icone: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          label: string
+          next_question_id: string | null
+          question_id: string
+          resultat_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          icone?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          label: string
+          next_question_id?: string | null
+          question_id: string
+          resultat_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          icone?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          label?: string
+          next_question_id?: string | null
+          question_id?: string
+          resultat_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionnaire_reponses_next_question_id_fkey"
+            columns: ["next_question_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questionnaire_reponses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questionnaire_reponses_resultat_id_fkey"
+            columns: ["resultat_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_resultats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      questionnaire_resultats: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          domaine_code: string
+          duree_max_minutes: number | null
+          duree_min_minutes: number | null
+          garantie_jours: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          nom: string
+          notes_internes: string | null
+          prix_max: number | null
+          prix_min: number | null
+          slug: string
+          unite_prix: string
+          updated_at: string
+          urgence_disponible: boolean
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          domaine_code: string
+          duree_max_minutes?: number | null
+          duree_min_minutes?: number | null
+          garantie_jours?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          nom: string
+          notes_internes?: string | null
+          prix_max?: number | null
+          prix_min?: number | null
+          slug: string
+          unite_prix?: string
+          updated_at?: string
+          urgence_disponible?: boolean
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          domaine_code?: string
+          duree_max_minutes?: number | null
+          duree_min_minutes?: number | null
+          garantie_jours?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          nom?: string
+          notes_internes?: string | null
+          prix_max?: number | null
+          prix_min?: number | null
+          slug?: string
+          unite_prix?: string
+          updated_at?: string
+          urgence_disponible?: boolean
+        }
+        Relationships: []
+      }
+      questionnaire_variantes: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          nom: string
+          prix_max: number | null
+          prix_min: number | null
+          resultat_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          nom: string
+          prix_max?: number | null
+          prix_min?: number | null
+          resultat_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          nom?: string
+          prix_max?: number | null
+          prix_min?: number | null
+          resultat_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questionnaire_variantes_resultat_id_fkey"
+            columns: ["resultat_id"]
+            isOneToOne: false
+            referencedRelation: "questionnaire_resultats"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quote_modification_items: {
         Row: {
