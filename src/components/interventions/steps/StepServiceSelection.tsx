@@ -78,6 +78,11 @@ export function StepServiceSelection({ selectedCategory, onSelect }: StepService
                   {categoryIcons[service.code] || <Wrench className="h-8 w-8" />}
                 </div>
                 <h3 className="font-semibold">{service.name}</h3>
+                {service.description && (
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                    {service.description}
+                  </p>
+                )}
               </CardContent>
             </Card>
           );
