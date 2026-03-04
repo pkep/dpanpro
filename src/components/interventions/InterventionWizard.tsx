@@ -57,7 +57,9 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [skipAccountCreation, setSkipAccountCreation] = useState(false);
   // Questionnaire result
   const [questionnaireResult, setQuestionnaireResult] = useState<QuestionnaireResult | null>(null);
   const [questionnaireAnswers, setQuestionnaireAnswers] = useState<string[]>([]);
@@ -97,12 +99,17 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
         return category !== null;
       case 2:
         return questionnaireResult !== null;
-      case 3:
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
+      case 3: {
+        const baseValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
                phone.trim().length >= 10 &&
                address.trim().length >= 5 && 
                /^\d{5}$/.test(postalCode) && 
                city.trim().length >= 2;
+        if (!user && !skipAccountCreation) {
+          return baseValid && password.length >= 8 && password === confirmPassword;
+        }
+        return baseValid;
+      }
       case 4:
         return true;
       default:
@@ -218,6 +225,12 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
             onCityChange={setCity}
             additionalInfo={additionalInfo}
             onAdditionalInfoChange={setAdditionalInfo}
+            password={password}
+            onPasswordChange={setPassword}
+            confirmPassword={confirmPassword}
+            onConfirmPasswordChange={setConfirmPassword}
+            skipAccountCreation={skipAccountCreation}
+            onSkipAccountCreationChange={setSkipAccountCreation}
           />
         );
       case 4:

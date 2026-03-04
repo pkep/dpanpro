@@ -1,9 +1,10 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
-import { User, Mail, Phone, MapPin } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Lock } from 'lucide-react';
 
 interface StepContactInfoProps {
   email: string;
@@ -18,6 +19,12 @@ interface StepContactInfoProps {
   onCityChange: (value: string) => void;
   additionalInfo: string;
   onAdditionalInfoChange: (value: string) => void;
+  password: string;
+  onPasswordChange: (value: string) => void;
+  confirmPassword: string;
+  onConfirmPasswordChange: (value: string) => void;
+  skipAccountCreation: boolean;
+  onSkipAccountCreationChange: (value: boolean) => void;
 }
 
 export function StepContactInfo({
@@ -33,6 +40,12 @@ export function StepContactInfo({
   onCityChange,
   additionalInfo,
   onAdditionalInfoChange,
+  password,
+  onPasswordChange,
+  confirmPassword,
+  onConfirmPasswordChange,
+  skipAccountCreation,
+  onSkipAccountCreationChange,
 }: StepContactInfoProps) {
   const { user, isAuthenticated } = useAuth();
 
@@ -102,7 +115,60 @@ export function StepContactInfo({
           <p className="text-xs text-muted-foreground mt-1">
             Le technicien vous contactera à ce numéro
           </p>
+      </div>
+
+      {/* Account Creation */}
+      {!isAuthenticated && (
+        <div className="space-y-4 pt-4 border-t">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Lock className="h-4 w-4" />
+            Création de compte
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="skipAccount"
+              checked={skipAccountCreation}
+              onCheckedChange={(checked) => onSkipAccountCreationChange(checked === true)}
+            />
+            <Label htmlFor="skipAccount" className="text-sm font-normal cursor-pointer">
+              Continuer en tant qu'invité (sans créer de compte)
+            </Label>
+          </div>
+
+          {!skipAccountCreation && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="password">Mot de passe *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Minimum 8 caractères"
+                  className="mt-2"
+                  value={password}
+                  onChange={(e) => onPasswordChange(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="Retapez votre mot de passe"
+                  className="mt-2"
+                  value={confirmPassword}
+                  onChange={(e) => onConfirmPasswordChange(e.target.value)}
+                />
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="text-xs text-destructive mt-1">
+                    Les mots de passe ne correspondent pas
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
+      )}
       </div>
 
       {/* Address Section */}
