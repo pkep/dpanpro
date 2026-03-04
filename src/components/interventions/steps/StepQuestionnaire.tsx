@@ -124,6 +124,19 @@ export function StepQuestionnaire({
     onPhotosChange(photos.filter((_, i) => i !== index));
   };
 
+  const handleGoBackFromResult = () => {
+    if (history.length > 0) {
+      const prev = history[history.length - 1];
+      setHistory(history.slice(0, -1));
+      setCurrentNode(prev.node);
+      setAnswers(answers.slice(0, -1));
+    } else {
+      setCurrentNode(domain);
+      setAnswers([]);
+    }
+    setResult(null);
+  };
+
   // Show result card
   if (result) {
     return (
@@ -140,6 +153,12 @@ export function StepQuestionnaire({
             </span>
           ))}
         </div>
+
+        {/* Back one step */}
+        <Button variant="ghost" size="sm" onClick={handleGoBackFromResult}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Retour
+        </Button>
 
         {/* Result Card */}
         <Card className="border-primary/30 bg-primary/5">
