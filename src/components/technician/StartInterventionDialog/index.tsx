@@ -17,7 +17,8 @@ import {
   ArrowRight, 
   ArrowLeft, 
   Plus,
-  PenTool
+  PenTool,
+  CreditCard
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { workPhotosService, WorkPhoto } from '@/services/work-photos/work-photos.service';
@@ -26,6 +27,7 @@ import { quoteModificationsService } from '@/services/quote-modifications/quote-
 import { servicesService } from '@/services/services/services.service';
 import { quotePDFService } from '@/services/quote-pdf/quote-pdf.service';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { paymentService } from '@/services/payment/payment.service';
 import { supabase } from '@/integrations/supabase/client';
 import { PhotoStep } from './PhotoStep';
 import { QuoteReviewStep } from './QuoteReviewStep';
@@ -38,6 +40,7 @@ const STEP_TITLES: Record<StartStep, string> = {
   quote_review: 'Validation du devis',
   add_items: 'Prestations complémentaires',
   signature: 'Signature du client',
+  payment_pending: 'Autorisation de paiement',
   processing: 'Traitement en cours',
 };
 
@@ -46,6 +49,7 @@ const STEP_DESCRIPTIONS: Record<StartStep, string> = {
   quote_review: 'Vérifiez le devis. Le client doit le signer pour commencer l\'intervention.',
   add_items: 'Ajoutez les prestations ou équipements supplémentaires nécessaires.',
   signature: 'Le client doit signer pour valider le devis et lancer l\'intervention.',
+  payment_pending: 'En attente de l\'autorisation de paiement du client.',
   processing: 'Génération du devis et démarrage de l\'intervention...',
 };
 
@@ -70,6 +74,7 @@ export function StartInterventionDialog({
   const [error, setError] = useState<string | null>(null);
   const [vatRate, setVatRate] = useState(10);
   const [isCompany, setIsCompany] = useState(false);
+  const [paymentAuthorized, setPaymentAuthorized] = useState(false);
 
   // Track if dialog has been opened to avoid resetting during close
   const [initialized, setInitialized] = useState(false);
@@ -77,7 +82,6 @@ export function StartInterventionDialog({
   // Reset state and load data when dialog opens
   useEffect(() => {
     if (open && interventionId) {
-      // Only reset on fresh open
       if (!initialized) {
         setStep('photos');
         setSelectedFiles([]);
@@ -85,22 +89,50 @@ export function StartInterventionDialog({
         setPendingItems([]);
         setSignatureData(null);
         setError(null);
+        setPaymentAuthorized(false);
         setInitialized(true);
       }
       loadQuoteData();
     }
     if (!open) {
-      // Mark as not initialized so next open resets
       setInitialized(false);
     }
   }, [open, interventionId]);
+
+  // Real-time listener for payment authorization
+  useEffect(() => {
+    if (step !== 'payment_pending' || !interventionId) return;
+
+    const channel = supabase
+      .channel(`payment-auth-${interventionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'payment_authorizations',
+          filter: `intervention_id=eq.${interventionId}`,
+        },
+        (payload) => {
+          const newStatus = (payload.new as any).status;
+          if (newStatus === 'authorized') {
+            setPaymentAuthorized(true);
+            toast.success('Paiement autorisé par le client !');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [step, interventionId]);
 
   const loadQuoteData = async () => {
     try {
       const lines = await quotesService.getQuoteLines(interventionId);
       setQuoteLines(lines);
 
-      // Get client company status and VAT rate
       if (clientId) {
         const { data: clientData } = await supabase
           .from('users')
@@ -112,7 +144,6 @@ export function StartInterventionDialog({
         }
       }
 
-      // Get VAT rate from service
       const services = await servicesService.getActiveServices();
       const service = services.find((s) => s.code === category);
       if (service) {
@@ -165,6 +196,18 @@ export function StartInterventionDialog({
     );
   };
 
+  // Calculate total TTC for payment
+  const getTotalTTC = () => {
+    const baseTotal = quoteLines.reduce((sum, line) => sum + line.calculatedPrice, 0);
+    const additionalTotal = pendingItems.reduce(
+      (sum, item) => sum + item.unitPrice * item.quantity,
+      0
+    );
+    const totalHT = baseTotal + additionalTotal;
+    const vatAmount = Math.round(totalHT * (vatRate / 100) * 100) / 100;
+    return Math.round((totalHT + vatAmount) * 100) / 100;
+  };
+
   const handleNext = async () => {
     if (step === 'photos') {
       if (selectedFiles.length === 0) {
@@ -175,7 +218,6 @@ export function StartInterventionDialog({
     } else if (step === 'quote_review') {
       setStep('signature');
     } else if (step === 'add_items') {
-      // Validate items
       const invalidItems = pendingItems.filter((item) => !item.label || item.unitPrice <= 0);
       if (invalidItems.length > 0) {
         setError('Veuillez remplir tous les champs obligatoires');
@@ -185,6 +227,13 @@ export function StartInterventionDialog({
     } else if (step === 'signature') {
       if (!signatureData) {
         setError('Le client doit signer le devis');
+        return;
+      }
+      // After signature, request payment authorization from client
+      await requestPaymentAuthorization();
+    } else if (step === 'payment_pending') {
+      if (!paymentAuthorized) {
+        setError('En attente de l\'autorisation de paiement du client');
         return;
       }
       await processIntervention();
@@ -203,10 +252,48 @@ export function StartInterventionDialog({
         setStep('quote_review');
       }
     }
+    // Cannot go back from payment_pending (signature already done)
   };
 
   const handleAddItems = () => {
     setStep('add_items');
+  };
+
+  const requestPaymentAuthorization = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const totalTTC = getTotalTTC();
+      const email = clientEmail || '';
+
+      if (!email) {
+        setError('Email du client manquant, impossible de demander l\'autorisation de paiement.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Create payment authorization in DB (pending)
+      await paymentService.createPaymentIntent({
+        interventionId,
+        amount: totalTTC,
+        clientEmail: email,
+        clientPhone: clientPhone || undefined,
+      });
+
+      // Notify client via SMS + Email + Push
+      await supabase.functions.invoke('notify-payment-required', {
+        body: { interventionId, reason: 'start_intervention' },
+      });
+
+      setStep('payment_pending');
+      toast.info('Demande d\'autorisation envoyée au client');
+    } catch (err: any) {
+      console.error('Error requesting payment authorization:', err);
+      setError(err?.message || 'Erreur lors de la demande d\'autorisation');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const processIntervention = async () => {
@@ -223,7 +310,7 @@ export function StartInterventionDialog({
         userId
       );
 
-      // 2. If there are pending items, create a quote modification and handle authorization increment
+      // 2. If there are pending items, create a quote modification
       if (pendingItems.length > 0) {
         const modification = await quoteModificationsService.createModification({
           interventionId,
@@ -287,7 +374,6 @@ export function StartInterventionDialog({
         });
       } catch (pdfErr) {
         console.error('Error sending quote email:', pdfErr);
-        // Don't fail the whole process for email
       }
 
       toast.success('Devis validé, intervention démarrée');
@@ -296,7 +382,7 @@ export function StartInterventionDialog({
     } catch (err: any) {
       console.error('Error processing intervention:', err);
       setError(err?.message || 'Erreur lors du traitement');
-      setStep('signature');
+      setStep('payment_pending');
       setIsLoading(false);
     }
   };
@@ -317,6 +403,8 @@ export function StartInterventionDialog({
         return pendingItems.every((item) => item.label && item.unitPrice > 0);
       case 'signature':
         return !!signatureData;
+      case 'payment_pending':
+        return paymentAuthorized;
       default:
         return false;
     }
@@ -331,11 +419,16 @@ export function StartInterventionDialog({
       case 'add_items':
         return 'Continuer vers la signature';
       case 'signature':
+        return 'Envoyer la demande de paiement';
+      case 'payment_pending':
         return 'Valider et commencer';
       default:
         return 'Suivant';
     }
   };
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -344,6 +437,7 @@ export function StartInterventionDialog({
           <DialogTitle className="flex items-center gap-2">
             {step === 'photos' && <Camera className="h-5 w-5" />}
             {step === 'signature' && <PenTool className="h-5 w-5" />}
+            {step === 'payment_pending' && <CreditCard className="h-5 w-5" />}
             {step === 'processing' && <Loader2 className="h-5 w-5 animate-spin" />}
             {STEP_TITLES[step]}
           </DialogTitle>
@@ -418,6 +512,76 @@ export function StartInterventionDialog({
             </div>
           )}
 
+          {step === 'payment_pending' && (
+            <div className="space-y-4">
+              {!paymentAuthorized ? (
+                <>
+                  <div className="flex flex-col items-center justify-center py-6 gap-4">
+                    <div className="relative">
+                      <CreditCard className="h-12 w-12 text-primary" />
+                      <div className="absolute -top-1 -right-1">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="font-semibold text-lg">En attente du client</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Le client a reçu une demande d'autorisation de paiement par SMS et email.
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Montant : <strong className="text-foreground">{formatPrice(getTotalTTC())}</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Vous pouvez fermer cette fenêtre et préparer votre matériel.
+                      L'intervention démarrera automatiquement une fois le paiement autorisé.
+                    </AlertDescription>
+                  </Alert>
+
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={async () => {
+                      try {
+                        await supabase.functions.invoke('notify-payment-required', {
+                          body: { interventionId, reason: 'reminder' },
+                        });
+                        toast.success('Rappel envoyé au client');
+                      } catch {
+                        toast.error('Erreur lors de l\'envoi du rappel');
+                      }
+                    }}
+                  >
+                    Renvoyer la notification au client
+                  </Button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 gap-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-lg">Paiement autorisé !</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Le client a autorisé {formatPrice(getTotalTTC())}. Vous pouvez maintenant démarrer l'intervention.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
           {step === 'processing' && (
             <div className="flex flex-col items-center justify-center py-8 gap-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -428,7 +592,7 @@ export function StartInterventionDialog({
 
         {step !== 'processing' && (
           <DialogFooter className="gap-2 sm:gap-0">
-            {step !== 'photos' && (
+            {step !== 'photos' && step !== 'payment_pending' && (
               <Button variant="outline" onClick={handleBack} disabled={isLoading}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Retour
@@ -439,11 +603,18 @@ export function StartInterventionDialog({
                 Annuler
               </Button>
             )}
+            {step === 'payment_pending' && !paymentAuthorized && (
+              <Button variant="outline" onClick={handleClose}>
+                Fermer (en attente)
+              </Button>
+            )}
             <Button onClick={handleNext} disabled={!canProceed() || isLoading}>
               {isLoading ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : step === 'signature' ? (
+              ) : step === 'payment_pending' && paymentAuthorized ? (
                 <CheckCircle className="h-4 w-4 mr-2" />
+              ) : step === 'signature' ? (
+                <CreditCard className="h-4 w-4 mr-2" />
               ) : (
                 <ArrowRight className="h-4 w-4 mr-2" />
               )}
