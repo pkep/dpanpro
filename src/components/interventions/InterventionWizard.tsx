@@ -192,6 +192,10 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
           <StepQuestionnaire
             category={category}
             onResult={handleQuestionnaireResult}
+            onResultClear={() => {
+              setQuestionnaireResult(null);
+              setQuestionnaireAnswers([]);
+            }}
             selectedResult={questionnaireResult}
             description={description}
             onDescriptionChange={setDescription}
@@ -313,10 +317,12 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
             </Button>
 
             {currentStep < STEPS.length ? (
-              <Button onClick={handleNext} disabled={!canProceed()}>
-                Suivant
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              !(currentStep === 2 && !questionnaireResult) ? (
+                <Button onClick={handleNext} disabled={!canProceed()}>
+                  Suivant
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : <div />
             ) : (
               <Button onClick={handleSubmit} disabled={isSubmitting}>
                 {isSubmitting ? (
