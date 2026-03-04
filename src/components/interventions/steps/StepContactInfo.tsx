@@ -1,10 +1,9 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Lock } from 'lucide-react';
+import { User, Mail, Phone, MapPin } from 'lucide-react';
 
 interface StepContactInfoProps {
   email: string;
@@ -19,12 +18,6 @@ interface StepContactInfoProps {
   onCityChange: (value: string) => void;
   additionalInfo: string;
   onAdditionalInfoChange: (value: string) => void;
-  password: string;
-  onPasswordChange: (value: string) => void;
-  confirmPassword: string;
-  onConfirmPasswordChange: (value: string) => void;
-  isGuest: boolean;
-  onIsGuestChange: (value: boolean) => void;
 }
 
 export function StepContactInfo({
@@ -40,12 +33,6 @@ export function StepContactInfo({
   onCityChange,
   additionalInfo,
   onAdditionalInfoChange,
-  password,
-  onPasswordChange,
-  confirmPassword,
-  onConfirmPasswordChange,
-  isGuest,
-  onIsGuestChange,
 }: StepContactInfoProps) {
   const { user, isAuthenticated } = useAuth();
 
@@ -117,61 +104,6 @@ export function StepContactInfo({
           </p>
         </div>
       </div>
-
-      {/* Password Section - only for non-authenticated users */}
-      {!isAuthenticated && (
-        <div className="space-y-4 pt-4 border-t">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="guest"
-              checked={isGuest}
-              onCheckedChange={(checked) => onIsGuestChange(checked === true)}
-            />
-            <Label htmlFor="guest" className="text-sm font-normal cursor-pointer">
-              Continuer en tant qu'invité (sans créer de compte)
-            </Label>
-          </div>
-
-          {!isGuest && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Lock className="h-4 w-4" />
-                Créer votre compte
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Créez un mot de passe pour suivre vos interventions depuis votre espace client
-              </p>
-              <div>
-                <Label htmlFor="password">Mot de passe *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className="mt-2"
-                  value={password}
-                  onChange={(e) => onPasswordChange(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  className="mt-2"
-                  value={confirmPassword}
-                  onChange={(e) => onConfirmPasswordChange(e.target.value)}
-                />
-                {confirmPassword && password !== confirmPassword && (
-                  <p className="text-xs text-destructive mt-1">
-                    Les mots de passe ne correspondent pas
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Address Section */}
       <div className="space-y-4 pt-4 border-t">
