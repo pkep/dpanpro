@@ -144,11 +144,14 @@ class InterventionsService {
 
     const intervention = this.mapToIntervention(data as unknown as DbIntervention);
 
-    // Trigger automatic dispatch in background (non-blocking)
-    // Now dispatch even without coordinates - the dispatch function will handle it
-    dispatchService.dispatchIntervention(intervention.id).catch(err => {
-      console.error('Auto-dispatch failed:', err);
-    });
+    // Trigger automatic dispatch only if we have coordinates
+    if (latitude && longitude) {
+      dispatchService.dispatchIntervention(intervention.id).catch(err => {
+        console.error('Auto-dispatch failed:', err);
+      });
+    } else {
+      console.warn('Skipping auto-dispatch: intervention has no coordinates (geocoding failed)');
+    }
 
     return intervention;
   }
