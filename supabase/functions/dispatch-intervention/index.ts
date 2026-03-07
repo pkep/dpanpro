@@ -462,8 +462,24 @@ async function handleDispatch(supabase: any, interventionId: string) {
 
   console.log(`[Dispatch] Notified top 3 technicians (attempts created):`, top3Technicians.map(t => t.userId));
 
-  // NOTE: Notifications are NOT sent here - they will be sent when 'notify' action is called
-  // after the client confirms the intervention (payment authorization)
+  // Send SMS, Email, and Push notifications immediately
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+  await notifyTechniciansDispatch(
+    supabaseUrl,
+    serviceRoleKey,
+    interventionId,
+    top3Technicians.map(t => t.userId),
+    {
+      title: intervention.title || `${intervention.category}`,
+      address: intervention.address || '',
+      city: intervention.city || '',
+      postalCode: intervention.postal_code || '',
+      category: intervention.category,
+      priority: intervention.priority,
+    }
+  );
 
   return new Response(
     JSON.stringify({
