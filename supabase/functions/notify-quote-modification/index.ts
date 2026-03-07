@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { buildQuoteModificationEmailHtml } from "../_shared/email-templates/quote-modification.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,19 +20,13 @@ interface NotifyRequest {
 
 // Format French phone number to international format
 function formatPhoneNumber(phone: string): string {
-  // Remove spaces and dashes
   let cleaned = phone.replace(/[\s\-\.]/g, "");
-  
-  // If starts with 0, replace with +33
   if (cleaned.startsWith("0")) {
     cleaned = "+33" + cleaned.substring(1);
   }
-  
-  // If doesn't start with +, add +33
   if (!cleaned.startsWith("+")) {
     cleaned = "+33" + cleaned;
   }
-  
   return cleaned;
 }
 
@@ -93,7 +88,6 @@ serve(async (req) => {
     console.log("Notifying client for modification:", modificationId);
     console.log("Client email:", clientEmail, "Client phone:", clientPhone);
 
-    // Get modification details
     const { data: modification, error: modError } = await supabase
       .from("quote_modifications")
       .select("*, quote_modification_items(*)")
@@ -104,7 +98,6 @@ serve(async (req) => {
       throw new Error("Modification not found");
     }
 
-    // Get intervention details
     const { data: intervention, error: intError } = await supabase
       .from("interventions")
       .select("*")
@@ -118,75 +111,13 @@ serve(async (req) => {
     const baseUrl = Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app";
     const approvalUrl = `${baseUrl}/quote-approval/${modification.notification_token}`;
 
-    // Build email content
-    const itemsHtml = modification.quote_modification_items
-      .map((item: { label: string; quantity: number; total_price: number }) => 
-        `<tr>
-          <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.label}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-          <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">${item.total_price.toFixed(2)} €</td>
-        </tr>`
-      )
-      .join("");
-
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Depan.Pro : Modification de devis</title>
-      </head>
-      <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 60px;" />
-        </div>
-        
-        <h1 style="color: #1a1a2e;">Modification de devis</h1>
-        
-        <p>Bonjour,</p>
-        
-        <p>Le technicien intervenant sur votre demande (${intervention.title}) vous propose des prestations ou équipements supplémentaires :</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-          <thead>
-            <tr style="background: #f5f5f5;">
-              <th style="padding: 10px; text-align: left;">Description</th>
-              <th style="padding: 10px; text-align: center;">Qté</th>
-              <th style="padding: 10px; text-align: right;">Prix</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHtml}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colspan="2" style="padding: 10px; font-weight: bold;">Total supplémentaire</td>
-              <td style="padding: 10px; text-align: right; font-weight: bold;">${modification.total_additional_amount.toFixed(2)} €</td>
-            </tr>
-          </tfoot>
-        </table>
-        
-        <p>Veuillez valider ou refuser cette modification en cliquant sur le bouton ci-dessous :</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${approvalUrl}" style="background: #1a1a2e; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
-            Voir et valider le devis
-          </a>
-        </div>
-        
-        <p style="color: #666; font-size: 14px;">
-          Si vous ne pouvez pas cliquer sur le bouton, copiez ce lien dans votre navigateur :<br>
-          <a href="${approvalUrl}">${approvalUrl}</a>
-        </p>
-        
-        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-        
-        <p style="color: #999; font-size: 12px;">
-          Cet email a été envoyé par Depan.Pro concernant votre intervention ${intervention.tracking_code || ""}.
-        </p>
-      </body>
-      </html>
-    `;
+    const emailHtml = buildQuoteModificationEmailHtml({
+      interventionTitle: intervention.title,
+      trackingCode: intervention.tracking_code,
+      items: modification.quote_modification_items,
+      totalAdditionalAmount: modification.total_additional_amount,
+      approvalUrl,
+    });
 
     const results: { email?: boolean; sms?: boolean } = {};
 

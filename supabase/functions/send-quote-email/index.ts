@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { buildQuoteEmailHtml } from "../_shared/email-templates/quote-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,7 +42,6 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing required fields");
     }
 
-    // Get intervention details
     const { data: intervention, error: intError } = await supabase
       .from("interventions")
       .select("*")
@@ -52,7 +52,6 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Intervention not found");
     }
 
-    // Get technician name
     let technicianName = "Technicien";
     if (intervention.technician_id) {
       const { data: techData } = await supabase
@@ -75,54 +74,18 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Send email with quote PDF attached
     const emailResponse = await resend.emails.send({
       from: `Depan.Pro <${fromEmail}>`,
       to: [emailToSend],
       subject: `Votre devis d'intervention - ${intervention.tracking_code || interventionId.slice(0, 8)}`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #0FB87F; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { padding: 20px; background: #f9f9f9; }
-            .info-box { background: white; padding: 15px; border-radius: 8px; margin: 15px 0; }
-            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-            .btn { display: inline-block; padding: 12px 24px; background: #0FB87F; color: white; text-decoration: none; border-radius: 6px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1 style="margin:0;">Depan.Pro</h1>
-              <p style="margin:5px 0 0 0;">Votre devis d'intervention</p>
-            </div>
-            <div class="content">
-              <p>Bonjour,</p>
-              <p>Veuillez trouver ci-joint le devis signé pour votre intervention.</p>
-              
-              <div class="info-box">
-                <p><strong>Référence:</strong> ${intervention.tracking_code || interventionId.slice(0, 8)}</p>
-                <p><strong>Adresse:</strong> ${intervention.address}, ${intervention.postal_code} ${intervention.city}</p>
-                <p><strong>Technicien:</strong> ${technicianName}</p>
-              </div>
-              
-              <p>Le technicien va maintenant procéder à l'intervention. Vous recevrez une facture une fois celle-ci terminée.</p>
-              
-              <p>Cordialement,<br/>L'équipe Depan.Pro</p>
-            </div>
-            <div class="footer">
-              <p>Depan.Pro - 7, place du 11 Novembre 1918, 93000 Bobigny</p>
-              <p>Tél: 01 84 60 86 30 | Email: contact@depan-pro.com</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+      html: buildQuoteEmailHtml({
+        trackingCode: intervention.tracking_code,
+        interventionId,
+        address: intervention.address,
+        postalCode: intervention.postal_code,
+        city: intervention.city,
+        technicianName,
+      }),
       attachments: [
         {
           filename: quoteFileName,
