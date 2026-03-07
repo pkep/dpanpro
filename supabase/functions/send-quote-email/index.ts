@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { buildQuoteEmailHtml } from "../_shared/email-templates/quote-email.ts";
+import { sendSMS } from "../_shared/sms/twilio.ts";
+import { buildQuoteSignedSms } from "../_shared/sms/templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -97,36 +99,12 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Quote email sent successfully:", emailResponse);
 
     // Send SMS notification if phone available
-    if (clientPhone || intervention.client_phone) {
-      const twilioSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-      const twilioToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-      const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-      if (twilioSid && twilioToken && twilioPhone) {
-        const phoneToSend = clientPhone || intervention.client_phone;
-        
-        try {
-          const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`;
-          const credentials = btoa(`${twilioSid}:${twilioToken}`);
-
-          await fetch(twilioUrl, {
-            method: "POST",
-            headers: {
-              Authorization: `Basic ${credentials}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: new URLSearchParams({
-              To: phoneToSend,
-              From: twilioPhone,
-              Body: `Depan.Pro: Votre devis a été validé et signé. L'intervention est en cours. Ref: ${intervention.tracking_code || interventionId.slice(0, 8)}`,
-            }),
-          });
-
-          console.log("SMS notification sent");
-        } catch (smsErr) {
-          console.error("Error sending SMS:", smsErr);
-        }
-      }
+    const phoneToSend = clientPhone || intervention.client_phone;
+    if (phoneToSend) {
+      const smsMessage = buildQuoteSignedSms({
+        trackingCode: intervention.tracking_code || interventionId.slice(0, 8),
+      });
+      await sendSMS(phoneToSend, smsMessage, "[QuoteEmail]");
     }
 
     return new Response(JSON.stringify({ success: true }), {

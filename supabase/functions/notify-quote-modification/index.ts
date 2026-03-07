@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { buildQuoteModificationEmailHtml } from "../_shared/email-templates/quote-modification.ts";
+import { sendSMS } from "../_shared/sms/twilio.ts";
+import { buildQuoteModificationSms } from "../_shared/sms/templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,65 +18,6 @@ interface NotifyRequest {
   modificationId: string;
   clientEmail: string | null;
   clientPhone: string | null;
-}
-
-// Format French phone number to international format
-function formatPhoneNumber(phone: string): string {
-  let cleaned = phone.replace(/[\s\-\.]/g, "");
-  if (cleaned.startsWith("0")) {
-    cleaned = "+33" + cleaned.substring(1);
-  }
-  if (!cleaned.startsWith("+")) {
-    cleaned = "+33" + cleaned;
-  }
-  return cleaned;
-}
-
-// Send SMS via Twilio
-async function sendSMS(to: string, message: string): Promise<boolean> {
-  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-  if (!accountSid || !authToken || !fromNumber) {
-    console.log("Twilio credentials not configured");
-    return false;
-  }
-
-  const formattedTo = formatPhoneNumber(to);
-  console.log("Sending SMS to:", formattedTo);
-
-  try {
-    const credentials = btoa(`${accountSid}:${authToken}`);
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Basic ${credentials}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          To: formattedTo,
-          From: fromNumber,
-          Body: message,
-        }),
-      }
-    );
-
-    const result = await response.json();
-    
-    if (response.ok) {
-      console.log("SMS sent successfully:", result.sid);
-      return true;
-    } else {
-      console.error("Twilio error:", result);
-      return false;
-    }
-  } catch (error) {
-    console.error("Error sending SMS:", error);
-    return false;
-  }
 }
 
 serve(async (req) => {
@@ -159,8 +102,11 @@ serve(async (req) => {
 
     // Send SMS via Twilio if clientPhone is available
     if (clientPhone) {
-      const smsMessage = `Depan.Pro: Le technicien propose ${modification.total_additional_amount.toFixed(2)}€ de prestations supplementaires pour votre intervention. Validez ici: ${approvalUrl}`;
-      results.sms = await sendSMS(clientPhone, smsMessage);
+      const smsMessage = buildQuoteModificationSms({
+        totalAdditionalAmount: modification.total_additional_amount,
+        approvalUrl,
+      });
+      results.sms = await sendSMS(clientPhone, smsMessage, "[QuoteModification]");
     }
 
     // Update client_notified_at if at least one notification was sent

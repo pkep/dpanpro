@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { buildArrivalReminderEmail } from "../_shared/email-templates/arrival-reminder.ts";
+import { sendSMS } from "../_shared/sms/twilio.ts";
+import { buildArrivalReminderSms } from "../_shared/sms/templates.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -68,13 +70,14 @@ Deno.serve(async (req) => {
 
     const remainingMinutes = targetTimeMinutes - elapsedMinutes;
     
-    // Build SMS message
-    let smsMessage: string;
-    if (reminderType === 'half_time') {
-      smsMessage = `⏰ Rappel: Il vous reste ${remainingMinutes} min pour arriver chez le client (${intervention.address}, ${intervention.city}). Objectif: ${targetTimeMinutes} min.`;
-    } else {
-      smsMessage = `🚨 URGENT: Plus que 5 min pour arriver chez le client! (${intervention.address}, ${intervention.city}). Le client vous attend.`;
-    }
+    // Build SMS from template
+    const smsMessage = buildArrivalReminderSms({
+      reminderType,
+      remainingMinutes,
+      targetTimeMinutes,
+      address: intervention.address,
+      city: intervention.city,
+    });
 
     // Build email from template
     const emailData = buildArrivalReminderEmail({
@@ -90,37 +93,9 @@ Deno.serve(async (req) => {
 
     const results = { sms: false, email: false, push: false };
 
-    // Send SMS via Twilio
-    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
-
-    if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber && technician.phone) {
-      try {
-        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-        const smsResponse = await fetch(twilioUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Basic ' + btoa(`${twilioAccountSid}:${twilioAuthToken}`),
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            To: technician.phone,
-            From: twilioPhoneNumber,
-            Body: smsMessage,
-          }),
-        });
-
-        if (smsResponse.ok) {
-          results.sms = true;
-          console.log('[Arrival Reminder] SMS sent successfully');
-        } else {
-          const smsError = await smsResponse.text();
-          console.error('[Arrival Reminder] SMS error:', smsError);
-        }
-      } catch (smsErr) {
-        console.error('[Arrival Reminder] SMS exception:', smsErr);
-      }
+    // Send SMS via shared Twilio module
+    if (technician.phone) {
+      results.sms = await sendSMS(technician.phone, smsMessage, "[ArrivalReminder]");
     }
 
     // Send Email via Resend

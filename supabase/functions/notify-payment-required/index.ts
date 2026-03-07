@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { buildPaymentRequiredEmailHtml } from "../_shared/email-templates/payment-required.ts";
+import { sendSMS } from "../_shared/sms/twilio.ts";
+import { buildPaymentRequiredSms } from "../_shared/sms/templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,100 +17,6 @@ const supabase = createClient(
 interface NotifyPaymentRequiredRequest {
   interventionId: string;
   reason?: string;
-}
-
-type TwilioMessageResult = {
-  sid?: string;
-  status?: string;
-  error_code?: string | number | null;
-  error_message?: string | null;
-};
-
-function formatPhoneNumber(phone: string): string {
-  let cleaned = phone.replace(/[\s\-\.]/g, "");
-  if (cleaned.startsWith("0")) {
-    cleaned = "+33" + cleaned.substring(1);
-  }
-  if (!cleaned.startsWith("+")) {
-    cleaned = "+33" + cleaned;
-  }
-  return cleaned;
-}
-
-async function sendSMS(to: string, message: string): Promise<boolean> {
-  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-  if (!accountSid || !authToken || !fromNumber) {
-    console.log("Twilio credentials not configured");
-    return false;
-  }
-
-  const formattedTo = formatPhoneNumber(to);
-  console.log("[NOTIFY-PAYMENT] Sending SMS to:", formattedTo);
-
-  try {
-    const credentials = btoa(`${accountSid}:${authToken}`);
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Basic ${credentials}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          To: formattedTo,
-          From: fromNumber,
-          Body: message,
-        }),
-      }
-    );
-
-    const result: TwilioMessageResult = await response.json();
-
-    if (response.ok) {
-      console.log("[NOTIFY-PAYMENT] SMS sent successfully:", {
-        sid: result.sid,
-        status: result.status,
-        error_code: result.error_code,
-        error_message: result.error_message,
-      });
-
-      if (result.sid) {
-        try {
-          const credentials = btoa(`${accountSid}:${authToken}`);
-          const statusRes = await fetch(
-            `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages/${result.sid}.json`,
-            {
-              method: "GET",
-              headers: {
-                "Authorization": `Basic ${credentials}`,
-              },
-            }
-          );
-
-          const statusBody: TwilioMessageResult = await statusRes.json();
-          console.log("[NOTIFY-PAYMENT] Twilio message status:", {
-            sid: statusBody.sid,
-            status: statusBody.status,
-            error_code: statusBody.error_code,
-            error_message: statusBody.error_message,
-          });
-        } catch (statusErr) {
-          console.error("[NOTIFY-PAYMENT] Failed to fetch Twilio message status:", statusErr);
-        }
-      }
-      return true;
-    } else {
-      console.error("[NOTIFY-PAYMENT] Twilio error:", result);
-      return false;
-    }
-  } catch (error) {
-    console.error("[NOTIFY-PAYMENT] Error sending SMS:", error);
-    return false;
-  }
 }
 
 async function getUserContact(userId: string | null): Promise<{ phone: string | null; email: string | null }> {
@@ -303,7 +211,7 @@ serve(async (req) => {
 
     console.log("[NOTIFY-PAYMENT] Tracking URL:", trackingUrl);
 
-    const smsMessage = `Depan.Pro: autorisation de paiement requise.\nOuvrez: ${trackingUrl}\nCode: ${trackingCode}`;
+    const smsMessage = buildPaymentRequiredSms({ trackingCode, trackingUrl });
 
     const emailSubject = "Depan.Pro : Autorisation de paiement requise";
     const emailHtml = buildPaymentRequiredEmailHtml({ trackingCode, trackingUrl });
@@ -319,7 +227,7 @@ serve(async (req) => {
     };
 
     if (clientPhone) {
-      results.sms = await sendSMS(clientPhone, smsMessage);
+      results.sms = await sendSMS(clientPhone, smsMessage, "[NOTIFY-PAYMENT]");
     }
 
     if (clientEmail) {

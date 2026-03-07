@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { buildCancellationInvoiceEmailHtml, buildCancellationInvoicePdfHtml } from "../_shared/email-templates/cancellation-invoice.ts";
+import { sendSMS } from "../_shared/sms/twilio.ts";
+import { buildCancellationInvoiceSms } from "../_shared/sms/templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,47 +16,6 @@ interface SendCancellationInvoiceRequest {
   vatRate: number;
   vatAmount: number;
   totalTTC: number;
-}
-
-async function sendSMS(phoneNumber: string, message: string): Promise<boolean> {
-  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-  if (!accountSid || !authToken || !fromNumber) {
-    console.log("Twilio credentials not configured, skipping SMS");
-    return false;
-  }
-
-  try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Authorization": "Basic " + btoa(`${accountSid}:${authToken}`),
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        To: phoneNumber,
-        From: fromNumber,
-        Body: message,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Twilio SMS error:", errorText);
-      return false;
-    }
-
-    const result = await response.json();
-    console.log("SMS sent successfully:", result.sid);
-    return true;
-  } catch (error) {
-    console.error("Error sending SMS:", error);
-    return false;
-  }
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -181,8 +142,12 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     if (clientPhone) {
-      const smsMessage = `Depan.Pro - Facture d'annulation ${invoiceNumber}. Suite à l'annulation de l'intervention ${trackingCode} après l'arrivée du technicien, un montant de ${totalTTC.toFixed(2)} € TTC vous est facturé. Facture envoyée par email.`;
-      results.sms = await sendSMS(clientPhone, smsMessage);
+      const smsMessage = buildCancellationInvoiceSms({
+        invoiceNumber,
+        trackingCode,
+        totalTTC,
+      });
+      results.sms = await sendSMS(clientPhone, smsMessage, "[CancellationInvoice]");
     } else {
       console.log("SMS not sent: no client phone number");
     }

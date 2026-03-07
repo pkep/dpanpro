@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { buildStatusChangeEmailHtml, STATUS_LABELS, STATUS_EMOJI } from "../_shared/email-templates/status-change.ts";
+import { sendSMS } from "../_shared/sms/twilio.ts";
+import { buildStatusChangeSms } from "../_shared/sms/templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,65 +28,6 @@ const STATUS_MESSAGES: Record<string, string> = {
   completed: "L'intervention est terminée",
   cancelled: "L'intervention a été annulée",
 };
-
-// Format French phone number to international format
-function formatPhoneNumber(phone: string): string {
-  let cleaned = phone.replace(/[\s\-\.]/g, "");
-  if (cleaned.startsWith("0")) {
-    cleaned = "+33" + cleaned.substring(1);
-  }
-  if (!cleaned.startsWith("+")) {
-    cleaned = "+33" + cleaned;
-  }
-  return cleaned;
-}
-
-// Send SMS via Twilio
-async function sendSMS(to: string, message: string): Promise<boolean> {
-  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-  if (!accountSid || !authToken || !fromNumber) {
-    console.log("Twilio credentials not configured");
-    return false;
-  }
-
-  const formattedTo = formatPhoneNumber(to);
-  console.log("Sending SMS to:", formattedTo);
-
-  try {
-    const credentials = btoa(`${accountSid}:${authToken}`);
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Basic ${credentials}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          To: formattedTo,
-          From: fromNumber,
-          Body: message,
-        }),
-      }
-    );
-
-    const result = await response.json();
-    
-    if (response.ok) {
-      console.log("SMS sent successfully:", result.sid);
-      return true;
-    } else {
-      console.error("Twilio error:", result);
-      return false;
-    }
-  } catch (error) {
-    console.error("Error sending SMS:", error);
-    return false;
-  }
-}
 
 // Send email via Resend
 async function sendEmail(
@@ -301,13 +244,17 @@ serve(async (req) => {
       const trackingUrl = intervention.tracking_code 
         ? `${baseUrl}/track/${intervention.tracking_code}`
         : baseUrl;
-      
-      const ratingPrompt = newStatus === 'completed' 
-        ? ` Notez votre experience: ${baseUrl}/intervention/${intervention.id}#rating`
-        : '';
-      
-      const smsMessage = `${emoji} Depan.Pro: ${statusMessage}. Ref: ${intervention.tracking_code || "N/A"}.${ratingPrompt} Suivez: ${trackingUrl}`;
-      results.sms = await sendSMS(clientPhone, smsMessage);
+
+      const smsMessage = buildStatusChangeSms({
+        emoji,
+        statusMessage,
+        trackingCode: intervention.tracking_code,
+        trackingUrl,
+        interventionId: intervention.id,
+        baseUrl,
+        isCompleted: newStatus === "completed",
+      });
+      results.sms = await sendSMS(clientPhone, smsMessage, "[StatusChange]");
     }
 
     // Send push notification if tokens available
