@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { buildPaymentRequiredEmailHtml } from "../_shared/email-templates/payment-required.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,7 +24,6 @@ type TwilioMessageResult = {
   error_message?: string | null;
 };
 
-// Format French phone number to international format
 function formatPhoneNumber(phone: string): string {
   let cleaned = phone.replace(/[\s\-\.]/g, "");
   if (cleaned.startsWith("0")) {
@@ -35,7 +35,6 @@ function formatPhoneNumber(phone: string): string {
   return cleaned;
 }
 
-// Send SMS via Twilio
 async function sendSMS(to: string, message: string): Promise<boolean> {
   const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
   const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
@@ -77,7 +76,6 @@ async function sendSMS(to: string, message: string): Promise<boolean> {
         error_message: result.error_message,
       });
 
-      // Attempt to immediately fetch message status from Twilio (best-effort)
       if (result.sid) {
         try {
           const credentials = btoa(`${accountSid}:${authToken}`);
@@ -138,7 +136,6 @@ async function getUserContact(userId: string | null): Promise<{ phone: string | 
   }
 }
 
-// Send email via Resend
 async function sendEmail(
   to: string,
   subject: string,
@@ -184,7 +181,6 @@ async function sendEmail(
   }
 }
 
-// Send push notification via Firebase Cloud Messaging
 async function sendPushNotification(
   fcmToken: string,
   title: string,
@@ -235,7 +231,6 @@ async function sendPushNotification(
   return false;
 }
 
-// Get client FCM tokens from database
 async function getClientFcmTokens(clientId: string | null, clientEmail: string | null): Promise<string[]> {
   const tokens: string[] = [];
 
@@ -280,7 +275,6 @@ serve(async (req) => {
       throw new Error("Missing interventionId");
     }
 
-    // Fetch intervention details
     const { data: intervention, error: interventionError } = await supabase
       .from("interventions")
       .select("*")
@@ -296,14 +290,12 @@ serve(async (req) => {
     let clientPhone = intervention.client_phone as string | null;
     const clientId = intervention.client_id;
 
-    // Fallback contact info from user profile if missing on intervention
     if ((!clientPhone || !clientEmail) && clientId) {
       const fallback = await getUserContact(clientId);
       clientPhone = clientPhone || fallback.phone;
       clientEmail = clientEmail || fallback.email;
     }
 
-    // Build tracking URL
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const projectRef = supabaseUrl.match(/https:\/\/([^.]+)/)?.[1] || "";
     const frontendUrl = `https://${projectRef.slice(0, 8)}-preview--${projectRef}.lovable.app`;
@@ -311,61 +303,10 @@ serve(async (req) => {
 
     console.log("[NOTIFY-PAYMENT] Tracking URL:", trackingUrl);
 
-    // Keep SMS short/simple to reduce carrier filtering issues.
     const smsMessage = `Depan.Pro: autorisation de paiement requise.\nOuvrez: ${trackingUrl}\nCode: ${trackingCode}`;
 
     const emailSubject = "Depan.Pro : Autorisation de paiement requise";
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f5f5f5; margin: 0; padding: 20px; }
-          .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-          .header { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 30px; text-align: center; }
-          .header img { height: 50px; margin-bottom: 15px; }
-          .header h1 { margin: 0; font-size: 24px; }
-          .content { padding: 30px; }
-          .alert-box { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-          .alert-box h2 { color: #92400e; margin-top: 0; }
-          .tracking-code { background: #f3f4f6; padding: 15px; border-radius: 6px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 2px; margin: 20px 0; }
-          .cta-button { display: inline-block; background: #16a34a; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
-          .cta-button:hover { background: #15803d; }
-          .footer { background: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #666; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" />
-            <h1>⚠️ Autorisation de paiement requise</h1>
-          </div>
-          <div class="content">
-            <div class="alert-box">
-              <h2>Action requise de votre part</h2>
-              <p>Votre technicien souhaite finaliser l'intervention, mais votre carte bancaire n'a pas été autorisée correctement.</p>
-              <p>Pour permettre le règlement et clôturer l'intervention, veuillez autoriser votre carte en cliquant sur le bouton ci-dessous.</p>
-            </div>
-            
-            <div class="tracking-code">${trackingCode}</div>
-            
-            <div style="text-align: center;">
-              <a href="${trackingUrl}" class="cta-button">Autoriser ma carte maintenant</a>
-            </div>
-            
-            <p style="font-size: 14px; color: #666;">
-              Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
-              <a href="${trackingUrl}">${trackingUrl}</a>
-            </p>
-          </div>
-          <div class="footer">
-            <p>Depan.Pro - Service de dépannage d'urgence</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
+    const emailHtml = buildPaymentRequiredEmailHtml({ trackingCode, trackingUrl });
 
     const pushTitle = "⚠️ Autorisation de paiement requise";
     const pushBody = "Votre technicien attend votre autorisation carte pour finaliser l'intervention.";
@@ -377,17 +318,14 @@ serve(async (req) => {
       pushTokensCount: 0,
     };
 
-    // Send SMS
     if (clientPhone) {
       results.sms = await sendSMS(clientPhone, smsMessage);
     }
 
-    // Send Email
     if (clientEmail) {
       results.email = await sendEmail(clientEmail, emailSubject, emailHtml);
     }
 
-    // Send Push Notifications
     const fcmTokens = await getClientFcmTokens(clientId, clientEmail);
     results.pushTokensCount = fcmTokens.length;
 

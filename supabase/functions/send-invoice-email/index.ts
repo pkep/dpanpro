@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildInvoiceEmailHtml } from "../_shared/email-templates/invoice-email.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,7 +56,6 @@ async function sendSMS(phoneNumber: string, message: string): Promise<boolean> {
 }
 
 serve(async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -69,7 +69,6 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`Sending invoice for intervention ${interventionId}`);
 
-    // Get intervention details
     const { data: intervention, error: interventionError } = await supabase
       .from("interventions")
       .select("*")
@@ -81,7 +80,6 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error("Intervention not found");
     }
 
-    // Get client info if client_id exists
     let clientUser = null;
     if (intervention.client_id) {
       const { data: user } = await supabase
@@ -103,7 +101,6 @@ serve(async (req: Request): Promise<Response> => {
       sms: false,
     };
 
-    // Send email if configured
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
     
@@ -111,58 +108,16 @@ serve(async (req: Request): Promise<Response> => {
       try {
         const resend = new Resend(resendApiKey);
 
-        const emailHtml = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background: #1a56db; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-              .header img { height: 50px; margin-bottom: 10px; }
-              .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-              .invoice-info { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
-              .total { font-size: 24px; color: #1a56db; font-weight: bold; }
-              .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" />
-                <h1>Facture - Intervention ${trackingCode}</h1>
-              </div>
-              <div class="content">
-                <p>Bonjour ${clientName},</p>
-                
-                <p>Nous vous remercions pour votre confiance. Veuillez trouver ci-joint la facture correspondant à votre intervention de dépannage.</p>
-                
-                <div class="invoice-info">
-                  <p><strong>Référence :</strong> ${trackingCode}</p>
-                  <p><strong>Adresse :</strong> ${intervention.address || "N/A"}</p>
-                  <p class="total">Montant total : ${finalPrice.toFixed(2)} € TTC</p>
-                </div>
-                
-                <p>La facture est jointe à cet email au format PDF.</p>
-                
-                <p>Si vous avez des questions concernant cette facture, n'hésitez pas à nous contacter.</p>
-                
-                <p>Cordialement,<br>L'équipe Depan.Pro</p>
-              </div>
-              <div class="footer">
-                <p>Depan.Pro - Service de dépannage à domicile</p>
-              </div>
-            </div>
-          </body>
-          </html>
-        `;
-
         const emailResponse = await resend.emails.send({
           from: `Depan.Pro <${resendFromEmail}>`,
           to: [clientEmail],
           subject: `Depan.Pro : Facture - Intervention ${trackingCode}`,
-          html: emailHtml,
+          html: buildInvoiceEmailHtml({
+            trackingCode,
+            clientName,
+            address: `${intervention.address || "N/A"}, ${intervention.postal_code} ${intervention.city}`,
+            finalPrice,
+          }),
           attachments: [
             {
               filename: invoiceFileName,
@@ -180,7 +135,6 @@ serve(async (req: Request): Promise<Response> => {
       console.log("Email not sent: RESEND_API_KEY not configured or no client email");
     }
 
-    // Send SMS if configured
     if (clientPhone) {
       const smsMessage = `Depan.Pro - Votre facture pour l'intervention ${trackingCode} est disponible. Montant: ${finalPrice.toFixed(2)} € TTC. Merci pour votre confiance !`;
       results.sms = await sendSMS(clientPhone, smsMessage);

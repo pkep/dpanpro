@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { buildArrivalReminderEmail } from "../_shared/email-templates/arrival-reminder.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,7 +30,6 @@ Deno.serve(async (req) => {
 
     console.log(`[Arrival Reminder] Type: ${reminderType}, Intervention: ${interventionId}, Technician: ${technicianId}`);
 
-    // Get technician details
     const { data: technician, error: techError } = await supabase
       .from('users')
       .select('email, phone, first_name')
@@ -44,7 +44,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get intervention details
     const { data: intervention, error: intError } = await supabase
       .from('interventions')
       .select('title, address, city, status, category')
@@ -59,7 +58,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if intervention is still in progress (not arrived yet)
     if (!['assigned', 'on_route'].includes(intervention.status)) {
       console.log(`[Arrival Reminder] Skipping - intervention status is ${intervention.status}`);
       return new Response(
@@ -70,31 +68,25 @@ Deno.serve(async (req) => {
 
     const remainingMinutes = targetTimeMinutes - elapsedMinutes;
     
-    // Prepare reminder message based on type
+    // Build SMS message
     let smsMessage: string;
-    let emailSubject: string;
-    let emailBody: string;
-    
     if (reminderType === 'half_time') {
       smsMessage = `⏰ Rappel: Il vous reste ${remainingMinutes} min pour arriver chez le client (${intervention.address}, ${intervention.city}). Objectif: ${targetTimeMinutes} min.`;
-      emailSubject = `Rappel - Mi-parcours: ${intervention.title}`;
-      emailBody = `
-        <p>Bonjour ${technician.first_name},</p>
-        <p>Vous avez accepté l'intervention il y a <strong>${elapsedMinutes} minutes</strong>.</p>
-        <p>Il vous reste environ <strong>${remainingMinutes} minutes</strong> pour atteindre le temps cible de ${targetTimeMinutes} minutes.</p>
-        <p><strong>Adresse:</strong> ${intervention.address}, ${intervention.city}</p>
-        <p>Merci de respecter les délais promis au client.</p>
-      `;
     } else {
       smsMessage = `🚨 URGENT: Plus que 5 min pour arriver chez le client! (${intervention.address}, ${intervention.city}). Le client vous attend.`;
-      emailSubject = `⚠️ Urgent - 5 min restantes: ${intervention.title}`;
-      emailBody = `
-        <p>Bonjour ${technician.first_name},</p>
-        <p><strong>Il ne vous reste que 5 minutes</strong> pour atteindre le temps cible de ${targetTimeMinutes} minutes.</p>
-        <p><strong>Adresse:</strong> ${intervention.address}, ${intervention.city}</p>
-        <p>Le client vous attend. Merci de faire au plus vite.</p>
-      `;
     }
+
+    // Build email from template
+    const emailData = buildArrivalReminderEmail({
+      firstName: technician.first_name,
+      reminderType,
+      elapsedMinutes,
+      remainingMinutes,
+      targetTimeMinutes,
+      address: intervention.address,
+      city: intervention.city,
+      interventionTitle: intervention.title,
+    });
 
     const results = { sms: false, email: false, push: false };
 
@@ -146,8 +138,8 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             from: resendFromEmail,
             to: [technician.email],
-            subject: emailSubject,
-            html: emailBody,
+            subject: emailData.subject,
+            html: emailData.html,
           }),
         });
 

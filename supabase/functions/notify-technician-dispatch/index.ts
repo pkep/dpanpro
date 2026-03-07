@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { buildTechnicianDispatchEmailHtml } from "../_shared/email-templates/technician-dispatch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,7 +28,6 @@ interface TechnicianInfo {
   lastName: string;
 }
 
-// Category labels for display
 const CATEGORY_LABELS: Record<string, string> = {
   locksmith: 'Serrurerie',
   plumbing: 'Plomberie',
@@ -43,7 +43,6 @@ const PRIORITY_LABELS: Record<string, string> = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -65,7 +64,6 @@ serve(async (req) => {
       );
     }
 
-    // Get intervention details if not provided
     let intervention = interventionDetails;
     if (!intervention) {
       const { data: intData, error: intError } = await supabase
@@ -92,7 +90,6 @@ serve(async (req) => {
       };
     }
 
-    // Get technician contact details
     const { data: technicians, error: techError } = await supabase
       .from('users')
       .select('id, email, phone, first_name, last_name')
@@ -126,7 +123,6 @@ serve(async (req) => {
     const priorityLabel = PRIORITY_LABELS[intervention.priority] || intervention.priority;
     const isUrgent = intervention.priority === 'urgent';
 
-    // Process each technician
     for (const tech of technicianInfos) {
       console.log(`[NotifyTechnicianDispatch] Processing technician ${tech.id} (${tech.firstName} ${tech.lastName})`);
 
@@ -138,7 +134,6 @@ serve(async (req) => {
           const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
 
           if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
-            // Format phone number for international format
             let formattedPhone = tech.phone.replace(/\s/g, '');
             if (formattedPhone.startsWith('0')) {
               formattedPhone = '+33' + formattedPhone.substring(1);
@@ -146,7 +141,6 @@ serve(async (req) => {
               formattedPhone = '+33' + formattedPhone;
             }
 
-            // Simple SMS message (no emojis/special chars to avoid carrier filtering)
             const smsMessage = isUrgent
               ? `URGENT - Depan.Pro: Nouvelle mission ${categoryLabel} a ${intervention.city}. ${intervention.address}, ${intervention.postalCode}. Ouvrez l'app pour accepter.`
               : `Depan.Pro: Nouvelle mission ${categoryLabel} a ${intervention.city}. ${intervention.address}, ${intervention.postalCode}. Ouvrez l'app pour accepter.`;
@@ -198,45 +192,15 @@ serve(async (req) => {
             ? `Depan.Pro : 🚨 URGENT - Nouvelle mission ${categoryLabel} à ${intervention.city}`
             : `Depan.Pro : Nouvelle mission ${categoryLabel} à ${intervention.city}`;
 
-          const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <div style="background: ${isUrgent ? '#ef4444' : '#3b82f6'}; color: white; padding: 20px; text-align: center;">
-                <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 40px; margin-bottom: 10px;" />
-                <h1 style="margin: 0;">${isUrgent ? '🚨 MISSION URGENTE' : '📋 Nouvelle Mission'}</h1>
-              </div>
-              
-              <div style="padding: 20px; background: #f9fafb;">
-                <p style="font-size: 16px;">Bonjour <strong>${tech.firstName}</strong>,</p>
-                
-                <p style="font-size: 16px;">Une nouvelle mission vous est proposée :</p>
-                
-                <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid ${isUrgent ? '#ef4444' : '#3b82f6'};">
-                  <h2 style="margin-top: 0; color: #1f2937;">${categoryLabel}</h2>
-                  <p style="margin: 8px 0; color: #6b7280;">
-                    <strong>📍 Adresse:</strong> ${intervention.address}<br>
-                    ${intervention.postalCode} ${intervention.city}
-                  </p>
-                  <p style="margin: 8px 0; color: #6b7280;">
-                    <strong>Priorité:</strong> ${priorityLabel}
-                  </p>
-                </div>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                  <p style="font-size: 14px; color: #6b7280;">
-                    Ouvrez l'application Depan.Pro pour voir les détails et accepter cette mission.
-                  </p>
-                </div>
-                
-                <p style="font-size: 12px; color: #9ca3af; text-align: center; margin-top: 30px;">
-                  Vous avez 5 minutes pour répondre avant que la mission ne soit proposée à un autre technicien.
-                </p>
-              </div>
-              
-              <div style="background: #1f2937; color: white; padding: 15px; text-align: center;">
-                <p style="margin: 0; font-size: 12px;">Depan.Pro - Votre partenaire dépannage</p>
-              </div>
-            </div>
-          `;
+          const emailHtml = buildTechnicianDispatchEmailHtml({
+            firstName: tech.firstName,
+            categoryLabel,
+            address: intervention.address,
+            postalCode: intervention.postalCode,
+            city: intervention.city,
+            priorityLabel,
+            isUrgent,
+          });
 
           const emailResponse = await fetch('https://api.resend.com/emails', {
             method: 'POST',
@@ -277,7 +241,6 @@ serve(async (req) => {
         const firebaseServerKey = Deno.env.get("FIREBASE_SERVER_KEY");
 
         if (firebaseServerKey) {
-          // Get technician's FCM tokens
           const { data: pushSubs, error: pushError } = await supabase
             .from('push_subscriptions')
             .select('fcm_token')
