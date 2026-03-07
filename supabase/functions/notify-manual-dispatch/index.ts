@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildManualDispatchEmailHtml } from "../_shared/email-templates/manual-dispatch.ts";
+import { sendSMS } from "../_shared/sms/twilio.ts";
+import { buildManualDispatchSms } from "../_shared/sms/templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,45 +86,14 @@ serve(async (req) => {
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
     const results = { sms: false, email: false, push: false };
 
-    // 1. Send SMS via Twilio
-    const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
-
-    if (twilioAccountSid && twilioAuthToken && twilioPhoneNumber && techData.phone) {
-      try {
-        let formattedPhone = techData.phone.replace(/\s/g, '');
-        if (formattedPhone.startsWith('0')) {
-          formattedPhone = '+33' + formattedPhone.substring(1);
-        } else if (!formattedPhone.startsWith('+')) {
-          formattedPhone = '+33' + formattedPhone;
-        }
-
-        const smsMessage = `Depan.Pro: Mission assignee par le manager: ${categoryLabel} a ${intervention.city}. ${intervention.address}. Ouvrez l'app pour voir les details.`;
-
-        const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
-        const twilioAuth = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
-
-        const smsResponse = await fetch(twilioUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Basic ${twilioAuth}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            To: formattedPhone,
-            From: twilioPhoneNumber,
-            Body: smsMessage,
-          }),
-        });
-
-        if (smsResponse.ok) {
-          console.log('[NotifyManualDispatch] SMS sent successfully');
-          results.sms = true;
-        }
-      } catch (smsError) {
-        console.error('[NotifyManualDispatch] SMS error:', smsError);
-      }
+    // 1. Send SMS via shared Twilio module
+    if (techData.phone) {
+      const smsMessage = buildManualDispatchSms({
+        categoryLabel,
+        city: intervention.city,
+        address: intervention.address,
+      });
+      results.sms = await sendSMS(techData.phone, smsMessage, "[NotifyManualDispatch]");
     }
 
     // 2. Send Email via Resend
