@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { sendSMS } from "../_shared/sms/twilio.ts";
+import { buildPaymentCapturedSms } from "../_shared/sms/templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -231,24 +233,13 @@ serve(async (req) => {
         }
 
         // Send SMS notification to technician
-        const twilioSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-        const twilioAuth = Deno.env.get("TWILIO_AUTH_TOKEN");
-        const twilioPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
-        if (twilioSid && twilioAuth && twilioPhone && techData?.phone) {
+        if (techData?.phone) {
           try {
-            const smsBody = `Depan.Pro: Paiement de ${capturedAmountEuros} € confirmé pour l'intervention ${interventionData.title || interventionData.category}.`;
-            await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": `Basic ${btoa(`${twilioSid}:${twilioAuth}`)}`,
-              },
-              body: new URLSearchParams({
-                To: techData.phone,
-                From: twilioPhone,
-                Body: smsBody,
-              }),
+            const smsBody = buildPaymentCapturedSms({
+              amount: capturedAmountEuros,
+              interventionTitle: interventionData.title || interventionData.category,
             });
+            await sendSMS(techData.phone, smsBody, "[CapturePayment]");
             console.log("Technician payment SMS sent");
           } catch (smsErr) {
             console.error("Failed to send technician SMS:", smsErr);
