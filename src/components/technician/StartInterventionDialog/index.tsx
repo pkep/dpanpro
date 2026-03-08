@@ -214,7 +214,7 @@ export function StartInterventionDialog({
       // Load questionnaire resultat + variantes
       const { data: interventionData } = await supabase
         .from('interventions')
-        .select('questionnaire_resultat_id, prix_min, prix_max, title')
+        .select('questionnaire_resultat_id, prix_min, prix_max, title, questionnaire_answers')
         .eq('id', interventionId)
         .single();
 
