@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,6 @@ import {
   Home,
   CreditCard,
   FileText,
-  Euro,
   Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -81,6 +80,7 @@ export default function PaymentAuthorizationPage() {
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentAuthorizationId, setPaymentAuthorizationId] = useState<string | null>(null);
   const [paymentAuthorized, setPaymentAuthorized] = useState(false);
+  const [autoInitAttempted, setAutoInitAttempted] = useState(false);
 
   // Fetch intervention + quote data
   useEffect(() => {
@@ -182,7 +182,7 @@ export default function PaymentAuthorizationPage() {
     return true;
   }, [intervention, grandTotal]);
 
-  const handleStartAuthorization = async () => {
+  const handleStartAuthorization = useCallback(async (showErrorToast = true) => {
     if (!intervention || !canAuthorize) return;
     try {
       setPaymentLoading(true);
@@ -197,11 +197,13 @@ export default function PaymentAuthorizationPage() {
       setPaymentClientSecret(clientSecret);
     } catch (err) {
       console.error('Error starting payment:', err);
-      toast.error("Impossible d'initialiser le paiement");
+      if (showErrorToast) {
+        toast.error("Impossible d'initialiser le paiement");
+      }
     } finally {
       setPaymentLoading(false);
     }
-  };
+  }, [intervention, canAuthorize, grandTotal]);
 
   const handleAuthorizationSuccess = async () => {
     try {
@@ -221,6 +223,30 @@ export default function PaymentAuthorizationPage() {
   const handleAuthorizationError = (message: string) => {
     toast.error('Erreur de paiement', { description: message });
   };
+
+  useEffect(() => {
+    if (
+      loading ||
+      autoInitAttempted ||
+      paymentAuthorized ||
+      paymentClientSecret ||
+      paymentLoading ||
+      !canAuthorize
+    ) {
+      return;
+    }
+
+    setAutoInitAttempted(true);
+    void handleStartAuthorization(false);
+  }, [
+    loading,
+    autoInitAttempted,
+    paymentAuthorized,
+    paymentClientSecret,
+    paymentLoading,
+    canAuthorize,
+    handleStartAuthorization,
+  ]);
 
   if (loading) {
     return (
@@ -371,32 +397,30 @@ export default function PaymentAuthorizationPage() {
                   </AlertDescription>
                 </Alert>
 
-                {!paymentClientSecret ? (
-                  <Button
-                    onClick={handleStartAuthorization}
-                    disabled={paymentLoading || !canAuthorize}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {paymentLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Préparation…
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        Autoriser {formatPrice(grandTotal)}
-                      </>
-                    )}
-                  </Button>
-                ) : (
+                {paymentClientSecret ? (
                   <StripeCardForm
                     clientSecret={paymentClientSecret}
                     amount={grandTotal}
                     onSuccess={handleAuthorizationSuccess}
                     onError={handleAuthorizationError}
                   />
+                ) : paymentLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      Initialisation du formulaire de paiement...
+                    </span>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => void handleStartAuthorization(true)}
+                    disabled={!canAuthorize}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Réessayer l'initialisation
+                  </Button>
                 )}
               </>
             )}
