@@ -14,7 +14,10 @@ import logo from '@/assets/logo.png';
 type AuthView = 'login' | 'register' | 'forgot-password' | 'change-password';
 
 export default function Auth() {
-  const [view, setView] = useState<AuthView>('login');
+  const [searchParams] = useSearchParams();
+  const [view, setView] = useState<AuthView>(() => 
+    searchParams.get('register') === 'true' ? 'register' : 'login'
+  );
   const [pendingUser, setPendingUser] = useState<User | null>(null);
   const { isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
