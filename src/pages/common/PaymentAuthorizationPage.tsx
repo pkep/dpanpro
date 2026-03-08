@@ -397,32 +397,30 @@ export default function PaymentAuthorizationPage() {
                   </AlertDescription>
                 </Alert>
 
-                {!paymentClientSecret ? (
-                  <Button
-                    onClick={handleStartAuthorization}
-                    disabled={paymentLoading || !canAuthorize}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {paymentLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Préparation…
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        Autoriser {formatPrice(grandTotal)}
-                      </>
-                    )}
-                  </Button>
-                ) : (
+                {paymentClientSecret ? (
                   <StripeCardForm
                     clientSecret={paymentClientSecret}
                     amount={grandTotal}
                     onSuccess={handleAuthorizationSuccess}
                     onError={handleAuthorizationError}
                   />
+                ) : paymentLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      Initialisation du formulaire de paiement...
+                    </span>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => void handleStartAuthorization(true)}
+                    disabled={!canAuthorize}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Réessayer l'initialisation
+                  </Button>
                 )}
               </>
             )}
