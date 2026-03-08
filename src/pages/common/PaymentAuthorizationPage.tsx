@@ -172,7 +172,8 @@ export default function PaymentAuthorizationPage() {
     () => quoteLines.reduce((s, l) => s + Number(l.calculated_price || 0), 0),
     [quoteLines]
   );
-  const grandTotal = baseTotal + additionalTotal;
+  // Use quote lines total if available, otherwise fall back to the amount from the existing authorization
+  const grandTotal = (baseTotal > 0 ? baseTotal : (authAmount ?? 0)) + additionalTotal;
 
   const canAuthorize = useMemo(() => {
     if (!intervention) return false;
