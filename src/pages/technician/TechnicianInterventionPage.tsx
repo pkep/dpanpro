@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeIntervention } from '@/hooks/useRealtimeIntervention';
+import { supabase } from '@/integrations/supabase/client';
 import { TechnicianLayout } from '@/components/technician/TechnicianLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
