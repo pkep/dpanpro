@@ -443,13 +443,20 @@ export function StartInterventionDialog({
         }
       }
 
-      // 1. Upload photos
-      const uploadedPhotos = await workPhotosService.uploadPhotos(
-        interventionId,
-        selectedFiles,
-        'before',
-        userId
-      );
+      // 1. Upload photos (only if new files were selected)
+      let uploadedPhotos: WorkPhoto[] = [];
+      if (selectedFiles.length > 0) {
+        uploadedPhotos = await workPhotosService.uploadPhotos(
+          interventionId,
+          selectedFiles,
+          'before',
+          userId
+        );
+      } else {
+        // Photos were already uploaded in a previous session
+        const existingPhotos = await workPhotosService.getPhotos(interventionId);
+        uploadedPhotos = existingPhotos.filter(p => p.photoType === 'before');
+      }
 
       // 2. If there are pending items, create a quote modification
       if (pendingItems.length > 0) {
