@@ -14,7 +14,7 @@ import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 // Fallback kept for dev/backward compatibility.
 const STRIPE_PUBLISHABLE_KEY =
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
-  'pk_test_51SrfsTDTC56CKPNhIxV93gHYHDinqpxPYcNurSkhUzKwjXkaOWFxdP3khzuvaBH507yahYxrA7KtsQLOBOyChXbH005j402hQH';
+  'pk_test_51MXNoOD4myDXU0RjzUHTLmiYTdTwRmxPiv2NbmmYmVWaRDqGB9EYEA599o08zkh2tdJGEVMRchljQukHzA5EFrsZ007hsxwRuT';
 
 // Initialize Stripe
 let stripePromise: Promise<Stripe | null> | null = null;
