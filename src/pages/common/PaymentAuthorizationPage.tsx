@@ -213,12 +213,8 @@ export default function PaymentAuthorizationPage() {
     return () => { supabase.removeChannel(channel); };
   }, [interventionId]);
 
-  const baseTotal = useMemo(
-    () => quoteLines.reduce((s, l) => s + Number(l.calculated_price || 0), 0),
-    [quoteLines]
-  );
-  // Use quote lines total if available, otherwise fall back to the amount from the existing authorization
-  const grandTotal = (baseTotal > 0 ? baseTotal : (authAmount ?? 0)) + additionalTotal;
+  // Use computed TTC from VAT info, or fall back to authAmount from DB
+  const grandTotal = vatInfo && vatInfo.totalTTC > 0 ? vatInfo.totalTTC : (authAmount ?? 0);
 
   const canAuthorize = useMemo(() => {
     if (!intervention) return false;
