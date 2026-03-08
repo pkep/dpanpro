@@ -84,9 +84,13 @@ export function RatingForm({
       }
       
       setIsEditing(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting rating:', error);
-      toast.error('Erreur lors de l\'envoi de l\'avis');
+      if (error?.code === '42501' || error?.message?.includes('row-level security')) {
+        toast.error('Vous devez être connecté en tant que client pour noter cette intervention');
+      } else {
+        toast.error('Erreur lors de l\'envoi de l\'avis. Veuillez réessayer.');
+      }
     } finally {
       setSubmitting(false);
     }
