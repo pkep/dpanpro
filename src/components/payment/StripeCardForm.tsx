@@ -94,12 +94,15 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
     setErrorMessage(null);
 
     try {
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: window.location.href,
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error('Le formulaire de carte n\'est pas prêt.');
+      }
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
         },
-        redirect: 'if_required',
       });
 
       if (error) {
