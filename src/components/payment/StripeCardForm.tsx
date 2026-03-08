@@ -10,11 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Stripe publishable key - PUBLIC key (safe in frontend). Prefer env-configured key.
-// Fallback kept for dev/backward compatibility.
-const STRIPE_PUBLISHABLE_KEY =
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
-  'pk_test_51MXNoOD4myDXU0RjzUHTLmiYTdTwRmxPiv2NbmmYmVWaRDqGB9EYEA599o08zkh2tdJGEVMRchljQukHzA5EFrsZ007hsxwRuT';
+// Stripe publishable key - PUBLIC key (safe in frontend).
+// Must match the same Stripe account as STRIPE_SECRET_KEY used in backend functions.
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
 // Initialize Stripe
 let stripePromise: Promise<Stripe | null> | null = null;
