@@ -52,6 +52,7 @@ interface InterventionData {
   address: string;
   city: string;
   postal_code: string;
+  client_id: string | null;
   client_email: string | null;
   client_phone: string | null;
   created_at: string;
@@ -61,6 +62,13 @@ interface QuoteLine {
   label: string;
   calculated_price: number;
   line_type: string;
+}
+
+interface VatInfo {
+  vatRate: number;
+  vatAmount: number;
+  totalHT: number;
+  totalTTC: number;
 }
 
 const formatPrice = (price: number) =>
@@ -75,6 +83,7 @@ export default function PaymentAuthorizationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authAmount, setAuthAmount] = useState<number | null>(null);
+  const [vatInfo, setVatInfo] = useState<VatInfo | null>(null);
 
   // Payment state
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -97,7 +106,7 @@ export default function PaymentAuthorizationPage() {
         const [intRes, quotesRes, modsRes] = await Promise.all([
           supabase
             .from('interventions')
-            .select('id, tracking_code, title, description, category, status, address, city, postal_code, client_email, client_phone, created_at')
+            .select('id, tracking_code, title, description, category, status, address, city, postal_code, client_email, client_phone, created_at, client_id')
             .eq('id', interventionId)
             .maybeSingle(),
           supabase
@@ -118,11 +127,43 @@ export default function PaymentAuthorizationPage() {
           return;
         }
 
-        setIntervention(intRes.data);
-        setQuoteLines(quotesRes.data || []);
-        setAdditionalTotal(
-          (modsRes.data || []).reduce((s, m) => s + Number(m.total_additional_amount || 0), 0)
-        );
+        const intData = intRes.data;
+        setIntervention(intData);
+        const lines = quotesRes.data || [];
+        setQuoteLines(lines);
+        const addTotal = (modsRes.data || []).reduce((s, m) => s + Number(m.total_additional_amount || 0), 0);
+        setAdditionalTotal(addTotal);
+
+        // Determine VAT rate based on client type and service
+        let vatRate = 10; // default for individuals
+        let clientIsCompany = false;
+        if (intData.client_id) {
+          const { data: clientData } = await supabase
+            .from('users')
+            .select('is_company')
+            .eq('id', intData.client_id)
+            .maybeSingle();
+          clientIsCompany = clientData?.is_company || false;
+        }
+
+        const { data: serviceData } = await supabase
+          .from('services')
+          .select('vat_rate_individual, vat_rate_professional')
+          .eq('code', intData.category)
+          .maybeSingle();
+        if (serviceData) {
+          vatRate = clientIsCompany
+            ? Number(serviceData.vat_rate_professional)
+            : Number(serviceData.vat_rate_individual);
+        } else if (clientIsCompany) {
+          vatRate = 20;
+        }
+
+        // Calculate VAT info from quote lines
+        const totalHT = lines.reduce((s, l) => s + Number(l.calculated_price || 0), 0) + addTotal;
+        const vatAmount = Math.round(totalHT * (vatRate / 100) * 100) / 100;
+        const totalTTC = Math.round((totalHT + vatAmount) * 100) / 100;
+        setVatInfo({ vatRate, vatAmount, totalHT, totalTTC });
 
         // Check existing authorization status + amount
         const authRes = await supabase
@@ -170,12 +211,8 @@ export default function PaymentAuthorizationPage() {
     return () => { supabase.removeChannel(channel); };
   }, [interventionId]);
 
-  const baseTotal = useMemo(
-    () => quoteLines.reduce((s, l) => s + Number(l.calculated_price || 0), 0),
-    [quoteLines]
-  );
-  // Use quote lines total if available, otherwise fall back to the amount from the existing authorization
-  const grandTotal = (baseTotal > 0 ? baseTotal : (authAmount ?? 0)) + additionalTotal;
+  // Use computed TTC from VAT info, or fall back to authAmount from DB
+  const grandTotal = vatInfo && vatInfo.totalTTC > 0 ? vatInfo.totalTTC : (authAmount ?? 0);
 
   const canAuthorize = useMemo(() => {
     if (!intervention) return false;
@@ -350,7 +387,7 @@ export default function PaymentAuthorizationPage() {
               {quoteLines.map((line, i) => (
                 <div key={i} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{line.label}</span>
-                  <span className="font-medium">{formatPrice(line.calculated_price)}</span>
+                  <span className="font-medium">{formatPrice(line.calculated_price)} HT</span>
                 </div>
               ))}
 
@@ -359,14 +396,29 @@ export default function PaymentAuthorizationPage() {
                   <Separator className="my-2" />
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Prestations supplémentaires</span>
-                    <span className="font-medium">{formatPrice(additionalTotal)}</span>
+                    <span className="font-medium">{formatPrice(additionalTotal)} HT</span>
                   </div>
                 </>
               )}
 
               <Separator className="my-2" />
+
+              {vatInfo && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total HT</span>
+                    <span className="font-medium">{formatPrice(vatInfo.totalHT)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">TVA ({vatInfo.vatRate}%)</span>
+                    <span className="font-medium">{formatPrice(vatInfo.vatAmount)}</span>
+                  </div>
+                  <Separator className="my-2" />
+                </>
+              )}
+
               <div className="flex justify-between font-semibold">
-                <span>Total à autoriser</span>
+                <span>Total TTC à autoriser</span>
                 <span className="text-lg">{formatPrice(grandTotal)}</span>
               </div>
             </CardContent>
