@@ -605,10 +605,18 @@ export default function InterventionDetails() {
                       <p className="text-sm text-muted-foreground">
                         L'intervention est terminée. Vous pouvez télécharger votre facture.
                       </p>
-                      {intervention.finalPrice && (
-                        <p className="text-lg font-semibold mt-1">
-                          Montant : {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(intervention.finalPrice)}
-                        </p>
+                      {intervention.finalPrice != null && (
+                        <div className="mt-1 space-y-0.5">
+                          <p className="text-sm text-muted-foreground">
+                            Montant HT : {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(intervention.finalPrice)}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            TVA ({vatRate}%) : {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(Math.round(intervention.finalPrice * (vatRate / 100) * 100) / 100)}
+                          </p>
+                          <p className="text-lg font-semibold">
+                            Montant TTC : {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(Math.round(intervention.finalPrice * (1 + vatRate / 100) * 100) / 100)}
+                          </p>
+                        </div>
                       )}
                     </div>
                     <Button onClick={handleDownloadInvoice} disabled={downloadingInvoice}>
