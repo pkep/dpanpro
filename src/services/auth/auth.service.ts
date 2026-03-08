@@ -99,7 +99,7 @@ class AuthService {
         last_name: credentials.lastName,
         phone: credentials.phone || null,
         role: 'client',
-        is_active: true,
+        is_active: false, // Inactive until email verified
         is_company: credentials.isCompany || false,
         company_name: credentials.companyName || null,
         company_address: credentials.companyAddress || null,
