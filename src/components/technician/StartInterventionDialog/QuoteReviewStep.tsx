@@ -86,6 +86,22 @@ export function QuoteReviewStep({
 
   return (
     <div className="space-y-4">
+      {/* Client questionnaire answers */}
+      {quoteConfig.questionnaireAnswers.length > 0 && (
+        <Card>
+          <CardContent className="pt-4 space-y-2">
+            <Label className="font-medium">Réponses du client</Label>
+            <div className="flex flex-wrap gap-2">
+              {quoteConfig.questionnaireAnswers.map((answer, i) => (
+                <Badge key={i} variant="secondary" className="text-xs">
+                  {answer}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Prestation result name + selected variant */}
       <div className="text-center space-y-1">
         <h3 className="font-semibold text-lg">{quoteConfig.resultatNom}</h3>
