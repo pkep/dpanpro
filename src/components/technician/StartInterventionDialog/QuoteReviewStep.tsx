@@ -86,9 +86,14 @@ export function QuoteReviewStep({
 
   return (
     <div className="space-y-4">
-      {/* Prestation result name */}
-      <div className="text-center">
+      {/* Prestation result name + selected variant */}
+      <div className="text-center space-y-1">
         <h3 className="font-semibold text-lg">{quoteConfig.resultatNom}</h3>
+        {selectedVariante && (
+          <p className="text-sm font-medium text-primary">
+            Variante : {selectedVariante.nom}
+          </p>
+        )}
         <p className="text-sm text-muted-foreground">
           Fourchette : {activePrixMinTTC} – {activePrixMaxTTC} € TTC
         </p>
