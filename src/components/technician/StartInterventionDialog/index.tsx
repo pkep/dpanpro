@@ -75,6 +75,9 @@ export function StartInterventionDialog({
   const [vatRate, setVatRate] = useState(10);
   const [isCompany, setIsCompany] = useState(false);
   const [paymentAuthorized, setPaymentAuthorized] = useState(false);
+  const [quoteConfig, setQuoteConfig] = useState<QuoteConfig | null>(null);
+  const [selectedVarianteId, setSelectedVarianteId] = useState<string | null>(null);
+  const [laborPrice, setLaborPrice] = useState(0);
 
   // Track if dialog has been opened to avoid resetting during close
   const [initialized, setInitialized] = useState(false);
