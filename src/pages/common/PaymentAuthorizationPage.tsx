@@ -82,6 +82,7 @@ export default function PaymentAuthorizationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authAmount, setAuthAmount] = useState<number | null>(null);
+  const [vatInfo, setVatInfo] = useState<VatInfo | null>(null);
 
   // Payment state
   const [paymentLoading, setPaymentLoading] = useState(false);
