@@ -136,30 +136,27 @@ export default function PaymentAuthorizationPage() {
 
         // Determine VAT rate based on client type and service
         let vatRate = 10; // default for individuals
+        let clientIsCompany = false;
         if (intData.client_id) {
           const { data: clientData } = await supabase
             .from('users')
             .select('is_company')
             .eq('id', intData.client_id)
             .maybeSingle();
-          if (clientData?.is_company) {
-            vatRate = 20;
-          }
+          clientIsCompany = clientData?.is_company || false;
         }
 
-        // Also try to get exact rate from service config
         const { data: serviceData } = await supabase
           .from('services')
           .select('vat_rate_individual, vat_rate_professional')
           .eq('code', intData.category)
           .maybeSingle();
         if (serviceData) {
-          const { data: clientData2 } = intData.client_id
-            ? await supabase.from('users').select('is_company').eq('id', intData.client_id).maybeSingle()
-            : { data: null };
-          vatRate = clientData2?.is_company
+          vatRate = clientIsCompany
             ? Number(serviceData.vat_rate_professional)
             : Number(serviceData.vat_rate_individual);
+        } else if (clientIsCompany) {
+          vatRate = 20;
         }
 
         // Calculate VAT info from quote lines
