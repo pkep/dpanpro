@@ -166,50 +166,61 @@ export function StartInterventionDialog({
       // Load questionnaire resultat + variantes
       const { data: interventionData } = await supabase
         .from('interventions')
-        .select('questionnaire_resultat_id, prix_min, prix_max')
+        .select('questionnaire_resultat_id, prix_min, prix_max, title')
         .eq('id', interventionId)
         .single();
 
-      if (interventionData?.questionnaire_resultat_id) {
-        const { data: resultat } = await supabase
-          .from('questionnaire_resultats')
-          .select('id, nom, prix_min, prix_max')
-          .eq('id', interventionData.questionnaire_resultat_id)
-          .single();
+      if (interventionData) {
+        let resultatNom = interventionData.title || 'Prestation';
+        let prixMin = interventionData.prix_min;
+        let prixMax = interventionData.prix_max;
+        let mappedVariantes: VarianteOption[] = [];
 
-        const { data: variantes } = await supabase
-          .from('questionnaire_variantes')
-          .select('id, nom, description, prix_min, prix_max, display_order')
-          .eq('resultat_id', interventionData.questionnaire_resultat_id)
-          .eq('is_active', true)
-          .order('display_order', { ascending: true });
+        if (interventionData.questionnaire_resultat_id) {
+          const { data: resultat } = await supabase
+            .from('questionnaire_resultats')
+            .select('id, nom, prix_min, prix_max')
+            .eq('id', interventionData.questionnaire_resultat_id)
+            .single();
 
-        if (resultat) {
-          const mappedVariantes: VarianteOption[] = (variantes || []).map(v => ({
+          const { data: variantes } = await supabase
+            .from('questionnaire_variantes')
+            .select('id, nom, description, prix_min, prix_max, display_order')
+            .eq('resultat_id', interventionData.questionnaire_resultat_id)
+            .eq('is_active', true)
+            .order('display_order', { ascending: true });
+
+          if (resultat) {
+            resultatNom = resultat.nom;
+            prixMin = resultat.prix_min ?? prixMin;
+            prixMax = resultat.prix_max ?? prixMax;
+          }
+
+          mappedVariantes = (variantes || []).map(v => ({
             id: v.id,
             nom: v.nom,
             description: v.description,
             prixMin: v.prix_min,
             prixMax: v.prix_max,
           }));
-
-          const config: QuoteConfig = {
-            resultatNom: resultat.nom,
-            resultatPrixMin: resultat.prix_min,
-            resultatPrixMax: resultat.prix_max,
-            variantes: mappedVariantes,
-            displacementPrice,
-            securityPrice,
-            vatRate: currentVatRate,
-          };
-          setQuoteConfig(config);
-
-          // Calculate default labor (to reach min price HT)
-          const minTTC = resultat.prix_min || 0;
-          const minHT = minTTC / (1 + currentVatRate / 100);
-          const defaultLabor = Math.max(0, Math.round((minHT - displacementPrice - securityPrice) * 100) / 100);
-          setLaborPrice(defaultLabor);
         }
+
+        const config: QuoteConfig = {
+          resultatNom,
+          resultatPrixMin: prixMin,
+          resultatPrixMax: prixMax,
+          variantes: mappedVariantes,
+          displacementPrice,
+          securityPrice,
+          vatRate: currentVatRate,
+        };
+        setQuoteConfig(config);
+
+        // Calculate default labor (to reach min price HT)
+        const minTTC = prixMin || 0;
+        const minHT = minTTC / (1 + currentVatRate / 100);
+        const defaultLabor = Math.max(0, Math.round((minHT - displacementPrice - securityPrice) * 100) / 100);
+        setLaborPrice(defaultLabor);
       }
     } catch (err) {
       console.error('Error loading quote data:', err);
