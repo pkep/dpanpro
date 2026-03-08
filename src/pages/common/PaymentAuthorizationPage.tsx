@@ -52,6 +52,7 @@ interface InterventionData {
   address: string;
   city: string;
   postal_code: string;
+  client_id: string | null;
   client_email: string | null;
   client_phone: string | null;
   created_at: string;
