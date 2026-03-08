@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/services/auth/auth.service';
 import type { User } from '@/types/auth.types';
 import { Wrench } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 
 type AuthView = 'login' | 'register' | 'forgot-password' | 'change-password';
