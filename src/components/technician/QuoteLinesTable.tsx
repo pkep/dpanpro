@@ -139,7 +139,17 @@ export function QuoteLinesTable({ quoteLines, approvedModifications, vatRate = 0
             </TableRow>
           )}
           <TableRow>
-            <TableCell colSpan={5} className="text-right font-bold">Total général</TableCell>
+            <TableCell colSpan={5} className="text-right">Total HT</TableCell>
+            <TableCell className="text-right font-medium">{formatPrice(totalHT)}</TableCell>
+          </TableRow>
+          {vatRate > 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="text-right text-muted-foreground">TVA ({vatRate}%)</TableCell>
+              <TableCell className="text-right font-medium text-muted-foreground">{formatPrice(vatAmount)}</TableCell>
+            </TableRow>
+          )}
+          <TableRow>
+            <TableCell colSpan={5} className="text-right font-bold">Total TTC</TableCell>
             <TableCell className="text-right font-bold text-lg">{formatPrice(grandTotal)}</TableCell>
           </TableRow>
         </TableFooter>
