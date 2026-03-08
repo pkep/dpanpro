@@ -35,8 +35,8 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [paymentElementReady, setPaymentElementReady] = useState(false);
-  const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
+  const [cardElementReady, setCardElementReady] = useState(false);
+  const [cardElementError, setCardElementError] = useState<string | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
 
   // Handle potential 3DS redirect return flow.
