@@ -86,7 +86,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements || !paymentElementReady || paymentElementError) {
+    if (!stripe || !elements || !paymentElementReady || paymentElementError || !paymentComplete) {
       return;
     }
 
