@@ -1,0 +1,1 @@
+UPDATE payment_authorizations SET status = 'cancelled', cancelled_at = now() WHERE intervention_id = '65e6dc42-8237-48cd-9375-6587c757268a' AND status = 'pending'
