@@ -260,12 +260,15 @@ export function StartInterventionDialog({
 
   // Calculate total TTC for payment
   const getTotalTTC = () => {
-    const baseTotal = quoteLines.reduce((sum, line) => sum + line.calculatedPrice, 0);
+    // Base: displacement + security + labor
+    const dp = quoteConfig?.displacementPrice || 0;
+    const sp = quoteConfig?.securityPrice || 0;
+    const baseHT = dp + sp + laborPrice;
     const additionalTotal = pendingItems.reduce(
       (sum, item) => sum + item.unitPrice * item.quantity,
       0
     );
-    const totalHT = baseTotal + additionalTotal;
+    const totalHT = baseHT + additionalTotal;
     const vatAmount = Math.round(totalHT * (vatRate / 100) * 100) / 100;
     return Math.round((totalHT + vatAmount) * 100) / 100;
   };
