@@ -10,11 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
-// Stripe publishable key - PUBLIC key (safe in frontend). Prefer env-configured key.
-// Fallback kept for dev/backward compatibility.
-const STRIPE_PUBLISHABLE_KEY =
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
-  'pk_test_51MXNoOD4myDXU0RjzUHTLmiYTdTwRmxPiv2NbmmYmVWaRDqGB9EYEA599o08zkh2tdJGEVMRchljQukHzA5EFrsZ007hsxwRuT';
+// Stripe publishable key - PUBLIC key (safe in frontend).
+// Must match the same Stripe account as STRIPE_SECRET_KEY used in backend functions.
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
 // Initialize Stripe
 let stripePromise: Promise<Stripe | null> | null = null;
@@ -37,6 +35,8 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
+  const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
 
   // Handle potential 3DS redirect return flow.
   useEffect(() => {
@@ -85,7 +85,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements) {
+    if (!stripe || !elements || !paymentElementReady || paymentElementError) {
       return;
     }
 
@@ -122,9 +122,24 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement 
+      <PaymentElement
         options={{
           layout: 'tabs',
+        }}
+        onReady={() => {
+          setPaymentElementReady(true);
+          setPaymentElementError(null);
+        }}
+        onLoadError={(event: { error?: { message?: string } }) => {
+          const rawMessage = event.error?.message || 'Erreur de chargement du formulaire de paiement.';
+          const message = rawMessage.includes('client_secret provided does not match any associated PaymentIntent')
+            ? 'Configuration Stripe invalide : la clé publique ne correspond pas au compte de paiement configuré.'
+            : rawMessage;
+
+          setPaymentElementReady(false);
+          setPaymentElementError(message);
+          setErrorMessage(message);
+          onError(message);
         }}
       />
       
@@ -137,7 +152,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
       <Button
         type="submit"
-        disabled={!stripe || !elements || isProcessing}
+        disabled={!stripe || !elements || isProcessing || !paymentElementReady || !!paymentElementError}
         className="w-full"
         size="lg"
       >
@@ -170,7 +185,7 @@ export function StripeCardForm({ clientSecret, amount, onSuccess, onError }: Str
 
   useEffect(() => {
     if (!STRIPE_PUBLISHABLE_KEY) {
-      setStripeError('Clé Stripe non configurée. Veuillez contacter le support.');
+      setStripeError('Clé publique Stripe non configurée (VITE_STRIPE_PUBLISHABLE_KEY).');
       return;
     }
 
