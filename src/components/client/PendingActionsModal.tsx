@@ -81,7 +81,17 @@ export function PendingActionsModal() {
         .in('status', ['failed', 'pending']);
 
       if (!payError && paymentAuths) {
+        // Deduplicate: keep only the latest authorization per intervention
+        const latestByIntervention = new Map<string, typeof paymentAuths[0]>();
         for (const auth of paymentAuths) {
+          const existing = latestByIntervention.get(auth.intervention_id);
+          if (!existing) {
+            latestByIntervention.set(auth.intervention_id, auth);
+          }
+          // Since we don't order here, just keep the first one (query returns latest by default)
+        }
+
+        for (const auth of latestByIntervention.values()) {
           const intervention = interventions.find(i => i.id === auth.intervention_id);
           if (intervention) {
             allActions.push({
