@@ -491,17 +491,19 @@ export function StartInterventionDialog({
         }
       }
 
-      // 3. Save signature to intervention
-      const { error: updateError } = await supabase
-        .from('interventions')
-        .update({
-          quote_signed_at: new Date().toISOString(),
-          quote_signature_data: signatureData,
-        })
-        .eq('id', interventionId);
+      // 3. Save signature to intervention (only if new signature)
+      if (signatureData) {
+        const { error: updateError } = await supabase
+          .from('interventions')
+          .update({
+            quote_signed_at: new Date().toISOString(),
+            quote_signature_data: signatureData,
+          })
+          .eq('id', interventionId);
 
-      if (updateError) {
-        console.error('Error saving signature:', updateError);
+        if (updateError) {
+          console.error('Error saving signature:', updateError);
+        }
       }
 
       // 4. Get intervention for PDF generation
