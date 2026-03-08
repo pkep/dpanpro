@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import {
   Elements,
-  PaymentElement,
+  CardCvcElement,
+  CardExpiryElement,
+  CardNumberElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
@@ -11,8 +13,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
 // Stripe publishable key - PUBLIC key (safe in frontend).
+// Must match the same Stripe account as STRIPE_SECRET_KEY used in backend functions.
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SrfsTDTC56CKPNhIxV93gHYHDinqpxPYcNurSkhUzKwjXkaOWFxdP3khzuvaBH507yahYxrA7KtsQLOBOyChXbH005j402hQH';
 
+// Initialize Stripe
 let stripePromise: Promise<Stripe | null> | null = null;
 const getStripe = () => {
   if (!stripePromise && STRIPE_PUBLISHABLE_KEY) {
@@ -28,15 +32,27 @@ interface PaymentFormProps {
   onError: (error: string) => void;
 }
 
+const cardElementBaseClasses = 'rounded-md border border-border bg-background px-3 py-3';
+
 function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [paymentElementReady, setPaymentElementReady] = useState(false);
-  const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
-  const [paymentComplete, setPaymentComplete] = useState(false);
 
+  const [cardReady, setCardReady] = useState({
+    number: false,
+    expiry: false,
+    cvc: false,
+  });
+
+  const [cardComplete, setCardComplete] = useState({
+    number: false,
+    expiry: false,
+    cvc: false,
+  });
+
+  // Handle potential 3DS redirect return flow.
   useEffect(() => {
     if (!stripe) return;
 
@@ -53,7 +69,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
         if (paymentIntent.status === 'requires_capture' || paymentIntent.status === 'succeeded') {
           onSuccess();
         } else if (paymentIntent.status === 'requires_payment_method') {
-          const msg = "Autorisation refusée ou expirée. Veuillez réessayer avec une autre carte.";
+          const msg = 'Autorisation refusée ou expirée. Veuillez réessayer avec une autre carte.';
           setErrorMessage(msg);
           onError(msg);
         }
@@ -64,6 +80,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
         onError(msg);
       })
       .finally(() => {
+        // Clean URL params (avoid re-processing on refresh)
         params.delete('payment_intent_client_secret');
         params.delete('payment_intent');
         params.delete('redirect_status');
@@ -79,10 +96,13 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
     }).format(price);
   };
 
+  const isFormReady = cardReady.number && cardReady.expiry && cardReady.cvc;
+  const isFormComplete = cardComplete.number && cardComplete.expiry && cardComplete.cvc;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements || !paymentElementReady || paymentElementError || !paymentComplete) {
+    if (!stripe || !elements || !isFormReady || !isFormComplete) {
       return;
     }
 
@@ -90,20 +110,21 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
     setErrorMessage(null);
 
     try {
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: window.location.href,
+      const card = elements.getElement(CardNumberElement);
+      if (!card) {
+        throw new Error('Le formulaire de carte n\'est pas prêt.');
+      }
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card,
         },
-        redirect: 'if_required',
       });
 
       if (error) {
         setErrorMessage(error.message || 'Une erreur est survenue');
         onError(error.message || 'Une erreur est survenue');
-      } else if (paymentIntent && paymentIntent.status === 'requires_capture') {
-        onSuccess();
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      } else if (paymentIntent && (paymentIntent.status === 'requires_capture' || paymentIntent.status === 'succeeded')) {
         onSuccess();
       }
     } catch (err) {
@@ -117,54 +138,55 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* CSS to hide Stripe's optional billing fields (email, phone, name) */}
-      <style>{`
-        #stripe-payment-element-wrapper .p-LinkAuthenticationElement,
-        #stripe-payment-element-wrapper [class*="LinkAuthenticationElement"],
-        #stripe-payment-element-wrapper .StripeElement--link,
-        #stripe-payment-element-wrapper .p-BillingDetails,
-        #stripe-payment-element-wrapper [class*="billingDetails"],
-        #stripe-payment-element-wrapper [class*="BillingDetails"] {
-          display: none !important;
-          height: 0 !important;
-          overflow: hidden !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-      `}</style>
-      <div id="stripe-payment-element-wrapper">
-        <PaymentElement
-          options={{
-            layout: 'tabs',
-            fields: {
-              billingDetails: 'never',
-            },
-            wallets: {
-              applePay: 'never',
-              googlePay: 'never',
-            },
-          }}
-          onReady={() => {
-            setPaymentElementReady(true);
-            setPaymentElementError(null);
-          }}
-          onLoadError={(event: { error?: { message?: string } }) => {
-            const rawMessage = event.error?.message || 'Erreur de chargement du formulaire de paiement.';
-            const message = rawMessage.includes('client_secret provided does not match any associated PaymentIntent')
-              ? 'Configuration Stripe invalide : la clé publique ne correspond pas au compte de paiement configuré.'
-              : rawMessage;
+      <div className="space-y-3">
+        <div className={cardElementBaseClasses}>
+          <CardNumberElement
+            options={{
+              showIcon: true,
+            }}
+            onReady={() => setCardReady((prev) => ({ ...prev, number: true }))}
+            onChange={(event) => {
+              setCardComplete((prev) => ({ ...prev, number: event.complete }));
+              if (event.error?.message) {
+                setErrorMessage(event.error.message);
+              } else if (errorMessage) {
+                setErrorMessage(null);
+              }
+            }}
+          />
+        </div>
 
-            setPaymentElementReady(false);
-            setPaymentElementError(message);
-            setErrorMessage(message);
-            onError(message);
-          }}
-          onChange={(event) => {
-            setPaymentComplete(event.complete);
-          }}
-        />
+        <div className="grid grid-cols-2 gap-3">
+          <div className={cardElementBaseClasses}>
+            <CardExpiryElement
+              onReady={() => setCardReady((prev) => ({ ...prev, expiry: true }))}
+              onChange={(event) => {
+                setCardComplete((prev) => ({ ...prev, expiry: event.complete }));
+                if (event.error?.message) {
+                  setErrorMessage(event.error.message);
+                } else if (errorMessage) {
+                  setErrorMessage(null);
+                }
+              }}
+            />
+          </div>
+
+          <div className={cardElementBaseClasses}>
+            <CardCvcElement
+              onReady={() => setCardReady((prev) => ({ ...prev, cvc: true }))}
+              onChange={(event) => {
+                setCardComplete((prev) => ({ ...prev, cvc: event.complete }));
+                if (event.error?.message) {
+                  setErrorMessage(event.error.message);
+                } else if (errorMessage) {
+                  setErrorMessage(null);
+                }
+              }}
+            />
+          </div>
+        </div>
       </div>
-      
+
       {errorMessage && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -174,7 +196,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
       <Button
         type="submit"
-        disabled={!stripe || !elements || isProcessing || !paymentElementReady || !!paymentElementError || !paymentComplete}
+        disabled={!stripe || !elements || isProcessing || !isFormReady || !isFormComplete}
         className="w-full"
         size="lg"
       >
@@ -207,21 +229,23 @@ export function StripeCardForm({ clientSecret, amount, onSuccess, onError }: Str
 
   useEffect(() => {
     if (!STRIPE_PUBLISHABLE_KEY) {
-      setStripeError('Clé publique Stripe non configurée.');
+      setStripeError('Clé publique Stripe non configurée (VITE_STRIPE_PUBLISHABLE_KEY).');
       return;
     }
 
     const stripe = getStripe();
     if (stripe) {
-      stripe.then((s) => {
-        if (s) {
-          setStripeReady(true);
-        } else {
-          setStripeError('Impossible de charger Stripe.');
-        }
-      }).catch((err) => {
-        setStripeError(`Erreur Stripe: ${err.message}`);
-      });
+      stripe
+        .then((s) => {
+          if (s) {
+            setStripeReady(true);
+          } else {
+            setStripeError('Impossible de charger Stripe. Vérifiez la clé publique.');
+          }
+        })
+        .catch((err) => {
+          setStripeError(`Erreur Stripe: ${err.message}`);
+        });
     }
   }, []);
 
@@ -250,22 +274,10 @@ export function StripeCardForm({ clientSecret, amount, onSuccess, onError }: Str
       stripe={stripe}
       options={{
         clientSecret,
-        appearance: {
-          theme: 'stripe',
-          variables: {
-            colorPrimary: 'hsl(221.2, 83.2%, 53.3%)',
-            borderRadius: '8px',
-          },
-        },
         locale: 'fr',
       }}
     >
-      <PaymentForm
-        clientSecret={clientSecret}
-        amount={amount}
-        onSuccess={onSuccess}
-        onError={onError}
-      />
+      <PaymentForm clientSecret={clientSecret} amount={amount} onSuccess={onSuccess} onError={onError} />
     </Elements>
   );
 }
