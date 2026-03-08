@@ -40,6 +40,7 @@ export function FinalizeInterventionDialog({
   const [modificationItems, setModificationItems] = useState<QuoteModificationItem[]>([]);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [hasSignature, setHasSignature] = useState(false);
+  const [vatRate, setVatRate] = useState(10);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
