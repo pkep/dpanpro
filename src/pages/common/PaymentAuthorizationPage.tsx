@@ -68,6 +68,7 @@ const formatPrice = (price: number) =>
 
 export default function PaymentAuthorizationPage() {
   const { interventionId } = useParams<{ interventionId: string }>();
+  const { isAuthenticated } = useAuth();
   const [intervention, setIntervention] = useState<InterventionData | null>(null);
   const [quoteLines, setQuoteLines] = useState<QuoteLine[]>([]);
   const [additionalTotal, setAdditionalTotal] = useState(0);
