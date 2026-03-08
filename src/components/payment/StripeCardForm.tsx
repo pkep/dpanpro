@@ -156,7 +156,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
       <Button
         type="submit"
-        disabled={!stripe || !elements || isProcessing || !paymentElementReady || !!paymentElementError || !paymentComplete}
+        disabled={!stripe || !elements || isProcessing || !cardElementReady || !!cardElementError || !paymentComplete}
         className="w-full"
         size="lg"
       >
