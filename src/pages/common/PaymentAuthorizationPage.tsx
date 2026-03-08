@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +68,7 @@ const formatPrice = (price: number) =>
 
 export default function PaymentAuthorizationPage() {
   const { interventionId } = useParams<{ interventionId: string }>();
+  const { isAuthenticated } = useAuth();
   const [intervention, setIntervention] = useState<InterventionData | null>(null);
   const [quoteLines, setQuoteLines] = useState<QuoteLine[]>([]);
   const [additionalTotal, setAdditionalTotal] = useState(0);
@@ -425,6 +427,16 @@ export default function PaymentAuthorizationPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Navigation button */}
+        <div className="flex justify-center">
+          <Link to={isAuthenticated ? '/dashboard' : '/'}>
+            <Button variant="outline" size="sm">
+              <Home className="h-4 w-4 mr-2" />
+              {isAuthenticated ? 'Retour à mon espace' : "Retour à l'accueil"}
+            </Button>
+          </Link>
+        </div>
 
         {/* Footer info */}
         <p className="text-xs text-center text-muted-foreground pb-4">
