@@ -80,7 +80,7 @@ export default function PaymentAuthorizationPage() {
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentAuthorizationId, setPaymentAuthorizationId] = useState<string | null>(null);
   const [paymentAuthorized, setPaymentAuthorized] = useState(false);
-  const [autoInitAttempted, setAutoInitAttempted] = useState(false);
+  const autoInitTriggeredRef = useRef(false);
 
   // Fetch intervention + quote data
   useEffect(() => {
