@@ -7,6 +7,7 @@ import { Wrench, Truck, Shield, Package, FileText } from 'lucide-react';
 interface QuoteLinesTableProps {
   quoteLines: QuoteLine[];
   approvedModifications: QuoteModification[];
+  vatRate?: number;
 }
 
 const LINE_TYPE_ICONS: Record<string, React.ReactNode> = {
