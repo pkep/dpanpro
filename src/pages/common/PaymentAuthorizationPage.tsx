@@ -105,7 +105,7 @@ export default function PaymentAuthorizationPage() {
         const [intRes, quotesRes, modsRes] = await Promise.all([
           supabase
             .from('interventions')
-            .select('id, tracking_code, title, description, category, status, address, city, postal_code, client_email, client_phone, created_at')
+            .select('id, tracking_code, title, description, category, status, address, city, postal_code, client_email, client_phone, created_at, client_id')
             .eq('id', interventionId)
             .maybeSingle(),
           supabase
@@ -126,11 +126,46 @@ export default function PaymentAuthorizationPage() {
           return;
         }
 
-        setIntervention(intRes.data);
-        setQuoteLines(quotesRes.data || []);
-        setAdditionalTotal(
-          (modsRes.data || []).reduce((s, m) => s + Number(m.total_additional_amount || 0), 0)
-        );
+        const intData = intRes.data;
+        setIntervention(intData);
+        const lines = quotesRes.data || [];
+        setQuoteLines(lines);
+        const addTotal = (modsRes.data || []).reduce((s, m) => s + Number(m.total_additional_amount || 0), 0);
+        setAdditionalTotal(addTotal);
+
+        // Determine VAT rate based on client type and service
+        let vatRate = 10; // default for individuals
+        if (intData.client_id) {
+          const { data: clientData } = await supabase
+            .from('users')
+            .select('is_company')
+            .eq('id', intData.client_id)
+            .maybeSingle();
+          if (clientData?.is_company) {
+            vatRate = 20;
+          }
+        }
+
+        // Also try to get exact rate from service config
+        const { data: serviceData } = await supabase
+          .from('services')
+          .select('vat_rate_individual, vat_rate_professional')
+          .eq('code', intData.category)
+          .maybeSingle();
+        if (serviceData) {
+          const { data: clientData2 } = intData.client_id
+            ? await supabase.from('users').select('is_company').eq('id', intData.client_id).maybeSingle()
+            : { data: null };
+          vatRate = clientData2?.is_company
+            ? Number(serviceData.vat_rate_professional)
+            : Number(serviceData.vat_rate_individual);
+        }
+
+        // Calculate VAT info from quote lines
+        const totalHT = lines.reduce((s, l) => s + Number(l.calculated_price || 0), 0) + addTotal;
+        const vatAmount = Math.round(totalHT * (vatRate / 100) * 100) / 100;
+        const totalTTC = Math.round((totalHT + vatAmount) * 100) / 100;
+        setVatInfo({ vatRate, vatAmount, totalHT, totalTTC });
 
         // Check existing authorization status + amount
         const authRes = await supabase
