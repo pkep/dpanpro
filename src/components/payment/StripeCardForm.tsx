@@ -122,9 +122,24 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement 
+      <PaymentElement
         options={{
           layout: 'tabs',
+        }}
+        onReady={() => {
+          setPaymentElementReady(true);
+          setPaymentElementError(null);
+        }}
+        onLoaderror={(event) => {
+          const rawMessage = event.error?.message || 'Erreur de chargement du formulaire de paiement.';
+          const message = rawMessage.includes('client_secret provided does not match any associated PaymentIntent')
+            ? 'Configuration Stripe invalide : la clé publique ne correspond pas au compte de paiement configuré.'
+            : rawMessage;
+
+          setPaymentElementReady(false);
+          setPaymentElementError(message);
+          setErrorMessage(message);
+          onError(message);
         }}
       />
       
