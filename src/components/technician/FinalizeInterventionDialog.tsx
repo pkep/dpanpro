@@ -362,7 +362,9 @@ export function FinalizeInterventionDialog({
     }
   };
 
-  const totalAmount = baseQuoteTotal + additionalAmount;
+  const totalHT = baseQuoteTotal + additionalAmount;
+  const vatAmount = Math.round(totalHT * (vatRate / 100) * 100) / 100;
+  const totalAmount = Math.round((totalHT + vatAmount) * 100) / 100;
 
   // Build list of all services for signature text
   const allServices = [
