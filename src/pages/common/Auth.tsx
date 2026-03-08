@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/services/auth/auth.service';
 import type { User } from '@/types/auth.types';
 import { Wrench } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import logo from '@/assets/logo.png';
 
 type AuthView = 'login' | 'register' | 'forgot-password' | 'change-password';
@@ -71,8 +72,10 @@ export default function Auth() {
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-secondary p-12 text-secondary-foreground">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
-          <span className="text-2xl font-bold">Dépan.Pro</span>
+          <Link to="/" className="flex items-center gap-3">
+            <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
+            <span className="text-2xl font-bold">Dépan.Pro</span>
+          </Link>
         </div>
         
         <div className="space-y-6">
@@ -118,10 +121,10 @@ export default function Auth() {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
+          <Link to="/" className="mb-8 flex items-center justify-center gap-3 lg:hidden">
             <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
             <span className="text-2xl font-bold text-foreground">Dépan.Pro</span>
-          </div>
+          </Link>
 
           {view === 'login' && (
             <LoginForm
