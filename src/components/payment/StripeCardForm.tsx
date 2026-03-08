@@ -127,12 +127,11 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
         options={{
           layout: 'tabs',
           fields: {
-            billingDetails: {
-              name: 'never',
-              email: 'never',
-              phone: 'never',
-              address: 'never',
-            },
+            billingDetails: 'never',
+          },
+          wallets: {
+            applePay: 'never',
+            googlePay: 'never',
           },
         }}
         onReady={() => {
