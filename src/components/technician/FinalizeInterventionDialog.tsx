@@ -431,9 +431,19 @@ export function FinalizeInterventionDialog({
                 </>
               )}
 
-              <div className="flex justify-between font-bold border-t pt-2 mt-2">
-                <span>Total à débiter</span>
-                <span>{totalAmount.toFixed(2)} €</span>
+              <div className="border-t pt-2 mt-2 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Total HT</span>
+                  <span>{totalHT.toFixed(2)} €</span>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>TVA ({vatRate}%)</span>
+                  <span>{vatAmount.toFixed(2)} €</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span>Total TTC à débiter</span>
+                  <span>{totalAmount.toFixed(2)} €</span>
+                </div>
               </div>
             </div>
           </div>
