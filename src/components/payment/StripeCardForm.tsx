@@ -130,7 +130,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
           setPaymentElementReady(true);
           setPaymentElementError(null);
         }}
-        onLoaderror={(event) => {
+        onLoadError={(event: { error?: { message?: string } }) => {
           const rawMessage = event.error?.message || 'Erreur de chargement du formulaire de paiement.';
           const message = rawMessage.includes('client_secret provided does not match any associated PaymentIntent')
             ? 'Configuration Stripe invalide : la clé publique ne correspond pas au compte de paiement configuré.'
