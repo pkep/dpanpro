@@ -126,36 +126,26 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement
-        options={{
-          layout: 'tabs',
-          fields: {
-            billingDetails: 'never',
-          },
-          wallets: {
-            applePay: 'never',
-            googlePay: 'never',
-          },
-        }}
-        onReady={() => {
-          setPaymentElementReady(true);
-          setPaymentElementError(null);
-        }}
-        onLoadError={(event: { error?: { message?: string } }) => {
-          const rawMessage = event.error?.message || 'Erreur de chargement du formulaire de paiement.';
-          const message = rawMessage.includes('client_secret provided does not match any associated PaymentIntent')
-            ? 'Configuration Stripe invalide : la clé publique ne correspond pas au compte de paiement configuré.'
-            : rawMessage;
-
-          setPaymentElementReady(false);
-          setPaymentElementError(message);
-          setErrorMessage(message);
-          onError(message);
-        }}
-        onChange={(event) => {
-          setPaymentComplete(event.complete);
-        }}
-      />
+      <div className="rounded-md border border-border p-3">
+        <CardElement
+          options={{
+            hidePostalCode: true,
+          }}
+          onReady={() => {
+            setCardElementReady(true);
+            setCardElementError(null);
+          }}
+          onChange={(event) => {
+            setPaymentComplete(event.complete);
+            const message = event.error?.message ?? null;
+            setCardElementError(message);
+            setErrorMessage(message);
+            if (message) {
+              onError(message);
+            }
+          }}
+        />
+      </div>
       
       {errorMessage && (
         <Alert variant="destructive">
