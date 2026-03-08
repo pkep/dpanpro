@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import {
   Elements,
-  PaymentElement,
+  CardElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
@@ -35,8 +35,8 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [paymentElementReady, setPaymentElementReady] = useState(false);
-  const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
+  const [cardElementReady, setCardElementReady] = useState(false);
+  const [cardElementError, setCardElementError] = useState<string | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
 
   // Handle potential 3DS redirect return flow.
@@ -86,7 +86,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements || !paymentElementReady || paymentElementError || !paymentComplete) {
+    if (!stripe || !elements || !cardElementReady || cardElementError || !paymentComplete) {
       return;
     }
 
@@ -94,12 +94,15 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
     setErrorMessage(null);
 
     try {
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: window.location.href,
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error('Le formulaire de carte n\'est pas prêt.');
+      }
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement,
         },
-        redirect: 'if_required',
       });
 
       if (error) {
@@ -123,36 +126,26 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement
-        options={{
-          layout: 'tabs',
-          fields: {
-            billingDetails: 'never',
-          },
-          wallets: {
-            applePay: 'never',
-            googlePay: 'never',
-          },
-        }}
-        onReady={() => {
-          setPaymentElementReady(true);
-          setPaymentElementError(null);
-        }}
-        onLoadError={(event: { error?: { message?: string } }) => {
-          const rawMessage = event.error?.message || 'Erreur de chargement du formulaire de paiement.';
-          const message = rawMessage.includes('client_secret provided does not match any associated PaymentIntent')
-            ? 'Configuration Stripe invalide : la clé publique ne correspond pas au compte de paiement configuré.'
-            : rawMessage;
-
-          setPaymentElementReady(false);
-          setPaymentElementError(message);
-          setErrorMessage(message);
-          onError(message);
-        }}
-        onChange={(event) => {
-          setPaymentComplete(event.complete);
-        }}
-      />
+      <div className="rounded-md border border-border p-3">
+        <CardElement
+          options={{
+            hidePostalCode: true,
+          }}
+          onReady={() => {
+            setCardElementReady(true);
+            setCardElementError(null);
+          }}
+          onChange={(event) => {
+            setPaymentComplete(event.complete);
+            const message = event.error?.message ?? null;
+            setCardElementError(message);
+            setErrorMessage(message);
+            if (message) {
+              onError(message);
+            }
+          }}
+        />
+      </div>
       
       {errorMessage && (
         <Alert variant="destructive">
@@ -163,7 +156,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
       <Button
         type="submit"
-        disabled={!stripe || !elements || isProcessing || !paymentElementReady || !!paymentElementError || !paymentComplete}
+        disabled={!stripe || !elements || isProcessing || !cardElementReady || !!cardElementError || !paymentComplete}
         className="w-full"
         size="lg"
       >
