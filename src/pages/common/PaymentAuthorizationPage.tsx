@@ -389,7 +389,7 @@ export default function PaymentAuthorizationPage() {
               {quoteLines.map((line, i) => (
                 <div key={i} className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{line.label}</span>
-                  <span className="font-medium">{formatPrice(line.calculated_price)}</span>
+                  <span className="font-medium">{formatPrice(line.calculated_price)} HT</span>
                 </div>
               ))}
 
@@ -398,14 +398,29 @@ export default function PaymentAuthorizationPage() {
                   <Separator className="my-2" />
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Prestations supplémentaires</span>
-                    <span className="font-medium">{formatPrice(additionalTotal)}</span>
+                    <span className="font-medium">{formatPrice(additionalTotal)} HT</span>
                   </div>
                 </>
               )}
 
               <Separator className="my-2" />
+
+              {vatInfo && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Total HT</span>
+                    <span className="font-medium">{formatPrice(vatInfo.totalHT)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">TVA ({vatInfo.vatRate}%)</span>
+                    <span className="font-medium">{formatPrice(vatInfo.vatAmount)}</span>
+                  </div>
+                  <Separator className="my-2" />
+                </>
+              )}
+
               <div className="flex justify-between font-semibold">
-                <span>Total à autoriser</span>
+                <span>Total TTC à autoriser</span>
                 <span className="text-lg">{formatPrice(grandTotal)}</span>
               </div>
             </CardContent>
