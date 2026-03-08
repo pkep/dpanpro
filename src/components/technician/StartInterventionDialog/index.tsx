@@ -33,7 +33,7 @@ import { PhotoStep } from './PhotoStep';
 import { QuoteReviewStep } from './QuoteReviewStep';
 import { AddItemsStep } from './AddItemsStep';
 import { SignatureCanvas } from '@/components/quotes/SignatureCanvas';
-import type { StartStep, QuoteModificationItem, StartInterventionDialogProps } from './types';
+import type { StartStep, QuoteModificationItem, StartInterventionDialogProps, QuoteConfig, VarianteOption } from './types';
 
 const STEP_TITLES: Record<StartStep, string> = {
   photos: 'Photos de la panne',
