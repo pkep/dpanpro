@@ -67,6 +67,7 @@ export default function TechnicianInterventionPage() {
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [showFinalizePhotosDialog, setShowFinalizePhotosDialog] = useState(false);
+  const [paymentAuthorized, setPaymentAuthorized] = useState(false);
   
   // Work photos state
   const [beforePhotos, setBeforePhotos] = useState<WorkPhoto[]>([]);
