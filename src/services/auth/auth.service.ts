@@ -141,11 +141,20 @@ class AuthService {
         updatedAt: newUser.updated_at,
       };
 
-      this.currentUser = user;
-      this.notifyListeners();
-      localStorage.setItem('depanpro_user', JSON.stringify(user));
+      // Don't auto-login: send verification email instead
+      try {
+        await supabase.functions.invoke('send-verification-email', {
+          body: {
+            userId: user.id,
+            email: user.email,
+            firstName: user.firstName,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+      }
 
-      return { success: true, user };
+      return { success: true, user, requiresEmailVerification: true };
     } catch (error) {
       console.error('Register error:', error);
       return { success: false, error: 'Erreur lors de l\'inscription' };
