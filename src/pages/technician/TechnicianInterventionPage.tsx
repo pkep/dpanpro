@@ -192,14 +192,10 @@ export default function TechnicianInterventionPage() {
   const handleStartInterventionClick = async () => {
     if (!intervention || !user) return;
 
-    // Check if all prerequisites are already completed (technician left modal after payment was authorized)
+    // Check if payment is already authorized (means the full flow was completed: photos, quote, signature, payment)
+    // Even if quote_signed_at or photos aren't in DB yet (they were in memory when dialog was closed),
+    // the payment authorization confirms the business flow was completed
     try {
-      const { data: intData } = await supabase
-        .from('interventions')
-        .select('quote_signed_at')
-        .eq('id', intervention.id)
-        .single();
-
       const { data: authData } = await supabase
         .from('payment_authorizations')
         .select('status')
@@ -208,11 +204,8 @@ export default function TechnicianInterventionPage() {
         .limit(1)
         .maybeSingle();
 
-      const existingPhotos = await workPhotosService.getPhotos(intervention.id);
-      const hasBeforePhotos = existingPhotos.some(p => p.photoType === 'before');
-
-      if (intData?.quote_signed_at && authData?.status === 'authorized' && hasBeforePhotos) {
-        // Everything already done — skip dialog and start directly
+      if (authData?.status === 'authorized') {
+        // Payment authorized — skip dialog entirely and start intervention directly
         setIsUpdatingStatus(true);
         try {
           await interventionsService.updateStatus(intervention.id, 'in_progress', intervention.status);
@@ -223,7 +216,6 @@ export default function TechnicianInterventionPage() {
             oldValue: intervention.status,
             newValue: 'in_progress',
           });
-          setBeforePhotos(existingPhotos.filter(p => p.photoType === 'before'));
           toast.success('Intervention démarrée !');
           refresh();
         } catch (err) {
@@ -235,10 +227,10 @@ export default function TechnicianInterventionPage() {
         return;
       }
     } catch (err) {
-      console.error('Error checking prerequisites:', err);
+      console.error('Error checking payment authorization:', err);
     }
 
-    // Prerequisites not complete — show the dialog
+    // Payment not yet authorized — show the full dialog flow
     setShowStartDialog(true);
   };
 
