@@ -168,7 +168,7 @@ export function PendingActionsModal() {
     } else if (action.type === 'quote_approval') {
       navigate(`/quote-approval/${action.notificationToken}`);
     }
-  // Don't close modal - it will close automatically once the action is resolved
+  };
 
 
   if (loading || actions.length === 0) {
