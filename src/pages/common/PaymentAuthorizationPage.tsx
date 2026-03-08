@@ -217,6 +217,15 @@ export default function PaymentAuthorizationPage() {
       toast.success('Carte autorisée avec succès !', {
         description: 'Le technicien peut désormais finaliser l\'intervention.',
       });
+
+      // Notify technician that payment was authorized (non-blocking)
+      if (interventionId) {
+        supabase.functions.invoke('notify-payment-authorized', {
+          body: { interventionId },
+        }).catch(err => {
+          console.error('Failed to notify technician:', err);
+        });
+      }
     } catch (err) {
       console.error('Error updating status:', err);
     }

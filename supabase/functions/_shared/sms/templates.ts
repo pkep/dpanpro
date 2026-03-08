@@ -100,6 +100,17 @@ export function buildPaymentCapturedSms(data: PaymentCapturedSmsData): string {
   return `${PREFIX} Paiement de ${data.amount} € confirmé pour l'intervention ${data.interventionTitle}.`;
 }
 
+// ── Payment Authorized (technician) ─────────────────────────────────
+interface PaymentAuthorizedTechSmsData {
+  trackingCode: string;
+  categoryLabel: string;
+  city: string;
+}
+
+export function buildPaymentAuthorizedTechSms(data: PaymentAuthorizedTechSmsData): string {
+  return `✅ ${PREFIX} Le client a autorisé le paiement pour l'intervention ${data.categoryLabel} à ${data.city}. Ref: ${data.trackingCode}. Vous pouvez reprendre l'intervention.`;
+}
+
 // ── Arrival Reminder (technician) ───────────────────────────────────
 interface ArrivalReminderSmsData {
   reminderType: "half_time" | "five_minutes";

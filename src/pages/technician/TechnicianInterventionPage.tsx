@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeIntervention } from '@/hooks/useRealtimeIntervention';
+import { supabase } from '@/integrations/supabase/client';
 import { TechnicianLayout } from '@/components/technician/TechnicianLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,6 +68,7 @@ export default function TechnicianInterventionPage() {
   const [showRatingDialog, setShowRatingDialog] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [showFinalizePhotosDialog, setShowFinalizePhotosDialog] = useState(false);
+  const [paymentAuthorized, setPaymentAuthorized] = useState(false);
   
   // Work photos state
   const [beforePhotos, setBeforePhotos] = useState<WorkPhoto[]>([]);
@@ -91,6 +93,43 @@ export default function TechnicianInterventionPage() {
       loadWorkPhotos();
     }
   }, [intervention?.id, user]);
+
+  // Listen for payment authorization in realtime (for "arrived" status)
+  useEffect(() => {
+    if (!intervention?.id || intervention.status !== 'arrived') return;
+
+    // Check initial state
+    const checkAuth = async () => {
+      const { data } = await supabase
+        .from('payment_authorizations')
+        .select('status')
+        .eq('intervention_id', intervention.id)
+        .eq('status', 'authorized')
+        .limit(1)
+        .maybeSingle();
+      if (data) setPaymentAuthorized(true);
+    };
+    checkAuth();
+
+    const channel = supabase
+      .channel(`tech-payment-auth-${intervention.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'payment_authorizations',
+        filter: `intervention_id=eq.${intervention.id}`,
+      }, (payload: any) => {
+        if (payload.new?.status === 'authorized') {
+          setPaymentAuthorized(true);
+          toast.success('✅ Le client a autorisé le paiement !', {
+            description: 'Vous pouvez maintenant commencer l\'intervention.',
+          });
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [intervention?.id, intervention?.status]);
 
   const loadWorkPhotos = async () => {
     if (!intervention?.id) return;
@@ -273,6 +312,16 @@ export default function TechnicianInterventionPage() {
       <div className="mb-4">
         <Badge className={STATUS_COLORS[intervention.status]}>{statusLabel}</Badge>
       </div>
+
+      {/* Payment authorized banner - shown when technician is on arrived and client has authorized */}
+      {intervention.status === 'arrived' && paymentAuthorized && (
+        <Alert className="mb-4 border-green-500 bg-green-50 dark:bg-green-950/30">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800 dark:text-green-300">
+            <strong>Le client a autorisé le paiement.</strong> Vous pouvez maintenant commencer l'intervention.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Quick Info Card */}
       <Card className="mb-4">
