@@ -48,6 +48,7 @@ export function QuoteModificationForm({
   const [isLoading, setIsLoading] = useState(true);
   const [quoteLines, setQuoteLines] = useState<QuoteLine[]>([]);
   const [approvedModifications, setApprovedModifications] = useState<QuoteModification[]>([]);
+  const [vatRate, setVatRate] = useState<number>(10);
 
   useEffect(() => {
     loadQuoteData();
@@ -63,6 +64,28 @@ export function QuoteModificationForm({
       
       setQuoteLines(lines);
       setApprovedModifications(modifications.filter(m => m.status === 'approved'));
+
+      // Fetch VAT rate based on client type and service
+      const { data: intervention } = await supabase
+        .from('interventions')
+        .select('client_id, category')
+        .eq('id', interventionId)
+        .maybeSingle();
+
+      if (intervention) {
+        const [clientRes, serviceRes] = await Promise.all([
+          intervention.client_id
+            ? supabase.from('users').select('is_company').eq('id', intervention.client_id).maybeSingle()
+            : Promise.resolve({ data: null }),
+          supabase.from('services').select('vat_rate_individual, vat_rate_professional').eq('code', intervention.category).maybeSingle(),
+        ]);
+
+        const isCompany = clientRes?.data?.is_company ?? false;
+        const service = serviceRes?.data;
+        if (service) {
+          setVatRate(isCompany ? Number(service.vat_rate_professional) : Number(service.vat_rate_individual));
+        }
+      }
     } catch (err) {
       console.error('Error loading quote data:', err);
     } finally {
@@ -185,7 +208,8 @@ export function QuoteModificationForm({
           ) : (
             <QuoteLinesTable 
               quoteLines={quoteLines} 
-              approvedModifications={approvedModifications} 
+              approvedModifications={approvedModifications}
+              vatRate={vatRate}
             />
           )}
         </CardContent>

@@ -7,6 +7,7 @@ import { Wrench, Truck, Shield, Package, FileText } from 'lucide-react';
 interface QuoteLinesTableProps {
   quoteLines: QuoteLine[];
   approvedModifications: QuoteModification[];
+  vatRate?: number;
 }
 
 const LINE_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -34,14 +35,16 @@ const formatPrice = (amount: number) => {
   }).format(amount);
 };
 
-export function QuoteLinesTable({ quoteLines, approvedModifications }: QuoteLinesTableProps) {
+export function QuoteLinesTable({ quoteLines, approvedModifications, vatRate = 0 }: QuoteLinesTableProps) {
   // Calculate totals
   const baseTotal = quoteLines.reduce((sum, line) => sum + line.calculatedPrice, 0);
   
   const approvedItems: QuoteModificationItem[] = approvedModifications.flatMap(mod => mod.items);
   const modificationsTotal = approvedItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
   
-  const grandTotal = baseTotal + modificationsTotal;
+  const totalHT = baseTotal + modificationsTotal;
+  const vatAmount = vatRate > 0 ? Math.round(totalHT * (vatRate / 100) * 100) / 100 : 0;
+  const grandTotal = Math.round((totalHT + vatAmount) * 100) / 100;
 
   // Start line numbering from 1
   let lineNumber = 0;
@@ -136,7 +139,17 @@ export function QuoteLinesTable({ quoteLines, approvedModifications }: QuoteLine
             </TableRow>
           )}
           <TableRow>
-            <TableCell colSpan={5} className="text-right font-bold">Total général</TableCell>
+            <TableCell colSpan={5} className="text-right">Total HT</TableCell>
+            <TableCell className="text-right font-medium">{formatPrice(totalHT)}</TableCell>
+          </TableRow>
+          {vatRate > 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="text-right text-muted-foreground">TVA ({vatRate}%)</TableCell>
+              <TableCell className="text-right font-medium text-muted-foreground">{formatPrice(vatAmount)}</TableCell>
+            </TableRow>
+          )}
+          <TableRow>
+            <TableCell colSpan={5} className="text-right font-bold">Total TTC</TableCell>
             <TableCell className="text-right font-bold text-lg">{formatPrice(grandTotal)}</TableCell>
           </TableRow>
         </TableFooter>
