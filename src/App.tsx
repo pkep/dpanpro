@@ -19,6 +19,8 @@ import LiveTrackingPage from "./pages/common/LiveTrackingPage";
 import QuoteApprovalPage from "./pages/common/QuoteApprovalPage";
 import TrackInterventionPage from "./pages/common/TrackInterventionPage";
 import ResetPassword from "./pages/common/ResetPassword";
+import VerifyEmailPage from "./pages/common/VerifyEmailPage";
+import EmailPendingPage from "./pages/common/EmailPendingPage";
 import PaymentAuthorizationPage from "./pages/common/PaymentAuthorizationPage";
 import PricingExplanationPage from "./pages/common/PricingExplanationPage";
 import CGUPage from "./pages/common/CGUPage";
