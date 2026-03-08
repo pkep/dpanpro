@@ -125,6 +125,9 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
       <PaymentElement
         options={{
           layout: 'tabs',
+          fields: {
+            billingDetails: 'never',
+          },
         }}
         onReady={() => {
           setPaymentElementReady(true);
