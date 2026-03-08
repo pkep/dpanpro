@@ -80,6 +80,7 @@ export default function PaymentAuthorizationPage() {
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentAuthorizationId, setPaymentAuthorizationId] = useState<string | null>(null);
   const [paymentAuthorized, setPaymentAuthorized] = useState(false);
+  const [autoInitAttempted, setAutoInitAttempted] = useState(false);
 
   // Fetch intervention + quote data
   useEffect(() => {
@@ -181,7 +182,7 @@ export default function PaymentAuthorizationPage() {
     return true;
   }, [intervention, grandTotal]);
 
-  const handleStartAuthorization = async () => {
+  const handleStartAuthorization = useCallback(async (showErrorToast = true) => {
     if (!intervention || !canAuthorize) return;
     try {
       setPaymentLoading(true);
@@ -196,11 +197,13 @@ export default function PaymentAuthorizationPage() {
       setPaymentClientSecret(clientSecret);
     } catch (err) {
       console.error('Error starting payment:', err);
-      toast.error("Impossible d'initialiser le paiement");
+      if (showErrorToast) {
+        toast.error("Impossible d'initialiser le paiement");
+      }
     } finally {
       setPaymentLoading(false);
     }
-  };
+  }, [intervention, canAuthorize, grandTotal]);
 
   const handleAuthorizationSuccess = async () => {
     try {
@@ -220,6 +223,30 @@ export default function PaymentAuthorizationPage() {
   const handleAuthorizationError = (message: string) => {
     toast.error('Erreur de paiement', { description: message });
   };
+
+  useEffect(() => {
+    if (
+      loading ||
+      autoInitAttempted ||
+      paymentAuthorized ||
+      paymentClientSecret ||
+      paymentLoading ||
+      !canAuthorize
+    ) {
+      return;
+    }
+
+    setAutoInitAttempted(true);
+    void handleStartAuthorization(false);
+  }, [
+    loading,
+    autoInitAttempted,
+    paymentAuthorized,
+    paymentClientSecret,
+    paymentLoading,
+    canAuthorize,
+    handleStartAuthorization,
+  ]);
 
   if (loading) {
     return (
