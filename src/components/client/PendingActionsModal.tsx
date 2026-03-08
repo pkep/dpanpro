@@ -167,9 +167,8 @@ export function PendingActionsModal() {
       navigate(`/authorize-payment/${action.interventionId}`);
     } else if (action.type === 'quote_approval') {
       navigate(`/quote-approval/${action.notificationToken}`);
-    } else {
-      navigate(`/intervention/${action.interventionId}`);
     }
+  };
     // Don't close modal - it will close automatically once the action is resolved
   };
 
