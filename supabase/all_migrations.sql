@@ -188,8 +188,8 @@ FOR INSERT
 WITH CHECK (
   EXISTS (
     SELECT 1 FROM public.interventions
-    WHERE interventions.id = intervention_id
-    AND interventions.client_id = client_id
+    WHERE interventions.id = intervention_ratings.intervention_id
+    AND interventions.client_id = intervention_ratings.client_id
     AND interventions.status = 'completed'
   )
 );
