@@ -313,6 +313,16 @@ export default function TechnicianInterventionPage() {
         <Badge className={STATUS_COLORS[intervention.status]}>{statusLabel}</Badge>
       </div>
 
+      {/* Payment authorized banner - shown when technician is on arrived and client has authorized */}
+      {intervention.status === 'arrived' && paymentAuthorized && (
+        <Alert className="mb-4 border-green-500 bg-green-50 dark:bg-green-950/30">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800 dark:text-green-300">
+            <strong>Le client a autorisé le paiement.</strong> Vous pouvez maintenant commencer l'intervention.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Quick Info Card */}
       <Card className="mb-4">
         <CardContent className="pt-4 space-y-3">
