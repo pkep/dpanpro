@@ -33,7 +33,7 @@ import { PhotoStep } from './PhotoStep';
 import { QuoteReviewStep } from './QuoteReviewStep';
 import { AddItemsStep } from './AddItemsStep';
 import { SignatureCanvas } from '@/components/quotes/SignatureCanvas';
-import type { StartStep, QuoteModificationItem, StartInterventionDialogProps } from './types';
+import type { StartStep, QuoteModificationItem, StartInterventionDialogProps, QuoteConfig, VarianteOption } from './types';
 
 const STEP_TITLES: Record<StartStep, string> = {
   photos: 'Photos de la panne',
@@ -75,6 +75,9 @@ export function StartInterventionDialog({
   const [vatRate, setVatRate] = useState(10);
   const [isCompany, setIsCompany] = useState(false);
   const [paymentAuthorized, setPaymentAuthorized] = useState(false);
+  const [quoteConfig, setQuoteConfig] = useState<QuoteConfig | null>(null);
+  const [selectedVarianteId, setSelectedVarianteId] = useState<string | null>(null);
+  const [laborPrice, setLaborPrice] = useState(0);
 
   // Track if dialog has been opened to avoid resetting during close
   const [initialized, setInitialized] = useState(false);
@@ -133,6 +136,8 @@ export function StartInterventionDialog({
       const lines = await quotesService.getQuoteLines(interventionId);
       setQuoteLines(lines);
 
+      // Load client company status
+      let clientIsCompany = false;
       if (clientId) {
         const { data: clientData } = await supabase
           .from('users')
@@ -140,14 +145,71 @@ export function StartInterventionDialog({
           .eq('id', clientId)
           .single();
         if (clientData) {
-          setIsCompany(clientData.is_company || false);
+          clientIsCompany = clientData.is_company || false;
+          setIsCompany(clientIsCompany);
         }
       }
 
+      // Load service config
       const services = await servicesService.getActiveServices();
       const service = services.find((s) => s.code === category);
+      let currentVatRate = 10;
+      let displacementPrice = 0;
+      let securityPrice = 0;
       if (service) {
-        setVatRate(isCompany ? service.vatRateProfessional : service.vatRateIndividual);
+        currentVatRate = clientIsCompany ? service.vatRateProfessional : service.vatRateIndividual;
+        setVatRate(currentVatRate);
+        displacementPrice = service.displacementPrice;
+        securityPrice = service.securityPrice;
+      }
+
+      // Load questionnaire resultat + variantes
+      const { data: interventionData } = await supabase
+        .from('interventions')
+        .select('questionnaire_resultat_id, prix_min, prix_max')
+        .eq('id', interventionId)
+        .single();
+
+      if (interventionData?.questionnaire_resultat_id) {
+        const { data: resultat } = await supabase
+          .from('questionnaire_resultats')
+          .select('id, nom, prix_min, prix_max')
+          .eq('id', interventionData.questionnaire_resultat_id)
+          .single();
+
+        const { data: variantes } = await supabase
+          .from('questionnaire_variantes')
+          .select('id, nom, description, prix_min, prix_max, display_order')
+          .eq('resultat_id', interventionData.questionnaire_resultat_id)
+          .eq('is_active', true)
+          .order('display_order', { ascending: true });
+
+        if (resultat) {
+          const mappedVariantes: VarianteOption[] = (variantes || []).map(v => ({
+            id: v.id,
+            nom: v.nom,
+            description: v.description,
+            prixMin: v.prix_min,
+            prixMax: v.prix_max,
+          }));
+
+          const config: QuoteConfig = {
+            resultatNom: resultat.nom,
+            resultatPrixMin: resultat.prix_min,
+            resultatPrixMax: resultat.prix_max,
+            variantes: mappedVariantes,
+            displacementPrice,
+            securityPrice,
+            vatRate: currentVatRate,
+          };
+          setQuoteConfig(config);
+
+          // Calculate default labor (to reach min price HT)
+          const minTTC = resultat.prix_min || 0;
+          const minHT = minTTC / (1 + currentVatRate / 100);
+          const defaultLabor = Math.max(0, Math.round((minHT - displacementPrice - securityPrice) * 100) / 100);
+          setLaborPrice(defaultLabor);
+        }
       }
     } catch (err) {
       console.error('Error loading quote data:', err);
@@ -198,12 +260,15 @@ export function StartInterventionDialog({
 
   // Calculate total TTC for payment
   const getTotalTTC = () => {
-    const baseTotal = quoteLines.reduce((sum, line) => sum + line.calculatedPrice, 0);
+    // Base: displacement + security + labor
+    const dp = quoteConfig?.displacementPrice || 0;
+    const sp = quoteConfig?.securityPrice || 0;
+    const baseHT = dp + sp + laborPrice;
     const additionalTotal = pendingItems.reduce(
       (sum, item) => sum + item.unitPrice * item.quantity,
       0
     );
-    const totalHT = baseTotal + additionalTotal;
+    const totalHT = baseHT + additionalTotal;
     const vatAmount = Math.round(totalHT * (vatRate / 100) * 100) / 100;
     return Math.round((totalHT + vatAmount) * 100) / 100;
   };
@@ -302,6 +367,23 @@ export function StartInterventionDialog({
     setError(null);
 
     try {
+      // 0. Save final quote lines based on technician's selections
+      if (quoteConfig) {
+        const newLines: import('@/services/quotes/quotes.service').QuoteInput[] = [];
+        if (quoteConfig.displacementPrice > 0) {
+          newLines.push({ lineType: 'displacement', label: 'Déplacement technicien', basePrice: quoteConfig.displacementPrice, multiplier: 1 });
+        }
+        if (quoteConfig.securityPrice > 0) {
+          newLines.push({ lineType: 'security', label: 'Mise en sécurité', basePrice: quoteConfig.securityPrice, multiplier: 1 });
+        }
+        if (laborPrice > 0) {
+          newLines.push({ lineType: 'repair', label: 'Main d\'œuvre', basePrice: laborPrice, multiplier: 1 });
+        }
+        if (newLines.length > 0) {
+          await quotesService.saveQuoteLines(interventionId, newLines);
+        }
+      }
+
       // 1. Upload photos
       const uploadedPhotos = await workPhotosService.uploadPhotos(
         interventionId,
@@ -458,7 +540,11 @@ export function StartInterventionDialog({
           {step === 'quote_review' && (
             <div className="space-y-4">
               <QuoteReviewStep
-                quoteLines={quoteLines}
+                quoteConfig={quoteConfig}
+                selectedVarianteId={selectedVarianteId}
+                onVarianteChange={setSelectedVarianteId}
+                laborPrice={laborPrice}
+                onLaborPriceChange={setLaborPrice}
                 pendingItems={pendingItems}
                 vatRate={vatRate}
               />
@@ -487,7 +573,11 @@ export function StartInterventionDialog({
           {step === 'signature' && (
             <div className="space-y-4">
               <QuoteReviewStep
-                quoteLines={quoteLines}
+                quoteConfig={quoteConfig}
+                selectedVarianteId={selectedVarianteId}
+                onVarianteChange={setSelectedVarianteId}
+                laborPrice={laborPrice}
+                onLaborPriceChange={setLaborPrice}
                 pendingItems={pendingItems}
                 vatRate={vatRate}
               />

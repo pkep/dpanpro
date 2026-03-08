@@ -26,6 +26,24 @@ export interface QuoteModificationItem {
   quantity: number;
 }
 
+export interface VarianteOption {
+  id: string;
+  nom: string;
+  description: string | null;
+  prixMin: number | null;
+  prixMax: number | null;
+}
+
+export interface QuoteConfig {
+  resultatNom: string;
+  resultatPrixMin: number | null;
+  resultatPrixMax: number | null;
+  variantes: VarianteOption[];
+  displacementPrice: number;
+  securityPrice: number;
+  vatRate: number;
+}
+
 export interface StartInterventionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
