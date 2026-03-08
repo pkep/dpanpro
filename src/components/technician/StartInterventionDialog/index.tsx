@@ -367,6 +367,23 @@ export function StartInterventionDialog({
     setError(null);
 
     try {
+      // 0. Save final quote lines based on technician's selections
+      if (quoteConfig) {
+        const newLines: import('@/services/quotes/quotes.service').QuoteInput[] = [];
+        if (quoteConfig.displacementPrice > 0) {
+          newLines.push({ lineType: 'displacement', label: 'Déplacement technicien', basePrice: quoteConfig.displacementPrice, multiplier: 1 });
+        }
+        if (quoteConfig.securityPrice > 0) {
+          newLines.push({ lineType: 'security', label: 'Mise en sécurité', basePrice: quoteConfig.securityPrice, multiplier: 1 });
+        }
+        if (laborPrice > 0) {
+          newLines.push({ lineType: 'repair', label: 'Main d\'œuvre', basePrice: laborPrice, multiplier: 1 });
+        }
+        if (newLines.length > 0) {
+          await quotesService.saveQuoteLines(interventionId, newLines);
+        }
+      }
+
       // 1. Upload photos
       const uploadedPhotos = await workPhotosService.uploadPhotos(
         interventionId,
