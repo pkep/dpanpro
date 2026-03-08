@@ -93,6 +93,39 @@ export function FinalizeInterventionDialog({
       const baseTotal = lines.reduce((sum, line) => sum + line.calculatedPrice, 0);
       setBaseQuoteTotal(baseTotal);
 
+      // Fetch VAT rate based on client type and service category
+      try {
+        const { data: interventionData } = await supabase
+          .from('interventions')
+          .select('category, client_id')
+          .eq('id', intervention.id)
+          .single();
+
+        if (interventionData) {
+          let isCompany = false;
+          if (interventionData.client_id) {
+            const { data: clientData } = await supabase
+              .from('users')
+              .select('is_company')
+              .eq('id', interventionData.client_id)
+              .single();
+            if (clientData) isCompany = clientData.is_company;
+          }
+
+          const { data: serviceData } = await supabase
+            .from('services')
+            .select('vat_rate_individual, vat_rate_professional')
+            .eq('code', interventionData.category)
+            .single();
+
+          if (serviceData) {
+            setVatRate(isCompany ? serviceData.vat_rate_professional : serviceData.vat_rate_individual);
+          }
+        }
+      } catch (vatErr) {
+        console.error('Error loading VAT rate:', vatErr);
+      }
+
       // Get modifications
       const modifications = await quoteModificationsService.getModificationsByIntervention(intervention.id);
       const pendingMod = modifications.find((m) => m.status === 'pending');
