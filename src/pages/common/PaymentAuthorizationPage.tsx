@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -80,7 +80,7 @@ export default function PaymentAuthorizationPage() {
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentAuthorizationId, setPaymentAuthorizationId] = useState<string | null>(null);
   const [paymentAuthorized, setPaymentAuthorized] = useState(false);
-  const [autoInitAttempted, setAutoInitAttempted] = useState(false);
+  const autoInitTriggeredRef = useRef(false);
 
   // Fetch intervention + quote data
   useEffect(() => {
@@ -227,7 +227,7 @@ export default function PaymentAuthorizationPage() {
   useEffect(() => {
     if (
       loading ||
-      autoInitAttempted ||
+      autoInitTriggeredRef.current ||
       paymentAuthorized ||
       paymentClientSecret ||
       paymentLoading ||
@@ -236,11 +236,10 @@ export default function PaymentAuthorizationPage() {
       return;
     }
 
-    setAutoInitAttempted(true);
+    autoInitTriggeredRef.current = true;
     void handleStartAuthorization(false);
   }, [
     loading,
-    autoInitAttempted,
     paymentAuthorized,
     paymentClientSecret,
     paymentLoading,
