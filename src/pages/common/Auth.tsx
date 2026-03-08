@@ -121,10 +121,10 @@ export default function Auth() {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="mb-8 flex items-center justify-center gap-3 lg:hidden">
+          <Link to="/" className="mb-8 flex items-center justify-center gap-3 lg:hidden">
             <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
             <span className="text-2xl font-bold text-foreground">Dépan.Pro</span>
-          </div>
+          </Link>
 
           {view === 'login' && (
             <LoginForm
