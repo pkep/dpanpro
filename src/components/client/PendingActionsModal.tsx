@@ -119,7 +119,6 @@ export function PendingActionsModal() {
           }
         }
       }
-      }
 
       // 2. Check for pending quote modifications
       const { data: modifications, error: modError } = await supabase
