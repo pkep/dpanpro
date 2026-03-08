@@ -227,7 +227,7 @@ export default function PaymentAuthorizationPage() {
   useEffect(() => {
     if (
       loading ||
-      autoInitAttempted ||
+      autoInitTriggeredRef.current ||
       paymentAuthorized ||
       paymentClientSecret ||
       paymentLoading ||
@@ -236,11 +236,10 @@ export default function PaymentAuthorizationPage() {
       return;
     }
 
-    setAutoInitAttempted(true);
+    autoInitTriggeredRef.current = true;
     void handleStartAuthorization(false);
   }, [
     loading,
-    autoInitAttempted,
     paymentAuthorized,
     paymentClientSecret,
     paymentLoading,
