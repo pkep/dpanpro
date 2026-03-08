@@ -65,6 +65,8 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword }: L
       });
       if (response.success && response.user) {
         onSuccess?.(response.user);
+      } else if (response.requiresEmailVerification) {
+        navigate(`/email-pending?email=${encodeURIComponent(data.email)}`);
       } else {
         setError(response.error || 'Erreur de connexion');
       }
