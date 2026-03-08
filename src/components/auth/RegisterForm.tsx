@@ -152,7 +152,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         vatNumber: data.isCompany ? data.vatNumber : undefined,
       });
 
-      if (response.success && response.user) {
+      if (response.success && response.requiresEmailVerification) {
+        // Redirect to email pending page
+        navigate(`/email-pending?email=${encodeURIComponent(data.email)}`);
+      } else if (response.success && response.user) {
         onSuccess?.(response.user);
       } else {
         setError(response.error || 'Erreur lors de l\'inscription');
