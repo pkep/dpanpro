@@ -357,6 +357,30 @@ class RevenueService {
     return data?.reduce((sum, i) => sum + (Number(i.final_price) || 0), 0) || 0;
   }
 
+  async getPayoutHistory(technicianId: string): Promise<MonthlyPayout[]> {
+    const commissionRate = await this.getCommissionRate(technicianId);
+
+    const { data, error } = await supabase
+      .from('technician_payouts')
+      .select('*')
+      .eq('technician_id', technicianId)
+      .eq('status', 'paid')
+      .order('period_end', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map(p => ({
+      periodStart: new Date(p.period_start),
+      periodEnd: new Date(p.period_end),
+      grossRevenue: Number(p.amount) / (1 - commissionRate / 100),
+      commissionRate,
+      netRevenue: Number(p.amount),
+      scheduledPaymentDate: new Date(p.payout_date),
+      isPaid: true,
+      paidAt: new Date(p.updated_at),
+    }));
+  }
+
   async getInsuranceExpiryDate(technicianId: string): Promise<Date | null> {
     const { data, error } = await supabase
       .from('partner_applications')
