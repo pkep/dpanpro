@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import {
   Elements,
-  CardElement,
+  PaymentElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
@@ -11,10 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
 // Stripe publishable key - PUBLIC key (safe in frontend).
-// Must match the same Stripe account as STRIPE_SECRET_KEY used in backend functions.
 const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SrfsTDTC56CKPNhIxV93gHYHDinqpxPYcNurSkhUzKwjXkaOWFxdP3khzuvaBH507yahYxrA7KtsQLOBOyChXbH005j402hQH';
 
-// Initialize Stripe
 let stripePromise: Promise<Stripe | null> | null = null;
 const getStripe = () => {
   if (!stripePromise && STRIPE_PUBLISHABLE_KEY) {
@@ -35,11 +33,10 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [cardElementReady, setCardElementReady] = useState(false);
-  const [cardElementError, setCardElementError] = useState<string | null>(null);
+  const [paymentElementReady, setPaymentElementReady] = useState(false);
+  const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
 
-  // Handle potential 3DS redirect return flow.
   useEffect(() => {
     if (!stripe) return;
 
@@ -67,7 +64,6 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
         onError(msg);
       })
       .finally(() => {
-        // Clean URL params (avoid re-processing on refresh)
         params.delete('payment_intent_client_secret');
         params.delete('payment_intent');
         params.delete('redirect_status');
@@ -86,7 +82,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements || !cardElementReady || cardElementError || !paymentComplete) {
+    if (!stripe || !elements || !paymentElementReady || paymentElementError || !paymentComplete) {
       return;
     }
 
@@ -94,25 +90,20 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
     setErrorMessage(null);
 
     try {
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('Le formulaire de carte n\'est pas prêt.');
-      }
-
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.href,
         },
+        redirect: 'if_required',
       });
 
       if (error) {
         setErrorMessage(error.message || 'Une erreur est survenue');
         onError(error.message || 'Une erreur est survenue');
       } else if (paymentIntent && paymentIntent.status === 'requires_capture') {
-        // Authorization successful - funds are held but not captured
         onSuccess();
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        // Shouldn't happen with manual capture, but handle anyway
         onSuccess();
       }
     } catch (err) {
@@ -126,23 +117,50 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-md border border-border p-3">
-        <CardElement
+      {/* CSS to hide Stripe's optional billing fields (email, phone, name) */}
+      <style>{`
+        #stripe-payment-element-wrapper .p-LinkAuthenticationElement,
+        #stripe-payment-element-wrapper [class*="LinkAuthenticationElement"],
+        #stripe-payment-element-wrapper .StripeElement--link,
+        #stripe-payment-element-wrapper .p-BillingDetails,
+        #stripe-payment-element-wrapper [class*="billingDetails"],
+        #stripe-payment-element-wrapper [class*="BillingDetails"] {
+          display: none !important;
+          height: 0 !important;
+          overflow: hidden !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      `}</style>
+      <div id="stripe-payment-element-wrapper">
+        <PaymentElement
           options={{
-            hidePostalCode: true,
+            layout: 'tabs',
+            fields: {
+              billingDetails: 'never',
+            },
+            wallets: {
+              applePay: 'never',
+              googlePay: 'never',
+            },
           }}
           onReady={() => {
-            setCardElementReady(true);
-            setCardElementError(null);
+            setPaymentElementReady(true);
+            setPaymentElementError(null);
+          }}
+          onLoadError={(event: { error?: { message?: string } }) => {
+            const rawMessage = event.error?.message || 'Erreur de chargement du formulaire de paiement.';
+            const message = rawMessage.includes('client_secret provided does not match any associated PaymentIntent')
+              ? 'Configuration Stripe invalide : la clé publique ne correspond pas au compte de paiement configuré.'
+              : rawMessage;
+
+            setPaymentElementReady(false);
+            setPaymentElementError(message);
+            setErrorMessage(message);
+            onError(message);
           }}
           onChange={(event) => {
             setPaymentComplete(event.complete);
-            const message = event.error?.message ?? null;
-            setCardElementError(message);
-            setErrorMessage(message);
-            if (message) {
-              onError(message);
-            }
           }}
         />
       </div>
@@ -156,7 +174,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
       <Button
         type="submit"
-        disabled={!stripe || !elements || isProcessing || !cardElementReady || !!cardElementError || !paymentComplete}
+        disabled={!stripe || !elements || isProcessing || !paymentElementReady || !!paymentElementError || !paymentComplete}
         className="w-full"
         size="lg"
       >
@@ -189,7 +207,7 @@ export function StripeCardForm({ clientSecret, amount, onSuccess, onError }: Str
 
   useEffect(() => {
     if (!STRIPE_PUBLISHABLE_KEY) {
-      setStripeError('Clé publique Stripe non configurée (VITE_STRIPE_PUBLISHABLE_KEY).');
+      setStripeError('Clé publique Stripe non configurée.');
       return;
     }
 
@@ -199,7 +217,7 @@ export function StripeCardForm({ clientSecret, amount, onSuccess, onError }: Str
         if (s) {
           setStripeReady(true);
         } else {
-          setStripeError('Impossible de charger Stripe. Vérifiez la clé publique.');
+          setStripeError('Impossible de charger Stripe.');
         }
       }).catch((err) => {
         setStripeError(`Erreur Stripe: ${err.message}`);
