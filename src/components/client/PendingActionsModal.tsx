@@ -80,15 +80,27 @@ export function PendingActionsModal() {
         .in('intervention_id', interventionIds)
         .in('status', ['failed', 'pending']);
 
-      if (!payError && paymentAuths) {
+      if (!payError && paymentAuths && paymentAuths.length > 0) {
+        // Also fetch authorized records to exclude interventions that already have a successful auth
+        const { data: authorizedAuths } = await supabase
+          .from('payment_authorizations')
+          .select('intervention_id')
+          .in('intervention_id', interventionIds)
+          .eq('status', 'authorized');
+
+        const authorizedInterventionIds = new Set(
+          (authorizedAuths || []).map(a => a.intervention_id)
+        );
+
         // Deduplicate: keep only the latest authorization per intervention
+        // and exclude interventions that already have a successful authorization
         const latestByIntervention = new Map<string, typeof paymentAuths[0]>();
         for (const auth of paymentAuths) {
+          if (authorizedInterventionIds.has(auth.intervention_id)) continue;
           const existing = latestByIntervention.get(auth.intervention_id);
           if (!existing) {
             latestByIntervention.set(auth.intervention_id, auth);
           }
-          // Since we don't order here, just keep the first one (query returns latest by default)
         }
 
         for (const auth of latestByIntervention.values()) {
