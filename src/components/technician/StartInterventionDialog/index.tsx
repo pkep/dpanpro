@@ -253,6 +253,9 @@ export function StartInterventionDialog({
           }));
         }
 
+        const rawAnswers = interventionData.questionnaire_answers;
+        const questionnaireAnswers: string[] = Array.isArray(rawAnswers) ? rawAnswers.map(String) : [];
+
         const config: QuoteConfig = {
           resultatNom,
           resultatPrixMin: prixMin,
@@ -261,6 +264,7 @@ export function StartInterventionDialog({
           displacementPrice,
           securityPrice,
           vatRate: currentVatRate,
+          questionnaireAnswers,
         };
         setQuoteConfig(config);
 
