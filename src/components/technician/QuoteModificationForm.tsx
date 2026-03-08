@@ -208,7 +208,8 @@ export function QuoteModificationForm({
           ) : (
             <QuoteLinesTable 
               quoteLines={quoteLines} 
-              approvedModifications={approvedModifications} 
+              approvedModifications={approvedModifications}
+              vatRate={vatRate}
             />
           )}
         </CardContent>
