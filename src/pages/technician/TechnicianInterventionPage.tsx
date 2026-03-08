@@ -227,6 +227,27 @@ export default function TechnicianInterventionPage() {
           setBeforePhotos(existingPhotos.filter(p => p.photoType === 'before'));
           toast.success('Intervention démarrée !');
           refresh();
+
+          // Generate and send quote PDF in background (non-blocking)
+          (async () => {
+            try {
+              const { quotePDFService } = await import('@/services/quote-pdf/quote-pdf.service');
+              const fullIntervention = await interventionsService.getIntervention(intervention.id);
+              const savedSignature = fullIntervention?.quoteSignatureData || null;
+              const { base64, fileName } = await quotePDFService.generateQuoteBase64(fullIntervention, savedSignature);
+              await supabase.functions.invoke('send-quote-email', {
+                body: {
+                  interventionId: intervention.id,
+                  quoteBase64: base64,
+                  quoteFileName: fileName,
+                  clientEmail: intervention.clientEmail,
+                  clientPhone: intervention.clientPhone,
+                },
+              });
+            } catch (pdfErr) {
+              console.error('Error sending quote PDF (non-blocking):', pdfErr);
+            }
+          })();
         } catch (err) {
           console.error('Error starting intervention:', err);
           toast.error('Erreur lors du démarrage');
