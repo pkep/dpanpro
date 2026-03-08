@@ -86,7 +86,6 @@ export function StartInterventionDialog({
   useEffect(() => {
     if (open && interventionId) {
       if (!initialized) {
-        setStep('photos');
         setSelectedFiles([]);
         setPreviews([]);
         setPendingItems([]);
@@ -94,6 +93,9 @@ export function StartInterventionDialog({
         setError(null);
         setPaymentAuthorized(false);
         setInitialized(true);
+
+        // Check if steps were already completed (technician returning after closing)
+        detectCompletedSteps();
       }
       loadQuoteData();
     }
@@ -101,6 +103,52 @@ export function StartInterventionDialog({
       setInitialized(false);
     }
   }, [open, interventionId]);
+
+  // Detect already-completed steps to avoid re-doing the whole flow
+  const detectCompletedSteps = async () => {
+    try {
+      // Check if before photos already exist
+      const existingPhotos = await workPhotosService.getPhotos(interventionId);
+      const hasBeforePhotos = existingPhotos.some(p => p.photoType === 'before');
+
+      // Check if quote is already signed
+      const { data: intData } = await supabase
+        .from('interventions')
+        .select('quote_signed_at, quote_signature_data')
+        .eq('id', interventionId)
+        .single();
+
+      const quoteSigned = !!intData?.quote_signed_at;
+
+      // Check if payment is already authorized
+      const { data: authData } = await supabase
+        .from('payment_authorizations')
+        .select('status')
+        .eq('intervention_id', interventionId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const isAuthorized = authData?.status === 'authorized';
+
+      if (quoteSigned && isAuthorized) {
+        // Everything done — go straight to payment_pending (authorized) to finalize
+        setPaymentAuthorized(true);
+        setStep('payment_pending');
+      } else if (quoteSigned && !isAuthorized) {
+        // Quote signed but payment pending
+        setStep('payment_pending');
+      } else if (hasBeforePhotos) {
+        // Photos done, skip to quote review
+        setStep('quote_review');
+      } else {
+        setStep('photos');
+      }
+    } catch (err) {
+      console.error('Error detecting completed steps:', err);
+      setStep('photos');
+    }
+  };
 
   // Real-time listener for payment authorization
   useEffect(() => {
@@ -395,13 +443,20 @@ export function StartInterventionDialog({
         }
       }
 
-      // 1. Upload photos
-      const uploadedPhotos = await workPhotosService.uploadPhotos(
-        interventionId,
-        selectedFiles,
-        'before',
-        userId
-      );
+      // 1. Upload photos (only if new files were selected)
+      let uploadedPhotos: WorkPhoto[] = [];
+      if (selectedFiles.length > 0) {
+        uploadedPhotos = await workPhotosService.uploadPhotos(
+          interventionId,
+          selectedFiles,
+          'before',
+          userId
+        );
+      } else {
+        // Photos were already uploaded in a previous session
+        const existingPhotos = await workPhotosService.getPhotos(interventionId);
+        uploadedPhotos = existingPhotos.filter(p => p.photoType === 'before');
+      }
 
       // 2. If there are pending items, create a quote modification
       if (pendingItems.length > 0) {
@@ -436,17 +491,19 @@ export function StartInterventionDialog({
         }
       }
 
-      // 3. Save signature to intervention
-      const { error: updateError } = await supabase
-        .from('interventions')
-        .update({
-          quote_signed_at: new Date().toISOString(),
-          quote_signature_data: signatureData,
-        })
-        .eq('id', interventionId);
+      // 3. Save signature to intervention (only if new signature)
+      if (signatureData) {
+        const { error: updateError } = await supabase
+          .from('interventions')
+          .update({
+            quote_signed_at: new Date().toISOString(),
+            quote_signature_data: signatureData,
+          })
+          .eq('id', interventionId);
 
-      if (updateError) {
-        console.error('Error saving signature:', updateError);
+        if (updateError) {
+          console.error('Error saving signature:', updateError);
+        }
       }
 
       // 4. Get intervention for PDF generation
