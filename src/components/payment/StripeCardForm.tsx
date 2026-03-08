@@ -37,6 +37,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
   const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
+  const [paymentComplete, setPaymentComplete] = useState(false);
 
   // Handle potential 3DS redirect return flow.
   useEffect(() => {
@@ -85,7 +86,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!stripe || !elements || !paymentElementReady || paymentElementError) {
+    if (!stripe || !elements || !paymentElementReady || paymentElementError || !paymentComplete) {
       return;
     }
 
@@ -149,6 +150,9 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
           setErrorMessage(message);
           onError(message);
         }}
+        onChange={(event) => {
+          setPaymentComplete(event.complete);
+        }}
       />
       
       {errorMessage && (
@@ -160,7 +164,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
 
       <Button
         type="submit"
-        disabled={!stripe || !elements || isProcessing || !paymentElementReady || !!paymentElementError}
+        disabled={!stripe || !elements || isProcessing || !paymentElementReady || !!paymentElementError || !paymentComplete}
         className="w-full"
         size="lg"
       >

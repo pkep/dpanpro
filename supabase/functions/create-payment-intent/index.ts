@@ -53,9 +53,7 @@ serve(async (req) => {
       currency: currency || "eur",
       customer: customerId,
       capture_method: "manual", // Authorization hold - won't capture until we call capture
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      payment_method_types: ["card"],
       metadata: {
         ...(interventionId ? { intervention_id: interventionId } : {}),
         authorization_id: authorizationId,
