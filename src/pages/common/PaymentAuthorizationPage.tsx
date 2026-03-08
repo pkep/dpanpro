@@ -122,10 +122,10 @@ export default function PaymentAuthorizationPage() {
           (modsRes.data || []).reduce((s, m) => s + Number(m.total_additional_amount || 0), 0)
         );
 
-        // Check existing authorization status
+        // Check existing authorization status + amount
         const authRes = await supabase
           .from('payment_authorizations')
-          .select('id, status')
+          .select('id, status, amount_authorized')
           .eq('intervention_id', interventionId)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -135,6 +135,7 @@ export default function PaymentAuthorizationPage() {
           setPaymentAuthorizationId(authRes.data.id);
           setPaymentStatus(authRes.data.status);
           setPaymentAuthorized(authRes.data.status === 'authorized');
+          setAuthAmount(authRes.data.amount_authorized);
         }
       } catch (err) {
         console.error('Error loading payment page:', err);
