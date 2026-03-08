@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.schedule-arrival-reminders]
 verify_jwt = false
+
+[functions.notify-payment-authorized]
+verify_jwt = false
