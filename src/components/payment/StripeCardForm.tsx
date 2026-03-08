@@ -37,6 +37,7 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
   const [paymentElementError, setPaymentElementError] = useState<string | null>(null);
+  const [paymentComplete, setPaymentComplete] = useState(false);
 
   // Handle potential 3DS redirect return flow.
   useEffect(() => {
