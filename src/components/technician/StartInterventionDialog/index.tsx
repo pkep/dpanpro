@@ -136,6 +136,8 @@ export function StartInterventionDialog({
       const lines = await quotesService.getQuoteLines(interventionId);
       setQuoteLines(lines);
 
+      // Load client company status
+      let clientIsCompany = false;
       if (clientId) {
         const { data: clientData } = await supabase
           .from('users')
@@ -143,14 +145,71 @@ export function StartInterventionDialog({
           .eq('id', clientId)
           .single();
         if (clientData) {
-          setIsCompany(clientData.is_company || false);
+          clientIsCompany = clientData.is_company || false;
+          setIsCompany(clientIsCompany);
         }
       }
 
+      // Load service config
       const services = await servicesService.getActiveServices();
       const service = services.find((s) => s.code === category);
+      let currentVatRate = 10;
+      let displacementPrice = 0;
+      let securityPrice = 0;
       if (service) {
-        setVatRate(isCompany ? service.vatRateProfessional : service.vatRateIndividual);
+        currentVatRate = clientIsCompany ? service.vatRateProfessional : service.vatRateIndividual;
+        setVatRate(currentVatRate);
+        displacementPrice = service.displacementPrice;
+        securityPrice = service.securityPrice;
+      }
+
+      // Load questionnaire resultat + variantes
+      const { data: interventionData } = await supabase
+        .from('interventions')
+        .select('questionnaire_resultat_id, prix_min, prix_max')
+        .eq('id', interventionId)
+        .single();
+
+      if (interventionData?.questionnaire_resultat_id) {
+        const { data: resultat } = await supabase
+          .from('questionnaire_resultats')
+          .select('id, nom, prix_min, prix_max')
+          .eq('id', interventionData.questionnaire_resultat_id)
+          .single();
+
+        const { data: variantes } = await supabase
+          .from('questionnaire_variantes')
+          .select('id, nom, description, prix_min, prix_max, display_order')
+          .eq('resultat_id', interventionData.questionnaire_resultat_id)
+          .eq('is_active', true)
+          .order('display_order', { ascending: true });
+
+        if (resultat) {
+          const mappedVariantes: VarianteOption[] = (variantes || []).map(v => ({
+            id: v.id,
+            nom: v.nom,
+            description: v.description,
+            prixMin: v.prix_min,
+            prixMax: v.prix_max,
+          }));
+
+          const config: QuoteConfig = {
+            resultatNom: resultat.nom,
+            resultatPrixMin: resultat.prix_min,
+            resultatPrixMax: resultat.prix_max,
+            variantes: mappedVariantes,
+            displacementPrice,
+            securityPrice,
+            vatRate: currentVatRate,
+          };
+          setQuoteConfig(config);
+
+          // Calculate default labor (to reach min price HT)
+          const minTTC = resultat.prix_min || 0;
+          const minHT = minTTC / (1 + currentVatRate / 100);
+          const defaultLabor = Math.max(0, Math.round((minHT - displacementPrice - securityPrice) * 100) / 100);
+          setLaborPrice(defaultLabor);
+        }
       }
     } catch (err) {
       console.error('Error loading quote data:', err);
