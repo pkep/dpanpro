@@ -428,6 +428,16 @@ export default function PaymentAuthorizationPage() {
           </CardContent>
         </Card>
 
+        {/* Navigation button */}
+        <div className="flex justify-center">
+          <Link to={isAuthenticated ? '/dashboard' : '/'}>
+            <Button variant="outline" size="sm">
+              <Home className="h-4 w-4 mr-2" />
+              {isAuthenticated ? 'Retour à mon espace' : "Retour à l'accueil"}
+            </Button>
+          </Link>
+        </div>
+
         {/* Footer info */}
         <p className="text-xs text-center text-muted-foreground pb-4">
           Paiement sécurisé par Stripe. Vos données bancaires ne sont jamais stockées sur nos serveurs.
