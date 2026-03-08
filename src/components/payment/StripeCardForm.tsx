@@ -150,6 +150,9 @@ function PaymentForm({ clientSecret, amount, onSuccess, onError }: PaymentFormPr
           setErrorMessage(message);
           onError(message);
         }}
+        onChange={(event) => {
+          setPaymentComplete(event.complete);
+        }}
       />
       
       {errorMessage && (
