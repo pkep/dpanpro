@@ -73,6 +73,7 @@ export default function PaymentAuthorizationPage() {
   const [additionalTotal, setAdditionalTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authAmount, setAuthAmount] = useState<number | null>(null);
 
   // Payment state
   const [paymentLoading, setPaymentLoading] = useState(false);
