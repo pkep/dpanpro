@@ -401,6 +401,64 @@ export function StartInterventionDialog({
         return;
       }
 
+      // === PERSIST DATA BEFORE SENDING PAYMENT REQUEST ===
+
+      // 1. Save quote lines
+      if (quoteConfig) {
+        const newLines: import('@/services/quotes/quotes.service').QuoteInput[] = [];
+        if (quoteConfig.displacementPrice > 0) {
+          newLines.push({ lineType: 'displacement', label: 'Déplacement technicien', basePrice: quoteConfig.displacementPrice, multiplier: 1 });
+        }
+        if (quoteConfig.securityPrice > 0) {
+          newLines.push({ lineType: 'security', label: 'Mise en sécurité', basePrice: quoteConfig.securityPrice, multiplier: 1 });
+        }
+        if (laborPrice > 0) {
+          newLines.push({ lineType: 'repair', label: 'Main d\'œuvre', basePrice: laborPrice, multiplier: 1 });
+        }
+        if (newLines.length > 0) {
+          await quotesService.saveQuoteLines(interventionId, newLines);
+        }
+      }
+
+      // 2. Upload before photos
+      if (selectedFiles.length > 0) {
+        await workPhotosService.uploadPhotos(
+          interventionId,
+          selectedFiles,
+          'before',
+          userId
+        );
+      }
+
+      // 3. Save signature
+      if (signatureData) {
+        await supabase
+          .from('interventions')
+          .update({
+            quote_signed_at: new Date().toISOString(),
+            quote_signature_data: signatureData,
+          })
+          .eq('id', interventionId);
+      }
+
+      // 4. Handle pending items (quote modifications)
+      if (pendingItems.length > 0) {
+        const modification = await quoteModificationsService.createModification({
+          interventionId,
+          createdBy: userId,
+          items: pendingItems.map((item) => ({
+            itemType: item.itemType,
+            label: item.label,
+            description: item.description || undefined,
+            unitPrice: item.unitPrice,
+            quantity: item.quantity,
+          })),
+        });
+        await quoteModificationsService.approveModification(modification.id, signatureData || undefined);
+      }
+
+      // === NOW SEND PAYMENT REQUEST ===
+
       // Create payment authorization in DB (pending)
       await paymentService.createPaymentIntent({
         interventionId,
@@ -430,56 +488,12 @@ export function StartInterventionDialog({
     setError(null);
 
     try {
-      // 0. Save final quote lines based on technician's selections
-      if (quoteConfig) {
-        const newLines: import('@/services/quotes/quotes.service').QuoteInput[] = [];
-        if (quoteConfig.displacementPrice > 0) {
-          newLines.push({ lineType: 'displacement', label: 'Déplacement technicien', basePrice: quoteConfig.displacementPrice, multiplier: 1 });
-        }
-        if (quoteConfig.securityPrice > 0) {
-          newLines.push({ lineType: 'security', label: 'Mise en sécurité', basePrice: quoteConfig.securityPrice, multiplier: 1 });
-        }
-        if (laborPrice > 0) {
-          newLines.push({ lineType: 'repair', label: 'Main d\'œuvre', basePrice: laborPrice, multiplier: 1 });
-        }
-        if (newLines.length > 0) {
-          await quotesService.saveQuoteLines(interventionId, newLines);
-        }
-      }
+      // Get existing before photos
+      const existingPhotos = await workPhotosService.getPhotos(interventionId);
+      const uploadedPhotos = existingPhotos.filter(p => p.photoType === 'before');
 
-      // 1. Upload photos (only if new files were selected)
-      let uploadedPhotos: WorkPhoto[] = [];
-      if (selectedFiles.length > 0) {
-        uploadedPhotos = await workPhotosService.uploadPhotos(
-          interventionId,
-          selectedFiles,
-          'before',
-          userId
-        );
-      } else {
-        // Photos were already uploaded in a previous session
-        const existingPhotos = await workPhotosService.getPhotos(interventionId);
-        uploadedPhotos = existingPhotos.filter(p => p.photoType === 'before');
-      }
-
-      // 2. If there are pending items, create a quote modification
+      // Increment authorization if there are pending additional items
       if (pendingItems.length > 0) {
-        const modification = await quoteModificationsService.createModification({
-          interventionId,
-          createdBy: userId,
-          items: pendingItems.map((item) => ({
-            itemType: item.itemType,
-            label: item.label,
-            description: item.description || undefined,
-            unitPrice: item.unitPrice,
-            quantity: item.quantity,
-          })),
-        });
-
-        // Auto-approve since client signed on-site
-        await quoteModificationsService.approveModification(modification.id, signatureData || undefined);
-
-        // Try to increment authorization with the additional amount
         const totalAdditional = pendingItems.reduce(
           (sum, item) => sum + item.unitPrice * item.quantity,
           0
@@ -495,27 +509,11 @@ export function StartInterventionDialog({
         }
       }
 
-      // 3. Save signature to intervention (only if new signature)
-      if (signatureData) {
-        const { error: updateError } = await supabase
-          .from('interventions')
-          .update({
-            quote_signed_at: new Date().toISOString(),
-            quote_signature_data: signatureData,
-          })
-          .eq('id', interventionId);
-
-        if (updateError) {
-          console.error('Error saving signature:', updateError);
-        }
-      }
-
-      // 4. Get intervention for PDF generation
-      const intervention = await interventionsService.getIntervention(interventionId);
-
-      // 5. Generate and send quote PDF
+      // Generate and send quote PDF
       try {
-        const { base64, fileName } = await quotePDFService.generateQuoteBase64(intervention, signatureData);
+        const intervention = await interventionsService.getIntervention(interventionId);
+        const savedSignature = signatureData || intervention?.quoteSignatureData || null;
+        const { base64, fileName } = await quotePDFService.generateQuoteBase64(intervention, savedSignature);
         
         await supabase.functions.invoke('send-quote-email', {
           body: {
