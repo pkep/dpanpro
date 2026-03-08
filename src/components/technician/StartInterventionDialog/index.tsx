@@ -27,6 +27,7 @@ import { quoteModificationsService } from '@/services/quote-modifications/quote-
 import { servicesService } from '@/services/services/services.service';
 import { quotePDFService } from '@/services/quote-pdf/quote-pdf.service';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { historyService } from '@/services/history/history.service';
 import { paymentService } from '@/services/payment/payment.service';
 import { supabase } from '@/integrations/supabase/client';
 import { PhotoStep } from './PhotoStep';
