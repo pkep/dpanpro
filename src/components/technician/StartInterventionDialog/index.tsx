@@ -523,7 +523,11 @@ export function StartInterventionDialog({
           {step === 'quote_review' && (
             <div className="space-y-4">
               <QuoteReviewStep
-                quoteLines={quoteLines}
+                quoteConfig={quoteConfig}
+                selectedVarianteId={selectedVarianteId}
+                onVarianteChange={setSelectedVarianteId}
+                laborPrice={laborPrice}
+                onLaborPriceChange={setLaborPrice}
                 pendingItems={pendingItems}
                 vatRate={vatRate}
               />
