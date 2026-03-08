@@ -63,6 +63,13 @@ interface QuoteLine {
   line_type: string;
 }
 
+interface VatInfo {
+  vatRate: number;
+  vatAmount: number;
+  totalHT: number;
+  totalTTC: number;
+}
+
 const formatPrice = (price: number) =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
 
