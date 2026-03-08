@@ -12,7 +12,7 @@ import { Loader2, CreditCard, AlertCircle } from 'lucide-react';
 
 // Stripe publishable key - PUBLIC key (safe in frontend).
 // Must match the same Stripe account as STRIPE_SECRET_KEY used in backend functions.
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SrfsTDTC56CKPNhIxV93gHYHDinqpxPYcNurSkhUzKwjXkaOWFxdP3khzuvaBH507yahYxrA7KtsQLOBOyChXbH005j402hQH';
 
 // Initialize Stripe
 let stripePromise: Promise<Stripe | null> | null = null;
