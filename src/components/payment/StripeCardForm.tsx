@@ -185,7 +185,7 @@ export function StripeCardForm({ clientSecret, amount, onSuccess, onError }: Str
 
   useEffect(() => {
     if (!STRIPE_PUBLISHABLE_KEY) {
-      setStripeError('Clé Stripe non configurée. Veuillez contacter le support.');
+      setStripeError('Clé publique Stripe non configurée (VITE_STRIPE_PUBLISHABLE_KEY).');
       return;
     }
 
