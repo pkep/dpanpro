@@ -72,8 +72,10 @@ export default function Auth() {
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-secondary p-12 text-secondary-foreground">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
-          <span className="text-2xl font-bold">Dépan.Pro</span>
+          <Link to="/" className="flex items-center gap-3">
+            <img src={logo} alt="Dépan.Pro" className="h-10 w-10 object-contain" />
+            <span className="text-2xl font-bold">Dépan.Pro</span>
+          </Link>
         </div>
         
         <div className="space-y-6">
