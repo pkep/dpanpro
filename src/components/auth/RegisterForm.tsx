@@ -109,6 +109,7 @@ interface RegisterFormProps {
 
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
   const { register } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
