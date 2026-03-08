@@ -27,6 +27,7 @@ import { quoteModificationsService } from '@/services/quote-modifications/quote-
 import { servicesService } from '@/services/services/services.service';
 import { quotePDFService } from '@/services/quote-pdf/quote-pdf.service';
 import { interventionsService } from '@/services/interventions/interventions.service';
+import { historyService } from '@/services/history/history.service';
 import { paymentService } from '@/services/payment/payment.service';
 import { supabase } from '@/integrations/supabase/client';
 import { PhotoStep } from './PhotoStep';
@@ -509,24 +510,20 @@ export function StartInterventionDialog({
         }
       }
 
-      // Generate and send quote PDF
-      try {
-        const intervention = await interventionsService.getIntervention(interventionId);
-        const savedSignature = signatureData || intervention?.quoteSignatureData || null;
-        const { base64, fileName } = await quotePDFService.generateQuoteBase64(intervention, savedSignature);
-        
-        await supabase.functions.invoke('send-quote-email', {
-          body: {
-            interventionId,
-            quoteBase64: base64,
-            quoteFileName: fileName,
-            clientEmail,
-            clientPhone,
-          },
-        });
-      } catch (pdfErr) {
-        console.error('Error sending quote email:', pdfErr);
-      }
+      // Update status to in_progress FIRST (most important action)
+      await interventionsService.updateStatus(interventionId, 'in_progress', 'arrived');
+      await historyService.addHistoryEntry({
+        interventionId,
+        userId,
+        action: 'status_changed',
+        oldValue: 'arrived',
+        newValue: 'in_progress',
+      });
+
+      // Generate and send quote PDF (non-blocking — don't fail the whole process)
+      generateAndSendQuotePDF().catch(err => {
+        console.error('Error sending quote email (non-blocking):', err);
+      });
 
       toast.success('Devis validé, intervention démarrée');
       onOpenChange(false);
@@ -535,6 +532,42 @@ export function StartInterventionDialog({
       console.error('Error processing intervention:', err);
       setError(err?.message || 'Erreur lors du traitement');
       setStep('payment_pending');
+      setIsLoading(false);
+    }
+  };
+
+  const generateAndSendQuotePDF = async () => {
+    try {
+      const intervention = await interventionsService.getIntervention(interventionId);
+      const savedSignature = signatureData || intervention?.quoteSignatureData || null;
+      const { base64, fileName } = await quotePDFService.generateQuoteBase64(intervention, savedSignature);
+      
+      await supabase.functions.invoke('send-quote-email', {
+        body: {
+          interventionId,
+          quoteBase64: base64,
+          quoteFileName: fileName,
+          clientEmail,
+          clientPhone,
+        },
+      });
+    } catch (pdfErr) {
+      console.error('Error generating/sending quote PDF:', pdfErr);
+    }
+  };
+
+  const resendPaymentNotification = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await supabase.functions.invoke('notify-payment-required', {
+        body: { interventionId, reason: 'start_intervention' },
+      });
+      toast.success('Notification renvoyée au client');
+    } catch (err: any) {
+      console.error('Error resending notification:', err);
+      setError('Erreur lors du renvoi de la notification');
+    } finally {
       setIsLoading(false);
     }
   };
