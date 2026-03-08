@@ -266,8 +266,8 @@ export default function TechnicianInterventionPage() {
 
   const handleStartInterventionSuccess = async (photos: WorkPhoto[]) => {
     setBeforePhotos(photos);
-    // Now change status to in_progress
-    await handleStatusChange('in_progress');
+    // Status already changed to in_progress inside processIntervention
+    refresh();
   };
 
   const handlePhotosUpdated = (newPhotos: string[]) => {
