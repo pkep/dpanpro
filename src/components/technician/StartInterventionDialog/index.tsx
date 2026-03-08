@@ -214,7 +214,7 @@ export function StartInterventionDialog({
       // Load questionnaire resultat + variantes
       const { data: interventionData } = await supabase
         .from('interventions')
-        .select('questionnaire_resultat_id, prix_min, prix_max, title')
+        .select('questionnaire_resultat_id, prix_min, prix_max, title, questionnaire_answers')
         .eq('id', interventionId)
         .single();
 
@@ -253,6 +253,9 @@ export function StartInterventionDialog({
           }));
         }
 
+        const rawAnswers = interventionData.questionnaire_answers;
+        const questionnaireAnswers: string[] = Array.isArray(rawAnswers) ? rawAnswers.map(String) : [];
+
         const config: QuoteConfig = {
           resultatNom,
           resultatPrixMin: prixMin,
@@ -261,6 +264,7 @@ export function StartInterventionDialog({
           displacementPrice,
           securityPrice,
           vatRate: currentVatRate,
+          questionnaireAnswers,
         };
         setQuoteConfig(config);
 

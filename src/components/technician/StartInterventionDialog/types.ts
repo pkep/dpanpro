@@ -42,6 +42,7 @@ export interface QuoteConfig {
   displacementPrice: number;
   securityPrice: number;
   vatRate: number;
+  questionnaireAnswers: string[];
 }
 
 export interface StartInterventionDialogProps {
