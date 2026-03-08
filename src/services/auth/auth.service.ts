@@ -22,6 +22,12 @@ class AuthService {
         return { success: false, error: 'Email ou mot de passe incorrect' };
       }
 
+      // Check if email is verified (is_active)
+      const dbUserCheck = userData as unknown as DbUser;
+      if (!dbUserCheck.is_active && dbUserCheck.role === 'client') {
+        return { success: false, error: 'Veuillez confirmer votre adresse email avant de vous connecter. Vérifiez votre boîte de réception.', requiresEmailVerification: true };
+      }
+
       const dbUser = userData as unknown as DbUser;
 
       // Vérifier le mot de passe via une edge function
@@ -99,7 +105,7 @@ class AuthService {
         last_name: credentials.lastName,
         phone: credentials.phone || null,
         role: 'client',
-        is_active: true,
+        is_active: false, // Inactive until email verified
         is_company: credentials.isCompany || false,
         company_name: credentials.companyName || null,
         company_address: credentials.companyAddress || null,
@@ -141,11 +147,20 @@ class AuthService {
         updatedAt: newUser.updated_at,
       };
 
-      this.currentUser = user;
-      this.notifyListeners();
-      localStorage.setItem('depanpro_user', JSON.stringify(user));
+      // Don't auto-login: send verification email instead
+      try {
+        await supabase.functions.invoke('send-verification-email', {
+          body: {
+            userId: user.id,
+            email: user.email,
+            firstName: user.firstName,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+      }
 
-      return { success: true, user };
+      return { success: true, user, requiresEmailVerification: true };
     } catch (error) {
       console.error('Register error:', error);
       return { success: false, error: 'Erreur lors de l\'inscription' };

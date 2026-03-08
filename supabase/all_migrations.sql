@@ -1760,3 +1760,26 @@ COMMENT ON COLUMN public.interventions.quote_pdf_url IS 'URL of the signed quote
 -- payment_authorizations n'est pas listée ci-dessus mais existe :
 -- ALTER TABLE public.payment_authorizations ALTER COLUMN intervention_id DROP NOT NULL;
 -- ============================================================
+
+-- ============================================================
+-- MIGRATION: Email Verification Tokens
+-- Date: 2026-03-08
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.email_verification_tokens (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  token text NOT NULL,
+  expires_at timestamp with time zone NOT NULL,
+  used_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.email_verification_tokens ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can insert verification tokens" ON public.email_verification_tokens FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can select verification tokens" ON public.email_verification_tokens FOR SELECT USING (true);
+CREATE POLICY "Anyone can update verification tokens" ON public.email_verification_tokens FOR UPDATE USING (true) WITH CHECK (true);
+
+CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_token ON public.email_verification_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user_id ON public.email_verification_tokens(user_id);
+-- ============================================================

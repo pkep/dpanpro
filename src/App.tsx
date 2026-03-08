@@ -19,6 +19,8 @@ import LiveTrackingPage from "./pages/common/LiveTrackingPage";
 import QuoteApprovalPage from "./pages/common/QuoteApprovalPage";
 import TrackInterventionPage from "./pages/common/TrackInterventionPage";
 import ResetPassword from "./pages/common/ResetPassword";
+import VerifyEmailPage from "./pages/common/VerifyEmailPage";
+import EmailPendingPage from "./pages/common/EmailPendingPage";
 import PaymentAuthorizationPage from "./pages/common/PaymentAuthorizationPage";
 import PricingExplanationPage from "./pages/common/PricingExplanationPage";
 import CGUPage from "./pages/common/CGUPage";
@@ -115,6 +117,8 @@ const App = () => (
             <Route path="/quote-approval/:token" element={<QuoteApprovalPage />} />
             <Route path="/track/:tracking_code" element={<TrackInterventionPage />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/email-pending" element={<EmailPendingPage />} />
             <Route path="/authorize-payment/:interventionId" element={<PaymentAuthorizationPage />} />
             <Route path="/comprendre-nos-tarifs" element={<PricingExplanationPage />} />
             <Route path="/cgu" element={<CGUPage />} />

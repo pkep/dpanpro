@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -109,6 +110,7 @@ interface RegisterFormProps {
 
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
   const { register } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -151,7 +153,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         vatNumber: data.isCompany ? data.vatNumber : undefined,
       });
 
-      if (response.success && response.user) {
+      if (response.success && response.requiresEmailVerification) {
+        // Redirect to email pending page
+        navigate(`/email-pending?email=${encodeURIComponent(data.email)}`);
+      } else if (response.success && response.user) {
         onSuccess?.(response.user);
       } else {
         setError(response.error || 'Erreur lors de l\'inscription');

@@ -42,6 +42,7 @@ export interface AuthResponse {
   success: boolean;
   user?: User;
   error?: string;
+  requiresEmailVerification?: boolean;
 }
 
 export interface AuthState {
