@@ -19,6 +19,7 @@ import LiveTrackingPage from "./pages/common/LiveTrackingPage";
 import QuoteApprovalPage from "./pages/common/QuoteApprovalPage";
 import TrackInterventionPage from "./pages/common/TrackInterventionPage";
 import ResetPassword from "./pages/common/ResetPassword";
+import PaymentAuthorizationPage from "./pages/common/PaymentAuthorizationPage";
 import PricingExplanationPage from "./pages/common/PricingExplanationPage";
 import CGUPage from "./pages/common/CGUPage";
 import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage";
