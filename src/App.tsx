@@ -19,6 +19,7 @@ import LiveTrackingPage from "./pages/common/LiveTrackingPage";
 import QuoteApprovalPage from "./pages/common/QuoteApprovalPage";
 import TrackInterventionPage from "./pages/common/TrackInterventionPage";
 import ResetPassword from "./pages/common/ResetPassword";
+import PaymentAuthorizationPage from "./pages/common/PaymentAuthorizationPage";
 import PricingExplanationPage from "./pages/common/PricingExplanationPage";
 import CGUPage from "./pages/common/CGUPage";
 import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage";
@@ -114,6 +115,7 @@ const App = () => (
             <Route path="/quote-approval/:token" element={<QuoteApprovalPage />} />
             <Route path="/track/:tracking_code" element={<TrackInterventionPage />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/authorize-payment/:interventionId" element={<PaymentAuthorizationPage />} />
             <Route path="/comprendre-nos-tarifs" element={<PricingExplanationPage />} />
             <Route path="/cgu" element={<CGUPage />} />
             <Route path="/politique-de-confidentialite" element={<PrivacyPolicyPage />} />
