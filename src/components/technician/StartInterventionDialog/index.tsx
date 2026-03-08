@@ -556,7 +556,11 @@ export function StartInterventionDialog({
           {step === 'signature' && (
             <div className="space-y-4">
               <QuoteReviewStep
-                quoteLines={quoteLines}
+                quoteConfig={quoteConfig}
+                selectedVarianteId={selectedVarianteId}
+                onVarianteChange={setSelectedVarianteId}
+                laborPrice={laborPrice}
+                onLaborPriceChange={setLaborPrice}
                 pendingItems={pendingItems}
                 vatRate={vatRate}
               />
