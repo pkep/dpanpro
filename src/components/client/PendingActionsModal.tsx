@@ -163,8 +163,8 @@ export function PendingActionsModal() {
     new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
 
   const handleAction = (action: PendingAction) => {
-    if (action.type === 'payment_authorization' && action.trackingCode) {
-      navigate(`/track/${action.trackingCode}`);
+    if (action.type === 'payment_authorization') {
+      navigate(`/authorize-payment/${action.interventionId}`);
     } else if (action.type === 'quote_approval') {
       navigate(`/quote-approval/${action.notificationToken}`);
     } else {

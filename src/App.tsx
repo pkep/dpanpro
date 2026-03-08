@@ -115,6 +115,7 @@ const App = () => (
             <Route path="/quote-approval/:token" element={<QuoteApprovalPage />} />
             <Route path="/track/:tracking_code" element={<TrackInterventionPage />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/authorize-payment/:interventionId" element={<PaymentAuthorizationPage />} />
             <Route path="/comprendre-nos-tarifs" element={<PricingExplanationPage />} />
             <Route path="/cgu" element={<CGUPage />} />
             <Route path="/politique-de-confidentialite" element={<PrivacyPolicyPage />} />
