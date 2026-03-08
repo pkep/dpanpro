@@ -40,6 +40,7 @@ export function FinalizeInterventionDialog({
   const [modificationItems, setModificationItems] = useState<QuoteModificationItem[]>([]);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [hasSignature, setHasSignature] = useState(false);
+  const [vatRate, setVatRate] = useState(10);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -91,6 +92,39 @@ export function FinalizeInterventionDialog({
       setQuoteLines(lines);
       const baseTotal = lines.reduce((sum, line) => sum + line.calculatedPrice, 0);
       setBaseQuoteTotal(baseTotal);
+
+      // Fetch VAT rate based on client type and service category
+      try {
+        const { data: interventionData } = await supabase
+          .from('interventions')
+          .select('category, client_id')
+          .eq('id', intervention.id)
+          .single();
+
+        if (interventionData) {
+          let isCompany = false;
+          if (interventionData.client_id) {
+            const { data: clientData } = await supabase
+              .from('users')
+              .select('is_company')
+              .eq('id', interventionData.client_id)
+              .single();
+            if (clientData) isCompany = clientData.is_company;
+          }
+
+          const { data: serviceData } = await supabase
+            .from('services')
+            .select('vat_rate_individual, vat_rate_professional')
+            .eq('code', interventionData.category)
+            .single();
+
+          if (serviceData) {
+            setVatRate(isCompany ? serviceData.vat_rate_professional : serviceData.vat_rate_individual);
+          }
+        }
+      } catch (vatErr) {
+        console.error('Error loading VAT rate:', vatErr);
+      }
 
       // Get modifications
       const modifications = await quoteModificationsService.getModificationsByIntervention(intervention.id);
@@ -328,7 +362,9 @@ export function FinalizeInterventionDialog({
     }
   };
 
-  const totalAmount = baseQuoteTotal + additionalAmount;
+  const totalHT = baseQuoteTotal + additionalAmount;
+  const vatAmount = Math.round(totalHT * (vatRate / 100) * 100) / 100;
+  const totalAmount = Math.round((totalHT + vatAmount) * 100) / 100;
 
   // Build list of all services for signature text
   const allServices = [
@@ -395,9 +431,19 @@ export function FinalizeInterventionDialog({
                 </>
               )}
 
-              <div className="flex justify-between font-bold border-t pt-2 mt-2">
-                <span>Total à débiter</span>
-                <span>{totalAmount.toFixed(2)} €</span>
+              <div className="border-t pt-2 mt-2 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Total HT</span>
+                  <span>{totalHT.toFixed(2)} €</span>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>TVA ({vatRate}%)</span>
+                  <span>{vatAmount.toFixed(2)} €</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span>Total TTC à débiter</span>
+                  <span>{totalAmount.toFixed(2)} €</span>
+                </div>
               </div>
             </div>
           </div>
