@@ -73,6 +73,7 @@ export default function PaymentAuthorizationPage() {
   const [additionalTotal, setAdditionalTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authAmount, setAuthAmount] = useState<number | null>(null);
 
   // Payment state
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -121,10 +122,10 @@ export default function PaymentAuthorizationPage() {
           (modsRes.data || []).reduce((s, m) => s + Number(m.total_additional_amount || 0), 0)
         );
 
-        // Check existing authorization status
+        // Check existing authorization status + amount
         const authRes = await supabase
           .from('payment_authorizations')
-          .select('id, status')
+          .select('id, status, amount_authorized')
           .eq('intervention_id', interventionId)
           .order('created_at', { ascending: false })
           .limit(1)
@@ -134,6 +135,7 @@ export default function PaymentAuthorizationPage() {
           setPaymentAuthorizationId(authRes.data.id);
           setPaymentStatus(authRes.data.status);
           setPaymentAuthorized(authRes.data.status === 'authorized');
+          setAuthAmount(authRes.data.amount_authorized);
         }
       } catch (err) {
         console.error('Error loading payment page:', err);
@@ -170,7 +172,8 @@ export default function PaymentAuthorizationPage() {
     () => quoteLines.reduce((s, l) => s + Number(l.calculated_price || 0), 0),
     [quoteLines]
   );
-  const grandTotal = baseTotal + additionalTotal;
+  // Use quote lines total if available, otherwise fall back to the amount from the existing authorization
+  const grandTotal = (baseTotal > 0 ? baseTotal : (authAmount ?? 0)) + additionalTotal;
 
   const canAuthorize = useMemo(() => {
     if (!intervention) return false;
