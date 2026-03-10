@@ -1,0 +1,179 @@
+/**
+ * Service Factory - Centralizes service instantiation based on API_MODE.
+ * 
+ * Usage: import { services } from '@/services/factory';
+ * Then:  services.auth.login(...)
+ *        services.interventions.getInterventions(...)
+ * 
+ * Switch modes via VITE_API_MODE env variable:
+ *   - 'supabase' (default): Uses existing Supabase implementations
+ *   - 'spring': Uses Spring Boot REST API implementations
+ */
+
+import { isSpringMode } from '@/config/api.config';
+
+// --- Supabase implementations (current) ---
+import { authService as supabaseAuthService } from '@/services/auth/auth.service';
+import { interventionsService as supabaseInterventionsService } from '@/services/interventions/interventions.service';
+import { usersService as supabaseUsersService } from '@/services/users/users.service';
+import { dispatchService as supabaseDispatchService } from '@/services/dispatch/dispatch.service';
+import { paymentService as supabasePaymentService } from '@/services/payment/payment.service';
+import { quotesService as supabaseQuotesService } from '@/services/quotes/quotes.service';
+import { ratingsService as supabaseRatingsService } from '@/services/ratings/ratings.service';
+import { messagesService as supabaseMessagesService } from '@/services/messages/messages.service';
+import { scheduleService as supabaseScheduleService } from '@/services/schedule/schedule.service';
+import { techniciansService as supabaseTechniciansService } from '@/services/technicians/technicians.service';
+import { servicesService as supabaseServicesService } from '@/services/services/services.service';
+import { historyService as supabaseHistoryService } from '@/services/history/history.service';
+import { photosService as supabasePhotosService } from '@/services/photos/photos.service';
+import { workPhotosService as supabaseWorkPhotosService } from '@/services/work-photos/work-photos.service';
+import { revenueService as supabaseRevenueService } from '@/services/revenue/revenue.service';
+import { statisticsService as supabaseStatisticsService } from '@/services/statistics/statistics.service';
+import { configurationService as supabaseConfigurationService } from '@/services/configuration/configuration.service';
+import { cancellationService as supabaseCancellationService } from '@/services/cancellation/cancellation.service';
+import { partnersService as supabasePartnersService } from '@/services/partners/partners.service';
+import { rolesService as supabaseRolesService } from '@/services/roles/roles.service';
+import { performanceService as supabasePerformanceService } from '@/services/performance/performance.service';
+import { pricingService as supabasePricingService } from '@/services/pricing/pricing.service';
+import { quoteModificationsService as supabaseQuoteModificationsService } from '@/services/quote-modifications/quote-modifications.service';
+
+// --- Spring implementations ---
+import { SpringAuthService } from '@/services/spring/auth.spring';
+import { SpringInterventionsService } from '@/services/spring/interventions.spring';
+import { SpringUsersService } from '@/services/spring/users.spring';
+import { SpringDispatchService } from '@/services/spring/dispatch.spring';
+import { SpringPaymentService } from '@/services/spring/payment.spring';
+import { SpringRatingsService } from '@/services/spring/ratings.spring';
+import { SpringMessagesService } from '@/services/spring/messages.spring';
+import { SpringScheduleService } from '@/services/spring/schedule.spring';
+import { SpringTechniciansService } from '@/services/spring/technicians.spring';
+import { SpringServicesService } from '@/services/spring/services.spring';
+import { SpringHistoryService } from '@/services/spring/history.spring';
+import { SpringPhotosService } from '@/services/spring/photos.spring';
+import { SpringWorkPhotosService } from '@/services/spring/work-photos.spring';
+import { SpringRevenueService } from '@/services/spring/revenue.spring';
+import { SpringStatisticsService } from '@/services/spring/statistics.spring';
+import { SpringConfigurationService } from '@/services/spring/configuration.spring';
+import { SpringCancellationService } from '@/services/spring/cancellation.spring';
+import { SpringPartnersService } from '@/services/spring/partners.spring';
+import { SpringRolesService } from '@/services/spring/roles.spring';
+import { SpringPerformanceService } from '@/services/spring/performance.spring';
+import { SpringPricingService } from '@/services/spring/pricing.spring';
+import { SpringQuoteModificationsService } from '@/services/spring/quote-modifications.spring';
+
+// --- Interfaces ---
+import type { IAuthService } from '@/services/interfaces/auth.interface';
+import type { IInterventionsService } from '@/services/interfaces/interventions.interface';
+import type { IUsersService } from '@/services/interfaces/users.interface';
+import type { IDispatchService } from '@/services/interfaces/dispatch.interface';
+import type { IPaymentService } from '@/services/interfaces/payment.interface';
+import type { IQuotesService } from '@/services/interfaces/quotes.interface';
+import type { IRatingsService } from '@/services/interfaces/ratings.interface';
+import type { IMessagesService } from '@/services/interfaces/messages.interface';
+import type { IScheduleService } from '@/services/interfaces/schedule.interface';
+import type { ITechniciansService } from '@/services/interfaces/technicians.interface';
+import type { IServicesService } from '@/services/interfaces/services.interface';
+import type { IHistoryService } from '@/services/interfaces/history.interface';
+import type { IPhotosService } from '@/services/interfaces/photos.interface';
+import type { IWorkPhotosService } from '@/services/interfaces/work-photos.interface';
+import type { IRevenueService } from '@/services/interfaces/revenue.interface';
+import type { IStatisticsService } from '@/services/interfaces/statistics.interface';
+import type { IConfigurationService } from '@/services/interfaces/configuration.interface';
+import type { ICancellationService } from '@/services/interfaces/cancellation.interface';
+import type { IPartnersService } from '@/services/interfaces/partners.interface';
+import type { IRolesService } from '@/services/interfaces/roles.interface';
+import type { IPerformanceService } from '@/services/interfaces/performance.interface';
+import type { IPricingService } from '@/services/interfaces/pricing.interface';
+import type { IQuoteModificationsService } from '@/services/interfaces/quote-modifications.interface';
+
+export interface ServiceContainer {
+  auth: IAuthService;
+  interventions: IInterventionsService;
+  users: IUsersService;
+  dispatch: IDispatchService;
+  payment: IPaymentService;
+  quotes: IQuotesService;
+  ratings: IRatingsService;
+  messages: IMessagesService;
+  schedule: IScheduleService;
+  technicians: ITechniciansService;
+  services: IServicesService;
+  history: IHistoryService;
+  photos: IPhotosService;
+  workPhotos: IWorkPhotosService;
+  revenue: IRevenueService;
+  statistics: IStatisticsService;
+  configuration: IConfigurationService;
+  cancellation: ICancellationService;
+  partners: IPartnersService;
+  roles: IRolesService;
+  performance: IPerformanceService;
+  pricing: IPricingService;
+  quoteModifications: IQuoteModificationsService;
+}
+
+function createSupabaseServices(): ServiceContainer {
+  return {
+    auth: supabaseAuthService,
+    interventions: supabaseInterventionsService,
+    users: supabaseUsersService,
+    dispatch: supabaseDispatchService,
+    payment: supabasePaymentService,
+    quotes: supabaseQuotesService,
+    ratings: supabaseRatingsService,
+    messages: supabaseMessagesService,
+    schedule: supabaseScheduleService,
+    technicians: supabaseTechniciansService,
+    services: supabaseServicesService,
+    history: supabaseHistoryService,
+    photos: supabasePhotosService,
+    workPhotos: supabaseWorkPhotosService,
+    revenue: supabaseRevenueService,
+    statistics: supabaseStatisticsService,
+    configuration: supabaseConfigurationService,
+    cancellation: supabaseCancellationService,
+    partners: supabasePartnersService,
+    roles: supabaseRolesService,
+    performance: supabasePerformanceService,
+    pricing: supabasePricingService,
+    quoteModifications: supabaseQuoteModificationsService,
+  };
+}
+
+function createSpringServices(): ServiceContainer {
+  return {
+    auth: new SpringAuthService(),
+    interventions: new SpringInterventionsService(),
+    users: new SpringUsersService(),
+    dispatch: new SpringDispatchService(),
+    payment: new SpringPaymentService(),
+    quotes: supabaseQuotesService, // Quotes has client-side logic, keep Supabase for now
+    ratings: new SpringRatingsService(),
+    messages: new SpringMessagesService(),
+    schedule: new SpringScheduleService(),
+    technicians: new SpringTechniciansService(),
+    services: new SpringServicesService(),
+    history: new SpringHistoryService(),
+    photos: new SpringPhotosService(),
+    workPhotos: new SpringWorkPhotosService(),
+    revenue: new SpringRevenueService(),
+    statistics: new SpringStatisticsService(),
+    configuration: new SpringConfigurationService(),
+    cancellation: new SpringCancellationService(),
+    partners: new SpringPartnersService(),
+    roles: new SpringRolesService(),
+    performance: new SpringPerformanceService(),
+    pricing: new SpringPricingService(),
+    quoteModifications: new SpringQuoteModificationsService(),
+  };
+}
+
+// Create the service container based on current mode
+export const services: ServiceContainer = isSpringMode()
+  ? createSpringServices()
+  : createSupabaseServices();
+
+// Re-export individual services for backward compatibility
+// Components can continue importing from their original locations
+// OR use `services.auth`, `services.interventions`, etc.
+console.log(`[ServiceFactory] Running in ${isSpringMode() ? 'Spring' : 'Supabase'} mode`);
