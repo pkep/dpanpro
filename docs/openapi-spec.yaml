@@ -1,0 +1,4227 @@
+openapi: 3.0.3
+info:
+  title: Depan.Pro API
+  description: |
+    Spécification OpenAPI complète de l'API backend Depan.Pro.
+    Cette spécification documente tous les endpoints REST et les Edge Functions
+    utilisés par le frontend React pour permettre une migration vers un backend Spring Boot.
+  version: 1.0.0
+  contact:
+    name: Depan.Pro
+    email: contact@depan-pro.com
+
+servers:
+  - url: https://api.depan-pro.com/v1
+    description: Production
+  - url: http://localhost:8080/v1
+    description: Local Development (Spring Boot)
+
+tags:
+  - name: Auth
+    description: Authentification et gestion de session
+  - name: Users
+    description: Gestion des utilisateurs
+  - name: Roles
+    description: Gestion des rôles et permissions
+  - name: Interventions
+    description: CRUD et gestion des interventions
+  - name: Dispatch
+    description: Dispatch automatique et assignation des techniciens
+  - name: Quotes
+    description: Devis et lignes de devis
+  - name: QuoteModifications
+    description: Modifications de devis en cours d'intervention
+  - name: Services
+    description: Configuration des services (serrurerie, plomberie, etc.)
+  - name: Technicians
+    description: Gestion des techniciens et géolocalisation
+  - name: Partners
+    description: Candidatures et profils partenaires
+  - name: Ratings
+    description: Notes et avis clients
+  - name: Messages
+    description: Messagerie intervention (technicien/client)
+  - name: Photos
+    description: Upload et gestion des photos
+  - name: WorkPhotos
+    description: Photos avant/après intervention
+  - name: Payment
+    description: Autorisation et capture de paiement (Stripe)
+  - name: Cancellation
+    description: Annulation d'intervention avec frais éventuels
+  - name: Schedule
+    description: Planning et disponibilités technicien
+  - name: Revenue
+    description: Revenus et commissions technicien
+  - name: Statistics
+    description: Statistiques globales
+  - name: Performance
+    description: Performance des techniciens
+  - name: Configuration
+    description: Configuration dispatch et historique
+  - name: Pricing
+    description: Multiplicateurs de priorité
+  - name: Notifications
+    description: Notifications email, SMS, push
+  - name: Storage
+    description: Upload et gestion de fichiers
+  - name: Geocoding
+    description: Géocodage et reverse géocodage
+  - name: Questionnaire
+    description: Arbre de questionnaire dynamique
+  - name: Invoice
+    description: Génération et envoi de factures
+  - name: SiteSettings
+    description: Paramètres globaux du site
+
+paths:
+  # ==================== AUTH ====================
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Connexion utilisateur
+      description: |
+        Vérifie l'email dans la table users, contrôle que le compte est actif,
+        vérifie le mot de passe via bcrypt, et retourne l'objet User.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginCredentials'
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Email ou mot de passe incorrect
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Inscription client
+      description: |
+        Crée un utilisateur avec role=client, is_active=false.
+        Hash le mot de passe via bcrypt. Envoie un email de vérification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterCredentials'
+      responses:
+        '201':
+          description: Compte créé, email de vérification envoyé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: Email déjà utilisé
+
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Vérifier l'email via token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Email vérifié, compte activé
+
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Demande de réinitialisation de mot de passe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Email de réinitialisation envoyé
+
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Réinitialiser le mot de passe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Mot de passe mis à jour
+
+  /auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Changer le mot de passe (utilisateur connecté)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPassword, newPassword]
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Mot de passe changé
+
+  # ==================== USERS ====================
+  /users:
+    get:
+      tags: [Users]
+      summary: Liste des utilisateurs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: role
+          in: query
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Liste des utilisateurs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Détail d'un utilisateur
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Utilisateur trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Utilisateur non trouvé
+    patch:
+      tags: [Users]
+      summary: Mettre à jour un utilisateur
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phone:
+                  type: string
+      responses:
+        '200':
+          description: Utilisateur mis à jour
+
+  /users/{id}/role:
+    put:
+      tags: [Users]
+      summary: Changer le rôle d'un utilisateur
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  $ref: '#/components/schemas/UserRole'
+      responses:
+        '200':
+          description: Rôle mis à jour
+
+  /users/{id}/toggle-active:
+    post:
+      tags: [Users]
+      summary: Activer/désactiver un utilisateur
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Statut mis à jour
+
+  # ==================== ROLES ====================
+  /roles/users/{userId}:
+    get:
+      tags: [Roles]
+      summary: Obtenir les rôles d'un utilisateur
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste des rôles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserRoleRecord'
+
+  /roles/users/{userId}/roles:
+    post:
+      tags: [Roles]
+      summary: Ajouter un rôle à un utilisateur
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  $ref: '#/components/schemas/AppRole'
+      responses:
+        '201':
+          description: Rôle ajouté
+
+  /roles/users/{userId}/roles/{role}:
+    delete:
+      tags: [Roles]
+      summary: Supprimer un rôle d'un utilisateur
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: role
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/AppRole'
+      responses:
+        '204':
+          description: Rôle supprimé
+
+  /roles/users/{userId}/manager-permissions:
+    get:
+      tags: [Roles]
+      summary: Obtenir les permissions manager
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Permissions manager
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManagerPermissions'
+    put:
+      tags: [Roles]
+      summary: Mettre à jour les permissions manager
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [canCreateManagers]
+              properties:
+                canCreateManagers:
+                  type: boolean
+      responses:
+        '200':
+          description: Permissions mises à jour
+
+  # ==================== INTERVENTIONS ====================
+  /interventions:
+    get:
+      tags: [Interventions]
+      summary: Liste des interventions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/InterventionStatus'
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/InterventionCategory'
+        - name: clientId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: technicianId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Liste des interventions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Intervention'
+    post:
+      tags: [Interventions]
+      summary: Créer une intervention
+      description: |
+        Crée l'intervention, géocode l'adresse, génère un tracking_code,
+        et déclenche le dispatch automatique en arrière-plan.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInterventionRequest'
+      responses:
+        '201':
+          description: Intervention créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervention'
+
+  /interventions/{id}:
+    get:
+      tags: [Interventions]
+      summary: Détail d'une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Intervention trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervention'
+
+  /interventions/{id}/status:
+    put:
+      tags: [Interventions]
+      summary: Changer le statut d'une intervention
+      description: |
+        Met à jour le statut. Calcule automatiquement les temps de trajet
+        (travel_time_seconds), de durée (intervention_duration_seconds).
+        Envoie des notifications au client (email, SMS, push).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  $ref: '#/components/schemas/InterventionStatus'
+                oldStatus:
+                  $ref: '#/components/schemas/InterventionStatus'
+      responses:
+        '200':
+          description: Statut mis à jour
+
+  /interventions/{id}/assign:
+    post:
+      tags: [Interventions]
+      summary: Assigner manuellement un technicien
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [technicianId]
+              properties:
+                technicianId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Technicien assigné
+
+  /interventions/{id}/cancel:
+    post:
+      tags: [Interventions]
+      summary: Annuler une intervention (simple, sans frais)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Intervention annulée
+
+  /interventions/{id}/toggle-active:
+    post:
+      tags: [Interventions]
+      summary: Activer/désactiver une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Statut actif mis à jour
+
+  /interventions/track/{trackingCode}:
+    get:
+      tags: [Interventions]
+      summary: Suivre une intervention par code de suivi (public)
+      parameters:
+        - name: trackingCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Intervention trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Intervention'
+
+  # ==================== DISPATCH ====================
+  /dispatch/intervention:
+    post:
+      tags: [Dispatch]
+      summary: Actions de dispatch
+      description: |
+        Point d'entrée unique pour toutes les actions de dispatch.
+        Actions: dispatch, accept, reject, decline, cancel, go, notify.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId, action]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                technicianId:
+                  type: string
+                  format: uuid
+                action:
+                  type: string
+                  enum: [dispatch, accept, reject, decline, cancel, go, notify]
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Résultat du dispatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchResult'
+
+  /dispatch/attempts:
+    get:
+      tags: [Dispatch]
+      summary: Tentatives de dispatch pour une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste des tentatives
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DispatchAttempt'
+
+  /dispatch/attempts/current:
+    get:
+      tags: [Dispatch]
+      summary: Tentative en cours pour une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tentative en cours
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchAttempt'
+
+  /dispatch/technician/{technicianId}/pending:
+    get:
+      tags: [Dispatch]
+      summary: Assignations en attente pour un technicien
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Assignations en attente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DispatchAttempt'
+
+  # ==================== QUOTES ====================
+  /quotes/lines:
+    get:
+      tags: [Quotes]
+      summary: Obtenir les lignes de devis d'une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lignes de devis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuoteLine'
+    post:
+      tags: [Quotes]
+      summary: Sauvegarder des lignes de devis
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId, lines]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                lines:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/QuoteLineInput'
+      responses:
+        '201':
+          description: Lignes sauvegardées
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuoteLine'
+
+  # ==================== QUOTE MODIFICATIONS ====================
+  /quote-modifications:
+    post:
+      tags: [QuoteModifications]
+      summary: Créer une modification de devis
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuoteModificationInput'
+      responses:
+        '201':
+          description: Modification créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteModification'
+
+  /quote-modifications/{id}:
+    get:
+      tags: [QuoteModifications]
+      summary: Obtenir une modification par ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Modification trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteModification'
+
+  /quote-modifications/by-token/{token}:
+    get:
+      tags: [QuoteModifications]
+      summary: Obtenir une modification par token de notification (public)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Modification trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteModification'
+
+  /quote-modifications/by-intervention/{interventionId}:
+    get:
+      tags: [QuoteModifications]
+      summary: Toutes les modifications d'une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste des modifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuoteModification'
+
+  /quote-modifications/by-intervention/{interventionId}/pending:
+    get:
+      tags: [QuoteModifications]
+      summary: Modification en attente d'une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Modification en attente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteModification'
+
+  /quote-modifications/{id}/approve:
+    post:
+      tags: [QuoteModifications]
+      summary: Approuver une modification de devis
+      description: |
+        Approuve la modification et incrémente l'autorisation de paiement Stripe
+        du montant additionnel.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signatureData:
+                  type: string
+                  description: Signature base64 du client
+      responses:
+        '200':
+          description: Modification approuvée
+
+  /quote-modifications/{id}/decline:
+    post:
+      tags: [QuoteModifications]
+      summary: Refuser une modification de devis
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Modification refusée
+
+  # ==================== SERVICES ====================
+  /services:
+    get:
+      tags: [Services]
+      summary: Liste des services
+      parameters:
+        - name: activeOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Liste des services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+
+  /services/{id}:
+    patch:
+      tags: [Services]
+      summary: Mettre à jour un service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceUpdate'
+      responses:
+        '200':
+          description: Service mis à jour
+
+  /services/{id}/toggle-active:
+    post:
+      tags: [Services]
+      summary: Activer/désactiver un service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isActive]
+              properties:
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: Statut mis à jour
+
+  /services/swap-order:
+    post:
+      tags: [Services]
+      summary: Échanger l'ordre d'affichage de deux services
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [serviceId1, order1, serviceId2, order2]
+              properties:
+                serviceId1:
+                  type: string
+                  format: uuid
+                order1:
+                  type: integer
+                serviceId2:
+                  type: string
+                  format: uuid
+                order2:
+                  type: integer
+      responses:
+        '200':
+          description: Ordre échangé
+
+  # ==================== TECHNICIANS ====================
+  /technicians/location:
+    put:
+      tags: [Technicians]
+      summary: Mettre à jour la position GPS d'un technicien
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, latitude, longitude]
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                latitude:
+                  type: number
+                  format: double
+                longitude:
+                  type: number
+                  format: double
+                city:
+                  type: string
+                  nullable: true
+                department:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Position mise à jour
+
+  /technicians/active:
+    get:
+      tags: [Technicians]
+      summary: Techniciens actifs avec géolocalisation
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des techniciens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TechnicianWithLocation'
+
+  /technicians/nearest:
+    get:
+      tags: [Technicians]
+      summary: Techniciens les plus proches d'un point
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 3
+      responses:
+        '200':
+          description: Techniciens proches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NearbyTechnician'
+
+  /technicians/availability/{technicianId}:
+    get:
+      tags: [Technicians]
+      summary: Vérifier la disponibilité d'un technicien
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Disponibilité
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isAvailable:
+                    type: boolean
+                  maxConcurrentInterventions:
+                    type: integer
+
+  # ==================== PARTNERS ====================
+  /partners/apply:
+    post:
+      tags: [Partners]
+      summary: Soumettre une candidature partenaire
+      description: |
+        Crée un utilisateur (role=technician, is_active=false) 
+        et une entrée partner_applications.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerApplicationData'
+      responses:
+        '201':
+          description: Candidature soumise
+
+  /partners/profile/{userId}:
+    get:
+      tags: [Partners]
+      summary: Profil partenaire complet
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Profil partenaire
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartnerProfile'
+    patch:
+      tags: [Partners]
+      summary: Mettre à jour le profil partenaire
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartnerProfileUpdate'
+      responses:
+        '200':
+          description: Profil mis à jour
+
+  # ==================== RATINGS ====================
+  /ratings/intervention/{interventionId}:
+    get:
+      tags: [Ratings]
+      summary: Note d'une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Note trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rating'
+    post:
+      tags: [Ratings]
+      summary: Créer une note
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [clientId, rating]
+              properties:
+                clientId:
+                  type: string
+                  format: uuid
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+      responses:
+        '201':
+          description: Note créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rating'
+
+  /ratings/{id}:
+    put:
+      tags: [Ratings]
+      summary: Modifier une note
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+      responses:
+        '200':
+          description: Note modifiée
+
+  /ratings/technician/{technicianId}/average:
+    get:
+      tags: [Ratings]
+      summary: Note moyenne d'un technicien
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Note moyenne
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  average:
+                    type: number
+                  count:
+                    type: integer
+
+  # ==================== MESSAGES ====================
+  /messages/intervention/{interventionId}:
+    get:
+      tags: [Messages]
+      summary: Messages d'une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste des messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InterventionMessage'
+    post:
+      tags: [Messages]
+      summary: Envoyer un message
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [senderId, senderRole, message]
+              properties:
+                senderId:
+                  type: string
+                  format: uuid
+                senderRole:
+                  type: string
+                  enum: [technician, client]
+                message:
+                  type: string
+      responses:
+        '201':
+          description: Message envoyé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterventionMessage'
+
+  /messages/intervention/{interventionId}/read:
+    post:
+      tags: [Messages]
+      summary: Marquer les messages comme lus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Messages marqués comme lus
+
+  /messages/intervention/{interventionId}/unread-count:
+    get:
+      tags: [Messages]
+      summary: Nombre de messages non lus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Compteur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  # ==================== PHOTOS & WORK PHOTOS ====================
+  /photos/upload:
+    post:
+      tags: [Photos]
+      summary: Upload de photos d'intervention
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [interventionId, files]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: URLs des photos uploadées
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  format: uri
+
+  /work-photos:
+    post:
+      tags: [WorkPhotos]
+      summary: Upload de photos de travail (avant/après)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [interventionId, photoType, uploadedBy, files]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                photoType:
+                  type: string
+                  enum: [before, after]
+                uploadedBy:
+                  type: string
+                  format: uuid
+                description:
+                  type: string
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '201':
+          description: Photos créées
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkPhoto'
+
+  /work-photos/intervention/{interventionId}:
+    get:
+      tags: [WorkPhotos]
+      summary: Photos de travail d'une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: photoType
+          in: query
+          schema:
+            type: string
+            enum: [before, after]
+      responses:
+        '200':
+          description: Liste des photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkPhoto'
+
+  /work-photos/intervention/{interventionId}/counts:
+    get:
+      tags: [WorkPhotos]
+      summary: Comptage des photos par type
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Compteurs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  before:
+                    type: integer
+                  after:
+                    type: integer
+
+  /work-photos/{photoId}:
+    delete:
+      tags: [WorkPhotos]
+      summary: Supprimer une photo de travail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Photo supprimée
+
+  # ==================== PAYMENT ====================
+  /payment/intent:
+    post:
+      tags: [Payment]
+      summary: Créer un PaymentIntent Stripe
+      description: |
+        Crée une entrée payment_authorizations et un PaymentIntent Stripe.
+        Retourne le clientSecret pour Stripe Elements.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, clientEmail]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                amount:
+                  type: number
+                  description: Montant en euros
+                currency:
+                  type: string
+                  default: eur
+                clientEmail:
+                  type: string
+                  format: email
+                clientPhone:
+                  type: string
+      responses:
+        '200':
+          description: PaymentIntent créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  clientSecret:
+                    type: string
+
+  /payment/authorization:
+    post:
+      tags: [Payment]
+      summary: Créer une autorisation de paiement (redirect)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId, amount, clientEmail]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                currency:
+                  type: string
+                  default: eur
+                clientEmail:
+                  type: string
+                  format: email
+                clientPhone:
+                  type: string
+      responses:
+        '200':
+          description: Autorisation créée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  checkoutUrl:
+                    type: string
+                    format: uri
+
+  /payment/authorization/{id}:
+    get:
+      tags: [Payment]
+      summary: Obtenir une autorisation par ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Autorisation trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAuthorization'
+
+  /payment/authorization/by-intervention/{interventionId}:
+    get:
+      tags: [Payment]
+      summary: Autorisation par intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Autorisation trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentAuthorization'
+
+  /payment/authorization/{id}/status:
+    put:
+      tags: [Payment]
+      summary: Mettre à jour le statut d'une autorisation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, authorized, captured, cancelled, failed]
+      responses:
+        '200':
+          description: Statut mis à jour
+
+  /payment/authorization/{id}/link-intervention:
+    post:
+      tags: [Payment]
+      summary: Associer une autorisation à une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Autorisation liée
+
+  /payment/capture:
+    post:
+      tags: [Payment]
+      summary: Capturer un paiement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId, amount]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: integer
+                  description: Montant en centimes
+      responses:
+        '200':
+          description: Paiement capturé
+
+  /payment/cancel:
+    post:
+      tags: [Payment]
+      summary: Annuler une autorisation de paiement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Autorisation annulée
+
+  /payment/increment-authorization:
+    post:
+      tags: [Payment]
+      summary: Incrémenter une autorisation existante
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId, additionalAmount]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                additionalAmount:
+                  type: number
+      responses:
+        '200':
+          description: Autorisation incrémentée
+
+  # ==================== CANCELLATION ====================
+  /cancellation/cancel-with-fees:
+    post:
+      tags: [Cancellation]
+      summary: Annuler une intervention avec frais de déplacement
+      description: |
+        Si le technicien est arrivé ou en route (< 5 min), des frais de déplacement
+        sont capturés. Une facture d'annulation est envoyée par email.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId, reason]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+                forceChargeFees:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Résultat de l'annulation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancellationResult'
+
+  # ==================== SCHEDULE ====================
+  /schedule/{technicianId}:
+    get:
+      tags: [Schedule]
+      summary: Planning hebdomadaire d'un technicien
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Planning
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TechnicianSchedule'
+
+  /schedule/{technicianId}/initialize:
+    post:
+      tags: [Schedule]
+      summary: Initialiser un planning par défaut (lun-ven 8h-18h)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Planning initialisé
+
+  /schedule/{technicianId}/day:
+    put:
+      tags: [Schedule]
+      summary: Mettre à jour un jour de planning
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [dayOfWeek, isWorkingDay, startTime, endTime]
+              properties:
+                dayOfWeek:
+                  type: integer
+                  minimum: 0
+                  maximum: 6
+                isWorkingDay:
+                  type: boolean
+                startTime:
+                  type: string
+                  example: "08:00:00"
+                endTime:
+                  type: string
+                  example: "18:00:00"
+      responses:
+        '200':
+          description: Jour mis à jour
+
+  /schedule/{technicianId}/overrides:
+    get:
+      tags: [Schedule]
+      summary: Exceptions de planning
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Liste des exceptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScheduleOverride'
+    post:
+      tags: [Schedule]
+      summary: Ajouter/modifier une exception de planning
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [date, isAvailable]
+              properties:
+                date:
+                  type: string
+                  format: date
+                isAvailable:
+                  type: boolean
+                startTime:
+                  type: string
+                endTime:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Exception créée/modifiée
+
+  /schedule/overrides/{overrideId}:
+    delete:
+      tags: [Schedule]
+      summary: Supprimer une exception
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: overrideId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Exception supprimée
+
+  /schedule/{technicianId}/available-at:
+    get:
+      tags: [Schedule]
+      summary: Vérifier si un technicien est disponible à un moment donné
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: datetime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Résultat
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+
+  # ==================== REVENUE ====================
+  /revenue/{technicianId}/stats:
+    get:
+      tags: [Revenue]
+      summary: Statistiques de revenus (aujourd'hui, semaine, mois)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stats de revenus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevenueStats'
+
+  /revenue/{technicianId}/weekly:
+    get:
+      tags: [Revenue]
+      summary: Statistiques hebdomadaires
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stats hebdo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WeeklyStats'
+
+  /revenue/{technicianId}/performance:
+    get:
+      tags: [Revenue]
+      summary: Statistiques de performance technicien
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stats de performance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  completedMissions:
+                    type: integer
+                  acceptanceRate:
+                    type: number
+                  averageRating:
+                    type: number
+                    nullable: true
+
+  /revenue/{technicianId}/commission-rate:
+    get:
+      tags: [Revenue]
+      summary: Taux de commission du technicien
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Taux de commission
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rate:
+                    type: number
+
+  /revenue/{technicianId}/payment-periods:
+    get:
+      tags: [Revenue]
+      summary: Périodes de paiement
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Périodes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentPeriod'
+
+  /revenue/{technicianId}/payout-history:
+    get:
+      tags: [Revenue]
+      summary: Historique des versements
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: technicianId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Historique
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentPeriod'
+
+  # ==================== STATISTICS ====================
+  /statistics/daily:
+    get:
+      tags: [Statistics]
+      summary: Statistiques quotidiennes (créées/complétées)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Stats journalières
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                    created:
+                      type: integer
+                    completed:
+                      type: integer
+
+  /statistics/categories:
+    get:
+      tags: [Statistics]
+      summary: Répartition par catégorie
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stats par catégorie
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    category:
+                      type: string
+                    count:
+                      type: integer
+                    percentage:
+                      type: number
+
+  /statistics/statuses:
+    get:
+      tags: [Statistics]
+      summary: Répartition par statut
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stats par statut
+
+  /statistics/performance:
+    get:
+      tags: [Statistics]
+      summary: Statistiques de performance globales
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Performance globale
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlobalPerformanceStats'
+
+  /statistics/technicians:
+    get:
+      tags: [Statistics]
+      summary: Statistiques par technicien
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stats par technicien
+
+  # ==================== PERFORMANCE ====================
+  /performance/technicians:
+    get:
+      tags: [Performance]
+      summary: Performances des techniciens par période
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, yearly]
+      responses:
+        '200':
+          description: Performances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TechnicianPerformance'
+
+  /performance/trends:
+    get:
+      tags: [Performance]
+      summary: Tendances de performance
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        '200':
+          description: Tendances
+
+  /performance/zones:
+    get:
+      tags: [Performance]
+      summary: Zones d'intervention (heatmap)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Zones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ZoneStats'
+
+  /performance/top-technicians:
+    get:
+      tags: [Performance]
+      summary: Top techniciens
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 7
+      responses:
+        '200':
+          description: Top techniciens
+
+  # ==================== CONFIGURATION ====================
+  /configuration/dispatch-algorithm:
+    get:
+      tags: [Configuration]
+      summary: Configuration de l'algorithme de dispatch
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Configuration active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DispatchAlgorithmConfig'
+    put:
+      tags: [Configuration]
+      summary: Mettre à jour la config de dispatch
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                weightProximity:
+                  type: integer
+                weightSkills:
+                  type: integer
+                weightWorkload:
+                  type: integer
+                weightRating:
+                  type: integer
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Configuration mise à jour
+
+  /configuration/history:
+    get:
+      tags: [Configuration]
+      summary: Historique des changements de configuration
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tableName
+          in: query
+          schema:
+            type: string
+        - name: recordId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Historique
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConfigurationHistoryEntry'
+
+  # ==================== PRICING ====================
+  /pricing/priority-multipliers:
+    get:
+      tags: [Pricing]
+      summary: Liste des multiplicateurs de priorité
+      responses:
+        '200':
+          description: Multiplicateurs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PriorityMultiplier'
+
+  /pricing/priority-multipliers/{id}:
+    patch:
+      tags: [Pricing]
+      summary: Modifier un multiplicateur
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [multiplier]
+              properties:
+                multiplier:
+                  type: number
+      responses:
+        '200':
+          description: Multiplicateur mis à jour
+
+  # ==================== HISTORY ====================
+  /history/intervention/{interventionId}:
+    get:
+      tags: [Interventions]
+      summary: Historique d'une intervention
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Historique
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InterventionHistory'
+    post:
+      tags: [Interventions]
+      summary: Ajouter une entrée d'historique
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interventionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, action]
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                action:
+                  type: string
+                oldValue:
+                  type: string
+                  nullable: true
+                newValue:
+                  type: string
+                  nullable: true
+                comment:
+                  type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Entrée ajoutée
+
+  # ==================== QUESTIONNAIRE ====================
+  /questionnaire/tree:
+    get:
+      tags: [Questionnaire]
+      summary: Arbre complet du questionnaire dynamique
+      description: |
+        Retourne l'arbre de questions/réponses/résultats pour tous les domaines.
+        Structuré par domaine (plumbing, locksmith, etc.) avec questions imbriquées.
+      responses:
+        '200':
+          description: Arbre du questionnaire
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/QuestionnaireDomain'
+
+  # ==================== INVOICE ====================
+  /invoice/generate:
+    post:
+      tags: [Invoice]
+      summary: Générer et télécharger une facture PDF
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Facture PDF
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /invoice/send-email:
+    post:
+      tags: [Invoice]
+      summary: Envoyer la facture par email
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Email envoyé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  # ==================== SITE SETTINGS ====================
+  /site-settings:
+    get:
+      tags: [SiteSettings]
+      summary: Obtenir un paramètre du site
+      parameters:
+        - name: key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paramètre
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settingKey:
+                    type: string
+                  settingValue:
+                    type: string
+
+  # ==================== NOTIFICATIONS (Edge Functions) ====================
+  /notifications/status-change:
+    post:
+      tags: [Notifications]
+      summary: Notifier le client d'un changement de statut
+      description: Envoie email (Resend), SMS (Twilio) et push (FCM)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [interventionId, newStatus]
+              properties:
+                interventionId:
+                  type: string
+                  format: uuid
+                newStatus:
+                  type: string
+                oldStatus:
+                  type: string
+      responses:
+        '200':
+          description: Notifications envoyées
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  results:
+                    type: object
+                    properties:
+                      email:
+                        type: boolean
+                      sms:
+                        type: boolean
+                      push:
+                        type: boolean
+
+  /notifications/quote-modification:
+    post:
+      tags: [Notifications]
+      summary: Notifier le client d'une modification de devis
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modificationId]
+              properties:
+                modificationId:
+                  type: string
+                  format: uuid
+                clientEmail:
+                  type: string
+                  format: email
+                  nullable: true
+                clientPhone:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Notifications envoyées
+
+  /notifications/welcome-admin:
+    post:
+      tags: [Notifications]
+      summary: Envoyer un email de bienvenue admin/manager
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, firstName, lastName, role, tempPassword]
+              properties:
+                email:
+                  type: string
+                  format: email
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                role:
+                  type: string
+                  enum: [admin, manager]
+                tempPassword:
+                  type: string
+                loginUrl:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Email envoyé
+
+  # ==================== STORAGE ====================
+  /storage/upload:
+    post:
+      tags: [Storage]
+      summary: Upload générique de fichier
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [bucket, file]
+              properties:
+                bucket:
+                  type: string
+                  enum: [intervention-photos, technician-photos]
+                folder:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: URL du fichier uploadé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+
+  /storage/delete:
+    delete:
+      tags: [Storage]
+      summary: Supprimer un fichier
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bucket
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: fileUrl
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+      responses:
+        '204':
+          description: Fichier supprimé
+
+  # ==================== GEOCODING ====================
+  /geocoding/forward:
+    get:
+      tags: [Geocoding]
+      summary: Géocodage d'une adresse
+      description: Utilise Nominatim (OpenStreetMap) en interne
+      parameters:
+        - name: address
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: city
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: postalCode
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Coordonnées GPS
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  latitude:
+                    type: number
+                    format: double
+                  longitude:
+                    type: number
+                    format: double
+                  displayName:
+                    type: string
+
+  /geocoding/reverse:
+    get:
+      tags: [Geocoding]
+      summary: Reverse géocodage
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+      responses:
+        '200':
+          description: Adresse trouvée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  city:
+                    type: string
+                    nullable: true
+                  department:
+                    type: string
+                    nullable: true
+                  postalCode:
+                    type: string
+                    nullable: true
+                  displayName:
+                    type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ===== AUTH =====
+    LoginCredentials:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    RegisterCredentials:
+      type: object
+      required: [email, password, firstName, lastName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        isCompany:
+          type: boolean
+        companyName:
+          type: string
+        companyAddress:
+          type: string
+        siren:
+          type: string
+        vatNumber:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        user:
+          $ref: '#/components/schemas/User'
+        error:
+          type: string
+        requiresEmailVerification:
+          type: boolean
+
+    UserRole:
+      type: string
+      enum: [admin, manager, technician, client, guest]
+
+    AppRole:
+      type: string
+      enum: [admin, manager, technician, client, guest]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        role:
+          $ref: '#/components/schemas/UserRole'
+        isActive:
+          type: boolean
+        isCompany:
+          type: boolean
+        companyName:
+          type: string
+          nullable: true
+        companyAddress:
+          type: string
+          nullable: true
+        siren:
+          type: string
+          nullable: true
+        vatNumber:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        companyLogoUrl:
+          type: string
+          nullable: true
+        mustChangePassword:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UserRoleRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/AppRole'
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+          format: uuid
+          nullable: true
+
+    ManagerPermissions:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        canCreateManagers:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        grantedBy:
+          type: string
+          format: uuid
+          nullable: true
+
+    # ===== INTERVENTIONS =====
+    InterventionStatus:
+      type: string
+      enum: [new, pending_payment, payment_authorized, dispatching, assigned, on_route, arrived, in_progress, completed, cancelled]
+
+    InterventionCategory:
+      type: string
+      enum: [locksmith, plumbing, electricity, glazing, heating, aircon]
+
+    Intervention:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+          format: uuid
+          nullable: true
+        technicianId:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          $ref: '#/components/schemas/InterventionCategory'
+        priority:
+          type: string
+          enum: [low, normal, urgent, emergency]
+        status:
+          $ref: '#/components/schemas/InterventionStatus'
+        title:
+          type: string
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        estimatedPrice:
+          type: number
+          nullable: true
+        finalPrice:
+          type: number
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        photos:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        trackingCode:
+          type: string
+          nullable: true
+        clientEmail:
+          type: string
+          format: email
+          nullable: true
+        clientPhone:
+          type: string
+          nullable: true
+        quoteSignedAt:
+          type: string
+          format: date-time
+          nullable: true
+        quoteSignatureData:
+          type: string
+          nullable: true
+        quotePdfUrl:
+          type: string
+          format: uri
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateInterventionRequest:
+      type: object
+      required: [category, address, city, postalCode]
+      properties:
+        clientId:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          $ref: '#/components/schemas/InterventionCategory'
+        description:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        priority:
+          type: string
+          default: normal
+        clientEmail:
+          type: string
+          format: email
+        clientPhone:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+        questionnaireAnswers:
+          type: array
+          items:
+            type: string
+        prixMin:
+          type: number
+          nullable: true
+        prixMax:
+          type: number
+          nullable: true
+
+    InterventionHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        interventionId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        action:
+          type: string
+        oldValue:
+          type: string
+          nullable: true
+        newValue:
+          type: string
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    # ===== DISPATCH =====
+    DispatchResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        assignedTechnician:
+          type: object
+          properties:
+            userId:
+              type: string
+              format: uuid
+            score:
+              type: number
+            distanceKm:
+              type: number
+            estimatedArrivalMinutes:
+              type: number
+        timeoutAt:
+          type: string
+          format: date-time
+        totalCandidates:
+          type: integer
+        requiresManualAssignment:
+          type: boolean
+        newTechnicianId:
+          type: string
+          format: uuid
+
+    DispatchAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        interventionId:
+          type: string
+          format: uuid
+        technicianId:
+          type: string
+          format: uuid
+        score:
+          type: number
+        scoreBreakdown:
+          type: object
+          properties:
+            proximity:
+              type: number
+            skills:
+              type: number
+            workload:
+              type: number
+            rating:
+              type: number
+        status:
+          type: string
+          enum: [pending, accepted, rejected, timeout, cancelled]
+        attemptOrder:
+          type: integer
+        notifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+        respondedAt:
+          type: string
+          format: date-time
+          nullable: true
+        timeoutAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    # ===== QUOTES =====
+    QuoteLine:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        interventionId:
+          type: string
+          format: uuid
+        lineType:
+          type: string
+          enum: [displacement, security, repair]
+        label:
+          type: string
+        basePrice:
+          type: number
+        multiplier:
+          type: number
+        calculatedPrice:
+          type: number
+        displayOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    QuoteLineInput:
+      type: object
+      required: [lineType, label, basePrice, multiplier]
+      properties:
+        lineType:
+          type: string
+          enum: [displacement, security, repair]
+        label:
+          type: string
+        basePrice:
+          type: number
+        multiplier:
+          type: number
+
+    QuoteModification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        interventionId:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, approved, declined]
+        totalAdditionalAmount:
+          type: number
+        clientNotifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+        clientRespondedAt:
+          type: string
+          format: date-time
+          nullable: true
+        notificationToken:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteModificationItem'
+
+    QuoteModificationItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        modificationId:
+          type: string
+          format: uuid
+        itemType:
+          type: string
+          enum: [service, equipment, other]
+        label:
+          type: string
+        description:
+          type: string
+          nullable: true
+        unitPrice:
+          type: number
+        quantity:
+          type: integer
+        totalPrice:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateQuoteModificationInput:
+      type: object
+      required: [interventionId, createdBy, items]
+      properties:
+        interventionId:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            type: object
+            required: [itemType, label, unitPrice, quantity]
+            properties:
+              itemType:
+                type: string
+                enum: [service, equipment, other]
+              label:
+                type: string
+              description:
+                type: string
+              unitPrice:
+                type: number
+              quantity:
+                type: integer
+
+    # ===== SERVICES =====
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        displayOrder:
+          type: integer
+        basePrice:
+          type: number
+        defaultPriority:
+          type: string
+        displacementPrice:
+          type: number
+        securityPrice:
+          type: number
+        repairPrice:
+          type: number
+        vatRateIndividual:
+          type: number
+        vatRateProfessional:
+          type: number
+        targetArrivalTimeMinutes:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ServiceUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        displacementPrice:
+          type: number
+        securityPrice:
+          type: number
+        repairPrice:
+          type: number
+        vatRateIndividual:
+          type: number
+        vatRateProfessional:
+          type: number
+        displayOrder:
+          type: integer
+        targetArrivalTimeMinutes:
+          type: integer
+
+    # ===== TECHNICIANS =====
+    TechnicianWithLocation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        companyName:
+          type: string
+        currentCity:
+          type: string
+          nullable: true
+        department:
+          type: string
+          nullable: true
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        skills:
+          type: array
+          items:
+            type: string
+        averageRating:
+          type: number
+          nullable: true
+        totalRatings:
+          type: integer
+        user:
+          type: object
+          properties:
+            firstName:
+              type: string
+            lastName:
+              type: string
+
+    NearbyTechnician:
+      allOf:
+        - $ref: '#/components/schemas/TechnicianWithLocation'
+        - type: object
+          properties:
+            distanceKm:
+              type: number
+            estimatedTravelTimeMinutes:
+              type: integer
+            estimatedArrivalTime:
+              type: string
+              format: date-time
+
+    # ===== PARTNERS =====
+    PartnerApplicationData:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - phone
+        - birthDate
+        - birthPlace
+        - address
+        - postalCode
+        - city
+        - password
+        - companyName
+        - siret
+        - legalStatus
+        - insuranceCompany
+        - insurancePolicyNumber
+        - insuranceExpiryDate
+        - skills
+        - yearsExperience
+        - motivation
+        - bankAccountHolder
+        - bankName
+        - iban
+        - bic
+        - termsAccepted
+        - dataAccuracyConfirmed
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        birthPlace:
+          type: string
+        address:
+          type: string
+        postalCode:
+          type: string
+        city:
+          type: string
+        password:
+          type: string
+        companyName:
+          type: string
+        siret:
+          type: string
+        vatNumber:
+          type: string
+        legalStatus:
+          type: string
+        insuranceCompany:
+          type: string
+        insurancePolicyNumber:
+          type: string
+        insuranceExpiryDate:
+          type: string
+          format: date
+        hasDecennialInsurance:
+          type: boolean
+        skills:
+          type: array
+          items:
+            type: string
+        yearsExperience:
+          type: integer
+        motivation:
+          type: string
+        bankAccountHolder:
+          type: string
+        bankName:
+          type: string
+        iban:
+          type: string
+        bic:
+          type: string
+        termsAccepted:
+          type: boolean
+        dataAccuracyConfirmed:
+          type: boolean
+
+    PartnerProfile:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            firstName:
+              type: string
+            lastName:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
+              nullable: true
+        application:
+          type: object
+          properties:
+            birthDate:
+              type: string
+            birthPlace:
+              type: string
+            address:
+              type: string
+            postalCode:
+              type: string
+            city:
+              type: string
+            companyName:
+              type: string
+            siret:
+              type: string
+            vatNumber:
+              type: string
+              nullable: true
+            legalStatus:
+              type: string
+            insuranceCompany:
+              type: string
+            insurancePolicyNumber:
+              type: string
+            insuranceExpiryDate:
+              type: string
+            hasDecennialInsurance:
+              type: boolean
+            skills:
+              type: array
+              items:
+                type: string
+            yearsExperience:
+              type: integer
+            motivation:
+              type: string
+            bankAccountHolder:
+              type: string
+            bankName:
+              type: string
+            iban:
+              type: string
+            bic:
+              type: string
+
+    PartnerProfileUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        birthDate:
+          type: string
+        birthPlace:
+          type: string
+        address:
+          type: string
+        postalCode:
+          type: string
+        city:
+          type: string
+        companyName:
+          type: string
+        siret:
+          type: string
+        vatNumber:
+          type: string
+        legalStatus:
+          type: string
+        insuranceCompany:
+          type: string
+        insurancePolicyNumber:
+          type: string
+        insuranceExpiryDate:
+          type: string
+        hasDecennialInsurance:
+          type: boolean
+        skills:
+          type: array
+          items:
+            type: string
+        yearsExperience:
+          type: integer
+        motivation:
+          type: string
+        bankAccountHolder:
+          type: string
+        bankName:
+          type: string
+        iban:
+          type: string
+        bic:
+          type: string
+
+    # ===== RATINGS =====
+    Rating:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        interventionId:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ===== MESSAGES =====
+    InterventionMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        interventionId:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        senderRole:
+          type: string
+          enum: [technician, client]
+        message:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    # ===== WORK PHOTOS =====
+    WorkPhoto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        interventionId:
+          type: string
+          format: uuid
+        photoUrl:
+          type: string
+          format: uri
+        photoType:
+          type: string
+          enum: [before, after]
+        uploadedBy:
+          type: string
+          format: uuid
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    # ===== PAYMENT =====
+    PaymentAuthorization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        interventionId:
+          type: string
+          format: uuid
+        paymentProvider:
+          type: string
+        providerPaymentId:
+          type: string
+          nullable: true
+        providerCustomerId:
+          type: string
+          nullable: true
+        amountAuthorized:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, authorized, captured, cancelled, failed]
+        clientEmail:
+          type: string
+          nullable: true
+        clientPhone:
+          type: string
+          nullable: true
+        authorizationRequestedAt:
+          type: string
+          format: date-time
+        authorizationConfirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+        capturedAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ===== CANCELLATION =====
+    CancellationResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        hasFees:
+          type: boolean
+        feeAmount:
+          type: number
+        invoiceSent:
+          type: boolean
+        error:
+          type: string
+
+    # ===== SCHEDULE =====
+    TechnicianSchedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        technicianId:
+          type: string
+          format: uuid
+        dayOfWeek:
+          type: integer
+          minimum: 0
+          maximum: 6
+          description: "0=Dimanche, 1=Lundi, ..., 6=Samedi"
+        startTime:
+          type: string
+          example: "08:00:00"
+        endTime:
+          type: string
+          example: "18:00:00"
+        isWorkingDay:
+          type: boolean
+
+    ScheduleOverride:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        technicianId:
+          type: string
+          format: uuid
+        overrideDate:
+          type: string
+          format: date
+        isAvailable:
+          type: boolean
+        startTime:
+          type: string
+          nullable: true
+        endTime:
+          type: string
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+
+    # ===== REVENUE =====
+    RevenueStats:
+      type: object
+      properties:
+        today:
+          type: number
+        thisWeek:
+          type: number
+        thisMonth:
+          type: number
+
+    WeeklyStats:
+      type: object
+      properties:
+        grossRevenue:
+          type: number
+        missionsCount:
+          type: integer
+        percentageChange:
+          type: number
+          nullable: true
+
+    PaymentPeriod:
+      type: object
+      properties:
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        grossRevenue:
+          type: number
+        commissionRate:
+          type: number
+        netRevenue:
+          type: number
+        paymentDate:
+          type: string
+          format: date
+        isPaid:
+          type: boolean
+
+    # ===== STATISTICS =====
+    GlobalPerformanceStats:
+      type: object
+      properties:
+        avgResolutionTimeMinutes:
+          type: integer
+        avgResolutionTimeFormatted:
+          type: string
+        totalInterventions:
+          type: integer
+        completedInterventions:
+          type: integer
+        completionRate:
+          type: number
+        urgentInterventions:
+          type: integer
+        urgentCompletionRate:
+          type: number
+
+    # ===== PERFORMANCE =====
+    TechnicianPerformance:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        companyName:
+          type: string
+          nullable: true
+        totalInterventions:
+          type: integer
+        completedInterventions:
+          type: integer
+        revenue:
+          type: number
+        avgResponseTimeSeconds:
+          type: integer
+          nullable: true
+        avgArrivalTimeSeconds:
+          type: integer
+          nullable: true
+        avgRating:
+          type: number
+          nullable: true
+        acceptanceRate:
+          type: number
+
+    ZoneStats:
+      type: object
+      properties:
+        city:
+          type: string
+        postalCode:
+          type: string
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+        count:
+          type: integer
+
+    # ===== CONFIGURATION =====
+    DispatchAlgorithmConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        weightProximity:
+          type: integer
+        weightSkills:
+          type: integer
+        weightWorkload:
+          type: integer
+        weightRating:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+          format: uuid
+          nullable: true
+
+    ConfigurationHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tableName:
+          type: string
+        recordId:
+          type: string
+          format: uuid
+        fieldName:
+          type: string
+        oldValue:
+          type: string
+          nullable: true
+        newValue:
+          type: string
+          nullable: true
+        changedBy:
+          type: string
+          format: uuid
+        changedAt:
+          type: string
+          format: date-time
+        changeReason:
+          type: string
+          nullable: true
+
+    # ===== PRICING =====
+    PriorityMultiplier:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        priority:
+          type: string
+        multiplier:
+          type: number
+        label:
+          type: string
+        displayOrder:
+          type: integer
+        isEnabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # ===== QUESTIONNAIRE =====
+    QuestionnaireDomain:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        icon:
+          type: string
+        color:
+          type: string
+        question:
+          type: string
+        sub:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionnaireOption'
+
+    QuestionnaireOption:
+      type: object
+      properties:
+        label:
+          type: string
+        icon:
+          type: string
+        next:
+          $ref: '#/components/schemas/QuestionnaireNode'
+        result:
+          $ref: '#/components/schemas/QuestionnaireResult'
+
+    QuestionnaireNode:
+      type: object
+      properties:
+        id:
+          type: string
+        question:
+          type: string
+        sub:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionnaireOption'
+
+    QuestionnaireResult:
+      type: object
+      properties:
+        nom:
+          type: string
+        prix:
+          type: string
+        tier:
+          type: string
+          enum: [low, mid, high, xhigh]
+        desc:
+          type: string
+        variantes:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        meta:
+          type: array
+          items:
+            type: string
