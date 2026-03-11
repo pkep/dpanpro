@@ -569,15 +569,10 @@ export function PayoutsTab() {
                           )}
                         </div>
                         {isSelected && (
-                          <div className="w-32" onClick={(e) => e.stopPropagation()}>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={payoutAmounts[tech.id] || ''}
-                              onChange={(e) => setPayoutAmounts(prev => ({ ...prev, [tech.id]: e.target.value }))}
-                              placeholder="Montant"
-                              className="text-right"
-                            />
+                          <div className="w-32 text-right">
+                            <span className="font-semibold text-primary">
+                              {formatCurrency(tech.netRevenue)}
+                            </span>
                           </div>
                         )}
                       </div>
