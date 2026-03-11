@@ -31,7 +31,9 @@ interface PaymentRow {
   intervention_title?: string;
   intervention_address?: string;
   intervention_city?: string;
+  intervention_status?: string;
   client_name?: string;
+  isCancellationFee?: boolean;
 }
 
 const STATUS_LABELS: Record<string, string> = {
