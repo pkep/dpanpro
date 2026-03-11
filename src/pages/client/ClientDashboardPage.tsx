@@ -180,7 +180,7 @@ export default function ClientDashboardPage() {
 
   // Filter interventions
   const activeInterventions = interventions.filter(i => 
-    ['new', 'assigned', 'on_route', 'in_progress'].includes(i.status)
+    !['completed', 'cancelled'].includes(i.status)
   ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const recentCompletedInterventions = interventions.filter(i => 
