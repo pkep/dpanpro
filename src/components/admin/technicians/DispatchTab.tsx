@@ -183,27 +183,25 @@ export function DispatchTab() {
               {interventions.map((intervention) => (
                 <div
                   key={intervention.id}
-                  className="border rounded-lg p-4 flex items-center justify-between"
+                  className="border rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{intervention.title}</span>
-                      <Badge
-                        variant={intervention.priority === 'urgent' ? 'destructive' : 'secondary'}
-                      >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="font-medium truncate">{intervention.title}</span>
+                      <Badge variant={intervention.priority === 'urgent' ? 'destructive' : 'secondary'}>
                         {PRIORITY_LABELS[intervention.priority]}
                       </Badge>
                       <Badge variant="outline">
                         {CATEGORY_LABELS[intervention.category]}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {intervention.address}, {intervention.postal_code} {intervention.city}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1 truncate">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{intervention.address}, {intervention.postal_code} {intervention.city}</span>
                       </span>
                       <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                        <Clock className="h-3 w-3 shrink-0" />
                         {format(new Date(intervention.created_at), 'dd MMM HH:mm', { locale: fr })}
                       </span>
                     </div>
@@ -217,6 +215,7 @@ export function DispatchTab() {
                   <Button
                     variant="default"
                     size="sm"
+                    className="w-full sm:w-auto shrink-0"
                     onClick={() => setSelectedIntervention(intervention)}
                     disabled={!intervention.latitude || !intervention.longitude}
                   >

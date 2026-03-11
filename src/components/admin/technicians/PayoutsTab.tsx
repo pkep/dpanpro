@@ -443,20 +443,20 @@ export function PayoutsTab() {
         {/* Period Info Card */}
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-primary" />
+                <Calendar className="h-5 w-5 text-primary shrink-0" />
                 <div>
-                  <p className="font-medium">Période de versement : {format(periodStart, 'MMMM yyyy', { locale: fr })}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-sm sm:text-base">Période : {format(periodStart, 'MMMM yyyy', { locale: fr })}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Du {format(periodStart, 'dd MMMM', { locale: fr })} au {format(periodEnd, 'dd MMMM yyyy', { locale: fr })}
                   </p>
                 </div>
               </div>
               {pendingTechnicians.length > 0 && (
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 self-start sm:self-auto">
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  {pendingTechnicians.length} technicien(s) sans versement
+                  {pendingTechnicians.length} sans versement
                 </Badge>
               )}
             </div>
@@ -525,7 +525,7 @@ export function PayoutsTab() {
                     return (
                       <div
                         key={tech.id}
-                        className={`border rounded-lg p-3 flex items-center gap-3 transition-colors cursor-pointer ${
+                        className={`border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center gap-3 transition-colors cursor-pointer ${
                           isSelected 
                             ? 'bg-primary/5 border-primary/30' 
                             : 'hover:bg-accent/50'
@@ -548,7 +548,7 @@ export function PayoutsTab() {
                           </div>
                           <p className="text-sm text-muted-foreground">{tech.email}</p>
                         </div>
-                        <div className="text-right min-w-[200px]">
+                        <div className="text-right min-w-0 sm:min-w-[200px]">
                           {tech.grossRevenue > 0 ? (
                             <div className="space-y-0.5">
                               <div className="flex justify-between text-xs text-muted-foreground">
@@ -602,7 +602,7 @@ export function PayoutsTab() {
                   </CardDescription>
                 </div>
               </div>
-              <div className="relative w-72">
+              <div className="relative w-full sm:w-72">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Filtrer par nom, prénom, email..."
@@ -787,7 +787,7 @@ export function PayoutsTab() {
                   </CardDescription>
                 </div>
               </div>
-              <div className="relative w-64">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Nom, prénom ou email..."
@@ -813,7 +813,7 @@ export function PayoutsTab() {
                   {payouts.map((payout) => (
                     <div
                       key={payout.id}
-                      className="border rounded-lg p-4 flex items-center justify-between"
+                      className="border rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -846,11 +846,11 @@ export function PayoutsTab() {
                         )}
                       </div>
                       {payout.status === 'pending' && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-green-600 hover:text-green-700"
+                            className="flex-1 sm:flex-none text-green-600 hover:text-green-700"
                             onClick={() => handleUpdateStatus(payout.id, 'paid')}
                           >
                             Marquer payé
@@ -858,7 +858,7 @@ export function PayoutsTab() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-destructive"
+                            className="flex-1 sm:flex-none text-destructive"
                             onClick={() => handleUpdateStatus(payout.id, 'cancelled')}
                           >
                             Annuler
@@ -871,7 +871,7 @@ export function PayoutsTab() {
 
                 {/* Pagination */}
                 {historyTotalPages > 1 && (
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4 pt-4 border-t">
                     <p className="text-sm text-muted-foreground">
                       Page {historyPage} sur {historyTotalPages} ({historyTotalCount} versements)
                     </p>
