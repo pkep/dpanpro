@@ -111,6 +111,7 @@ const App = () => (
             <Route path="/admin/settings" element={<AdminSettingsPage />} />
             <Route path="/admin/config-history" element={<AdminConfigHistoryPage />} />
             <Route path="/admin/map" element={<AdminMapPage />} />
+            <Route path="/admin/live-tracking" element={<AdminLiveTrackingPage />} />
             <Route path="/admin/planning" element={<AdminPlanningPage />} />
             
             {/* Shared routes */}
