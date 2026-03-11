@@ -69,6 +69,8 @@ function getEffectiveStatus(status: string, createdAt: string): string {
 const PAGE_SIZE = 10;
 
 export default function AdminPaymentsPage() {
+  const { user } = useAuth();
+  const { hasRole, isLoading: rolesLoading } = useUserRoles();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -81,6 +83,31 @@ export default function AdminPaymentsPage() {
   const [refundAmount, setRefundAmount] = useState('');
   const [refundType, setRefundType] = useState<'full' | 'partial'>('full');
   const [actionLoading, setActionLoading] = useState(false);
+
+  const canAccessPayments = user?.role === 'admin' || hasRole('payment') || hasRole('admin');
+
+  if (!rolesLoading && !canAccessPayments) {
+    return (
+      <AdminLayout title="Paiements">
+        <Card className="max-w-md mx-auto mt-12">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5" />
+              Accès refusé
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Vous n'avez pas le rôle requis pour accéder à la gestion des paiements. Le rôle <strong>payment</strong> ou <strong>admin</strong> est nécessaire.
+            </p>
+            <Button asChild className="w-full">
+              <Link to="/admin">Retour au tableau de bord</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </AdminLayout>
+    );
+  }
 
   const fetchPayments = async () => {
     setLoading(true);
