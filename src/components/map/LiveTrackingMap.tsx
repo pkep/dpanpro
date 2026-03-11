@@ -397,6 +397,13 @@ export function LiveTrackingMap({
 
   return (
     <div className="space-y-4">
+      {/* Search bar */}
+      <MapSearchBar onSelect={(result) => {
+        const zoom = result.type === 'municipality' ? 13 : result.type === 'street' ? 15 : 16;
+        setSearchTarget([result.lat, result.lng]);
+        setSearchZoom(zoom);
+      }} />
+
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-6">
