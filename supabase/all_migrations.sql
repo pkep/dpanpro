@@ -1791,3 +1791,10 @@ CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user_id ON public.email
 ALTER TABLE public.services DROP COLUMN IF EXISTS repair_price;
 ALTER TABLE public.services DROP COLUMN IF EXISTS base_price;
 -- ============================================================
+
+-- ============================================================
+-- Migration: Ajout du rôle 'payment' à l'enum app_role
+-- Date: 2026-03-11
+-- ============================================================
+ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'payment';
+-- ============================================================
