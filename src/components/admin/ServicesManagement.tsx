@@ -297,7 +297,7 @@ export function ServicesManagement() {
                         <span className="font-semibold text-primary">{estimatedPrice.toFixed(2)}</span>
                         <Euro className="h-4 w-4 text-primary" />
                         <span className="text-xs text-muted-foreground">
-                          ({basePrice} × {multiplierValue})
+                          ({totalHT.toFixed(2)} × {multiplierValue})
                         </span>
                       </div>
                     </TableCell>

@@ -1783,3 +1783,11 @@ CREATE POLICY "Anyone can update verification tokens" ON public.email_verificati
 CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_token ON public.email_verification_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_email_verification_tokens_user_id ON public.email_verification_tokens(user_id);
 -- ============================================================
+
+-- ============================================================
+-- Migration: Suppression colonnes obsolètes repair_price et base_price de services
+-- Date: 2026-03-11
+-- ============================================================
+ALTER TABLE public.services DROP COLUMN IF EXISTS repair_price;
+ALTER TABLE public.services DROP COLUMN IF EXISTS base_price;
+-- ============================================================

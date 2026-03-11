@@ -3975,8 +3975,6 @@ components:
           type: number
         securityPrice:
           type: number
-        repairPrice:
-          type: number
         vatRateIndividual:
           type: number
         vatRateProfessional:
