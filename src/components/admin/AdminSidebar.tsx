@@ -21,6 +21,7 @@ import {
   Users,
   BarChart3,
   Map,
+  Radio,
   Calendar,
   Settings,
   Shield,
@@ -35,6 +36,7 @@ const menuItems = [
   { title: "Gestion Techniciens", url: "/admin/technicians", icon: Users },
   { title: "Dashboard Performance", url: "/admin/performance", icon: BarChart3 },
   { title: "Carte Techniciens", url: "/admin/map", icon: Map },
+  { title: "Suivi en temps réel", url: "/admin/live-tracking", icon: Radio },
   { title: "Planning", url: "/admin/planning", icon: Calendar },
 ];
 
