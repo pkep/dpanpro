@@ -25,7 +25,7 @@ import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.se
 import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
 import { quoteModificationsService } from '@/services/supabase/quote-modifications.service';
 import { servicesService } from '@/services/supabase/services.service';
-import { quotePDFService } from '@/services/quote-pdf/quote-pdf.service';
+import { quotePDFService } from '@/services/components/quote-pdf/quote-pdf.service';
 import { interventionsService } from '@/services/supabase/interventions.service';
 import { historyService } from '@/services/supabase/history.service';
 import { paymentService } from '@/services/supabase/payment.service';

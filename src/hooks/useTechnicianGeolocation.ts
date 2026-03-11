@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { techniciansService } from '@/services/supabase/technicians.service';
-import { geocodingService } from '@/services/geocoding/geocoding.service';
+import { geocodingService } from '@/services/components/geocoding/geocoding.service';
 
 interface GeolocationState {
   latitude: number | null;

@@ -231,7 +231,7 @@ export default function TechnicianInterventionPage() {
           // Generate and send quote PDF in background (non-blocking)
           (async () => {
             try {
-              const { quotePDFService } = await import('@/services/quote-pdf/quote-pdf.service');
+              const { quotePDFService } = await import('@/services/components/quote-pdf/quote-pdf.service');
               const fullIntervention = await interventionsService.getIntervention(intervention.id);
               const savedSignature = fullIntervention?.quoteSignatureData || null;
               const { base64, fileName } = await quotePDFService.generateQuoteBase64(fullIntervention, savedSignature);

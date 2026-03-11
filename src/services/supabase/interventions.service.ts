@@ -8,7 +8,7 @@ import type {
 import type { DbIntervention, DbInterventionInsert, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { dispatchService } from '@/services/supabase/dispatch.service';
-import { geocodingService } from '@/services/geocoding/geocoding.service';
+import { geocodingService } from '@/services/components/geocoding/geocoding.service';
 
 class InterventionsService {
   async getInterventions(filters?: {

@@ -23,7 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { exportService } from '@/services/export/export.service';
+import { exportService } from '@/services/components/export/export.service';
 import type { Intervention } from '@/types/intervention.types';
 import { 
   Download, 

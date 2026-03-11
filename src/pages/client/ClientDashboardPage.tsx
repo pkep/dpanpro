@@ -4,7 +4,7 @@ import { ClientLayout } from '@/components/client/ClientLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/supabase/interventions.service';
 import { cancellationService } from '@/services/supabase/cancellation.service';
-import { invoiceService } from '@/services/invoice/invoice.service';
+import { invoiceService } from '@/services/components/invoice/invoice.service';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
 import { Button } from '@/components/ui/button';
