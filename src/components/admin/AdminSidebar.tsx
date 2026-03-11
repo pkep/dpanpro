@@ -47,6 +47,7 @@ const paymentItems = [
 
 const adminOnlyItems = [
   { title: "Administration", url: "/admin/settings", icon: Settings },
+  { title: "Notifications", url: "/admin/notifications", icon: Bell },
   { title: "Historique Config", url: "/admin/config-history", icon: History },
 ];
 
