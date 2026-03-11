@@ -25,9 +25,9 @@ import {
   MapPinCheck
 } from 'lucide-react';
 import { CATEGORY_LABELS, CATEGORY_ICONS, STATUS_LABELS, PRIORITY_LABELS } from '@/types/intervention.types';
-import { interventionsService } from '@/services/interventions/interventions.service';
-import { historyService } from '@/services/history/history.service';
-import { workPhotosService, WorkPhoto } from '@/services/work-photos/work-photos.service';
+import { interventionsService } from '@/services/supabase/interventions.service';
+import { historyService } from '@/services/supabase/history.service';
+import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { InterventionChat } from '@/components/technician/InterventionChat';
