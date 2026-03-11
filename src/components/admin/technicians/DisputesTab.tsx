@@ -492,8 +492,34 @@ export function DisputesTab() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            {/* Filters */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Filtrer par technicien</Label>
+                <Select value={filterTechnicianId} onValueChange={(v) => { setFilterTechnicianId(v); setSelectedInterventionId(''); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tous les techniciens" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les techniciens</SelectItem>
+                    {technicians.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Filtrer par adresse / ville</Label>
+                <Input
+                  value={filterAddress}
+                  onChange={(e) => { setFilterAddress(e.target.value); setSelectedInterventionId(''); }}
+                  placeholder="Rechercher une adresse..."
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label>Intervention</Label>
+              <Label>Intervention ({filteredInterventions.length} résultat{filteredInterventions.length > 1 ? 's' : ''})</Label>
               {loadingInterventions ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -505,7 +531,7 @@ export function DisputesTab() {
                     <SelectValue placeholder="Sélectionner une intervention..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {completedInterventions.map((int) => (
+                    {filteredInterventions.map((int) => (
                       <SelectItem key={int.id} value={int.id}>
                         <span className="flex flex-col">
                           <span>{int.tracking_code || int.title} — {CATEGORY_LABELS[int.category] || int.category}</span>
@@ -513,6 +539,7 @@ export function DisputesTab() {
                             {int.client_name} / {int.technician_name}
                             {int.final_price ? ` — ${int.final_price.toFixed(2)} €` : ''}
                           </span>
+                          <span className="text-xs text-muted-foreground">{int.address}, {int.city}</span>
                         </span>
                       </SelectItem>
                     ))}
@@ -526,6 +553,7 @@ export function DisputesTab() {
                 <p><strong>{selectedIntervention.title}</strong></p>
                 <p>Client : {selectedIntervention.client_name || 'N/A'}</p>
                 <p>Technicien : {selectedIntervention.technician_name || 'N/A'}</p>
+                <p>Adresse : {selectedIntervention.address}, {selectedIntervention.city}</p>
                 {selectedIntervention.final_price && (
                   <p>Montant facturé : <strong>{selectedIntervention.final_price.toFixed(2)} €</strong></p>
                 )}
