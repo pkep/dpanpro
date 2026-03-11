@@ -254,12 +254,12 @@ export function ServicesManagement() {
             </TableHeader>
             <TableBody>
               {services.map((service) => {
-                const basePrice = getDisplayValue(service, 'basePrice') as number;
+                const totalHT = service.displacementPrice + service.securityPrice;
                 const defaultPriority = getDisplayValue(service, 'defaultPriority') as string;
                 const isActive = getDisplayValue(service, 'isActive') as boolean;
                 const multiplier = multipliers.find((m) => m.priority === defaultPriority);
                 const multiplierValue = multiplier ? getMultiplierValue(multiplier) : 1;
-                const estimatedPrice = pricingService.calculateEstimatedPrice(basePrice, multiplierValue);
+                const estimatedPrice = pricingService.calculateEstimatedPrice(totalHT, multiplierValue);
 
                 return (
                   <TableRow key={service.id}>
