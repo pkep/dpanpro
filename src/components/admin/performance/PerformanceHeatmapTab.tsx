@@ -80,22 +80,22 @@ export function PerformanceHeatmapTab() {
             </div>
 
             {/* Legend */}
-            <div className="flex items-center justify-center gap-6 py-2">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-[#22c55e]" />
-                <span className="text-sm text-muted-foreground">Faible</span>
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 py-2">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#22c55e]" />
+                <span className="text-xs sm:text-sm text-muted-foreground">Faible</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-[#eab308]" />
-                <span className="text-sm text-muted-foreground">Modéré</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#eab308]" />
+                <span className="text-xs sm:text-sm text-muted-foreground">Modéré</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-[#f97316]" />
-                <span className="text-sm text-muted-foreground">Élevé</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#f97316]" />
+                <span className="text-xs sm:text-sm text-muted-foreground">Élevé</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-[#ef4444]" />
-                <span className="text-sm text-muted-foreground">Très élevé</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#ef4444]" />
+                <span className="text-xs sm:text-sm text-muted-foreground">Très élevé</span>
               </div>
             </div>
 
