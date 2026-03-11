@@ -444,7 +444,13 @@ export function LiveTrackingMap({
           })}
 
           {/* Interventions */}
-          {mapReady && showInterventions && interventionsWithCoords.map((intervention) => (
+          {mapReady && showInterventions && interventionsWithCoords
+            .filter(i => {
+              if (i.priority === 'urgent') return showUrgent;
+              if (i.priority === 'high') return showHigh;
+              return showNormal;
+            })
+            .map((intervention) => (
             <Marker
               key={intervention.id}
               position={[intervention.latitude!, intervention.longitude!]}
