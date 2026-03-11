@@ -52,26 +52,34 @@ export function UsersSettingsTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Fetch managers with their permissions
+  // Fetch managers with their permissions and payment role
   const { data: managersData, isLoading: loadingManagers } = useQuery({
     queryKey: ['managers-with-permissions', searchQuery],
     queryFn: async () => {
       // Get all users with manager role
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id')
-        .eq('role', 'manager');
+        .select('user_id, role')
+        .in('role', ['manager', 'payment']);
 
       if (rolesError) throw rolesError;
 
-      const managerIds = userRoles?.map((r) => r.user_id) || [];
-      if (managerIds.length === 0) return [];
+      // Build maps
+      const managerIds = new Set<string>();
+      const paymentRoleSet = new Set<string>();
+      (userRoles || []).forEach((r) => {
+        if (r.role === 'manager') managerIds.add(r.user_id);
+        if (r.role === 'payment') paymentRoleSet.add(r.user_id);
+      });
+
+      const managerIdArray = Array.from(managerIds);
+      if (managerIdArray.length === 0) return [];
 
       // Get user details
       let query = supabase
         .from('users')
         .select('id, first_name, last_name, email, phone')
-        .in('id', managerIds);
+        .in('id', managerIdArray);
 
       if (searchQuery) {
         query = query.or(
@@ -87,7 +95,7 @@ export function UsersSettingsTab() {
       const { data: permissions, error: permError } = await supabase
         .from('manager_permissions')
         .select('user_id, can_create_managers')
-        .in('user_id', managerIds);
+        .in('user_id', managerIdArray);
 
       if (permError) throw permError;
 
@@ -100,6 +108,7 @@ export function UsersSettingsTab() {
         email: u.email,
         phone: u.phone,
         canCreateManagers: permMap.get(u.id) || false,
+        hasPaymentRole: paymentRoleSet.has(u.id),
       }));
     },
   });
@@ -163,6 +172,33 @@ export function UsersSettingsTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['managers-with-permissions'] });
       toast.success('Permissions mises à jour');
+    },
+    onError: (error: Error) => {
+      toast.error(`Erreur: ${error.message}`);
+    },
+  });
+
+  const togglePaymentRoleMutation = useMutation({
+    mutationFn: async ({ userId, hasPaymentRole }: { userId: string; hasPaymentRole: boolean }) => {
+      if (hasPaymentRole) {
+        // Add payment role
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'payment', created_by: user?.id });
+        if (error) throw error;
+      } else {
+        // Remove payment role
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role', 'payment');
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['managers-with-permissions'] });
+      toast.success('Rôle paiement mis à jour');
     },
     onError: (error: Error) => {
       toast.error(`Erreur: ${error.message}`);
@@ -370,27 +406,44 @@ export function UsersSettingsTab() {
                     key={manager.id}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium">
                         {manager.firstName} {manager.lastName}
                       </p>
                       <p className="text-sm text-muted-foreground">{manager.email}</p>
                       {manager.phone && <p className="text-sm text-muted-foreground">{manager.phone}</p>}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">Peut créer des managers</span>
-                      <Switch
-                        checked={manager.canCreateManagers}
-                        onCheckedChange={(checked) =>
-                          updatePermissionMutation.mutate({ userId: manager.id, canCreateManagers: checked })
-                        }
-                        disabled={updatePermissionMutation.isPending}
-                      />
-                      {manager.canCreateManagers ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <X className="h-4 w-4 text-muted-foreground" />
-                      )}
+                    <div className="flex flex-col gap-3 items-end">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-muted-foreground">Créer des managers</span>
+                        <Switch
+                          checked={manager.canCreateManagers}
+                          onCheckedChange={(checked) =>
+                            updatePermissionMutation.mutate({ userId: manager.id, canCreateManagers: checked })
+                          }
+                          disabled={updatePermissionMutation.isPending}
+                        />
+                        {manager.canCreateManagers ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-muted-foreground">Gestion paiements</span>
+                        <Switch
+                          checked={manager.hasPaymentRole}
+                          onCheckedChange={(checked) =>
+                            togglePaymentRoleMutation.mutate({ userId: manager.id, hasPaymentRole: checked })
+                          }
+                          disabled={togglePaymentRoleMutation.isPending}
+                        />
+                        {manager.hasPaymentRole ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

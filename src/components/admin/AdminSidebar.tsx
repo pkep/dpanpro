@@ -39,7 +39,10 @@ const menuItems = [
   { title: "Carte Techniciens", url: "/admin/map", icon: Map },
   { title: "Suivi en temps réel", url: "/admin/live-tracking", icon: Radio },
   { title: "Planning", url: "/admin/planning", icon: Calendar },
-  { title: "Paiements", url: "/admin/payments", icon: CreditCard },
+];
+
+const paymentItems = [
+  { title: "Gestion Paiements", url: "/admin/payments", icon: CreditCard },
 ];
 
 const adminOnlyItems = [
@@ -134,7 +137,33 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Admin Only */}
+        {/* Paiement */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Paiement</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {paymentItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname.startsWith(item.url)}
+                    tooltip={collapsed ? item.title : undefined}
+                  >
+                    <NavLink
+                      to={item.url}
+                      className="flex items-center gap-3"
+                      activeClassName="bg-red-600/10 text-red-600"
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel>Administration</SidebarGroupLabel>
           <SidebarGroupContent>
