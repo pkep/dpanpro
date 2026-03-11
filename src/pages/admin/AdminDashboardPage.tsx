@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, ClipboardList, BarChart3, TrendingUp, Clock, Settings } from 'lucide-react';
+import { Users, ClipboardList, BarChart3, TrendingUp, Clock, Settings, Map, Radio } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -118,7 +118,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Quick Access */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -145,6 +145,36 @@ export default function AdminDashboardPage() {
             <CardContent>
               <Button asChild className="w-full">
                 <Link to="/admin/performance">Accéder</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Map className="h-5 w-5" />
+                Carte techniciens
+              </CardTitle>
+              <CardDescription>Visualiser la flotte en temps réel</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/admin/map">Ouvrir</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Radio className="h-5 w-5" />
+                Suivi en temps réel
+              </CardTitle>
+              <CardDescription>Suivre les interventions actives</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline" className="w-full">
+                <Link to="/admin/live-tracking">Ouvrir</Link>
               </Button>
             </CardContent>
           </Card>
