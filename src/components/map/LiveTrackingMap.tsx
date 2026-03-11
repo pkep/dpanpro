@@ -39,9 +39,9 @@ L.Icon.Default.mergeOptions({
 });
 
 // Custom icons for technicians
-const createTechnicianIcon = (isCurrentUser: boolean = false) => {
-  const color = isCurrentUser ? '#22c55e' : '#3b82f6';
-  const pulseColor = isCurrentUser ? 'rgba(34, 197, 94, 0.4)' : 'rgba(59, 130, 246, 0.4)';
+const createTechnicianIcon = (_isCurrentUser: boolean = false) => {
+  const color = '#22c55e';
+  const pulseColor = 'rgba(34, 197, 94, 0.4)';
   
   return L.divIcon({
     className: 'technician-marker',
