@@ -29,6 +29,7 @@ import CookiePolicyPage from "./pages/common/CookiePolicyPage";
 import LegalNoticePage from "./pages/common/LegalNoticePage";
 import ContactPage from "./pages/common/ContactPage";
 import NotFound from "./pages/common/NotFound";
+import { GlobalPendingActions } from "./components/client/GlobalPendingActions";
 
 // Client pages
 import ClientDashboardPage from "./pages/client/ClientDashboardPage";
@@ -70,6 +71,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <GlobalPendingActions />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Index />} />
