@@ -124,14 +124,16 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   const handleNext = () => {
     if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
-      scrollToTop();
+      // Delay scroll to ensure DOM has updated
+      setTimeout(() => scrollToTop(), 50);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
-      scrollToTop();
+      // Delay scroll to ensure DOM has updated
+      setTimeout(() => scrollToTop(), 50);
     }
   };
 
