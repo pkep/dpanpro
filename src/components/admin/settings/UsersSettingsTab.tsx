@@ -52,26 +52,34 @@ export function UsersSettingsTab() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Fetch managers with their permissions
+  // Fetch managers with their permissions and payment role
   const { data: managersData, isLoading: loadingManagers } = useQuery({
     queryKey: ['managers-with-permissions', searchQuery],
     queryFn: async () => {
       // Get all users with manager role
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id')
-        .eq('role', 'manager');
+        .select('user_id, role')
+        .in('role', ['manager', 'payment']);
 
       if (rolesError) throw rolesError;
 
-      const managerIds = userRoles?.map((r) => r.user_id) || [];
-      if (managerIds.length === 0) return [];
+      // Build maps
+      const managerIds = new Set<string>();
+      const paymentRoleSet = new Set<string>();
+      (userRoles || []).forEach((r) => {
+        if (r.role === 'manager') managerIds.add(r.user_id);
+        if (r.role === 'payment') paymentRoleSet.add(r.user_id);
+      });
+
+      const managerIdArray = Array.from(managerIds);
+      if (managerIdArray.length === 0) return [];
 
       // Get user details
       let query = supabase
         .from('users')
         .select('id, first_name, last_name, email, phone')
-        .in('id', managerIds);
+        .in('id', managerIdArray);
 
       if (searchQuery) {
         query = query.or(
@@ -87,7 +95,7 @@ export function UsersSettingsTab() {
       const { data: permissions, error: permError } = await supabase
         .from('manager_permissions')
         .select('user_id, can_create_managers')
-        .in('user_id', managerIds);
+        .in('user_id', managerIdArray);
 
       if (permError) throw permError;
 
@@ -100,6 +108,7 @@ export function UsersSettingsTab() {
         email: u.email,
         phone: u.phone,
         canCreateManagers: permMap.get(u.id) || false,
+        hasPaymentRole: paymentRoleSet.has(u.id),
       }));
     },
   });
