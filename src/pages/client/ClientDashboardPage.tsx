@@ -140,7 +140,7 @@ export default function ClientDashboardPage() {
         // Calculate stats
         setStats({
           total: data.length,
-          active: data.filter(i => ['assigned', 'on_route', 'in_progress'].includes(i.status)).length,
+          active: data.filter(i => !['completed', 'cancelled'].includes(i.status)).length,
           completed: data.filter(i => i.status === 'completed').length,
           pending: data.filter(i => i.status === 'new').length,
           urgent: data.filter(i => i.priority === 'urgent' && !['completed', 'cancelled'].includes(i.status)).length,
