@@ -126,15 +126,7 @@ class QuotesService {
       });
     }
 
-    // Add repair line if price > 0
-    if (service.repairPrice > 0) {
-      lines.push({
-        lineType: 'repair',
-        label: QUOTE_LINES_CONFIG.repair.label,
-        basePrice: service.repairPrice,
-        multiplier: effectiveMultiplier,
-      });
-    }
+    // repair_price removed - repair/labor is now managed by the technician via the adjustable quote
 
     return lines;
   }

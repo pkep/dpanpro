@@ -58,8 +58,9 @@ export function StepServiceSelection({ selectedCategory, onSelect }: StepService
         {services.map((service) => {
           const category = service.code as InterventionCategory;
           const isSelected = selectedCategory === category;
-          const priceTTC = Math.round(service.basePrice * (1 + service.vatRateIndividual / 100) * 100) / 100;
-          const vatAmount = Math.round((priceTTC - service.basePrice) * 100) / 100;
+          const totalHT = service.displacementPrice + service.securityPrice;
+          const priceTTC = Math.round(totalHT * (1 + service.vatRateIndividual / 100) * 100) / 100;
+          const vatAmount = Math.round((priceTTC - totalHT) * 100) / 100;
           
           return (
             <Card
