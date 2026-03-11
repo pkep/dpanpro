@@ -126,6 +126,8 @@ export default function AdminPaymentsPage() {
 
       const rows: PaymentRow[] = (paData || []).map(p => {
         const intInfo = p.intervention_id ? interventionsMap[p.intervention_id] : null;
+        // A cancellation fee is identified when the intervention is cancelled and the payment was captured
+        const isCancellationFee = intInfo?.status === 'cancelled' && p.status === 'captured';
         return {
           id: p.id,
           intervention_id: p.intervention_id,
@@ -140,7 +142,9 @@ export default function AdminPaymentsPage() {
           intervention_title: intInfo?.title,
           intervention_address: intInfo?.address,
           intervention_city: intInfo?.city,
+          intervention_status: intInfo?.status,
           client_name: intInfo?.clientName || p.client_email || '—',
+          isCancellationFee,
         };
       });
 
