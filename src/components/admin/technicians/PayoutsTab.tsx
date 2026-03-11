@@ -548,7 +548,7 @@ export function PayoutsTab() {
                           </div>
                           <p className="text-sm text-muted-foreground">{tech.email}</p>
                         </div>
-                        <div className="text-right min-w-[200px]">
+                        <div className="text-right min-w-0 sm:min-w-[200px]">
                           {tech.grossRevenue > 0 ? (
                             <div className="space-y-0.5">
                               <div className="flex justify-between text-xs text-muted-foreground">
