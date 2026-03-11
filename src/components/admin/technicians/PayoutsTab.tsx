@@ -67,7 +67,7 @@ export function PayoutsTab() {
 
   // Form state
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>([]);
-  const [payoutAmounts, setPayoutAmounts] = useState<Record<string, string>>({});
+  
   const [payoutDate, setPayoutDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [notes, setNotes] = useState('');
 
@@ -165,14 +165,6 @@ export function PayoutsTab() {
 
       setPendingTechnicians(enrichedTechnicians);
 
-      // Initialize payout amounts with calculated net revenue
-      const initialAmounts: Record<string, string> = {};
-      enrichedTechnicians.forEach(tech => {
-        if (tech.netRevenue > 0) {
-          initialAmounts[tech.id] = tech.netRevenue.toFixed(2);
-        }
-      });
-      setPayoutAmounts(prev => ({ ...prev, ...initialAmounts }));
     } catch (error) {
       console.error('Error fetching pending technicians:', error);
       toast.error('Erreur lors du chargement des techniciens');
@@ -319,33 +311,36 @@ export function PayoutsTab() {
   }, [paidTechSearchQuery]);
 
   const handleCreatePayout = async () => {
-    // Validate all selected technicians have amounts
-    const missingAmounts = selectedTechnicianIds.filter(id => {
-      const amount = payoutAmounts[id];
-      return !amount || parseFloat(amount) <= 0;
-    });
-
-    if (missingAmounts.length > 0) {
-      toast.error('Veuillez renseigner un montant valide pour tous les techniciens sélectionnés');
-      return;
-    }
-
     if (selectedTechnicianIds.length === 0 || !payoutDate) {
       toast.error('Veuillez sélectionner au moins un technicien et une date de versement');
       return;
     }
 
+    // Validate all selected technicians have positive net revenue
+    const invalidTechs = selectedTechnicianIds.filter(id => {
+      const tech = pendingTechnicians.find(t => t.id === id);
+      return !tech || tech.netRevenue <= 0;
+    });
+
+    if (invalidTechs.length > 0) {
+      toast.error('Certains techniciens sélectionnés n\'ont pas de revenu net positif');
+      return;
+    }
+
     setProcessing(true);
     try {
-      const payoutsToCreate = selectedTechnicianIds.map((techId) => ({
-        technician_id: techId,
-        amount: parseFloat(payoutAmounts[techId] || '0'),
-        payout_date: payoutDate,
-        period_start: periodStartStr,
-        period_end: periodEndStr,
-        status: 'paid',
-        notes: notes || null,
-      }));
+      const payoutsToCreate = selectedTechnicianIds.map((techId) => {
+        const tech = pendingTechnicians.find(t => t.id === techId)!;
+        return {
+          technician_id: techId,
+          amount: parseFloat(tech.netRevenue.toFixed(2)),
+          payout_date: payoutDate,
+          period_start: periodStartStr,
+          period_end: periodEndStr,
+          status: 'paid',
+          notes: notes || null,
+        };
+      });
 
       const { error } = await supabase.from('technician_payouts').insert(payoutsToCreate);
 
@@ -388,7 +383,6 @@ export function PayoutsTab() {
 
   const resetForm = () => {
     setSelectedTechnicianIds([]);
-    setPayoutAmounts({});
     setPayoutDate(format(new Date(), 'yyyy-MM-dd'));
     setNotes('');
   };
@@ -569,15 +563,10 @@ export function PayoutsTab() {
                           )}
                         </div>
                         {isSelected && (
-                          <div className="w-32" onClick={(e) => e.stopPropagation()}>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={payoutAmounts[tech.id] || ''}
-                              onChange={(e) => setPayoutAmounts(prev => ({ ...prev, [tech.id]: e.target.value }))}
-                              placeholder="Montant"
-                              className="text-right"
-                            />
+                          <div className="w-32 text-right">
+                            <span className="font-semibold text-primary">
+                              {formatCurrency(tech.netRevenue)}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -920,7 +909,6 @@ export function PayoutsTab() {
               <div className="max-h-48 overflow-y-auto space-y-2">
                 {selectedTechnicianIds.map((id) => {
                   const tech = pendingTechnicians.find((t) => t.id === id);
-                  const amount = payoutAmounts[id] || '0';
                   return tech ? (
                     <div key={id} className="p-3 bg-muted/50 rounded-lg space-y-2">
                       <div className="flex items-center justify-between">
@@ -940,23 +928,8 @@ export function PayoutsTab() {
                           <span>- {formatCurrency(tech.commissionAmount)}</span>
                         </div>
                         <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                          <span>Net calculé :</span>
+                          <span>Montant à verser :</span>
                           <span className="text-primary">{formatCurrency(tech.netRevenue)}</span>
-                        </div>
-                      </div>
-
-                      {/* Editable amount */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Montant à verser :</span>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={amount}
-                            onChange={(e) => setPayoutAmounts(prev => ({ ...prev, [id]: e.target.value }))}
-                            className="w-28 text-right h-8"
-                          />
-                          <span className="text-sm">€</span>
                         </div>
                       </div>
                     </div>
@@ -970,7 +943,10 @@ export function PayoutsTab() {
               <span className="font-medium">Total des versements :</span>
               <span className="text-lg font-bold text-primary">
                 {formatCurrency(
-                  selectedTechnicianIds.reduce((sum, id) => sum + (parseFloat(payoutAmounts[id] || '0') || 0), 0)
+                  selectedTechnicianIds.reduce((sum, id) => {
+                    const tech = pendingTechnicians.find(t => t.id === id);
+                    return sum + (tech?.netRevenue || 0);
+                  }, 0)
                 )}
               </span>
             </div>
