@@ -97,6 +97,11 @@ export function DisputesTab() {
   const [loadingInterventions, setLoadingInterventions] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  // Search filters for create dialog
+  const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
+  const [filterTechnicianId, setFilterTechnicianId] = useState('all');
+  const [filterAddress, setFilterAddress] = useState('');
+
   // Refund state
   const [refundType, setRefundType] = useState<'none' | 'full' | 'partial'>('none');
   const [refundAmount, setRefundAmount] = useState('');
