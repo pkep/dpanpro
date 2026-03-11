@@ -943,7 +943,10 @@ export function PayoutsTab() {
               <span className="font-medium">Total des versements :</span>
               <span className="text-lg font-bold text-primary">
                 {formatCurrency(
-                  selectedTechnicianIds.reduce((sum, id) => sum + (parseFloat(payoutAmounts[id] || '0') || 0), 0)
+                  selectedTechnicianIds.reduce((sum, id) => {
+                    const tech = pendingTechnicians.find(t => t.id === id);
+                    return sum + (tech?.netRevenue || 0);
+                  }, 0)
                 )}
               </span>
             </div>
