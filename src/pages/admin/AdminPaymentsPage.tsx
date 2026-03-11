@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { differenceInDays } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ const STATUS_LABELS: Record<string, string> = {
   captured: 'Payé',
   cancelled: 'Annulé',
   failed: 'Échoué',
+  expired: 'Expiré',
 };
 
 const STATUS_VARIANTS: Record<string, string> = {
@@ -47,7 +49,17 @@ const STATUS_VARIANTS: Record<string, string> = {
   captured: 'bg-green-100 text-green-800 border-green-200',
   cancelled: 'bg-muted text-muted-foreground',
   failed: 'bg-destructive/10 text-destructive',
+  expired: 'bg-orange-100 text-orange-800 border-orange-200',
 };
+
+const EXPIRY_DAYS = 6;
+
+function getEffectiveStatus(status: string, createdAt: string): string {
+  if (status === 'pending' && differenceInDays(new Date(), new Date(createdAt)) >= EXPIRY_DAYS) {
+    return 'expired';
+  }
+  return status;
+}
 
 const PAGE_SIZE = 10;
 
@@ -115,7 +127,7 @@ export default function AdminPaymentsPage() {
           intervention_id: p.intervention_id,
           amount_authorized: p.amount_authorized,
           currency: p.currency,
-          status: p.status,
+          status: getEffectiveStatus(p.status, p.created_at),
           client_email: p.client_email,
           provider_payment_id: p.provider_payment_id,
           created_at: p.created_at,
@@ -309,6 +321,7 @@ export default function AdminPaymentsPage() {
                   <SelectItem value="captured">Payé</SelectItem>
                   <SelectItem value="cancelled">Annulé</SelectItem>
                   <SelectItem value="failed">Échoué</SelectItem>
+                  <SelectItem value="expired">Expiré</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
