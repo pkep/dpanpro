@@ -525,7 +525,7 @@ export function PayoutsTab() {
                     return (
                       <div
                         key={tech.id}
-                        className={`border rounded-lg p-3 flex items-center gap-3 transition-colors cursor-pointer ${
+                        className={`border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center gap-3 transition-colors cursor-pointer ${
                           isSelected 
                             ? 'bg-primary/5 border-primary/30' 
                             : 'hover:bg-accent/50'
