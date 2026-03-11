@@ -111,7 +111,6 @@ export function ServicesManagement() {
       // Save service changes
       for (const [serviceId, changes] of Object.entries(editedServices)) {
         const updateData: Record<string, unknown> = {};
-        if (changes.basePrice !== undefined) updateData.base_price = changes.basePrice;
         if (changes.defaultPriority !== undefined) updateData.default_priority = changes.defaultPriority;
         if (changes.isActive !== undefined) updateData.is_active = changes.isActive;
 
