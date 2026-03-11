@@ -162,7 +162,14 @@ export function PendingActionsModal() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isOnActionPage, dismissed]);
+
+  // Reset dismissed state when leaving action pages
+  useEffect(() => {
+    if (!isOnActionPage) {
+      setDismissed(false);
+    }
+  }, [isOnActionPage]);
 
   useEffect(() => {
     fetchPendingActions();
