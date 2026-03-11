@@ -246,7 +246,7 @@ export function ServicesManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>Service</TableHead>
-                <TableHead>Prix de base</TableHead>
+                <TableHead>Total HT</TableHead>
                 <TableHead>Priorité par défaut</TableHead>
                 <TableHead>Prix estimé</TableHead>
                 <TableHead>Actif</TableHead>
