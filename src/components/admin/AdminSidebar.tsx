@@ -28,6 +28,7 @@ import {
   History,
   Home,
   LogOut,
+  CreditCard,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -38,6 +39,7 @@ const menuItems = [
   { title: "Carte Techniciens", url: "/admin/map", icon: Map },
   { title: "Suivi en temps réel", url: "/admin/live-tracking", icon: Radio },
   { title: "Planning", url: "/admin/planning", icon: Calendar },
+  { title: "Gestion Paiements", url: "/admin/payments", icon: CreditCard },
 ];
 
 const adminOnlyItems = [
