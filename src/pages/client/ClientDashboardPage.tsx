@@ -140,7 +140,7 @@ export default function ClientDashboardPage() {
         // Calculate stats
         setStats({
           total: data.length,
-          active: data.filter(i => ['assigned', 'on_route', 'in_progress'].includes(i.status)).length,
+          active: data.filter(i => !['completed', 'cancelled'].includes(i.status)).length,
           completed: data.filter(i => i.status === 'completed').length,
           pending: data.filter(i => i.status === 'new').length,
           urgent: data.filter(i => i.priority === 'urgent' && !['completed', 'cancelled'].includes(i.status)).length,
@@ -172,6 +172,7 @@ export default function ClientDashboardPage() {
       case 'new': return 10;
       case 'assigned': return 30;
       case 'on_route': return 50;
+      case 'arrived': return 65;
       case 'in_progress': return 75;
       case 'completed': return 100;
       default: return 0;
@@ -180,7 +181,7 @@ export default function ClientDashboardPage() {
 
   // Filter interventions
   const activeInterventions = interventions.filter(i => 
-    ['new', 'assigned', 'on_route', 'in_progress'].includes(i.status)
+    !['completed', 'cancelled'].includes(i.status)
   ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const recentCompletedInterventions = interventions.filter(i => 
