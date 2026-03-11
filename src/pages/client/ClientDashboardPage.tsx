@@ -172,6 +172,7 @@ export default function ClientDashboardPage() {
       case 'new': return 10;
       case 'assigned': return 30;
       case 'on_route': return 50;
+      case 'arrived': return 65;
       case 'in_progress': return 75;
       case 'completed': return 100;
       default: return 0;
