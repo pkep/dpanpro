@@ -119,14 +119,14 @@ export function ActiveTechniciansTab() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Techniciens actifs</CardTitle>
               <CardDescription>
                 {totalCount} technicien(s) sur la plateforme
               </CardDescription>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Rechercher..."
