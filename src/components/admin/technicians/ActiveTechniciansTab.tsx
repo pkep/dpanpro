@@ -194,27 +194,17 @@ export function ActiveTechniciansTab() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 mt-4 pt-4 border-t">
                   <p className="text-sm text-muted-foreground">
                     Page {currentPage} sur {totalPages}
                   </p>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
                       <ChevronLeft className="h-4 w-4" />
-                      Précédent
+                      <span className="hidden sm:inline ml-1">Précédent</span>
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Suivant
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                      <span className="hidden sm:inline mr-1">Suivant</span>
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>

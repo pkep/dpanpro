@@ -193,16 +193,16 @@ export function PendingTechniciansTab() {
               {applications.map((app) => (
                 <div
                   key={app.id}
-                  className="border rounded-lg p-4 flex items-center justify-between"
+                  className="border rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="font-medium">
                         {app.user.first_name} {app.user.last_name}
                       </span>
                       <Badge variant="outline">{app.company_name}</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{app.user.email}</p>
+                    <p className="text-sm text-muted-foreground truncate">{app.user.email}</p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {app.skills.map((skill) => (
                         <Badge key={skill} variant="secondary" className="text-xs">
@@ -211,14 +211,14 @@ export function PendingTechniciansTab() {
                       ))}
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {app.years_experience} ans d'expérience • Soumis le{' '}
-                      {format(new Date(app.created_at), 'dd MMM yyyy', { locale: fr })}
+                      {app.years_experience} ans d'exp. • {format(new Date(app.created_at), 'dd MMM yyyy', { locale: fr })}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Button
                       variant="outline"
                       size="sm"
+                      className="flex-1 sm:flex-none"
                       onClick={() => {
                         setSelectedApp(app);
                         setActionType(null);
@@ -230,25 +230,26 @@ export function PendingTechniciansTab() {
                     <Button
                       variant="default"
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700"
+                      className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
                       onClick={() => {
                         setSelectedApp(app);
                         setActionType('accept');
                       }}
                     >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Accepter
+                      <CheckCircle className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Accepter</span>
                     </Button>
                     <Button
                       variant="destructive"
                       size="sm"
+                      className="flex-1 sm:flex-none"
                       onClick={() => {
                         setSelectedApp(app);
                         setActionType('reject');
                       }}
                     >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Refuser
+                      <XCircle className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Refuser</span>
                     </Button>
                   </div>
                 </div>
