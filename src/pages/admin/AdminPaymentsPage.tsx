@@ -279,8 +279,31 @@ export default function AdminPaymentsPage() {
     };
   }, [payments]);
 
+  if (!rolesLoading && !canAccessPayments) {
+    return (
+      <AdminLayout title="Paiements">
+        <Card className="max-w-md mx-auto mt-12">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5" />
+              Accès refusé
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">
+              Vous n'avez pas le rôle requis pour accéder à la gestion des paiements. Le rôle <strong>payment</strong> ou <strong>admin</strong> est nécessaire.
+            </p>
+            <Button asChild className="w-full">
+              <Link to="/admin">Retour au tableau de bord</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </AdminLayout>
+    );
+  }
+
   return (
-    <AdminLayout title="Gestion des Paiements" subtitle="Suivi et actions sur les paiements">
+    <AdminLayout title="Paiements" subtitle="Suivi et actions sur les paiements">
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
