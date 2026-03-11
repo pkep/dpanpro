@@ -401,7 +401,14 @@ export default function AdminPaymentsPage() {
                         {p.intervention_address ? `${p.intervention_address}, ${p.intervention_city || ''}` : '—'}
                       </TableCell>
                       <TableCell className="text-right font-medium whitespace-nowrap">
-                        {p.amount_authorized.toFixed(2)} €
+                        <div className="flex flex-col items-end gap-1">
+                          <span>{p.amount_authorized.toFixed(2)} €</span>
+                          {p.isCancellationFee && (
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-[10px] px-1.5 py-0">
+                              Frais d'annulation
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge className={STATUS_VARIANTS[p.status] || ''}>
