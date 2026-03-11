@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { rolesService, type AppRole, type UserRoleRecord, type ManagerPermissions } from '@/services/roles/roles.service';
+import { rolesService, type AppRole, type UserRoleRecord, type ManagerPermissions } from '@/services/supabase/roles.service';
 
 export function useUserRoles() {
   const { user } = useAuth();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { historyService } from '@/services/history/history.service';
-import { usersService } from '@/services/users/users.service';
+import { historyService } from '@/services/supabase/history.service';
+import { usersService } from '@/services/supabase/users.service';
 import type { InterventionHistory } from '@/types/history.types';
 import type { User } from '@/types/auth.types';
 import { ACTION_LABELS } from '@/types/history.types';

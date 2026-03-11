@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { interventionsService } from '@/services/interventions/interventions.service';
-import { cancellationService } from '@/services/cancellation/cancellation.service';
+import { interventionsService } from '@/services/supabase/interventions.service';
+import { cancellationService } from '@/services/supabase/cancellation.service';
 import { invoiceService } from '@/services/invoice/invoice.service';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import type { Intervention } from '@/types/intervention.types';

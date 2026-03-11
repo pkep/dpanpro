@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { servicesService, Service } from '@/services/services/services.service';
-import { pricingService, PriorityMultiplier } from '@/services/pricing/pricing.service';
+import { servicesService, Service } from '@/services/supabase/services.service';
+import { pricingService, PriorityMultiplier } from '@/services/supabase/pricing.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

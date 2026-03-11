@@ -10,8 +10,8 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { quotePDFService } from '@/services/quote-pdf/quote-pdf.service';
 import type { Intervention } from '@/types/intervention.types';
-import type { QuoteLine } from '@/services/quotes/quotes.service';
-import type { QuoteModification } from '@/services/quote-modifications/quote-modifications.service';
+import type { QuoteLine } from '@/services/supabase/quotes.service';
+import type { QuoteModification } from '@/services/supabase/quote-modifications.service';
 import { toast } from 'sonner';
 
 interface SignedQuoteCardProps {

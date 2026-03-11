@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { interventionsService } from '@/services/interventions/interventions.service';
-import { usersService } from '@/services/users/users.service';
+import { interventionsService } from '@/services/supabase/interventions.service';
+import { usersService } from '@/services/supabase/users.service';
 import type { Intervention } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { CATEGORY_ICONS, STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS } from '@/types/intervention.types';

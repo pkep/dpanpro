@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { quoteModificationsService, QuoteModification } from '@/services/quote-modifications/quote-modifications.service';
-import { quotesService, QuoteLine } from '@/services/quotes/quotes.service';
+import { quoteModificationsService, QuoteModification } from '@/services/supabase/quote-modifications.service';
+import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

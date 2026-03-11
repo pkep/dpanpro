@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Service } from '@/services/services/services.service';
+import { Service } from '@/services/supabase/services.service';
 
 export interface QuoteLine {
   id: string;
