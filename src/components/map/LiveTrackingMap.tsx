@@ -298,6 +298,8 @@ export function LiveTrackingMap({
   const [showUrgent, setShowUrgent] = useState(true);
   const [showHigh, setShowHigh] = useState(true);
   const [showNormal, setShowNormal] = useState(true);
+  const [searchTarget, setSearchTarget] = useState<[number, number] | null>(null);
+  const [searchZoom, setSearchZoom] = useState(14);
 
   // Fetch active interventions
   useEffect(() => {
