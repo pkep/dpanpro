@@ -447,6 +447,12 @@ export function LiveTrackingMap({
         const zoom = result.type === 'municipality' ? 13 : result.type === 'street' ? 15 : 16;
         setSearchTarget([result.lat, result.lng]);
         setSearchZoom(zoom);
+        // Fetch boundary for municipalities
+        if (result.type === 'municipality' || result.type === 'locality') {
+          fetchCityBoundary(result.label, result.lat, result.lng);
+        } else {
+          setCityBoundary(null);
+        }
       }} />
 
       {/* Controls */}
