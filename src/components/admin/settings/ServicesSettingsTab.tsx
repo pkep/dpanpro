@@ -19,7 +19,6 @@ export function ServicesSettingsTab() {
     description: '',
     displacementPrice: 0,
     securityPrice: 0,
-    repairPrice: 0,
     vatRateIndividual: 10,
     vatRateProfessional: 20,
     targetArrivalTimeMinutes: 30,
@@ -74,7 +73,6 @@ export function ServicesSettingsTab() {
       description: service.description || '',
       displacementPrice: service.displacementPrice,
       securityPrice: service.securityPrice,
-      repairPrice: service.repairPrice,
       vatRateIndividual: service.vatRateIndividual,
       vatRateProfessional: service.vatRateProfessional,
       targetArrivalTimeMinutes: service.targetArrivalTimeMinutes || 30,
@@ -91,7 +89,6 @@ export function ServicesSettingsTab() {
         description: formData.description || null,
         displacementPrice: formData.displacementPrice,
         securityPrice: formData.securityPrice,
-        repairPrice: formData.repairPrice,
         vatRateIndividual: formData.vatRateIndividual,
         vatRateProfessional: formData.vatRateProfessional,
         targetArrivalTimeMinutes: formData.targetArrivalTimeMinutes,
@@ -126,7 +123,7 @@ export function ServicesSettingsTab() {
   };
 
   const calculateBasePrice = () => {
-    return formData.displacementPrice + formData.securityPrice + formData.repairPrice;
+    return formData.displacementPrice + formData.securityPrice;
   };
 
   if (isLoading) {
@@ -148,7 +145,7 @@ export function ServicesSettingsTab() {
             Gestion des services
           </CardTitle>
           <CardDescription>
-            Modifier les noms, prix et activer/désactiver les services. Utilisez les flèches pour réorganiser l'ordre d'affichage.
+            Modifier les noms, prix et activer/désactiver les services. La main d'œuvre est gérée directement par le technicien.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -159,7 +156,6 @@ export function ServicesSettingsTab() {
                 <TableHead>Service</TableHead>
                 <TableHead className="text-right">Déplacement</TableHead>
                 <TableHead className="text-right">Mise en sécurité</TableHead>
-                <TableHead className="text-right">Dépannage</TableHead>
                 <TableHead className="text-right">Total HT</TableHead>
                 <TableHead className="text-center">Temps cible</TableHead>
                 <TableHead className="text-center">Actif</TableHead>
@@ -168,7 +164,7 @@ export function ServicesSettingsTab() {
             </TableHeader>
             <TableBody>
               {services?.map((service, index) => {
-                const total = service.displacementPrice + service.securityPrice + service.repairPrice;
+                const total = service.displacementPrice + service.securityPrice;
                 return (
                   <TableRow key={service.id}>
                     <TableCell>
@@ -213,9 +209,6 @@ export function ServicesSettingsTab() {
                     <TableCell className="text-right">
                       {service.securityPrice > 0 ? `${service.securityPrice.toFixed(2)} €` : '-'}
                     </TableCell>
-                    <TableCell className="text-right">
-                      {service.repairPrice > 0 ? `${service.repairPrice.toFixed(2)} €` : '-'}
-                    </TableCell>
                     <TableCell className="text-right font-semibold">
                       {total.toFixed(2)} €
                     </TableCell>
@@ -255,7 +248,7 @@ export function ServicesSettingsTab() {
           <DialogHeader>
             <DialogTitle>Modifier le service</DialogTitle>
             <DialogDescription>
-              Modifiez les informations et les prix du service.
+              Modifiez les informations et les prix du service. La main d'œuvre est gérée par le technicien.
             </DialogDescription>
           </DialogHeader>
           
@@ -278,7 +271,7 @@ export function ServicesSettingsTab() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="displacement">Déplacement (€ HT)</Label>
                 <Input
@@ -300,18 +293,6 @@ export function ServicesSettingsTab() {
                   min="0"
                   value={formData.securityPrice}
                   onChange={(e) => setFormData({ ...formData, securityPrice: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="repair">Dépannage (€ HT)</Label>
-                <Input
-                  id="repair"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.repairPrice}
-                  onChange={(e) => setFormData({ ...formData, repairPrice: parseFloat(e.target.value) || 0 })}
                 />
               </div>
             </div>
