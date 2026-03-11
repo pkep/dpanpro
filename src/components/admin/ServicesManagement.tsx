@@ -27,9 +27,8 @@ import { toast } from 'sonner';
 import { Loader2, Save, Euro, Percent, Wrench, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface ExtendedService extends Service {
-  defaultPriority: string;
-}
+// Service already includes defaultPriority
+type ExtendedService = Service;
 
 export function ServicesManagement() {
   const [services, setServices] = useState<ExtendedService[]>([]);
