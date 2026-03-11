@@ -209,12 +209,12 @@ export function DisputesTab() {
               {disputes.map((dispute) => (
                 <div
                   key={dispute.id}
-                  className="border rounded-lg p-4 flex items-start justify-between"
+                  className="border rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-4 w-4 text-orange-500" />
-                      <span className="font-medium">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
+                      <span className="font-medium truncate">
                         {dispute.intervention?.title || 'Intervention'}
                       </span>
                       {getStatusBadge(dispute.status)}
@@ -225,44 +225,36 @@ export function DisputesTab() {
                       )}
                     </div>
 
-                    <div className="text-sm text-muted-foreground mb-2">
-                      <p>
+                    <div className="text-sm text-muted-foreground mb-2 space-y-0.5">
+                      <p className="truncate">
                         Client : {dispute.client?.first_name} {dispute.client?.last_name}{' '}
-                        ({dispute.client?.email})
+                        <span className="hidden sm:inline">({dispute.client?.email})</span>
                       </p>
                       <p>
-                        Technicien : {dispute.technician?.first_name} {dispute.technician?.last_name}
+                        Tech. : {dispute.technician?.first_name} {dispute.technician?.last_name}
                       </p>
                     </div>
 
                     {dispute.client_notes && (
                       <div className="bg-red-50 dark:bg-red-950 rounded p-2 mb-2">
-                        <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">
-                          Note client :
-                        </p>
-                        <p className="text-sm text-red-600 dark:text-red-400">
-                          {dispute.client_notes}
-                        </p>
+                        <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">Note client :</p>
+                        <p className="text-sm text-red-600 dark:text-red-400 line-clamp-2">{dispute.client_notes}</p>
                       </div>
                     )}
 
                     {dispute.technician_notes && (
                       <div className="bg-blue-50 dark:bg-blue-950 rounded p-2">
-                        <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
-                          Note technicien :
-                        </p>
-                        <p className="text-sm text-blue-600 dark:text-blue-400">
-                          {dispute.technician_notes}
-                        </p>
+                        <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Note technicien :</p>
+                        <p className="text-sm text-blue-600 dark:text-blue-400 line-clamp-2">{dispute.technician_notes}</p>
                       </div>
                     )}
 
                     <p className="text-xs text-muted-foreground mt-2">
-                      Créé le {format(new Date(dispute.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
+                      {format(new Date(dispute.created_at), 'dd MMM yyyy à HH:mm', { locale: fr })}
                     </p>
                   </div>
 
-                  <Button variant="outline" size="sm" onClick={() => openDisputeDetails(dispute)}>
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto shrink-0" onClick={() => openDisputeDetails(dispute)}>
                     <Eye className="h-4 w-4 mr-1" />
                     Gérer
                   </Button>
