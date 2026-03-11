@@ -531,6 +531,7 @@ export function LiveTrackingMap({
           {/* Recenter control */}
           {mapReady && <RecenterControl position={myPosition} />}
           {mapReady && <FlyToLocation position={searchTarget} zoom={searchZoom} />}
+          {mapReady && <CityBoundary geoJson={cityBoundary} />}
 
           {/* Current user position with accuracy circle */}
           {mapReady && myPosition && myLocation && (
