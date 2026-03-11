@@ -40,6 +40,7 @@ const STATUS_LABELS: Record<string, string> = {
   captured: 'Payé',
   cancelled: 'Annulé',
   failed: 'Échoué',
+  expired: 'Expiré',
 };
 
 const STATUS_VARIANTS: Record<string, string> = {
@@ -48,7 +49,17 @@ const STATUS_VARIANTS: Record<string, string> = {
   captured: 'bg-green-100 text-green-800 border-green-200',
   cancelled: 'bg-muted text-muted-foreground',
   failed: 'bg-destructive/10 text-destructive',
+  expired: 'bg-orange-100 text-orange-800 border-orange-200',
 };
+
+const EXPIRY_DAYS = 6;
+
+function getEffectiveStatus(status: string, createdAt: string): string {
+  if (status === 'pending' && differenceInDays(new Date(), new Date(createdAt)) >= EXPIRY_DAYS) {
+    return 'expired';
+  }
+  return status;
+}
 
 const PAGE_SIZE = 10;
 
