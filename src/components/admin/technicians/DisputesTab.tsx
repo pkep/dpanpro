@@ -52,8 +52,15 @@ interface CompletedIntervention {
   final_price: number | null;
   client_id: string | null;
   technician_id: string | null;
+  address: string;
+  city: string;
   client_name?: string;
   technician_name?: string;
+}
+
+interface TechnicianOption {
+  id: string;
+  name: string;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -89,6 +96,11 @@ export function DisputesTab() {
   const [technicianNotes, setTechnicianNotes] = useState('');
   const [loadingInterventions, setLoadingInterventions] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  // Search filters for create dialog
+  const [technicians, setTechnicians] = useState<TechnicianOption[]>([]);
+  const [filterTechnicianId, setFilterTechnicianId] = useState('all');
+  const [filterAddress, setFilterAddress] = useState('');
 
   // Refund state
   const [refundType, setRefundType] = useState<'none' | 'full' | 'partial'>('none');
@@ -159,42 +171,36 @@ export function DisputesTab() {
     try {
       const { data, error } = await supabase
         .from('interventions')
-        .select('id, title, category, tracking_code, final_price, client_id, technician_id')
+        .select('id, title, category, tracking_code, final_price, client_id, technician_id, address, city')
         .eq('status', 'completed')
         .order('completed_at', { ascending: false })
-        .limit(50);
+        .limit(200);
 
       if (error) throw error;
 
-      const enriched: CompletedIntervention[] = [];
-      for (const int of data || []) {
-        let clientName = '';
-        let technicianName = '';
-
-        if (int.client_id) {
-          const { data: c } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', int.client_id)
-            .single();
-          if (c) clientName = `${c.first_name} ${c.last_name}`;
-        }
-
-        if (int.technician_id) {
-          const { data: t } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', int.technician_id)
-            .single();
-          if (t) technicianName = `${t.first_name} ${t.last_name}`;
-        }
-
-        enriched.push({
-          ...int,
-          client_name: clientName,
-          technician_name: technicianName,
-        });
+      // Build unique technician list
+      const techIds = [...new Set((data || []).map(i => i.technician_id).filter(Boolean))] as string[];
+      const techMap: Record<string, string> = {};
+      for (const tid of techIds) {
+        const { data: t } = await supabase.from('users').select('first_name, last_name').eq('id', tid).single();
+        if (t) techMap[tid] = `${t.first_name} ${t.last_name}`;
       }
+      setTechnicians(techIds.map(id => ({ id, name: techMap[id] || id })));
+
+      const clientIds = [...new Set((data || []).map(i => i.client_id).filter(Boolean))] as string[];
+      const clientMap: Record<string, string> = {};
+      for (const cid of clientIds) {
+        const { data: c } = await supabase.from('users').select('first_name, last_name').eq('id', cid).single();
+        if (c) clientMap[cid] = `${c.first_name} ${c.last_name}`;
+      }
+
+      const enriched: CompletedIntervention[] = (data || []).map(int => ({
+        ...int,
+        address: int.address || '',
+        city: int.city || '',
+        client_name: int.client_id ? clientMap[int.client_id] || '' : '',
+        technician_name: int.technician_id ? techMap[int.technician_id] || '' : '',
+      }));
 
       setCompletedInterventions(enriched);
     } catch (error) {
@@ -210,8 +216,21 @@ export function DisputesTab() {
     setSelectedInterventionId('');
     setClientNotes('');
     setTechnicianNotes('');
+    setFilterTechnicianId('all');
+    setFilterAddress('');
     fetchCompletedInterventions();
   };
+
+  const filteredInterventions = completedInterventions.filter(int => {
+    if (filterTechnicianId !== 'all' && int.technician_id !== filterTechnicianId) return false;
+    if (filterAddress.trim()) {
+      const search = filterAddress.toLowerCase();
+      const matchAddress = int.address.toLowerCase().includes(search);
+      const matchCity = int.city.toLowerCase().includes(search);
+      if (!matchAddress && !matchCity) return false;
+    }
+    return true;
+  });
 
   const handleCreateDispute = async () => {
     if (!selectedInterventionId) {
@@ -473,8 +492,34 @@ export function DisputesTab() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            {/* Filters */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Filtrer par technicien</Label>
+                <Select value={filterTechnicianId} onValueChange={(v) => { setFilterTechnicianId(v); setSelectedInterventionId(''); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tous les techniciens" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les techniciens</SelectItem>
+                    {technicians.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Filtrer par adresse / ville</Label>
+                <Input
+                  value={filterAddress}
+                  onChange={(e) => { setFilterAddress(e.target.value); setSelectedInterventionId(''); }}
+                  placeholder="Rechercher une adresse..."
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
-              <Label>Intervention</Label>
+              <Label>Intervention ({filteredInterventions.length} résultat{filteredInterventions.length > 1 ? 's' : ''})</Label>
               {loadingInterventions ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -486,7 +531,7 @@ export function DisputesTab() {
                     <SelectValue placeholder="Sélectionner une intervention..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {completedInterventions.map((int) => (
+                    {filteredInterventions.map((int) => (
                       <SelectItem key={int.id} value={int.id}>
                         <span className="flex flex-col">
                           <span>{int.tracking_code || int.title} — {CATEGORY_LABELS[int.category] || int.category}</span>
@@ -494,6 +539,7 @@ export function DisputesTab() {
                             {int.client_name} / {int.technician_name}
                             {int.final_price ? ` — ${int.final_price.toFixed(2)} €` : ''}
                           </span>
+                          <span className="text-xs text-muted-foreground">{int.address}, {int.city}</span>
                         </span>
                       </SelectItem>
                     ))}
@@ -507,6 +553,7 @@ export function DisputesTab() {
                 <p><strong>{selectedIntervention.title}</strong></p>
                 <p>Client : {selectedIntervention.client_name || 'N/A'}</p>
                 <p>Technicien : {selectedIntervention.technician_name || 'N/A'}</p>
+                <p>Adresse : {selectedIntervention.address}, {selectedIntervention.city}</p>
                 {selectedIntervention.final_price && (
                   <p>Montant facturé : <strong>{selectedIntervention.final_price.toFixed(2)} €</strong></p>
                 )}
