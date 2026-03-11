@@ -909,7 +909,6 @@ export function PayoutsTab() {
               <div className="max-h-48 overflow-y-auto space-y-2">
                 {selectedTechnicianIds.map((id) => {
                   const tech = pendingTechnicians.find((t) => t.id === id);
-                  const amount = payoutAmounts[id] || '0';
                   return tech ? (
                     <div key={id} className="p-3 bg-muted/50 rounded-lg space-y-2">
                       <div className="flex items-center justify-between">
@@ -929,23 +928,8 @@ export function PayoutsTab() {
                           <span>- {formatCurrency(tech.commissionAmount)}</span>
                         </div>
                         <div className="flex justify-between font-medium border-t pt-1 mt-1">
-                          <span>Net calculé :</span>
+                          <span>Montant à verser :</span>
                           <span className="text-primary">{formatCurrency(tech.netRevenue)}</span>
-                        </div>
-                      </div>
-
-                      {/* Editable amount */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Montant à verser :</span>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            value={amount}
-                            onChange={(e) => setPayoutAmounts(prev => ({ ...prev, [id]: e.target.value }))}
-                            className="w-28 text-right h-8"
-                          />
-                          <span className="text-sm">€</span>
                         </div>
                       </div>
                     </div>
