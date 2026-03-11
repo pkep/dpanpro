@@ -12,30 +12,30 @@
 
 import { isSpringMode } from '@/config/api.config';
 
-// --- Supabase implementations (current) ---
-import { authService as supabaseAuthService } from '@/services/auth/auth.service';
-import { interventionsService as supabaseInterventionsService } from '@/services/interventions/interventions.service';
-import { usersService as supabaseUsersService } from '@/services/users/users.service';
-import { dispatchService as supabaseDispatchService } from '@/services/dispatch/dispatch.service';
-import { paymentService as supabasePaymentService } from '@/services/payment/payment.service';
-import { quotesService as supabaseQuotesService } from '@/services/quotes/quotes.service';
-import { ratingsService as supabaseRatingsService } from '@/services/ratings/ratings.service';
-import { messagesService as supabaseMessagesService } from '@/services/messages/messages.service';
-import { scheduleService as supabaseScheduleService } from '@/services/schedule/schedule.service';
-import { techniciansService as supabaseTechniciansService } from '@/services/technicians/technicians.service';
-import { servicesService as supabaseServicesService } from '@/services/services/services.service';
-import { historyService as supabaseHistoryService } from '@/services/history/history.service';
-import { photosService as supabasePhotosService } from '@/services/photos/photos.service';
-import { workPhotosService as supabaseWorkPhotosService } from '@/services/work-photos/work-photos.service';
-import { revenueService as supabaseRevenueService } from '@/services/revenue/revenue.service';
-import { statisticsService as supabaseStatisticsService } from '@/services/statistics/statistics.service';
-import { configurationService as supabaseConfigurationService } from '@/services/configuration/configuration.service';
-import { cancellationService as supabaseCancellationService } from '@/services/cancellation/cancellation.service';
-import { partnersService as supabasePartnersService } from '@/services/partners/partners.service';
-import { rolesService as supabaseRolesService } from '@/services/roles/roles.service';
-import { performanceService as supabasePerformanceService } from '@/services/performance/performance.service';
-import { pricingService as supabasePricingService } from '@/services/pricing/pricing.service';
-import { quoteModificationsService as supabaseQuoteModificationsService } from '@/services/quote-modifications/quote-modifications.service';
+// --- Supabase implementations ---
+import { authService as supabaseAuthService } from '@/services/supabase/auth.service';
+import { interventionsService as supabaseInterventionsService } from '@/services/supabase/interventions.service';
+import { usersService as supabaseUsersService } from '@/services/supabase/users.service';
+import { dispatchService as supabaseDispatchService } from '@/services/supabase/dispatch.service';
+import { paymentService as supabasePaymentService } from '@/services/supabase/payment.service';
+import { quotesService as supabaseQuotesService } from '@/services/supabase/quotes.service';
+import { ratingsService as supabaseRatingsService } from '@/services/supabase/ratings.service';
+import { messagesService as supabaseMessagesService } from '@/services/supabase/messages.service';
+import { scheduleService as supabaseScheduleService } from '@/services/supabase/schedule.service';
+import { techniciansService as supabaseTechniciansService } from '@/services/supabase/technicians.service';
+import { servicesService as supabaseServicesService } from '@/services/supabase/services.service';
+import { historyService as supabaseHistoryService } from '@/services/supabase/history.service';
+import { photosService as supabasePhotosService } from '@/services/supabase/photos.service';
+import { workPhotosService as supabaseWorkPhotosService } from '@/services/supabase/work-photos.service';
+import { revenueService as supabaseRevenueService } from '@/services/supabase/revenue.service';
+import { statisticsService as supabaseStatisticsService } from '@/services/supabase/statistics.service';
+import { configurationService as supabaseConfigurationService } from '@/services/supabase/configuration.service';
+import { cancellationService as supabaseCancellationService } from '@/services/supabase/cancellation.service';
+import { partnersService as supabasePartnersService } from '@/services/supabase/partners.service';
+import { rolesService as supabaseRolesService } from '@/services/supabase/roles.service';
+import { performanceService as supabasePerformanceService } from '@/services/supabase/performance.service';
+import { pricingService as supabasePricingService } from '@/services/supabase/pricing.service';
+import { quoteModificationsService as supabaseQuoteModificationsService } from '@/services/supabase/quote-modifications.service';
 
 // --- Spring implementations ---
 import { SpringAuthService } from '@/services/spring/auth.spring';
