@@ -40,6 +40,6 @@ export class SpringRolesService implements IRolesService {
 
   async canCreateManagers(userId: string): Promise<boolean> {
     const perms = await this.getManagerPermissions(userId);
-    return perms?.can_create_managers ?? false;
+    return (perms as any)?.canCreateManagers ?? (perms as any)?.can_create_managers ?? false;
   }
 }
