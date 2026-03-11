@@ -116,6 +116,8 @@ export default function AdminPaymentsPage() {
               title: i.title,
               address: i.address,
               city: i.city,
+              status: i.status,
+              finalPrice: i.final_price,
               clientName: i.client_id ? clientsMap[i.client_id] || '' : '',
             };
           });
