@@ -10,11 +10,9 @@ export interface Service {
   displayOrder: number;
   createdAt: string;
   updatedAt: string;
-  basePrice: number;
   defaultPriority: string;
   displacementPrice: number;
   securityPrice: number;
-  repairPrice: number;
   vatRateIndividual: number;
   vatRateProfessional: number;
   targetArrivalTimeMinutes: number;
@@ -30,11 +28,9 @@ interface DbService {
   display_order: number;
   created_at: string;
   updated_at: string;
-  base_price: number;
   default_priority: string;
   displacement_price: number;
   security_price: number;
-  repair_price: number;
   vat_rate_individual: number;
   vat_rate_professional: number;
   target_arrival_time_minutes: number;
@@ -80,19 +76,10 @@ class ServicesService {
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.displacementPrice !== undefined) dbUpdates.displacement_price = updates.displacementPrice;
     if (updates.securityPrice !== undefined) dbUpdates.security_price = updates.securityPrice;
-    if (updates.repairPrice !== undefined) dbUpdates.repair_price = updates.repairPrice;
     if (updates.vatRateIndividual !== undefined) dbUpdates.vat_rate_individual = updates.vatRateIndividual;
     if (updates.vatRateProfessional !== undefined) dbUpdates.vat_rate_professional = updates.vatRateProfessional;
     if (updates.displayOrder !== undefined) dbUpdates.display_order = updates.displayOrder;
     if (updates.targetArrivalTimeMinutes !== undefined) dbUpdates.target_arrival_time_minutes = updates.targetArrivalTimeMinutes;
-    
-    // Recalculate base_price as sum of components
-    if (updates.displacementPrice !== undefined || updates.securityPrice !== undefined || updates.repairPrice !== undefined) {
-      const displacement = updates.displacementPrice ?? 0;
-      const security = updates.securityPrice ?? 0;
-      const repair = updates.repairPrice ?? 0;
-      dbUpdates.base_price = displacement + security + repair;
-    }
 
     const { error } = await supabase
       .from('services')
@@ -103,7 +90,6 @@ class ServicesService {
   }
 
   async swapServiceOrder(serviceId1: string, order1: number, serviceId2: string, order2: number): Promise<void> {
-    // Update both services' display_order
     const { error: error1 } = await supabase
       .from('services')
       .update({ display_order: order2 } as Record<string, unknown>)
@@ -130,11 +116,9 @@ class ServicesService {
       displayOrder: data.display_order,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
-      basePrice: data.base_price,
       defaultPriority: data.default_priority,
       displacementPrice: data.displacement_price,
       securityPrice: data.security_price,
-      repairPrice: data.repair_price,
       vatRateIndividual: data.vat_rate_individual,
       vatRateProfessional: data.vat_rate_professional,
       targetArrivalTimeMinutes: data.target_arrival_time_minutes || 30,

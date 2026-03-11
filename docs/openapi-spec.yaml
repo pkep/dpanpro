@@ -3947,13 +3947,9 @@ components:
           type: boolean
         displayOrder:
           type: integer
-        basePrice:
-          type: number
         displacementPrice:
           type: number
         securityPrice:
-          type: number
-        repairPrice:
           type: number
         vatRateIndividual:
           type: number
@@ -3978,8 +3974,6 @@ components:
         displacementPrice:
           type: number
         securityPrice:
-          type: number
-        repairPrice:
           type: number
         vatRateIndividual:
           type: number

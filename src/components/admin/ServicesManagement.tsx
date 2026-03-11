@@ -28,7 +28,6 @@ import { Loader2, Save, Euro, Percent, Wrench, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ExtendedService extends Service {
-  basePrice: number;
   defaultPriority: string;
 }
 
@@ -79,11 +78,9 @@ export function ServicesManagement() {
       displayOrder: s.display_order as number,
       createdAt: s.created_at as string,
       updatedAt: s.updated_at as string,
-      basePrice: s.base_price as number,
       defaultPriority: s.default_priority as string,
       displacementPrice: (s.displacement_price as number) || 0,
       securityPrice: (s.security_price as number) || 0,
-      repairPrice: (s.repair_price as number) || 0,
       vatRateIndividual: (s.vat_rate_individual as number) || 10,
       vatRateProfessional: (s.vat_rate_professional as number) || 20,
       targetArrivalTimeMinutes: (s.target_arrival_time_minutes as number) || 30,
@@ -114,7 +111,6 @@ export function ServicesManagement() {
       // Save service changes
       for (const [serviceId, changes] of Object.entries(editedServices)) {
         const updateData: Record<string, unknown> = {};
-        if (changes.basePrice !== undefined) updateData.base_price = changes.basePrice;
         if (changes.defaultPriority !== undefined) updateData.default_priority = changes.defaultPriority;
         if (changes.isActive !== undefined) updateData.is_active = changes.isActive;
 
@@ -250,7 +246,7 @@ export function ServicesManagement() {
             <TableHeader>
               <TableRow>
                 <TableHead>Service</TableHead>
-                <TableHead>Prix de base</TableHead>
+                <TableHead>Total HT</TableHead>
                 <TableHead>Priorité par défaut</TableHead>
                 <TableHead>Prix estimé</TableHead>
                 <TableHead>Actif</TableHead>
@@ -258,12 +254,12 @@ export function ServicesManagement() {
             </TableHeader>
             <TableBody>
               {services.map((service) => {
-                const basePrice = getDisplayValue(service, 'basePrice') as number;
+                const totalHT = service.displacementPrice + service.securityPrice;
                 const defaultPriority = getDisplayValue(service, 'defaultPriority') as string;
                 const isActive = getDisplayValue(service, 'isActive') as boolean;
                 const multiplier = multipliers.find((m) => m.priority === defaultPriority);
                 const multiplierValue = multiplier ? getMultiplierValue(multiplier) : 1;
-                const estimatedPrice = pricingService.calculateEstimatedPrice(basePrice, multiplierValue);
+                const estimatedPrice = pricingService.calculateEstimatedPrice(totalHT, multiplierValue);
 
                 return (
                   <TableRow key={service.id}>
@@ -275,16 +271,7 @@ export function ServicesManagement() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          step="1"
-                          min="0"
-                          value={basePrice}
-                          onChange={(e) =>
-                            handleServiceChange(service.id, 'basePrice', parseFloat(e.target.value) || 0)
-                          }
-                          className="w-24"
-                        />
+                        <span className="font-medium">{totalHT.toFixed(2)}</span>
                         <Euro className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </TableCell>
@@ -310,7 +297,7 @@ export function ServicesManagement() {
                         <span className="font-semibold text-primary">{estimatedPrice.toFixed(2)}</span>
                         <Euro className="h-4 w-4 text-primary" />
                         <span className="text-xs text-muted-foreground">
-                          ({basePrice} × {multiplierValue})
+                          ({totalHT.toFixed(2)} × {multiplierValue})
                         </span>
                       </div>
                     </TableCell>
