@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { servicesService, Service } from '@/services/services/services.service';
+import { servicesService, Service } from '@/services/supabase/services.service';
 import { InterventionCategory } from '@/types/intervention.types';
 import { Loader2, Wrench, Key, Zap, Flame, Snowflake, Grid3X3 } from 'lucide-react';
 import { cn } from '@/lib/utils';

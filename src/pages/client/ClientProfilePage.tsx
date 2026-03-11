@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ClientLayout } from '@/components/client/ClientLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { usersService } from '@/services/users/users.service';
+import { usersService } from '@/services/supabase/users.service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

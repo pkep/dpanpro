@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Loader2, MapPin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { performanceService } from '@/services/performance/performance.service';
+import { performanceService } from '@/services/supabase/performance.service';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 

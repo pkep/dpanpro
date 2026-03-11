@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StatusTimeline } from '@/components/interventions/StatusTimeline';
 import { ClientTrackingMap } from '@/components/map/ClientTrackingMap';
 import { StripeCardForm } from '@/components/payment/StripeCardForm';
-import { paymentService } from '@/services/payment/payment.service';
+import { paymentService } from '@/services/supabase/payment.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Camera, Upload, Loader2, CheckCircle, Image, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { workPhotosService, WorkPhoto, WorkPhotoType } from '@/services/work-photos/work-photos.service';
+import { workPhotosService, WorkPhoto, WorkPhotoType } from '@/services/supabase/work-photos.service';
 
 interface WorkPhotoCaptureProps {
   interventionId: string;

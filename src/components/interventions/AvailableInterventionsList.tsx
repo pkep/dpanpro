@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { InterventionCategory, InterventionStatus, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';
-import { dispatchService } from '@/services/dispatch/dispatch.service';
+import { dispatchService } from '@/services/supabase/dispatch.service';
 import { calculateDistance } from '@/utils/geolocation';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';

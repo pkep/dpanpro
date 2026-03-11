@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Intervention, InterventionStatus, STATUS_LABELS, CATEGORY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
-import { interventionsService } from '@/services/interventions/interventions.service';
-import { dispatchService } from '@/services/dispatch/dispatch.service';
+import { interventionsService } from '@/services/supabase/interventions.service';
+import { dispatchService } from '@/services/supabase/dispatch.service';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, Inbox, MapPin, XCircle, Eye } from 'lucide-react';

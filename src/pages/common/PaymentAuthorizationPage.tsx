@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { StripeCardForm } from '@/components/payment/StripeCardForm';
-import { paymentService } from '@/services/payment/payment.service';
+import { paymentService } from '@/services/supabase/payment.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Camera, Image, Loader2, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { workPhotosService, WorkPhoto } from '@/services/work-photos/work-photos.service';
+import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
 
 interface FinalizePhotosDialogProps {
   open: boolean;

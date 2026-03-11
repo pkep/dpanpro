@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { ratingsService, Rating } from '@/services/ratings/ratings.service';
+import { ratingsService, Rating } from '@/services/supabase/ratings.service';
 import { StarRating } from './StarRating';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';

@@ -5,7 +5,7 @@ import { RegisterForm } from '@/components/auth/RegisterForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm';
 import { useAuth } from '@/hooks/useAuth';
-import { authService } from '@/services/auth/auth.service';
+import { authService } from '@/services/supabase/auth.service';
 import type { User } from '@/types/auth.types';
 import { Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';

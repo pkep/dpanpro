@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   ShieldAlert
 } from 'lucide-react';
-import { revenueService, type WeeklyStats, type PerformanceStats } from '@/services/revenue/revenue.service';
+import { revenueService, type WeeklyStats, type PerformanceStats } from '@/services/supabase/revenue.service';
 import { differenceInDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
