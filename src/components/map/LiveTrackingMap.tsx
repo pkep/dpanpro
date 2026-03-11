@@ -318,6 +318,33 @@ export function LiveTrackingMap({
   const [showNormal, setShowNormal] = useState(true);
   const [searchTarget, setSearchTarget] = useState<[number, number] | null>(null);
   const [searchZoom, setSearchZoom] = useState(14);
+  const [cityBoundary, setCityBoundary] = useState<any | null>(null);
+
+  // Fetch city boundary from Nominatim
+  const fetchCityBoundary = useCallback(async (query: string, lat: number, lng: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&polygon_geojson=1`,
+        { headers: { 'User-Agent': 'InterventionApp/1.0' } }
+      );
+      const data = await res.json();
+      if (data.length > 0 && data[0].geojson) {
+        const geojson = data[0].geojson;
+        // Only use polygon/multipolygon boundaries
+        if (geojson.type === 'Polygon' || geojson.type === 'MultiPolygon') {
+          setCityBoundary({
+            type: 'Feature',
+            geometry: geojson,
+            properties: {},
+          });
+          return;
+        }
+      }
+      setCityBoundary(null);
+    } catch {
+      setCityBoundary(null);
+    }
+  }, []);
 
   // Fetch active interventions
   useEffect(() => {
