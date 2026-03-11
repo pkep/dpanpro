@@ -39,9 +39,9 @@ L.Icon.Default.mergeOptions({
 });
 
 // Custom icons for technicians
-const createTechnicianIcon = (isCurrentUser: boolean = false) => {
-  const color = isCurrentUser ? '#22c55e' : '#3b82f6';
-  const pulseColor = isCurrentUser ? 'rgba(34, 197, 94, 0.4)' : 'rgba(59, 130, 246, 0.4)';
+const createTechnicianIcon = (_isCurrentUser: boolean = false) => {
+  const color = '#22c55e';
+  const pulseColor = 'rgba(34, 197, 94, 0.4)';
   
   return L.divIcon({
     className: 'technician-marker',
@@ -176,6 +176,10 @@ export function LiveTrackingMap({
   const [loading, setLoading] = useState(true);
   const [mapCenter, setMapCenter] = useState<[number, number]>([46.603354, 1.888334]);
   const [mapReady, setMapReady] = useState(false);
+  const [showTechnicians, setShowTechnicians] = useState(true);
+  const [showUrgent, setShowUrgent] = useState(true);
+  const [showHigh, setShowHigh] = useState(true);
+  const [showNormal, setShowNormal] = useState(true);
 
   // Fetch active interventions
   useEffect(() => {
@@ -312,7 +316,7 @@ export function LiveTrackingMap({
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
             <span>{technicians.length} technicien(s) en ligne</span>
           </div>
           {showInterventions && (
@@ -382,7 +386,7 @@ export function LiveTrackingMap({
           )}
 
           {/* Other technicians */}
-          {mapReady && technicians
+          {mapReady && showTechnicians && technicians
             .filter(t => t.id !== user?.id)
             .filter(t => t.latitude != null && t.longitude != null)
             .map((tech) => (
@@ -440,7 +444,13 @@ export function LiveTrackingMap({
           })}
 
           {/* Interventions */}
-          {mapReady && showInterventions && interventionsWithCoords.map((intervention) => (
+          {mapReady && showInterventions && interventionsWithCoords
+            .filter(i => {
+              if (i.priority === 'urgent') return showUrgent;
+              if (i.priority === 'high') return showHigh;
+              return showNormal;
+            })
+            .map((intervention) => (
             <Marker
               key={intervention.id}
               position={[intervention.latitude!, intervention.longitude!]}
@@ -536,36 +546,44 @@ export function LiveTrackingMap({
       {/* Legend */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Légende</CardTitle>
+          <CardTitle className="text-sm">Légende (cliquez pour afficher/masquer)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-6 text-sm">
             <div className="space-y-2">
               <h4 className="font-medium text-muted-foreground">Techniciens</h4>
-              <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setShowTechnicians(prev => !prev)}
+                className={`flex items-center gap-2 cursor-pointer transition-opacity ${!showTechnicians ? 'opacity-40 line-through' : ''}`}
+              >
                 <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-[10px]">👷</div>
-                <span>Ma position</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">👷</div>
-                <span>Autres techniciens</span>
-              </div>
+                <span>Technicien</span>
+              </button>
             </div>
             {showInterventions && (
               <div className="space-y-2">
                 <h4 className="font-medium text-muted-foreground">Interventions</h4>
-                <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowUrgent(prev => !prev)}
+                  className={`flex items-center gap-2 cursor-pointer transition-opacity ${!showUrgent ? 'opacity-40 line-through' : ''}`}
+                >
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
                   <span>Urgent</span>
-                </div>
-                <div className="flex items-center gap-2">
+                </button>
+                <button 
+                  onClick={() => setShowHigh(prev => !prev)}
+                  className={`flex items-center gap-2 cursor-pointer transition-opacity ${!showHigh ? 'opacity-40 line-through' : ''}`}
+                >
                   <div className="w-3 h-3 rounded-full bg-orange-500"></div>
                   <span>Haute</span>
-                </div>
-                <div className="flex items-center gap-2">
+                </button>
+                <button 
+                  onClick={() => setShowNormal(prev => !prev)}
+                  className={`flex items-center gap-2 cursor-pointer transition-opacity ${!showNormal ? 'opacity-40 line-through' : ''}`}
+                >
                   <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
                   <span>Normale</span>
-                </div>
+                </button>
               </div>
             )}
             {showLines && (
