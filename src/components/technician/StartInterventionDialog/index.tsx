@@ -406,7 +406,7 @@ export function StartInterventionDialog({
 
       // 1. Save quote lines
       if (quoteConfig) {
-        const newLines: import('@/services/quotes/quotes.service').QuoteInput[] = [];
+        const newLines: import('@/services/supabase/quotes.service').QuoteInput[] = [];
         if (quoteConfig.displacementPrice > 0) {
           newLines.push({ lineType: 'displacement', label: 'Déplacement technicien', basePrice: quoteConfig.displacementPrice, multiplier: 1 });
         }
