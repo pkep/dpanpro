@@ -813,7 +813,7 @@ export function PayoutsTab() {
                   {payouts.map((payout) => (
                     <div
                       key={payout.id}
-                      className="border rounded-lg p-4 flex items-center justify-between"
+                      className="border rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
