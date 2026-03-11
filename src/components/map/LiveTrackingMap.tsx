@@ -176,6 +176,10 @@ export function LiveTrackingMap({
   const [loading, setLoading] = useState(true);
   const [mapCenter, setMapCenter] = useState<[number, number]>([46.603354, 1.888334]);
   const [mapReady, setMapReady] = useState(false);
+  const [showTechnicians, setShowTechnicians] = useState(true);
+  const [showUrgent, setShowUrgent] = useState(true);
+  const [showHigh, setShowHigh] = useState(true);
+  const [showNormal, setShowNormal] = useState(true);
 
   // Fetch active interventions
   useEffect(() => {
