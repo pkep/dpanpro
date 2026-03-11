@@ -198,6 +198,7 @@ export function PendingActionsModal() {
 
   const handleAction = (action: PendingAction) => {
     setOpen(false);
+    setDismissed(true);
     if (action.type === 'payment_authorization') {
       navigate(`/authorize-payment/${action.interventionId}`);
     } else if (action.type === 'quote_approval') {
