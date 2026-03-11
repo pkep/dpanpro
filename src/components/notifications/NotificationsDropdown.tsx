@@ -73,34 +73,48 @@ export function NotificationsDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
-          {notifications.length > 0 && (
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={(e) => {
-                  e.preventDefault();
-                  markAllAsRead();
-                }}
-              >
-                <CheckCheck className="h-3 w-3 mr-1" />
-                Tout lire
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs text-destructive hover:text-destructive"
-                onClick={(e) => {
-                  e.preventDefault();
-                  clearNotifications();
-                }}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
+          <span>{showPreferences ? 'Préférences' : 'Notifications'}</span>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowPreferences(!showPreferences);
+              }}
+            >
+              <Settings2 className="h-3 w-3 mr-1" />
+              {showPreferences ? 'Retour' : 'Gérer'}
+            </Button>
+            {!showPreferences && notifications.length > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    markAllAsRead();
+                  }}
+                >
+                  <CheckCheck className="h-3 w-3 mr-1" />
+                  Tout lire
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    clearNotifications();
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+          </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
