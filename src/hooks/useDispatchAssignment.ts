@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { dispatchService, DispatchAttempt } from '@/services/supabase/dispatch.service';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { getRouteWithFallback, RouteResult } from '@/services/routing/routing.service';
+import { getRouteWithFallback, RouteResult } from '@/services/components/utils/routing/routing.service';
 
 interface TravelInfo {
   distanceKm: number;

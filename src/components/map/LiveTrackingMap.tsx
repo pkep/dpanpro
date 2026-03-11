@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTechnicianTracking, TechnicianLocation } from '@/hooks/useTechnicianTracking';
 import { interventionsService } from '@/services/supabase/interventions.service';
-import { geocodingService } from '@/services/geocoding/geocoding.service';
+import { geocodingService } from '@/services/components/geocoding/geocoding.service';
 import { calculateDistance, formatDistance } from '@/utils/geolocation';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';

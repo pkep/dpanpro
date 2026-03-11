@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { storageService } from '@/services/storage/storage.service';
+import { storageService } from '@/services/components/utils/storage/storage.service';
 import {
   Dialog,
   DialogContent,

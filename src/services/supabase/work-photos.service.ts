@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { storageService } from '@/services/storage/storage.service';
+import { storageService } from '@/services/components/utils/storage/storage.service';
 
 const BUCKET_NAME = 'intervention-photos';
 

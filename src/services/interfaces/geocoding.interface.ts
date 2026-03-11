@@ -1,4 +1,4 @@
-import type { GeocodingResult, ReverseGeocodingResult } from '@/services/geocoding/geocoding.service';
+import type { GeocodingResult, ReverseGeocodingResult } from '@/services/components/geocoding/geocoding.service';
 
 export interface IGeocodingService {
   geocodeAddress(address: string, city: string, postalCode: string): Promise<GeocodingResult | null>;

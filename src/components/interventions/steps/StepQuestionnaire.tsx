@@ -12,10 +12,10 @@ import {
   QuestionnaireResult, 
   QuestionnaireDomain 
 } from '@/data/questionnaire-tree';
-import { questionnaireService } from '@/services/questionnaire/questionnaire.service';
+import { questionnaireService } from '@/services/components/questionnaire/questionnaire.service';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { storageService } from '@/services/storage/storage.service';
+import { storageService } from '@/services/components/utils/storage/storage.service';
 import { toast } from 'sonner';
 
 interface HistoryEntry {

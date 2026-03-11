@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { interventionsService } from '@/services/supabase/interventions.service';
-import { geocodingService } from '@/services/geocoding/geocoding.service';
+import { geocodingService } from '@/services/components/geocoding/geocoding.service';
 import { calculateDistance, formatDistance } from '@/utils/geolocation';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { invoiceService } from '@/services/invoice/invoice.service';
+import { invoiceService } from '@/services/components/invoice/invoice.service';
 import type { Intervention } from '@/types/intervention.types';
 
 export interface CancellationResult {

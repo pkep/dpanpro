@@ -6,7 +6,7 @@ import { interventionsService } from '@/services/supabase/interventions.service'
 import { cancellationService } from '@/services/supabase/cancellation.service';
 import { historyService } from '@/services/supabase/history.service';
 import { usersService } from '@/services/supabase/users.service';
-import { invoiceService } from '@/services/invoice/invoice.service';
+import { invoiceService } from '@/services/components/invoice/invoice.service';
 import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
 import { quoteModificationsService, QuoteModification } from '@/services/supabase/quote-modifications.service';
 import { servicesService } from '@/services/supabase/services.service';

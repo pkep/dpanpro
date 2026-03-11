@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, Download, CheckCircle, PenTool } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { quotePDFService } from '@/services/quote-pdf/quote-pdf.service';
+import { quotePDFService } from '@/services/components/quote-pdf/quote-pdf.service';
 import type { Intervention } from '@/types/intervention.types';
 import type { QuoteLine } from '@/services/supabase/quotes.service';
 import type { QuoteModification } from '@/services/supabase/quote-modifications.service';

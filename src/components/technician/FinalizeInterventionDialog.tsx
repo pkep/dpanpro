@@ -9,7 +9,7 @@ import { interventionsService } from '@/services/supabase/interventions.service'
 import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
 import { quoteModificationsService, QuoteModificationItem } from '@/services/supabase/quote-modifications.service';
 import { historyService } from '@/services/supabase/history.service';
-import { invoiceService } from '@/services/invoice/invoice.service';
+import { invoiceService } from '@/services/components/invoice/invoice.service';
 import { useAuth } from '@/hooks/useAuth';
 import type { Intervention } from '@/types/intervention.types';
 

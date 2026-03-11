@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { calculateRoute, calculateFallbackRoute } from '@/services/routing/routing.service';
+import { calculateRoute, calculateFallbackRoute } from '@/services/components/utils/routing/routing.service';
 
 interface CancellationFeeInfo {
   hasFees: boolean;
