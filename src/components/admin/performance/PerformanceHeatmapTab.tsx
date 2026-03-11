@@ -46,7 +46,7 @@ export function PerformanceHeatmapTab() {
           </div>
         ) : zones && zones.length > 0 ? (
           <div className="space-y-4">
-            <div className="h-[500px] rounded-lg overflow-hidden border">
+            <div className="h-[350px] sm:h-[500px] rounded-lg overflow-hidden border">
               <MapContainer
                 center={[center.lat, center.lng]}
                 zoom={6}
