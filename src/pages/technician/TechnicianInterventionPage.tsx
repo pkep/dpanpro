@@ -443,10 +443,12 @@ export default function TechnicianInterventionPage() {
             <CardTitle className="text-sm font-medium">Actions rapides</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            <Button onClick={handleNavigate} variant="default">
-              <Navigation className="h-4 w-4 mr-2" />
-              Naviguer
-            </Button>
+            {['assigned', 'on_route'].includes(intervention.status) && (
+              <Button onClick={handleNavigate} variant="default">
+                <Navigation className="h-4 w-4 mr-2" />
+                Naviguer
+              </Button>
+            )}
             
             {intervention.status === 'assigned' && (
               <Button 
