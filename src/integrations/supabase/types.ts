@@ -1390,7 +1390,6 @@ export type Database = {
       }
       services: {
         Row: {
-          base_price: number
           code: string
           created_at: string
           default_priority: string
@@ -1401,7 +1400,6 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
-          repair_price: number
           security_price: number
           target_arrival_time_minutes: number | null
           updated_at: string
@@ -1409,7 +1407,6 @@ export type Database = {
           vat_rate_professional: number
         }
         Insert: {
-          base_price?: number
           code: string
           created_at?: string
           default_priority?: string
@@ -1420,7 +1417,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
-          repair_price?: number
           security_price?: number
           target_arrival_time_minutes?: number | null
           updated_at?: string
@@ -1428,7 +1424,6 @@ export type Database = {
           vat_rate_professional?: number
         }
         Update: {
-          base_price?: number
           code?: string
           created_at?: string
           default_priority?: string
@@ -1439,7 +1434,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
-          repair_price?: number
           security_price?: number
           target_arrival_time_minutes?: number | null
           updated_at?: string
