@@ -1,8 +1,8 @@
-import type { TechnicianPerformance, PerformanceTrend, ZoneStats, PeriodType } from '@/services/supabase/performance.service';
+import type { TechnicianPerformance, PerformanceTrend, ZoneStats, DateRange } from '@/services/supabase/performance.service';
 
 export interface IPerformanceService {
-  getTechnicianPerformances(period: PeriodType): Promise<TechnicianPerformance[]>;
-  getPerformanceTrends(days?: number): Promise<PerformanceTrend[]>;
-  getInterventionZones(): Promise<ZoneStats[]>;
-  getTopTechnicians(limit?: number): Promise<TechnicianPerformance[]>;
+  getTechnicianPerformances(dateRange: DateRange): Promise<TechnicianPerformance[]>;
+  getPerformanceTrends(dateRange: DateRange): Promise<PerformanceTrend[]>;
+  getInterventionZones(dateRange?: DateRange): Promise<ZoneStats[]>;
+  getTopTechnicians(limit?: number, dateRange?: DateRange): Promise<TechnicianPerformance[]>;
 }

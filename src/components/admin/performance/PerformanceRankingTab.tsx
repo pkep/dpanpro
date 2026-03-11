@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Trophy, Medal, Star, TrendingUp, Briefcase } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { performanceService } from '@/services/supabase/performance.service';
+import { PeriodFilter, getDateRangeForPeriod, type DateRange } from './PeriodFilter';
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value);
@@ -39,16 +41,23 @@ function getRankBadge(rank: number) {
 }
 
 export function PerformanceRankingTab() {
+  const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPeriod('monthly'));
+
   const { data: topTechnicians, isLoading } = useQuery({
-    queryKey: ['top-technicians'],
-    queryFn: () => performanceService.getTopTechnicians(7),
+    queryKey: ['top-technicians', dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
+    queryFn: () => performanceService.getTopTechnicians(7, dateRange),
   });
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Classement des Techniciens</CardTitle>
-        <CardDescription>Top 7 des techniciens les plus performants ce mois</CardDescription>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle>Classement des Techniciens</CardTitle>
+            <CardDescription>Top 7 des techniciens les plus performants</CardDescription>
+          </div>
+          <PeriodFilter onPeriodChange={(_, range) => setDateRange(range)} />
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -61,13 +70,13 @@ export function PerformanceRankingTab() {
               <div
                 key={tech.id}
                 className={`flex items-center gap-4 p-4 rounded-lg border ${
-                  index === 0 
-                    ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800' 
+                  index === 0
+                    ? 'bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-yellow-200 dark:border-yellow-800'
                     : 'bg-card'
                 }`}
               >
                 {getRankBadge(index + 1)}
-                
+
                 <Avatar className="h-12 w-12">
                   <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                     {tech.firstName.charAt(0)}{tech.lastName.charAt(0)}
@@ -75,16 +84,11 @@ export function PerformanceRankingTab() {
                 </Avatar>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">
-                    {tech.firstName} {tech.lastName}
-                  </p>
-                  {tech.companyName && (
-                    <p className="text-sm text-muted-foreground truncate">{tech.companyName}</p>
-                  )}
+                  <p className="font-semibold truncate">{tech.firstName} {tech.lastName}</p>
+                  {tech.companyName && <p className="text-sm text-muted-foreground truncate">{tech.companyName}</p>}
                 </div>
 
                 <div className="hidden sm:flex items-center gap-6">
-                  {/* Revenue */}
                   <div className="text-center">
                     <div className="flex items-center gap-1 text-primary">
                       <TrendingUp className="h-4 w-4" />
@@ -92,8 +96,6 @@ export function PerformanceRankingTab() {
                     </div>
                     <p className="text-xs text-muted-foreground">CA Généré</p>
                   </div>
-
-                  {/* Interventions */}
                   <div className="text-center">
                     <div className="flex items-center gap-1">
                       <Briefcase className="h-4 w-4 text-muted-foreground" />
@@ -101,8 +103,6 @@ export function PerformanceRankingTab() {
                     </div>
                     <p className="text-xs text-muted-foreground">Interventions</p>
                   </div>
-
-                  {/* Rating */}
                   <div className="text-center min-w-[60px]">
                     {tech.avgRating ? (
                       <>
@@ -118,11 +118,8 @@ export function PerformanceRankingTab() {
                   </div>
                 </div>
 
-                {/* Mobile view stats */}
                 <div className="sm:hidden flex flex-col items-end gap-1">
-                  <Badge variant="secondary" className="font-bold">
-                    {formatCurrency(tech.revenue)}
-                  </Badge>
+                  <Badge variant="secondary" className="font-bold">{formatCurrency(tech.revenue)}</Badge>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{tech.completedInterventions} interv.</span>
                     {tech.avgRating && (

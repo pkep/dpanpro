@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, MapPin } from 'lucide-react';
@@ -5,21 +6,24 @@ import { useQuery } from '@tanstack/react-query';
 import { performanceService } from '@/services/supabase/performance.service';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { PeriodFilter, getDateRangeForPeriod, type DateRange } from './PeriodFilter';
 
 export function PerformanceHeatmapTab() {
+  const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPeriod('monthly'));
+
   const { data: zones, isLoading } = useQuery({
-    queryKey: ['intervention-zones'],
-    queryFn: () => performanceService.getInterventionZones(),
+    queryKey: ['intervention-zones', dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
+    queryFn: () => performanceService.getInterventionZones(dateRange),
   });
 
   const maxCount = zones?.reduce((max, z) => Math.max(max, z.count), 1) || 1;
 
   const getColor = (count: number) => {
     const intensity = count / maxCount;
-    if (intensity > 0.75) return '#ef4444'; // red
-    if (intensity > 0.5) return '#f97316'; // orange
-    if (intensity > 0.25) return '#eab308'; // yellow
-    return '#22c55e'; // green
+    if (intensity > 0.75) return '#ef4444';
+    if (intensity > 0.5) return '#f97316';
+    if (intensity > 0.25) return '#eab308';
+    return '#22c55e';
   };
 
   const getRadius = (count: number) => {
@@ -28,7 +32,6 @@ export function PerformanceHeatmapTab() {
     return base + scale;
   };
 
-  // Calculate center based on data or default to France
   const center = zones && zones.length > 0
     ? { lat: zones[0].lat, lng: zones[0].lng }
     : { lat: 46.603354, lng: 1.888334 };
@@ -36,8 +39,13 @@ export function PerformanceHeatmapTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Heatmap Géographique</CardTitle>
-        <CardDescription>Zones les plus sollicitées par les clients</CardDescription>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle>Heatmap Géographique</CardTitle>
+            <CardDescription>Zones les plus sollicitées par les clients</CardDescription>
+          </div>
+          <PeriodFilter onPeriodChange={(_, range) => setDateRange(range)} />
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -47,11 +55,7 @@ export function PerformanceHeatmapTab() {
         ) : zones && zones.length > 0 ? (
           <div className="space-y-4">
             <div className="h-[350px] sm:h-[500px] rounded-lg overflow-hidden border">
-              <MapContainer
-                center={[center.lat, center.lng]}
-                zoom={6}
-                style={{ height: '100%', width: '100%' }}
-              >
+              <MapContainer center={[center.lat, center.lng]} zoom={6} style={{ height: '100%', width: '100%' }}>
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -79,7 +83,6 @@ export function PerformanceHeatmapTab() {
               </MapContainer>
             </div>
 
-            {/* Legend */}
             <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 py-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#22c55e]" />
@@ -99,19 +102,13 @@ export function PerformanceHeatmapTab() {
               </div>
             </div>
 
-            {/* Top Zones List */}
             <div className="mt-6">
               <h3 className="text-sm font-medium mb-3">Top 10 des zones les plus sollicitées</h3>
               <div className="grid gap-2">
                 {zones.slice(0, 10).map((zone, index) => (
-                  <div 
-                    key={`${zone.city}-${zone.postalCode}-list-${index}`}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                  >
+                  <div key={`${zone.city}-${zone.postalCode}-list-${index}`} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="w-8 h-8 flex items-center justify-center rounded-full">
-                        {index + 1}
-                      </Badge>
+                      <Badge variant="outline" className="w-8 h-8 flex items-center justify-center rounded-full">{index + 1}</Badge>
                       <div>
                         <p className="font-medium">{zone.city}</p>
                         <p className="text-sm text-muted-foreground">{zone.postalCode}</p>

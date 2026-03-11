@@ -1,22 +1,23 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { performanceService, type TechnicianPerformance, type PeriodType } from '@/services/supabase/performance.service';
+import { performanceService, type TechnicianPerformance } from '@/services/supabase/performance.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { PeriodFilter, getDateRangeForPeriod, type PeriodType, type DateRange } from './PeriodFilter';
 
 const PERIOD_LABELS: Record<PeriodType, string> = {
   daily: 'Quotidien',
   weekly: 'Hebdomadaire',
   monthly: 'Mensuel',
   yearly: 'Annuel',
+  custom: 'Personnalisé',
 };
 
 function formatDuration(seconds: number | null): string {
@@ -34,11 +35,17 @@ function formatCurrency(value: number): string {
 
 export function PerformanceReportsTab() {
   const [period, setPeriod] = useState<PeriodType>('monthly');
+  const [dateRange, setDateRange] = useState<DateRange>(getDateRangeForPeriod('monthly'));
 
   const { data: performances, isLoading } = useQuery({
-    queryKey: ['technician-performances', period],
-    queryFn: () => performanceService.getTechnicianPerformances(period),
+    queryKey: ['technician-performances', dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
+    queryFn: () => performanceService.getTechnicianPerformances(dateRange),
   });
+
+  const handlePeriodChange = (newPeriod: PeriodType, range: DateRange) => {
+    setPeriod(newPeriod);
+    setDateRange(range);
+  };
 
   const exportToPDF = () => {
     if (!performances) return;
@@ -54,6 +61,7 @@ export function PerformanceReportsTab() {
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Généré le ${currentDate}`, 14, 30);
+    doc.text(`Période: ${format(dateRange.startDate, 'dd/MM/yyyy')} - ${format(dateRange.endDate, 'dd/MM/yyyy')}`, 14, 36);
 
     const tableData = performances.map((p, index) => [
       (index + 1).toString(),
@@ -68,22 +76,15 @@ export function PerformanceReportsTab() {
     ]);
 
     autoTable(doc, {
-      startY: 40,
+      startY: 44,
       head: [['#', 'Technicien', 'Entreprise', 'CA', 'Interv.', 'Temps rép.', 'Temps arr.', 'Note', 'Accept.']],
       body: tableData,
       theme: 'striped',
       headStyles: { fillColor: [15, 184, 127], fontSize: 8 },
       bodyStyles: { fontSize: 7 },
       columnStyles: {
-        0: { cellWidth: 10 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 15 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 20 },
-        7: { cellWidth: 15 },
-        8: { cellWidth: 15 },
+        0: { cellWidth: 10 }, 1: { cellWidth: 30 }, 2: { cellWidth: 25 }, 3: { cellWidth: 20 },
+        4: { cellWidth: 15 }, 5: { cellWidth: 20 }, 6: { cellWidth: 20 }, 7: { cellWidth: 15 }, 8: { cellWidth: 15 },
       },
     });
 
@@ -107,12 +108,10 @@ export function PerformanceReportsTab() {
 
     const workbook = XLSX.utils.book_new();
     const sheet = XLSX.utils.json_to_sheet(data);
-    
     sheet['!cols'] = [
       { wch: 5 }, { wch: 25 }, { wch: 20 }, { wch: 15 }, { wch: 15 },
       { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 18 },
     ];
-
     XLSX.utils.book_append_sheet(workbook, sheet, 'Performances');
     XLSX.writeFile(workbook, `rapport-performance-${period}-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
@@ -123,20 +122,10 @@ export function PerformanceReportsTab() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>Rapports de Performance</CardTitle>
-            <CardDescription>Export PDF/CSV des performances des techniciens</CardDescription>
+            <CardDescription>Export PDF/Excel des performances des techniciens</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">Quotidien</SelectItem>
-                <SelectItem value="weekly">Hebdomadaire</SelectItem>
-                <SelectItem value="monthly">Mensuel</SelectItem>
-                <SelectItem value="yearly">Annuel</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <PeriodFilter onPeriodChange={handlePeriodChange} />
             <Button variant="outline" size="sm" onClick={exportToPDF} disabled={!performances?.length}>
               <FileText className="h-4 w-4 mr-2" />
               PDF
@@ -179,9 +168,7 @@ export function PerformanceReportsTab() {
                     <TableCell className="text-right">{p.completedInterventions}</TableCell>
                     <TableCell className="text-right">{formatDuration(p.avgResponseTimeSeconds)}</TableCell>
                     <TableCell className="text-right">{formatDuration(p.avgArrivalTimeSeconds)}</TableCell>
-                    <TableCell className="text-right">
-                      {p.avgRating ? `${p.avgRating.toFixed(1)}/5` : '-'}
-                    </TableCell>
+                    <TableCell className="text-right">{p.avgRating ? `${p.avgRating.toFixed(1)}/5` : '-'}</TableCell>
                     <TableCell className="text-right">{p.acceptanceRate.toFixed(0)}%</TableCell>
                   </TableRow>
                 ))}
