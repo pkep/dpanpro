@@ -28,6 +28,7 @@ import {
   History,
   Home,
   LogOut,
+  CreditCard,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
