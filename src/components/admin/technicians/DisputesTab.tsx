@@ -171,42 +171,36 @@ export function DisputesTab() {
     try {
       const { data, error } = await supabase
         .from('interventions')
-        .select('id, title, category, tracking_code, final_price, client_id, technician_id')
+        .select('id, title, category, tracking_code, final_price, client_id, technician_id, address, city')
         .eq('status', 'completed')
         .order('completed_at', { ascending: false })
-        .limit(50);
+        .limit(200);
 
       if (error) throw error;
 
-      const enriched: CompletedIntervention[] = [];
-      for (const int of data || []) {
-        let clientName = '';
-        let technicianName = '';
-
-        if (int.client_id) {
-          const { data: c } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', int.client_id)
-            .single();
-          if (c) clientName = `${c.first_name} ${c.last_name}`;
-        }
-
-        if (int.technician_id) {
-          const { data: t } = await supabase
-            .from('users')
-            .select('first_name, last_name')
-            .eq('id', int.technician_id)
-            .single();
-          if (t) technicianName = `${t.first_name} ${t.last_name}`;
-        }
-
-        enriched.push({
-          ...int,
-          client_name: clientName,
-          technician_name: technicianName,
-        });
+      // Build unique technician list
+      const techIds = [...new Set((data || []).map(i => i.technician_id).filter(Boolean))] as string[];
+      const techMap: Record<string, string> = {};
+      for (const tid of techIds) {
+        const { data: t } = await supabase.from('users').select('first_name, last_name').eq('id', tid).single();
+        if (t) techMap[tid] = `${t.first_name} ${t.last_name}`;
       }
+      setTechnicians(techIds.map(id => ({ id, name: techMap[id] || id })));
+
+      const clientIds = [...new Set((data || []).map(i => i.client_id).filter(Boolean))] as string[];
+      const clientMap: Record<string, string> = {};
+      for (const cid of clientIds) {
+        const { data: c } = await supabase.from('users').select('first_name, last_name').eq('id', cid).single();
+        if (c) clientMap[cid] = `${c.first_name} ${c.last_name}`;
+      }
+
+      const enriched: CompletedIntervention[] = (data || []).map(int => ({
+        ...int,
+        address: int.address || '',
+        city: int.city || '',
+        client_name: int.client_id ? clientMap[int.client_id] || '' : '',
+        technician_name: int.technician_id ? techMap[int.technician_id] || '' : '',
+      }));
 
       setCompletedInterventions(enriched);
     } catch (error) {
@@ -222,8 +216,21 @@ export function DisputesTab() {
     setSelectedInterventionId('');
     setClientNotes('');
     setTechnicianNotes('');
+    setFilterTechnicianId('all');
+    setFilterAddress('');
     fetchCompletedInterventions();
   };
+
+  const filteredInterventions = completedInterventions.filter(int => {
+    if (filterTechnicianId !== 'all' && int.technician_id !== filterTechnicianId) return false;
+    if (filterAddress.trim()) {
+      const search = filterAddress.toLowerCase();
+      const matchAddress = int.address.toLowerCase().includes(search);
+      const matchCity = int.city.toLowerCase().includes(search);
+      if (!matchAddress && !matchCity) return false;
+    }
+    return true;
+  });
 
   const handleCreateDispute = async () => {
     if (!selectedInterventionId) {
