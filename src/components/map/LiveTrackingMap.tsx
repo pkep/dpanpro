@@ -161,6 +161,24 @@ function FlyToLocation({ position, zoom }: { position: [number, number] | null; 
   return null;
 }
 
+// Display city boundary polygon
+function CityBoundary({ geoJson }: { geoJson: any | null }) {
+  if (!geoJson) return null;
+  return (
+    <GeoJSON
+      key={JSON.stringify(geoJson).slice(0, 100)}
+      data={geoJson}
+      style={{
+        color: 'hsl(var(--primary))',
+        weight: 3,
+        fillOpacity: 0.08,
+        fillColor: 'hsl(var(--primary))',
+        dashArray: '6, 4',
+      }}
+    />
+  );
+}
+
 // Search result type from adresse.data.gouv.fr
 interface AddressSearchResult {
   label: string;
