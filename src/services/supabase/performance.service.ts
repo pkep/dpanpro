@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { subDays, subMonths, subYears, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from 'date-fns';
+import { subDays, differenceInDays, format } from 'date-fns';
 
 export interface TechnicianPerformance {
   id: string;
@@ -30,11 +30,16 @@ export interface ZoneStats {
   count: number;
 }
 
-export type PeriodType = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type PeriodType = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
+
+export interface DateRange {
+  startDate: Date;
+  endDate: Date;
+}
 
 class PerformanceService {
-  async getTechnicianPerformances(period: PeriodType): Promise<TechnicianPerformance[]> {
-    const { startDate, endDate } = this.getDateRange(period);
+  async getTechnicianPerformances(dateRange: DateRange): Promise<TechnicianPerformance[]> {
+    const { startDate, endDate } = dateRange;
 
     // Get approved technicians
     const { data: partners, error: partnersError } = await supabase
@@ -116,13 +121,15 @@ class PerformanceService {
     return performances;
   }
 
-  async getPerformanceTrends(days: number = 30): Promise<PerformanceTrend[]> {
-    const startDate = subDays(new Date(), days);
+  async getPerformanceTrends(dateRange: DateRange): Promise<PerformanceTrend[]> {
+    const { startDate, endDate } = dateRange;
+    const days = Math.max(differenceInDays(endDate, startDate), 1);
 
     const { data: interventions, error } = await supabase
       .from('interventions')
       .select('created_at, status, response_time_seconds, technician_id')
-      .gte('created_at', startDate.toISOString());
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
 
     if (error) throw error;
 
@@ -130,7 +137,8 @@ class PerformanceService {
     const { data: ratings, error: ratingsError } = await supabase
       .from('intervention_ratings')
       .select('rating, created_at')
-      .gte('created_at', startDate.toISOString());
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
 
     if (ratingsError) throw ratingsError;
 
@@ -138,8 +146,8 @@ class PerformanceService {
     const dateMap = new Map<string, { responseTimes: number[], completed: number, total: number, ratings: number[] }>();
 
     // Initialize all days
-    for (let i = 0; i < days; i++) {
-      const date = format(subDays(new Date(), days - 1 - i), 'yyyy-MM-dd');
+    for (let i = 0; i <= days; i++) {
+      const date = format(new Date(startDate.getTime() + i * 86400000), 'yyyy-MM-dd');
       dateMap.set(date, { responseTimes: [], completed: 0, total: 0, ratings: [] });
     }
 
@@ -173,12 +181,20 @@ class PerformanceService {
     }));
   }
 
-  async getInterventionZones(): Promise<ZoneStats[]> {
-    const { data: interventions, error } = await supabase
+  async getInterventionZones(dateRange?: DateRange): Promise<ZoneStats[]> {
+    let query = supabase
       .from('interventions')
-      .select('city, postal_code, latitude, longitude')
+      .select('city, postal_code, latitude, longitude, created_at')
       .not('latitude', 'is', null)
       .not('longitude', 'is', null);
+
+    if (dateRange) {
+      query = query
+        .gte('created_at', dateRange.startDate.toISOString())
+        .lte('created_at', dateRange.endDate.toISOString());
+    }
+
+    const { data: interventions, error } = await query;
 
     if (error) throw error;
 
@@ -193,7 +209,6 @@ class PerformanceService {
       
       if (existing) {
         existing.count++;
-        // Average the coordinates
         existing.lat = (existing.lat * (existing.count - 1) + i.latitude) / existing.count;
         existing.lng = (existing.lng * (existing.count - 1) + i.longitude) / existing.count;
       } else {
@@ -210,10 +225,10 @@ class PerformanceService {
     return Array.from(zoneMap.values()).sort((a, b) => b.count - a.count);
   }
 
-  async getTopTechnicians(limit: number = 7): Promise<TechnicianPerformance[]> {
-    const performances = await this.getTechnicianPerformances('monthly');
+  async getTopTechnicians(limit: number = 7, dateRange?: DateRange): Promise<TechnicianPerformance[]> {
+    const range = dateRange || this.getDefaultMonthRange();
+    const performances = await this.getTechnicianPerformances(range);
     
-    // Sort by composite score (revenue + completed interventions + rating)
     return performances
       .sort((a, b) => {
         const scoreA = a.revenue + (a.completedInterventions * 100) + ((a.avgRating || 0) * 200);
@@ -223,19 +238,11 @@ class PerformanceService {
       .slice(0, limit);
   }
 
-  private getDateRange(period: PeriodType): { startDate: Date; endDate: Date } {
+  private getDefaultMonthRange(): DateRange {
     const now = new Date();
-    
-    switch (period) {
-      case 'daily':
-        return { startDate: startOfDay(now), endDate: endOfDay(now) };
-      case 'weekly':
-        return { startDate: startOfWeek(now, { weekStartsOn: 1 }), endDate: endOfWeek(now, { weekStartsOn: 1 }) };
-      case 'monthly':
-        return { startDate: startOfMonth(now), endDate: endOfMonth(now) };
-      case 'yearly':
-        return { startDate: startOfYear(now), endDate: endOfYear(now) };
-    }
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    return { startDate: startOfMonth, endDate: endOfMonth };
   }
 }
 
