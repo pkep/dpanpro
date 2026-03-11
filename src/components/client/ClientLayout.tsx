@@ -84,7 +84,6 @@ export function ClientLayout({ children, title, subtitle }: ClientLayoutProps) {
           </main>
         </div>
       </div>
-      <PendingActionsModal />
     </SidebarProvider>
   );
 }

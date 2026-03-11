@@ -71,6 +71,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <GlobalPendingActions />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/profile" element={<Index />} />
