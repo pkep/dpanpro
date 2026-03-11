@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -9,6 +9,7 @@ import { calculateDistance, formatDistance } from '@/utils/geolocation';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -26,6 +27,8 @@ import {
   AlertCircle,
   Radio,
   Route,
+  Search,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -147,6 +150,121 @@ function RecenterControl({ position }: { position: [number, number] | null }) {
   ) : null;
 }
 
+// Fly to a location on the map
+function FlyToLocation({ position, zoom }: { position: [number, number] | null; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, zoom, { duration: 1.5 });
+    }
+  }, [position, zoom, map]);
+  return null;
+}
+
+// Search result type from adresse.data.gouv.fr
+interface AddressSearchResult {
+  label: string;
+  lat: number;
+  lng: number;
+  type: string; // housenumber, street, municipality, locality
+}
+
+// Address search bar component
+function MapSearchBar({ onSelect }: { onSelect: (result: AddressSearchResult) => void }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<AddressSearchResult[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const searchAddress = useCallback(async (q: string) => {
+    if (q.length < 3) {
+      setResults([]);
+      setIsOpen(false);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await fetch(
+        `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&limit=5`
+      );
+      const data = await res.json();
+      const mapped: AddressSearchResult[] = (data.features || []).map((f: any) => ({
+        label: f.properties.label,
+        lat: f.geometry.coordinates[1],
+        lng: f.geometry.coordinates[0],
+        type: f.properties.type,
+      }));
+      setResults(mapped);
+      setIsOpen(mapped.length > 0);
+    } catch {
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleChange = (value: string) => {
+    setQuery(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => searchAddress(value), 300);
+  };
+
+  const handleSelect = (result: AddressSearchResult) => {
+    setQuery(result.label);
+    setIsOpen(false);
+    onSelect(result);
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative w-full max-w-md">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={query}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="Rechercher une adresse, ville, département..."
+          className="pl-9 pr-8"
+        />
+        {query && (
+          <button
+            onClick={() => { setQuery(''); setResults([]); setIsOpen(false); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg">
+          {results.map((r, i) => (
+            <button
+              key={i}
+              onClick={() => handleSelect(r)}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md"
+            >
+              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="truncate">{r.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface InterventionWithDistance extends Intervention {
   distance?: number;
 }
@@ -180,6 +298,8 @@ export function LiveTrackingMap({
   const [showUrgent, setShowUrgent] = useState(true);
   const [showHigh, setShowHigh] = useState(true);
   const [showNormal, setShowNormal] = useState(true);
+  const [searchTarget, setSearchTarget] = useState<[number, number] | null>(null);
+  const [searchZoom, setSearchZoom] = useState(14);
 
   // Fetch active interventions
   useEffect(() => {
@@ -277,6 +397,13 @@ export function LiveTrackingMap({
 
   return (
     <div className="space-y-4">
+      {/* Search bar */}
+      <MapSearchBar onSelect={(result) => {
+        const zoom = result.type === 'municipality' ? 13 : result.type === 'street' ? 15 : 16;
+        setSearchTarget([result.lat, result.lng]);
+        setSearchZoom(zoom);
+      }} />
+
       {/* Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-6">
@@ -352,6 +479,7 @@ export function LiveTrackingMap({
 
           {/* Recenter control */}
           {mapReady && <RecenterControl position={myPosition} />}
+          {mapReady && <FlyToLocation position={searchTarget} zoom={searchZoom} />}
 
           {/* Current user position with accuracy circle */}
           {mapReady && myPosition && myLocation && (
