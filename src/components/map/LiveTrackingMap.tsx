@@ -546,36 +546,44 @@ export function LiveTrackingMap({
       {/* Legend */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Légende</CardTitle>
+          <CardTitle className="text-sm">Légende (cliquez pour afficher/masquer)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-6 text-sm">
             <div className="space-y-2">
               <h4 className="font-medium text-muted-foreground">Techniciens</h4>
-              <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setShowTechnicians(prev => !prev)}
+                className={`flex items-center gap-2 cursor-pointer transition-opacity ${!showTechnicians ? 'opacity-40 line-through' : ''}`}
+              >
                 <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-[10px]">👷</div>
-                <span>Ma position</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-[10px]">👷</div>
-                <span>Autres techniciens</span>
-              </div>
+                <span>Technicien</span>
+              </button>
             </div>
             {showInterventions && (
               <div className="space-y-2">
                 <h4 className="font-medium text-muted-foreground">Interventions</h4>
-                <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowUrgent(prev => !prev)}
+                  className={`flex items-center gap-2 cursor-pointer transition-opacity ${!showUrgent ? 'opacity-40 line-through' : ''}`}
+                >
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
                   <span>Urgent</span>
-                </div>
-                <div className="flex items-center gap-2">
+                </button>
+                <button 
+                  onClick={() => setShowHigh(prev => !prev)}
+                  className={`flex items-center gap-2 cursor-pointer transition-opacity ${!showHigh ? 'opacity-40 line-through' : ''}`}
+                >
                   <div className="w-3 h-3 rounded-full bg-orange-500"></div>
                   <span>Haute</span>
-                </div>
-                <div className="flex items-center gap-2">
+                </button>
+                <button 
+                  onClick={() => setShowNormal(prev => !prev)}
+                  className={`flex items-center gap-2 cursor-pointer transition-opacity ${!showNormal ? 'opacity-40 line-through' : ''}`}
+                >
                   <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
                   <span>Normale</span>
-                </div>
+                </button>
               </div>
             )}
             {showLines && (
