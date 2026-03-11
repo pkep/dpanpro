@@ -846,11 +846,11 @@ export function PayoutsTab() {
                         )}
                       </div>
                       {payout.status === 'pending' && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-green-600 hover:text-green-700"
+                            className="flex-1 sm:flex-none text-green-600 hover:text-green-700"
                             onClick={() => handleUpdateStatus(payout.id, 'paid')}
                           >
                             Marquer payé
@@ -858,7 +858,7 @@ export function PayoutsTab() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-destructive"
+                            className="flex-1 sm:flex-none text-destructive"
                             onClick={() => handleUpdateStatus(payout.id, 'cancelled')}
                           >
                             Annuler
