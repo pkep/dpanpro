@@ -127,7 +127,7 @@ export default function AdminPaymentsPage() {
           intervention_id: p.intervention_id,
           amount_authorized: p.amount_authorized,
           currency: p.currency,
-          status: p.status,
+          status: getEffectiveStatus(p.status, p.created_at),
           client_email: p.client_email,
           provider_payment_id: p.provider_payment_id,
           created_at: p.created_at,
