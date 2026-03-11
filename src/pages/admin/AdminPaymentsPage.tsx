@@ -321,6 +321,7 @@ export default function AdminPaymentsPage() {
                   <SelectItem value="captured">Payé</SelectItem>
                   <SelectItem value="cancelled">Annulé</SelectItem>
                   <SelectItem value="failed">Échoué</SelectItem>
+                  <SelectItem value="expired">Expiré</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
