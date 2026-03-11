@@ -149,7 +149,14 @@ export function PendingActionsModal() {
       }
 
       setActions(allActions);
-      setOpen(allActions.length > 0);
+      // Don't reopen if user is already on an action page or manually dismissed
+      if (!isOnActionPage && !dismissed) {
+        setOpen(allActions.length > 0);
+      }
+      if (allActions.length === 0) {
+        setOpen(false);
+        setDismissed(false);
+      }
     } catch (error) {
       console.error('Error fetching pending actions:', error);
     } finally {
