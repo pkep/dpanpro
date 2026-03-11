@@ -3,30 +3,46 @@ import type { RevenueStats, WeeklyStats, PerformanceStats, PaymentPeriod, Monthl
 import { springHttp } from './http-client';
 
 export class SpringRevenueService implements IRevenueService {
+  // GET /technicians/{id}/revenue/stats
   async getRevenueStats(technicianId: string): Promise<RevenueStats> {
-    return springHttp.get(`/revenue/${technicianId}/stats`);
+    return springHttp.get(`/technicians/${technicianId}/revenue/stats`);
   }
+
+  // GET /technicians/{id}/revenue/weekly
   async getWeeklyStats(technicianId: string): Promise<WeeklyStats> {
-    return springHttp.get(`/revenue/${technicianId}/weekly`);
+    return springHttp.get(`/technicians/${technicianId}/revenue/weekly`);
   }
+
+  // GET /technicians/{id}/revenue/performance
   async getPerformanceStats(technicianId: string): Promise<PerformanceStats> {
-    return springHttp.get(`/revenue/${technicianId}/performance`);
+    return springHttp.get(`/technicians/${technicianId}/revenue/performance`);
   }
+
+  // GET /technicians/{id}/revenue/commission-rate
   async getCommissionRate(technicianId: string): Promise<number> {
-    const r = await springHttp.get<{ rate: number }>(`/revenue/${technicianId}/commission`);
+    const r = await springHttp.get<{ rate: number }>(`/technicians/${technicianId}/revenue/commission-rate`);
     return r.rate;
   }
+
+  // GET /technicians/{id}/revenue/payment-periods
   async getPaymentPeriods(technicianId: string): Promise<PaymentPeriod[]> {
-    return springHttp.get(`/revenue/${technicianId}/payment-periods`);
+    return springHttp.get(`/technicians/${technicianId}/revenue/payment-periods`);
   }
+
+  // Monthly payout from payout-history
   async getMonthlyPayout(technicianId: string): Promise<MonthlyPayout | null> {
-    return springHttp.get(`/revenue/${technicianId}/monthly-payout`);
+    const history = await this.getPayoutHistory(technicianId);
+    return history.length > 0 ? history[0] : null;
   }
+
+  // GET /technicians/{id}/revenue/payout-history
   async getPayoutHistory(technicianId: string): Promise<MonthlyPayout[]> {
-    return springHttp.get(`/revenue/${technicianId}/payout-history`);
+    return springHttp.get(`/technicians/${technicianId}/revenue/payout-history`);
   }
+
   async getInsuranceExpiryDate(technicianId: string): Promise<Date | null> {
-    const r = await springHttp.get<{ date: string | null }>(`/revenue/${technicianId}/insurance-expiry`);
-    return r.date ? new Date(r.date) : null;
+    // Not a dedicated revenue endpoint; fetch from partner profile
+    const profile = await springHttp.get<{ insuranceExpiryDate?: string | null }>(`/partners/profile/${technicianId}`);
+    return profile?.insuranceExpiryDate ? new Date(profile.insuranceExpiryDate) : null;
   }
 }

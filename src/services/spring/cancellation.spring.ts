@@ -3,7 +3,8 @@ import type { CancellationResult } from '@/services/cancellation/cancellation.se
 import { springHttp } from './http-client';
 
 export class SpringCancellationService implements ICancellationService {
+  // POST /cancellation/cancel-with-fees
   async cancelInterventionWithFees(interventionId: string, reason: string, forceChargeFees?: boolean): Promise<CancellationResult> {
-    return springHttp.post(`/interventions/${interventionId}/cancel-with-fees`, { reason, forceChargeFees });
+    return springHttp.post('/cancellation/cancel-with-fees', { interventionId, reason, forceChargeFees });
   }
 }

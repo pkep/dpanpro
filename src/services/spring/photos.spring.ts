@@ -2,25 +2,30 @@ import type { IPhotosService } from '@/services/interfaces/photos.interface';
 import { springHttp } from './http-client';
 
 export class SpringPhotosService implements IPhotosService {
+  // POST /interventions/{id}/photos (multipart)
   async uploadPhoto(interventionId: string, file: File): Promise<string> {
-    const formData = new FormData();
-    formData.append('file', file);
-    const result = await springHttp.upload<{ url: string }>(`/photos/${interventionId}`, formData);
-    return result.url;
+    const urls = await this.uploadPhotos(interventionId, [file]);
+    return urls[0];
   }
+
   async uploadPhotos(interventionId: string, files: File[]): Promise<string[]> {
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
-    const result = await springHttp.upload<{ urls: string[] }>(`/photos/${interventionId}/batch`, formData);
-    return result.urls;
+    return springHttp.upload<string[]>(`/interventions/${interventionId}/photos`, formData);
   }
+
   async deletePhoto(photoUrl: string): Promise<void> {
-    await springHttp.post('/photos/delete', { photoUrl });
+    // Storage: DELETE /storage/{fileKey}
+    const fileKey = encodeURIComponent(photoUrl);
+    await springHttp.delete(`/storage/${fileKey}`);
   }
+
   async updateInterventionPhotos(interventionId: string, photos: string[]): Promise<void> {
-    await springHttp.put(`/photos/${interventionId}`, { photos });
+    await springHttp.patch(`/interventions/${interventionId}`, { photos });
   }
+
   async getInterventionPhotos(interventionId: string): Promise<string[]> {
-    return springHttp.get(`/photos/${interventionId}`);
+    const intervention = await springHttp.get<{ photos: string[] | null }>(`/interventions/${interventionId}`);
+    return intervention.photos || [];
   }
 }

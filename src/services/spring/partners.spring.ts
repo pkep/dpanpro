@@ -3,13 +3,18 @@ import type { PartnerApplicationData } from '@/services/partners/partners.servic
 import { springHttp } from './http-client';
 
 export class SpringPartnersService implements IPartnersService {
+  // POST /partners/apply
   async submitApplication(data: PartnerApplicationData): Promise<void> {
     await springHttp.post('/partners/apply', data);
   }
+
+  // GET /partners/profile/{userId}
   async getPartnerProfile(userId: string): Promise<any | null> {
-    return springHttp.get(`/partners/${userId}/profile`);
+    return springHttp.get(`/partners/profile/${userId}`);
   }
+
+  // PATCH /partners/profile/{userId}
   async updatePartnerProfile(userId: string, data: Record<string, unknown>): Promise<void> {
-    await springHttp.patch(`/partners/${userId}/profile`, data);
+    await springHttp.patch(`/partners/profile/${userId}`, data);
   }
 }

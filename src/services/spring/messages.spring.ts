@@ -3,17 +3,25 @@ import type { InterventionMessage } from '@/services/messages/messages.service';
 import { springHttp } from './http-client';
 
 export class SpringMessagesService implements IMessagesService {
+  // POST /interventions/{id}/messages
   async sendMessage(params: any): Promise<InterventionMessage> {
-    return springHttp.post('/messages', params);
+    const { interventionId, ...body } = params;
+    return springHttp.post(`/interventions/${interventionId}/messages`, body);
   }
+
+  // GET /interventions/{id}/messages
   async getMessages(interventionId: string): Promise<InterventionMessage[]> {
-    return springHttp.get(`/messages/${interventionId}`);
+    return springHttp.get(`/interventions/${interventionId}/messages`);
   }
-  async markAsRead(interventionId: string, userId: string): Promise<void> {
-    await springHttp.patch(`/messages/${interventionId}/read`, { userId });
+
+  // POST /interventions/{id}/messages/read (server uses auth user, no userId needed)
+  async markAsRead(interventionId: string, _userId: string): Promise<void> {
+    await springHttp.post(`/interventions/${interventionId}/messages/read`);
   }
-  async getUnreadCount(interventionId: string, userId: string): Promise<number> {
-    const result = await springHttp.get<{ count: number }>(`/messages/${interventionId}/unread`, { userId });
+
+  // GET /interventions/{id}/messages/unread-count
+  async getUnreadCount(interventionId: string, _userId: string): Promise<number> {
+    const result = await springHttp.get<{ count: number }>(`/interventions/${interventionId}/messages/unread-count`);
     return result.count;
   }
 }

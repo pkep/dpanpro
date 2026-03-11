@@ -3,29 +3,43 @@ import type { UserRoleRecord, ManagerPermissions, AppRole } from '@/services/rol
 import { springHttp } from './http-client';
 
 export class SpringRolesService implements IRolesService {
-  async getUserRoles(userId: string): Promise<UserRoleRecord[]> { return springHttp.get(`/roles/${userId}`); }
+  // GET /users/{id}/roles
+  async getUserRoles(userId: string): Promise<UserRoleRecord[]> {
+    return springHttp.get(`/users/${userId}/roles`);
+  }
+
   async hasRole(userId: string, role: AppRole): Promise<boolean> {
-    const r = await springHttp.get<{ hasRole: boolean }>(`/roles/${userId}/has/${role}`);
-    return r.hasRole;
+    const roles = await this.getUserRoles(userId);
+    return roles.some(r => r.role === role);
   }
+
   async isAdminOrManager(userId: string): Promise<boolean> {
-    const r = await springHttp.get<{ result: boolean }>(`/roles/${userId}/is-admin-or-manager`);
-    return r.result;
+    const roles = await this.getUserRoles(userId);
+    return roles.some(r => r.role === 'admin' || r.role === 'manager');
   }
-  async addRole(userId: string, role: AppRole, createdBy?: string): Promise<void> {
-    await springHttp.post(`/roles/${userId}`, { role, createdBy });
+
+  // POST /users/{id}/roles
+  async addRole(userId: string, role: AppRole, _createdBy?: string): Promise<void> {
+    await springHttp.post(`/users/${userId}/roles`, { role });
   }
+
+  // DELETE /users/{id}/roles/{role}
   async removeRole(userId: string, role: AppRole): Promise<void> {
-    await springHttp.delete(`/roles/${userId}/${role}`);
+    await springHttp.delete(`/users/${userId}/roles/${role}`);
   }
+
+  // GET /users/{id}/permissions
   async getManagerPermissions(userId: string): Promise<ManagerPermissions | null> {
-    return springHttp.get(`/roles/${userId}/manager-permissions`);
+    return springHttp.get(`/users/${userId}/permissions`);
   }
-  async updateManagerPermissions(userId: string, canCreateManagers: boolean, grantedBy: string): Promise<void> {
-    await springHttp.put(`/roles/${userId}/manager-permissions`, { canCreateManagers, grantedBy });
+
+  // PATCH /users/{id}/permissions
+  async updateManagerPermissions(userId: string, canCreateManagers: boolean, _grantedBy: string): Promise<void> {
+    await springHttp.patch(`/users/${userId}/permissions`, { canCreateManagers });
   }
+
   async canCreateManagers(userId: string): Promise<boolean> {
-    const r = await springHttp.get<{ result: boolean }>(`/roles/${userId}/can-create-managers`);
-    return r.result;
+    const perms = await this.getManagerPermissions(userId);
+    return (perms as any)?.canCreateManagers ?? (perms as any)?.can_create_managers ?? false;
   }
 }
