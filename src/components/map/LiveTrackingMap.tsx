@@ -27,6 +27,8 @@ import {
   AlertCircle,
   Radio,
   Route,
+  Search,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
