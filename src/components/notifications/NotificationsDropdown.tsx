@@ -19,6 +19,7 @@ import { fr } from 'date-fns/locale';
 
 export function NotificationsDropdown() {
   const navigate = useNavigate();
+  const [showPreferences, setShowPreferences] = useState(false);
   const {
     notifications,
     unreadCount,
