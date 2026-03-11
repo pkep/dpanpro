@@ -3,12 +3,17 @@ import type { DispatchAlgorithmConfig, ConfigurationHistoryEntry } from '@/servi
 import { springHttp } from './http-client';
 
 export class SpringConfigurationService implements IConfigurationService {
+  // GET /configuration/dispatch-algorithm
   async getDispatchAlgorithmConfig(): Promise<DispatchAlgorithmConfig | null> {
     return springHttp.get('/configuration/dispatch-algorithm');
   }
-  async updateDispatchAlgorithmConfig(config: any, changedBy: string, reason?: string): Promise<void> {
-    await springHttp.put('/configuration/dispatch-algorithm', { ...config, changedBy, reason });
+
+  // PATCH /configuration/dispatch-algorithm (changed from PUT to PATCH)
+  async updateDispatchAlgorithmConfig(config: any, _changedBy: string, reason?: string): Promise<void> {
+    await springHttp.patch('/configuration/dispatch-algorithm', { ...config, reason });
   }
+
+  // GET /configuration/history?tableName=&recordId=&limit=
   async getConfigurationHistory(tableName?: string, recordId?: string, limit?: number): Promise<ConfigurationHistoryEntry[]> {
     const params: Record<string, string> = {};
     if (tableName) params.tableName = tableName;
@@ -16,7 +21,7 @@ export class SpringConfigurationService implements IConfigurationService {
     if (limit) params.limit = String(limit);
     return springHttp.get('/configuration/history', params);
   }
-  async logConfigChange(tableName: string, recordId: string, fieldName: string, oldValue: string | null, newValue: string | null, changedBy: string, reason?: string): Promise<void> {
-    await springHttp.post('/configuration/history', { tableName, recordId, fieldName, oldValue, newValue, changedBy, reason });
-  }
+
+  // Configuration history is logged server-side now; this is a no-op
+  async logConfigChange(_tableName: string, _recordId: string, _fieldName: string, _oldValue: string | null, _newValue: string | null, _changedBy: string, _reason?: string): Promise<void> {}
 }

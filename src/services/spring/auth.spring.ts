@@ -2,16 +2,26 @@ import type { IAuthService } from '@/services/interfaces/auth.interface';
 import type { User, LoginCredentials, RegisterCredentials, AuthResponse } from '@/types/auth.types';
 import { springHttp } from './http-client';
 
+interface SpringAuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
+  user: User;
+}
+
 export class SpringAuthService implements IAuthService {
   private currentUser: User | null = null;
   private listeners: Set<(user: User | null) => void> = new Set();
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const response = await springHttp.post<{ user: User; token: string }>('/auth/login', credentials);
+      // POST /auth/login → ApiResponse<AuthResponse>
+      const response = await springHttp.post<SpringAuthResponse>('/auth/login', credentials);
       this.currentUser = response.user;
       localStorage.setItem('depanpro_user', JSON.stringify(response.user));
-      localStorage.setItem('depanpro_token', response.token);
+      localStorage.setItem('depanpro_token', response.accessToken);
+      localStorage.setItem('depanpro_refresh_token', response.refreshToken);
       this.notifyListeners();
       return { success: true, user: response.user };
     } catch (error: any) {
@@ -21,18 +31,42 @@ export class SpringAuthService implements IAuthService {
 
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
-      const response = await springHttp.post<{ user: User; requiresEmailVerification?: boolean }>('/auth/register', credentials);
-      return { success: true, user: response.user, requiresEmailVerification: response.requiresEmailVerification };
+      // POST /auth/register → ApiResponse<AuthResponse>
+      const response = await springHttp.post<SpringAuthResponse>('/auth/register', credentials);
+      return { success: true, user: response.user, requiresEmailVerification: true };
     } catch (error: any) {
-      return { success: false, error: error.message || 'Erreur lors de l\'inscription' };
+      return { success: false, error: error.message || "Erreur lors de l'inscription" };
     }
   }
 
+  async refreshToken(): Promise<void> {
+    const refreshToken = localStorage.getItem('depanpro_refresh_token');
+    if (!refreshToken) throw new Error('No refresh token');
+    const response = await springHttp.post<SpringAuthResponse>('/auth/refresh', { refreshToken });
+    localStorage.setItem('depanpro_token', response.accessToken);
+    localStorage.setItem('depanpro_refresh_token', response.refreshToken);
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    // GET /auth/verify-email?token=...
+    await springHttp.get('/auth/verify-email', { token });
+  }
+
+  async requestPasswordReset(email: string): Promise<void> {
+    // POST /auth/password-reset/request
+    await springHttp.post('/auth/password-reset/request', { email });
+  }
+
+  async confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+    // POST /auth/password-reset/confirm
+    await springHttp.post('/auth/password-reset/confirm', { token, newPassword });
+  }
+
   async logout(): Promise<void> {
-    try { await springHttp.post('/auth/logout'); } catch { /* ignore */ }
     this.currentUser = null;
     localStorage.removeItem('depanpro_user');
     localStorage.removeItem('depanpro_token');
+    localStorage.removeItem('depanpro_refresh_token');
     this.notifyListeners();
   }
 
