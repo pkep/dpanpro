@@ -29,6 +29,7 @@ import {
   Home,
   LogOut,
   CreditCard,
+  Bell,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
