@@ -126,8 +126,6 @@ class QuotesService {
       });
     }
 
-    // repair_price removed - repair/labor is now managed by the technician via the adjustable quote
-
     return lines;
   }
 
