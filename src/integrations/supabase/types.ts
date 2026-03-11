@@ -754,6 +754,39 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          applicable_roles: string[]
+          channel: string
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          is_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          applicable_roles?: string[]
+          channel: string
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          applicable_roles?: string[]
+          channel?: string
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       partner_applications: {
         Row: {
           address: string
@@ -1707,6 +1740,44 @@ export type Database = {
           {
             foreignKeyName: "technician_schedules_technician_id_fkey"
             columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notification_preferences: {
+        Row: {
+          channel: string
+          created_at: string
+          event_type: string
+          id: string
+          is_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          event_type: string
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notification_preferences_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]

@@ -11,12 +11,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, Check, CheckCheck, Trash2, ExternalLink } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, ExternalLink, Settings2 } from 'lucide-react';
+import { useState } from 'react';
+import { UserNotificationPreferences } from './UserNotificationPreferences';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export function NotificationsDropdown() {
   const navigate = useNavigate();
+  const [showPreferences, setShowPreferences] = useState(false);
   const {
     notifications,
     unreadCount,
@@ -70,38 +73,54 @@ export function NotificationsDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notifications</span>
-          {notifications.length > 0 && (
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={(e) => {
-                  e.preventDefault();
-                  markAllAsRead();
-                }}
-              >
-                <CheckCheck className="h-3 w-3 mr-1" />
-                Tout lire
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs text-destructive hover:text-destructive"
-                onClick={(e) => {
-                  e.preventDefault();
-                  clearNotifications();
-                }}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          )}
+          <span>{showPreferences ? 'Préférences' : 'Notifications'}</span>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowPreferences(!showPreferences);
+              }}
+            >
+              <Settings2 className="h-3 w-3 mr-1" />
+              {showPreferences ? 'Retour' : 'Gérer'}
+            </Button>
+            {!showPreferences && notifications.length > 0 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    markAllAsRead();
+                  }}
+                >
+                  <CheckCheck className="h-3 w-3 mr-1" />
+                  Tout lire
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    clearNotifications();
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+          </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {notifications.length === 0 ? (
+        {showPreferences ? (
+          <UserNotificationPreferences />
+        ) : notifications.length === 0 ? (
           <div className="py-8 text-center text-muted-foreground">
             <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">Aucune notification</p>
