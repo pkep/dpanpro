@@ -12,9 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CreditCard, Search, RefreshCw, DollarSign, ArrowRight } from 'lucide-react';
+import { CreditCard, Search, RefreshCw, DollarSign, ArrowRight, ShieldAlert } from 'lucide-react';
 import { format, startOfDay, startOfWeek, startOfMonth, startOfYear } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { Link } from 'react-router-dom';
 
 interface PaymentRow {
   id: string;
