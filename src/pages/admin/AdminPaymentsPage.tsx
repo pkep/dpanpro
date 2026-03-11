@@ -95,7 +95,7 @@ export default function AdminPaymentsPage() {
       if (interventionIds.length > 0) {
         const { data: intData } = await supabase
           .from('interventions')
-          .select('id, title, address, city, client_id')
+          .select('id, title, address, city, client_id, status, final_price')
           .in('id', interventionIds);
         if (intData) {
           const clientIds = [...new Set(intData.map(i => i.client_id).filter(Boolean))];
