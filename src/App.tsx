@@ -52,6 +52,7 @@ import ManagerTechniciansPage from "./pages/manager/ManagerTechniciansPage";
 import ManagerPerformancePage from "./pages/manager/ManagerPerformancePage";
 import ManagerMapPage from "./pages/manager/ManagerMapPage";
 import ManagerPlanningPage from "./pages/manager/ManagerPlanningPage";
+import ManagerLiveTrackingPage from "./pages/manager/ManagerLiveTrackingPage";
 
 // Admin pages
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
@@ -99,6 +100,7 @@ const App = () => (
             <Route path="/manager/technicians" element={<ManagerTechniciansPage />} />
             <Route path="/manager/performance" element={<ManagerPerformancePage />} />
             <Route path="/manager/map" element={<ManagerMapPage />} />
+            <Route path="/manager/live-tracking" element={<ManagerLiveTrackingPage />} />
             <Route path="/manager/planning" element={<ManagerPlanningPage />} />
             
             {/* Admin routes */}

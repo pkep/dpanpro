@@ -20,8 +20,8 @@ export default function LiveTrackingPage() {
     return <Navigate to="/auth" replace />;
   }
 
-  // Only admin and technicians can access live tracking
-  if (user.role !== 'admin' && user.role !== 'technician') {
+  // Only admin and managers can access live tracking
+  if (user.role !== 'admin' && user.role !== 'manager') {
     return <Navigate to="/" replace />;
   }
 

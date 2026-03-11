@@ -20,8 +20,8 @@ export default function MapPage() {
     return <Navigate to="/auth" replace />;
   }
 
-  // Only admin and technicians can access the full map
-  if (user.role !== 'admin' && user.role !== 'technician') {
+  // Only admin and managers can access the full map
+  if (user.role !== 'admin' && user.role !== 'manager') {
     return <Navigate to="/" replace />;
   }
 
