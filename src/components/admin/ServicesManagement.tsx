@@ -271,16 +271,7 @@ export function ServicesManagement() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          step="1"
-                          min="0"
-                          value={basePrice}
-                          onChange={(e) =>
-                            handleServiceChange(service.id, 'basePrice', parseFloat(e.target.value) || 0)
-                          }
-                          className="w-24"
-                        />
+                        <span className="font-medium">{totalHT.toFixed(2)}</span>
                         <Euro className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </TableCell>
