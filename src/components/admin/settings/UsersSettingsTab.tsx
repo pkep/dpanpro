@@ -406,27 +406,44 @@ export function UsersSettingsTab() {
                     key={manager.id}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                   >
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium">
                         {manager.firstName} {manager.lastName}
                       </p>
                       <p className="text-sm text-muted-foreground">{manager.email}</p>
                       {manager.phone && <p className="text-sm text-muted-foreground">{manager.phone}</p>}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">Peut créer des managers</span>
-                      <Switch
-                        checked={manager.canCreateManagers}
-                        onCheckedChange={(checked) =>
-                          updatePermissionMutation.mutate({ userId: manager.id, canCreateManagers: checked })
-                        }
-                        disabled={updatePermissionMutation.isPending}
-                      />
-                      {manager.canCreateManagers ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <X className="h-4 w-4 text-muted-foreground" />
-                      )}
+                    <div className="flex flex-col gap-3 items-end">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-muted-foreground">Créer des managers</span>
+                        <Switch
+                          checked={manager.canCreateManagers}
+                          onCheckedChange={(checked) =>
+                            updatePermissionMutation.mutate({ userId: manager.id, canCreateManagers: checked })
+                          }
+                          disabled={updatePermissionMutation.isPending}
+                        />
+                        {manager.canCreateManagers ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-muted-foreground">Gestion paiements</span>
+                        <Switch
+                          checked={manager.hasPaymentRole}
+                          onCheckedChange={(checked) =>
+                            togglePaymentRoleMutation.mutate({ userId: manager.id, hasPaymentRole: checked })
+                          }
+                          disabled={togglePaymentRoleMutation.isPending}
+                        />
+                        {manager.hasPaymentRole ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <X className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
