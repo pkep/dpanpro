@@ -443,20 +443,20 @@ export function PayoutsTab() {
         {/* Period Info Card */}
         <Card className="border-primary/20 bg-primary/5">
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-primary" />
+                <Calendar className="h-5 w-5 text-primary shrink-0" />
                 <div>
-                  <p className="font-medium">Période de versement : {format(periodStart, 'MMMM yyyy', { locale: fr })}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-sm sm:text-base">Période : {format(periodStart, 'MMMM yyyy', { locale: fr })}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     Du {format(periodStart, 'dd MMMM', { locale: fr })} au {format(periodEnd, 'dd MMMM yyyy', { locale: fr })}
                   </p>
                 </div>
               </div>
               {pendingTechnicians.length > 0 && (
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 self-start sm:self-auto">
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  {pendingTechnicians.length} technicien(s) sans versement
+                  {pendingTechnicians.length} sans versement
                 </Badge>
               )}
             </div>
