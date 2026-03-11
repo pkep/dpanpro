@@ -67,7 +67,7 @@ export function PayoutsTab() {
 
   // Form state
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>([]);
-  const [payoutAmounts, setPayoutAmounts] = useState<Record<string, string>>({});
+  
   const [payoutDate, setPayoutDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [notes, setNotes] = useState('');
 
