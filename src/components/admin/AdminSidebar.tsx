@@ -39,7 +39,10 @@ const menuItems = [
   { title: "Carte Techniciens", url: "/admin/map", icon: Map },
   { title: "Suivi en temps réel", url: "/admin/live-tracking", icon: Radio },
   { title: "Planning", url: "/admin/planning", icon: Calendar },
-  { title: "Paiements", url: "/admin/payments", icon: CreditCard },
+];
+
+const paymentItems = [
+  { title: "Gestion Paiements", url: "/admin/payments", icon: CreditCard },
 ];
 
 const adminOnlyItems = [
