@@ -60,6 +60,7 @@ import AdminTechniciansPage from "./pages/admin/AdminTechniciansPage";
 import AdminPerformancePage from "./pages/admin/AdminPerformancePage";
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import AdminConfigHistoryPage from "./pages/admin/AdminConfigHistoryPage";
+import AdminMapPage from "./pages/admin/AdminMapPage";
 import AdminPlanningPage from "./pages/admin/AdminPlanningPage";
 import AdminLiveTrackingPage from "./pages/admin/AdminLiveTrackingPage";
 
