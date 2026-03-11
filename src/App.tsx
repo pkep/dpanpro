@@ -62,6 +62,7 @@ import AdminSettingsPage from "./pages/admin/AdminSettingsPage";
 import AdminConfigHistoryPage from "./pages/admin/AdminConfigHistoryPage";
 import AdminMapPage from "./pages/admin/AdminMapPage";
 import AdminPlanningPage from "./pages/admin/AdminPlanningPage";
+import AdminLiveTrackingPage from "./pages/admin/AdminLiveTrackingPage";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,7 @@ const App = () => (
             <Route path="/admin/settings" element={<AdminSettingsPage />} />
             <Route path="/admin/config-history" element={<AdminConfigHistoryPage />} />
             <Route path="/admin/map" element={<AdminMapPage />} />
+            <Route path="/admin/live-tracking" element={<AdminLiveTrackingPage />} />
             <Route path="/admin/planning" element={<AdminPlanningPage />} />
             
             {/* Shared routes */}
