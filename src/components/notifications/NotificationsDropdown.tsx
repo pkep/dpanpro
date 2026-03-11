@@ -11,7 +11,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bell, Check, CheckCheck, Trash2, ExternalLink } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, ExternalLink, Settings2 } from 'lucide-react';
+import { useState } from 'react';
+import { UserNotificationPreferences } from './UserNotificationPreferences';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
