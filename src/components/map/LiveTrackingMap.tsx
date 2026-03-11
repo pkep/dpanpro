@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline, Tooltip, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTechnicianTracking, TechnicianLocation } from '@/hooks/useTechnicianTracking';
@@ -161,6 +161,24 @@ function FlyToLocation({ position, zoom }: { position: [number, number] | null; 
   return null;
 }
 
+// Display city boundary polygon
+function CityBoundary({ geoJson }: { geoJson: any | null }) {
+  if (!geoJson) return null;
+  return (
+    <GeoJSON
+      key={JSON.stringify(geoJson).slice(0, 100)}
+      data={geoJson}
+      style={{
+        color: 'hsl(var(--primary))',
+        weight: 3,
+        fillOpacity: 0.08,
+        fillColor: 'hsl(var(--primary))',
+        dashArray: '6, 4',
+      }}
+    />
+  );
+}
+
 // Search result type from adresse.data.gouv.fr
 interface AddressSearchResult {
   label: string;
@@ -300,6 +318,33 @@ export function LiveTrackingMap({
   const [showNormal, setShowNormal] = useState(true);
   const [searchTarget, setSearchTarget] = useState<[number, number] | null>(null);
   const [searchZoom, setSearchZoom] = useState(14);
+  const [cityBoundary, setCityBoundary] = useState<any | null>(null);
+
+  // Fetch city boundary from Nominatim
+  const fetchCityBoundary = useCallback(async (query: string, lat: number, lng: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&polygon_geojson=1`,
+        { headers: { 'User-Agent': 'InterventionApp/1.0' } }
+      );
+      const data = await res.json();
+      if (data.length > 0 && data[0].geojson) {
+        const geojson = data[0].geojson;
+        // Only use polygon/multipolygon boundaries
+        if (geojson.type === 'Polygon' || geojson.type === 'MultiPolygon') {
+          setCityBoundary({
+            type: 'Feature',
+            geometry: geojson,
+            properties: {},
+          });
+          return;
+        }
+      }
+      setCityBoundary(null);
+    } catch {
+      setCityBoundary(null);
+    }
+  }, []);
 
   // Fetch active interventions
   useEffect(() => {
@@ -402,6 +447,12 @@ export function LiveTrackingMap({
         const zoom = result.type === 'municipality' ? 13 : result.type === 'street' ? 15 : 16;
         setSearchTarget([result.lat, result.lng]);
         setSearchZoom(zoom);
+        // Fetch boundary for municipalities
+        if (result.type === 'municipality' || result.type === 'locality') {
+          fetchCityBoundary(result.label, result.lat, result.lng);
+        } else {
+          setCityBoundary(null);
+        }
       }} />
 
       {/* Controls */}
@@ -480,6 +531,7 @@ export function LiveTrackingMap({
           {/* Recenter control */}
           {mapReady && <RecenterControl position={myPosition} />}
           {mapReady && <FlyToLocation position={searchTarget} zoom={searchZoom} />}
+          {mapReady && <CityBoundary geoJson={cityBoundary} />}
 
           {/* Current user position with accuracy circle */}
           {mapReady && myPosition && myLocation && (
