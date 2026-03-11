@@ -346,6 +346,28 @@ export function PayoutsTab() {
 
       if (error) throw error;
 
+      // Notify technicians via SMS & Email (fire-and-forget)
+      const periodLabel = format(periodStart, 'MMMM yyyy', { locale: fr });
+      const notificationPayloads = selectedTechnicianIds.map((techId) => {
+        const tech = pendingTechnicians.find(t => t.id === techId)!;
+        return {
+          technicianId: techId,
+          amount: parseFloat(tech.netRevenue.toFixed(2)),
+          grossRevenue: tech.grossRevenue,
+          commissionRate: tech.commissionRate,
+          commissionAmount: tech.commissionAmount,
+          periodLabel,
+          payoutDate: format(new Date(payoutDate), 'dd/MM/yyyy'),
+        };
+      });
+
+      supabase.functions.invoke('notify-payout', {
+        body: { payouts: notificationPayloads },
+      }).then(({ error: notifError }) => {
+        if (notifError) console.error('Payout notification error:', notifError);
+        else console.log('Payout notifications sent');
+      });
+
       toast.success(
         selectedTechnicianIds.length === 1
           ? 'Versement créé avec succès'
