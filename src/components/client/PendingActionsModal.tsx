@@ -48,9 +48,14 @@ type PendingAction = PendingPaymentAction | PendingQuoteAction;
 export function PendingActionsModal() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [actions, setActions] = useState<PendingAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  // Check if user is already on an action page
+  const isOnActionPage = location.pathname.startsWith('/authorize-payment/') || location.pathname.startsWith('/quote-approval/');
 
   const fetchPendingActions = useCallback(async () => {
     if (!user) return;
