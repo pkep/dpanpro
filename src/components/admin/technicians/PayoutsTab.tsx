@@ -319,33 +319,36 @@ export function PayoutsTab() {
   }, [paidTechSearchQuery]);
 
   const handleCreatePayout = async () => {
-    // Validate all selected technicians have amounts
-    const missingAmounts = selectedTechnicianIds.filter(id => {
-      const amount = payoutAmounts[id];
-      return !amount || parseFloat(amount) <= 0;
-    });
-
-    if (missingAmounts.length > 0) {
-      toast.error('Veuillez renseigner un montant valide pour tous les techniciens sélectionnés');
-      return;
-    }
-
     if (selectedTechnicianIds.length === 0 || !payoutDate) {
       toast.error('Veuillez sélectionner au moins un technicien et une date de versement');
       return;
     }
 
+    // Validate all selected technicians have positive net revenue
+    const invalidTechs = selectedTechnicianIds.filter(id => {
+      const tech = pendingTechnicians.find(t => t.id === id);
+      return !tech || tech.netRevenue <= 0;
+    });
+
+    if (invalidTechs.length > 0) {
+      toast.error('Certains techniciens sélectionnés n\'ont pas de revenu net positif');
+      return;
+    }
+
     setProcessing(true);
     try {
-      const payoutsToCreate = selectedTechnicianIds.map((techId) => ({
-        technician_id: techId,
-        amount: parseFloat(payoutAmounts[techId] || '0'),
-        payout_date: payoutDate,
-        period_start: periodStartStr,
-        period_end: periodEndStr,
-        status: 'paid',
-        notes: notes || null,
-      }));
+      const payoutsToCreate = selectedTechnicianIds.map((techId) => {
+        const tech = pendingTechnicians.find(t => t.id === techId)!;
+        return {
+          technician_id: techId,
+          amount: parseFloat(tech.netRevenue.toFixed(2)),
+          payout_date: payoutDate,
+          period_start: periodStartStr,
+          period_end: periodEndStr,
+          status: 'paid',
+          notes: notes || null,
+        };
+      });
 
       const { error } = await supabase.from('technician_payouts').insert(payoutsToCreate);
 
