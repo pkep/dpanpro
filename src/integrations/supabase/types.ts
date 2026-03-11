@@ -251,6 +251,9 @@ export type Database = {
           created_at: string
           id: string
           intervention_id: string
+          refund_amount: number | null
+          refund_stripe_id: string | null
+          refund_type: string | null
           resolution: string | null
           resolved_at: string | null
           resolved_by: string | null
@@ -266,6 +269,9 @@ export type Database = {
           created_at?: string
           id?: string
           intervention_id: string
+          refund_amount?: number | null
+          refund_stripe_id?: string | null
+          refund_type?: string | null
           resolution?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -281,6 +287,9 @@ export type Database = {
           created_at?: string
           id?: string
           intervention_id?: string
+          refund_amount?: number | null
+          refund_stripe_id?: string | null
+          refund_type?: string | null
           resolution?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
