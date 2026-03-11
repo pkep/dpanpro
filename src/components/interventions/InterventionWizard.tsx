@@ -28,7 +28,7 @@ const categoryIcons: Record<InterventionCategory, React.ReactNode> = {
 
 const STEPS = [
   { id: 1, title: 'Service', icon: <Settings className="h-4 w-4" /> },
-  { id: 2, title: 'Diagnostic', icon: <MessageSquare className="h-4 w-4" /> },
+  { id: 2, title: 'Diagnostique', icon: <MessageSquare className="h-4 w-4" /> },
   { id: 3, title: 'Contact', icon: <User className="h-4 w-4" /> },
   { id: 4, title: 'Validation', icon: <CheckCircle className="h-4 w-4" /> },
 ];
@@ -124,14 +124,16 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   const handleNext = () => {
     if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
-      scrollToTop();
+      // Delay scroll to ensure DOM has updated
+      setTimeout(() => scrollToTop(), 50);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
-      scrollToTop();
+      // Delay scroll to ensure DOM has updated
+      setTimeout(() => scrollToTop(), 50);
     }
   };
 
