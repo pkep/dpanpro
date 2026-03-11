@@ -52,8 +52,15 @@ interface CompletedIntervention {
   final_price: number | null;
   client_id: string | null;
   technician_id: string | null;
+  address: string;
+  city: string;
   client_name?: string;
   technician_name?: string;
+}
+
+interface TechnicianOption {
+  id: string;
+  name: string;
 }
 
 const STATUS_LABELS: Record<string, string> = {
