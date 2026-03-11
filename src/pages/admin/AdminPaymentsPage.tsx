@@ -31,7 +31,9 @@ interface PaymentRow {
   intervention_title?: string;
   intervention_address?: string;
   intervention_city?: string;
+  intervention_status?: string;
   client_name?: string;
+  isCancellationFee?: boolean;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -93,7 +95,7 @@ export default function AdminPaymentsPage() {
       if (interventionIds.length > 0) {
         const { data: intData } = await supabase
           .from('interventions')
-          .select('id, title, address, city, client_id')
+          .select('id, title, address, city, client_id, status, final_price')
           .in('id', interventionIds);
         if (intData) {
           const clientIds = [...new Set(intData.map(i => i.client_id).filter(Boolean))];
@@ -114,6 +116,8 @@ export default function AdminPaymentsPage() {
               title: i.title,
               address: i.address,
               city: i.city,
+              status: i.status,
+              finalPrice: i.final_price,
               clientName: i.client_id ? clientsMap[i.client_id] || '' : '',
             };
           });
@@ -122,6 +126,8 @@ export default function AdminPaymentsPage() {
 
       const rows: PaymentRow[] = (paData || []).map(p => {
         const intInfo = p.intervention_id ? interventionsMap[p.intervention_id] : null;
+        // A cancellation fee is identified when the intervention is cancelled and the payment was captured
+        const isCancellationFee = intInfo?.status === 'cancelled' && p.status === 'captured';
         return {
           id: p.id,
           intervention_id: p.intervention_id,
@@ -136,7 +142,9 @@ export default function AdminPaymentsPage() {
           intervention_title: intInfo?.title,
           intervention_address: intInfo?.address,
           intervention_city: intInfo?.city,
+          intervention_status: intInfo?.status,
           client_name: intInfo?.clientName || p.client_email || '—',
+          isCancellationFee,
         };
       });
 
@@ -393,7 +401,14 @@ export default function AdminPaymentsPage() {
                         {p.intervention_address ? `${p.intervention_address}, ${p.intervention_city || ''}` : '—'}
                       </TableCell>
                       <TableCell className="text-right font-medium whitespace-nowrap">
-                        {p.amount_authorized.toFixed(2)} €
+                        <div className="flex flex-col items-end gap-1">
+                          <span>{p.amount_authorized.toFixed(2)} €</span>
+                          {p.isCancellationFee && (
+                            <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-[10px] px-1.5 py-0">
+                              Frais d'annulation
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge className={STATUS_VARIANTS[p.status] || ''}>
