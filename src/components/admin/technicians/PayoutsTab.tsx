@@ -165,14 +165,6 @@ export function PayoutsTab() {
 
       setPendingTechnicians(enrichedTechnicians);
 
-      // Initialize payout amounts with calculated net revenue
-      const initialAmounts: Record<string, string> = {};
-      enrichedTechnicians.forEach(tech => {
-        if (tech.netRevenue > 0) {
-          initialAmounts[tech.id] = tech.netRevenue.toFixed(2);
-        }
-      });
-      setPayoutAmounts(prev => ({ ...prev, ...initialAmounts }));
     } catch (error) {
       console.error('Error fetching pending technicians:', error);
       toast.error('Erreur lors du chargement des techniciens');
