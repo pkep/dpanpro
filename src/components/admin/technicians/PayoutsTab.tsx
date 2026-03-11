@@ -383,7 +383,6 @@ export function PayoutsTab() {
 
   const resetForm = () => {
     setSelectedTechnicianIds([]);
-    setPayoutAmounts({});
     setPayoutDate(format(new Date(), 'yyyy-MM-dd'));
     setNotes('');
   };
