@@ -386,7 +386,7 @@ export function LiveTrackingMap({
           )}
 
           {/* Other technicians */}
-          {mapReady && technicians
+          {mapReady && showTechnicians && technicians
             .filter(t => t.id !== user?.id)
             .filter(t => t.latitude != null && t.longitude != null)
             .map((tech) => (
