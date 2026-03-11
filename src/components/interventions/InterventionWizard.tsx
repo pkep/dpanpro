@@ -196,6 +196,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
               setQuestionnaireAnswers([]);
               if (autoAdvance) {
                 setCurrentStep(2);
+                scrollToTop();
               }
             }}
           />
