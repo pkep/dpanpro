@@ -28,7 +28,6 @@ import { Loader2, Save, Euro, Percent, Wrench, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ExtendedService extends Service {
-  basePrice: number;
   defaultPriority: string;
 }
 
