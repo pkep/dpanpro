@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { performanceService, type TechnicianPerformance, type PeriodType } from '@/services/performance/performance.service';
+import { performanceService, type TechnicianPerformance, type PeriodType } from '@/services/supabase/performance.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';

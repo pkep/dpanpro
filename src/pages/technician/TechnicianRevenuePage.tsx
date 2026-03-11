@@ -13,7 +13,7 @@ import {
   Wallet,
   History
 } from 'lucide-react';
-import { revenueService, type RevenueStats, type MonthlyPayout } from '@/services/revenue/revenue.service';
+import { revenueService, type RevenueStats, type MonthlyPayout } from '@/services/supabase/revenue.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 

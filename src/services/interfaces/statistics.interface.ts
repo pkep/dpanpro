@@ -1,4 +1,4 @@
-import type { DailyStats, CategoryStats, StatusStats, PerformanceStats, TechnicianStats } from '@/services/statistics/statistics.service';
+import type { DailyStats, CategoryStats, StatusStats, PerformanceStats, TechnicianStats } from '@/services/supabase/statistics.service';
 
 export interface IStatisticsService {
   getDailyStats(days?: number): Promise<DailyStats[]>;

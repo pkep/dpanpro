@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline, Toolt
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTechnicianTracking, TechnicianLocation } from '@/hooks/useTechnicianTracking';
-import { interventionsService } from '@/services/interventions/interventions.service';
+import { interventionsService } from '@/services/supabase/interventions.service';
 import { geocodingService } from '@/services/geocoding/geocoding.service';
 import { calculateDistance, formatDistance } from '@/utils/geolocation';
 import type { Intervention } from '@/types/intervention.types';

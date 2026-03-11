@@ -1,4 +1,4 @@
-import type { PriorityMultiplier } from '@/services/pricing/pricing.service';
+import type { PriorityMultiplier } from '@/services/supabase/pricing.service';
 
 export interface IPricingService {
   getPriorityMultipliers(): Promise<PriorityMultiplier[]>;

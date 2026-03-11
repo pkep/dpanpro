@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
-import { authService } from '@/services/auth/auth.service';
+import { authService } from '@/services/supabase/auth.service';
 import type { User, AuthState, LoginCredentials, RegisterCredentials, AuthResponse } from '@/types/auth.types';
 
 interface AuthContextType extends AuthState {

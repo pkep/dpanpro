@@ -1,4 +1,4 @@
-import type { Service } from '@/services/services/services.service';
+import type { Service } from '@/services/supabase/services.service';
 
 export interface IServicesService {
   getActiveServices(): Promise<Service[]>;

@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { interventionsService } from '@/services/interventions/interventions.service';
+import { interventionsService } from '@/services/supabase/interventions.service';
 import { geocodingService } from '@/services/geocoding/geocoding.service';
 import type { Intervention, InterventionStatus, InterventionCategory } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';

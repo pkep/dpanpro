@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { techniciansService } from '@/services/technicians/technicians.service';
+import { techniciansService } from '@/services/supabase/technicians.service';
 import { geocodingService } from '@/services/geocoding/geocoding.service';
 
 interface GeolocationState {

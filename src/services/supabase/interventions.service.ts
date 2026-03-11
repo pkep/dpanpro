@@ -7,7 +7,7 @@ import type {
 } from '@/types/intervention.types';
 import type { DbIntervention, DbInterventionInsert, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
-import { dispatchService } from '@/services/dispatch/dispatch.service';
+import { dispatchService } from '@/services/supabase/dispatch.service';
 import { geocodingService } from '@/services/geocoding/geocoding.service';
 
 class InterventionsService {

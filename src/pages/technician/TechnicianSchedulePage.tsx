@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Clock, Save, Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { scheduleService, type TechnicianSchedule, type ScheduleOverride } from '@/services/schedule/schedule.service';
+import { scheduleService, type TechnicianSchedule, type ScheduleOverride } from '@/services/supabase/schedule.service';
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, addDays, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';

@@ -1,4 +1,4 @@
-import type { PaymentAuthorization } from '@/services/payment/payment.service';
+import type { PaymentAuthorization } from '@/services/supabase/payment.service';
 
 export interface IPaymentService {
   createPaymentIntent(params: {

@@ -1,5 +1,5 @@
 import type { IStatisticsService } from '@/services/interfaces/statistics.interface';
-import type { DailyStats, CategoryStats, StatusStats, PerformanceStats, TechnicianStats } from '@/services/statistics/statistics.service';
+import type { DailyStats, CategoryStats, StatusStats, PerformanceStats, TechnicianStats } from '@/services/supabase/statistics.service';
 import { springHttp } from './http-client';
 
 export class SpringStatisticsService implements IStatisticsService {

@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { TechnicianLayout } from '@/components/technician/TechnicianLayout';
 import { ProfileImagesTab } from '@/components/technician/ProfileImagesTab';
-import { partnersService } from '@/services/partners/partners.service';
+import { partnersService } from '@/services/supabase/partners.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

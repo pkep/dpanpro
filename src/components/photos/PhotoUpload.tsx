@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
-import { photosService } from '@/services/photos/photos.service';
-import { historyService } from '@/services/history/history.service';
+import { photosService } from '@/services/supabase/photos.service';
+import { historyService } from '@/services/supabase/history.service';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';

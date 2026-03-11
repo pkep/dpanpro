@@ -1,5 +1,5 @@
 import type { IServicesService } from '@/services/interfaces/services.interface';
-import type { Service } from '@/services/services/services.service';
+import type { Service } from '@/services/supabase/services.service';
 import { springHttp } from './http-client';
 
 export class SpringServicesService implements IServicesService {

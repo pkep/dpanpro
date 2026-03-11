@@ -1,5 +1,5 @@
 import type { IPricingService } from '@/services/interfaces/pricing.interface';
-import type { PriorityMultiplier } from '@/services/pricing/pricing.service';
+import type { PriorityMultiplier } from '@/services/supabase/pricing.service';
 import { springHttp } from './http-client';
 
 export class SpringPricingService implements IPricingService {

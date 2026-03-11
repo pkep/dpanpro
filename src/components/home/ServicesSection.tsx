@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { servicesService, type Service } from '@/services/services/services.service';
+import { servicesService, type Service } from '@/services/supabase/services.service';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, Key, Droplets, Zap, Square, Flame, Wind } from 'lucide-react';

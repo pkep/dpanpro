@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { quoteModificationsService, QuoteModification } from '@/services/quote-modifications/quote-modifications.service';
+import { quoteModificationsService, QuoteModification } from '@/services/supabase/quote-modifications.service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';

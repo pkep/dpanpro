@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { Loader2, MapPin, Clock, UserCheck, Star, Navigation, AlertCircle, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { getEligibleTechnicians, type EligibleTechnician } from '@/services/dispatch/eligible-technicians.service';
+import { getEligibleTechnicians, type EligibleTechnician } from '@/services/supabase/eligible-technicians.service';
 
 interface UnassignedIntervention {
   id: string;

@@ -1,5 +1,5 @@
 import type { IScheduleService } from '@/services/interfaces/schedule.interface';
-import type { TechnicianSchedule, ScheduleOverride } from '@/services/schedule/schedule.service';
+import type { TechnicianSchedule, ScheduleOverride } from '@/services/supabase/schedule.service';
 import { springHttp } from './http-client';
 
 const DAY_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];

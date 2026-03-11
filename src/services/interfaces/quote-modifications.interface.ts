@@ -1,4 +1,4 @@
-import type { QuoteModification, CreateQuoteModificationInput } from '@/services/quote-modifications/quote-modifications.service';
+import type { QuoteModification, CreateQuoteModificationInput } from '@/services/supabase/quote-modifications.service';
 
 export interface IQuoteModificationsService {
   createModification(input: CreateQuoteModificationInput): Promise<QuoteModification>;

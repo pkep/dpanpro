@@ -1,6 +1,6 @@
-import type { QuoteLine } from '@/services/quotes/quotes.service';
-import type { QuoteModification } from '@/services/quote-modifications/quote-modifications.service';
-import type { WorkPhoto } from '@/services/work-photos/work-photos.service';
+import type { QuoteLine } from '@/services/supabase/quotes.service';
+import type { QuoteModification } from '@/services/supabase/quote-modifications.service';
+import type { WorkPhoto } from '@/services/supabase/work-photos.service';
 
 export type StartStep = 'photos' | 'quote_review' | 'add_items' | 'signature' | 'payment_pending' | 'processing';
 

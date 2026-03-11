@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Cog, Edit2, Save, X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { configurationService, type DispatchAlgorithmConfig } from '@/services/configuration/configuration.service';
+import { configurationService, type DispatchAlgorithmConfig } from '@/services/supabase/configuration.service';
 import { useAuth } from '@/hooks/useAuth';
 
 interface WeightConfig {

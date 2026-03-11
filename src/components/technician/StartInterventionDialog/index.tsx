@@ -21,14 +21,14 @@ import {
   CreditCard
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { workPhotosService, WorkPhoto } from '@/services/work-photos/work-photos.service';
-import { quotesService, QuoteLine } from '@/services/quotes/quotes.service';
-import { quoteModificationsService } from '@/services/quote-modifications/quote-modifications.service';
-import { servicesService } from '@/services/services/services.service';
+import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
+import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
+import { quoteModificationsService } from '@/services/supabase/quote-modifications.service';
+import { servicesService } from '@/services/supabase/services.service';
 import { quotePDFService } from '@/services/quote-pdf/quote-pdf.service';
-import { interventionsService } from '@/services/interventions/interventions.service';
-import { historyService } from '@/services/history/history.service';
-import { paymentService } from '@/services/payment/payment.service';
+import { interventionsService } from '@/services/supabase/interventions.service';
+import { historyService } from '@/services/supabase/history.service';
+import { paymentService } from '@/services/supabase/payment.service';
 import { supabase } from '@/integrations/supabase/client';
 import { PhotoStep } from './PhotoStep';
 import { QuoteReviewStep } from './QuoteReviewStep';
@@ -406,7 +406,7 @@ export function StartInterventionDialog({
 
       // 1. Save quote lines
       if (quoteConfig) {
-        const newLines: import('@/services/quotes/quotes.service').QuoteInput[] = [];
+        const newLines: import('@/services/supabase/quotes.service').QuoteInput[] = [];
         if (quoteConfig.displacementPrice > 0) {
           newLines.push({ lineType: 'displacement', label: 'Déplacement technicien', basePrice: quoteConfig.displacementPrice, multiplier: 1 });
         }

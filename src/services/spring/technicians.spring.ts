@@ -1,5 +1,5 @@
 import type { ITechniciansService } from '@/services/interfaces/technicians.interface';
-import type { TechnicianWithLocation, NearbyTechnician } from '@/services/technicians/technicians.service';
+import type { TechnicianWithLocation, NearbyTechnician } from '@/services/supabase/technicians.service';
 import { springHttp } from './http-client';
 
 export class SpringTechniciansService implements ITechniciansService {

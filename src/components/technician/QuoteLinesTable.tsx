@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { QuoteLine } from '@/services/quotes/quotes.service';
-import { QuoteModification, QuoteModificationItem } from '@/services/quote-modifications/quote-modifications.service';
+import { QuoteLine } from '@/services/supabase/quotes.service';
+import { QuoteModification, QuoteModificationItem } from '@/services/supabase/quote-modifications.service';
 import { Wrench, Truck, Shield, Package, FileText } from 'lucide-react';
 
 interface QuoteLinesTableProps {

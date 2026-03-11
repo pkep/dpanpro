@@ -1,5 +1,5 @@
 import type { IMessagesService } from '@/services/interfaces/messages.interface';
-import type { InterventionMessage } from '@/services/messages/messages.service';
+import type { InterventionMessage } from '@/services/supabase/messages.service';
 import { springHttp } from './http-client';
 
 export class SpringMessagesService implements IMessagesService {

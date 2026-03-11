@@ -1,4 +1,4 @@
-import type { DispatchResult, DispatchAttempt } from '@/services/dispatch/dispatch.service';
+import type { DispatchResult, DispatchAttempt } from '@/services/supabase/dispatch.service';
 
 export interface IDispatchService {
   dispatchIntervention(interventionId: string): Promise<DispatchResult>;

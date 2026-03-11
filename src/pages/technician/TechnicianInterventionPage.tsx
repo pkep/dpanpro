@@ -25,9 +25,9 @@ import {
   MapPinCheck
 } from 'lucide-react';
 import { CATEGORY_LABELS, CATEGORY_ICONS, STATUS_LABELS, PRIORITY_LABELS } from '@/types/intervention.types';
-import { interventionsService } from '@/services/interventions/interventions.service';
-import { historyService } from '@/services/history/history.service';
-import { workPhotosService, WorkPhoto } from '@/services/work-photos/work-photos.service';
+import { interventionsService } from '@/services/supabase/interventions.service';
+import { historyService } from '@/services/supabase/history.service';
+import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { InterventionChat } from '@/components/technician/InterventionChat';
@@ -40,8 +40,8 @@ import { WorkPhotoCapture } from '@/components/technician/WorkPhotoCapture';
 import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
 import { StartInterventionDialog } from '@/components/technician/StartInterventionDialog/index';
 import { FinalizePhotosDialog } from '@/components/technician/FinalizePhotosDialog';
-import { dispatchService } from '@/services/dispatch/dispatch.service';
-import { quoteModificationsService } from '@/services/quote-modifications/quote-modifications.service';
+import { dispatchService } from '@/services/supabase/dispatch.service';
+import { quoteModificationsService } from '@/services/supabase/quote-modifications.service';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {

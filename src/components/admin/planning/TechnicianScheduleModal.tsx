@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { scheduleService, type TechnicianSchedule, type ScheduleOverride } from '@/services/schedule/schedule.service';
-import { interventionsService } from '@/services/interventions/interventions.service';
+import { scheduleService, type TechnicianSchedule, type ScheduleOverride } from '@/services/supabase/schedule.service';
+import { interventionsService } from '@/services/supabase/interventions.service';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_ICONS, STATUS_LABELS } from '@/types/intervention.types';
 import { cn } from '@/lib/utils';

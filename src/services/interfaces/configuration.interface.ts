@@ -1,4 +1,4 @@
-import type { DispatchAlgorithmConfig, ConfigurationHistoryEntry } from '@/services/configuration/configuration.service';
+import type { DispatchAlgorithmConfig, ConfigurationHistoryEntry } from '@/services/supabase/configuration.service';
 
 export interface IConfigurationService {
   getDispatchAlgorithmConfig(): Promise<DispatchAlgorithmConfig | null>;

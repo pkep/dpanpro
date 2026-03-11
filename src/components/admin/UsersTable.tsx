@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usersService } from '@/services/users/users.service';
+import { usersService } from '@/services/supabase/users.service';
 import type { User, UserRole } from '@/types/auth.types';
 import {
   Table,

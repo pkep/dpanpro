@@ -2,10 +2,10 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS } from '@/types/intervention.types';
-import { quotesService, QuoteLine } from '@/services/quotes/quotes.service';
-import { quoteModificationsService, QuoteModification } from '@/services/quote-modifications/quote-modifications.service';
+import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
+import { quoteModificationsService, QuoteModification } from '@/services/supabase/quote-modifications.service';
 import { supabase } from '@/integrations/supabase/client';
-import { servicesService } from '@/services/services/services.service';
+import { servicesService } from '@/services/supabase/services.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 

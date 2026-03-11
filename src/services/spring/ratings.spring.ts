@@ -1,5 +1,5 @@
 import type { IRatingsService } from '@/services/interfaces/ratings.interface';
-import type { Rating } from '@/services/ratings/ratings.service';
+import type { Rating } from '@/services/supabase/ratings.service';
 import { springHttp } from './http-client';
 
 export class SpringRatingsService implements IRatingsService {

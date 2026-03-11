@@ -1,4 +1,4 @@
-import type { TechnicianPerformance, PerformanceTrend, ZoneStats, PeriodType } from '@/services/performance/performance.service';
+import type { TechnicianPerformance, PerformanceTrend, ZoneStats, PeriodType } from '@/services/supabase/performance.service';
 
 export interface IPerformanceService {
   getTechnicianPerformances(period: PeriodType): Promise<TechnicianPerformance[]>;
