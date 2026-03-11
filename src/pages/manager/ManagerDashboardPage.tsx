@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ManagerLayout } from '@/components/manager/ManagerLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, ClipboardList, BarChart3, TrendingUp, Clock } from 'lucide-react';
+import { Users, ClipboardList, BarChart3, TrendingUp, Clock, Map, Radio } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
