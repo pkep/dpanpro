@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -48,9 +48,14 @@ type PendingAction = PendingPaymentAction | PendingQuoteAction;
 export function PendingActionsModal() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [actions, setActions] = useState<PendingAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  // Check if user is already on an action page
+  const isOnActionPage = location.pathname.startsWith('/authorize-payment/') || location.pathname.startsWith('/quote-approval/');
 
   const fetchPendingActions = useCallback(async () => {
     if (!user) return;
@@ -144,13 +149,27 @@ export function PendingActionsModal() {
       }
 
       setActions(allActions);
-      setOpen(allActions.length > 0);
+      // Don't reopen if user is already on an action page or manually dismissed
+      if (!isOnActionPage && !dismissed) {
+        setOpen(allActions.length > 0);
+      }
+      if (allActions.length === 0) {
+        setOpen(false);
+        setDismissed(false);
+      }
     } catch (error) {
       console.error('Error fetching pending actions:', error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isOnActionPage, dismissed]);
+
+  // Reset dismissed state when leaving action pages
+  useEffect(() => {
+    if (!isOnActionPage) {
+      setDismissed(false);
+    }
+  }, [isOnActionPage]);
 
   useEffect(() => {
     fetchPendingActions();
@@ -186,6 +205,7 @@ export function PendingActionsModal() {
 
   const handleAction = (action: PendingAction) => {
     setOpen(false);
+    setDismissed(true);
     if (action.type === 'payment_authorization') {
       navigate(`/authorize-payment/${action.interventionId}`);
     } else if (action.type === 'quote_approval') {
