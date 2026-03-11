@@ -52,6 +52,7 @@ import ManagerTechniciansPage from "./pages/manager/ManagerTechniciansPage";
 import ManagerPerformancePage from "./pages/manager/ManagerPerformancePage";
 import ManagerMapPage from "./pages/manager/ManagerMapPage";
 import ManagerPlanningPage from "./pages/manager/ManagerPlanningPage";
+import ManagerLiveTrackingPage from "./pages/manager/ManagerLiveTrackingPage";
 
 // Admin pages
 import AdminDashboardPage from "./pages/admin/AdminDashboardPage";
