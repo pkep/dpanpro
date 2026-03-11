@@ -178,6 +178,33 @@ export function UsersSettingsTab() {
     },
   });
 
+  const togglePaymentRoleMutation = useMutation({
+    mutationFn: async ({ userId, hasPaymentRole }: { userId: string; hasPaymentRole: boolean }) => {
+      if (hasPaymentRole) {
+        // Add payment role
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'payment', created_by: user?.id });
+        if (error) throw error;
+      } else {
+        // Remove payment role
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role', 'payment');
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['managers-with-permissions'] });
+      toast.success('Rôle paiement mis à jour');
+    },
+    onError: (error: Error) => {
+      toast.error(`Erreur: ${error.message}`);
+    },
+  });
+
   return (
     <Card>
       <CardHeader>
