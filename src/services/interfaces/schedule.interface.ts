@@ -1,4 +1,4 @@
-import type { TechnicianSchedule, ScheduleOverride } from '@/services/schedule/schedule.service';
+import type { TechnicianSchedule, ScheduleOverride } from '@/services/supabase/schedule.service';
 
 export interface IScheduleService {
   getDayName(dayOfWeek: number): string;

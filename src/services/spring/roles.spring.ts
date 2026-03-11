@@ -1,5 +1,5 @@
 import type { IRolesService } from '@/services/interfaces/roles.interface';
-import type { UserRoleRecord, ManagerPermissions, AppRole } from '@/services/roles/roles.service';
+import type { UserRoleRecord, ManagerPermissions, AppRole } from '@/services/supabase/roles.service';
 import { springHttp } from './http-client';
 
 export class SpringRolesService implements IRolesService {

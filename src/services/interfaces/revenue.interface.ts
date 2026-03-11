@@ -1,4 +1,4 @@
-import type { RevenueStats, WeeklyStats, PerformanceStats, PaymentPeriod, MonthlyPayout } from '@/services/revenue/revenue.service';
+import type { RevenueStats, WeeklyStats, PerformanceStats, PaymentPeriod, MonthlyPayout } from '@/services/supabase/revenue.service';
 
 export interface IRevenueService {
   getRevenueStats(technicianId: string): Promise<RevenueStats>;

@@ -1,4 +1,4 @@
-import type { PartnerApplicationData } from '@/services/partners/partners.service';
+import type { PartnerApplicationData } from '@/services/supabase/partners.service';
 
 export interface IPartnersService {
   submitApplication(data: PartnerApplicationData): Promise<void>;

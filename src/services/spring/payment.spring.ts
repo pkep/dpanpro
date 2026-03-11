@@ -1,5 +1,5 @@
 import type { IPaymentService } from '@/services/interfaces/payment.interface';
-import type { PaymentAuthorization } from '@/services/payment/payment.service';
+import type { PaymentAuthorization } from '@/services/supabase/payment.service';
 import { springHttp } from './http-client';
 
 export class SpringPaymentService implements IPaymentService {

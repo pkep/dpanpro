@@ -1,5 +1,5 @@
-import type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/quotes/quotes.service';
-import type { Service } from '@/services/services/services.service';
+import type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/supabase/quotes.service';
+import type { Service } from '@/services/supabase/services.service';
 
 export interface IQuotesService {
   isMultiplierEnabled(): Promise<boolean>;

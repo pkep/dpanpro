@@ -1,5 +1,5 @@
 import type { IPerformanceService } from '@/services/interfaces/performance.interface';
-import type { TechnicianPerformance, PerformanceTrend, ZoneStats, PeriodType } from '@/services/performance/performance.service';
+import type { TechnicianPerformance, PerformanceTrend, ZoneStats, PeriodType } from '@/services/supabase/performance.service';
 import { springHttp } from './http-client';
 
 export class SpringPerformanceService implements IPerformanceService {

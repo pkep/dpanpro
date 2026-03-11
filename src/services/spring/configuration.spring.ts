@@ -1,5 +1,5 @@
 import type { IConfigurationService } from '@/services/interfaces/configuration.interface';
-import type { DispatchAlgorithmConfig, ConfigurationHistoryEntry } from '@/services/configuration/configuration.service';
+import type { DispatchAlgorithmConfig, ConfigurationHistoryEntry } from '@/services/supabase/configuration.service';
 import { springHttp } from './http-client';
 
 export class SpringConfigurationService implements IConfigurationService {

@@ -1,5 +1,5 @@
 import type { IWorkPhotosService } from '@/services/interfaces/work-photos.interface';
-import type { WorkPhoto, WorkPhotoType } from '@/services/work-photos/work-photos.service';
+import type { WorkPhoto, WorkPhotoType } from '@/services/supabase/work-photos.service';
 import { springHttp } from './http-client';
 
 export class SpringWorkPhotosService implements IWorkPhotosService {

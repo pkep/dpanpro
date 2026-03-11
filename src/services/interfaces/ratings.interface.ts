@@ -1,4 +1,4 @@
-import type { Rating } from '@/services/ratings/ratings.service';
+import type { Rating } from '@/services/supabase/ratings.service';
 
 export interface IRatingsService {
   getRating(interventionId: string): Promise<Rating | null>;

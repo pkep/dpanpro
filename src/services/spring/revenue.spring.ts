@@ -1,5 +1,5 @@
 import type { IRevenueService } from '@/services/interfaces/revenue.interface';
-import type { RevenueStats, WeeklyStats, PerformanceStats, PaymentPeriod, MonthlyPayout } from '@/services/revenue/revenue.service';
+import type { RevenueStats, WeeklyStats, PerformanceStats, PaymentPeriod, MonthlyPayout } from '@/services/supabase/revenue.service';
 import { springHttp } from './http-client';
 
 export class SpringRevenueService implements IRevenueService {

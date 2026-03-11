@@ -1,5 +1,5 @@
 import type { IDispatchService } from '@/services/interfaces/dispatch.interface';
-import type { DispatchResult, DispatchAttempt } from '@/services/dispatch/dispatch.service';
+import type { DispatchResult, DispatchAttempt } from '@/services/supabase/dispatch.service';
 import { springHttp } from './http-client';
 
 export class SpringDispatchService implements IDispatchService {

@@ -1,4 +1,4 @@
-import type { UserRoleRecord, ManagerPermissions, AppRole } from '@/services/roles/roles.service';
+import type { UserRoleRecord, ManagerPermissions, AppRole } from '@/services/supabase/roles.service';
 
 export interface IRolesService {
   getUserRoles(userId: string): Promise<UserRoleRecord[]>;

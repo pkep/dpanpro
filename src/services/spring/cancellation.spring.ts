@@ -1,5 +1,5 @@
 import type { ICancellationService } from '@/services/interfaces/cancellation.interface';
-import type { CancellationResult } from '@/services/cancellation/cancellation.service';
+import type { CancellationResult } from '@/services/supabase/cancellation.service';
 import { springHttp } from './http-client';
 
 export class SpringCancellationService implements ICancellationService {
