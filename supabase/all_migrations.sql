@@ -1845,3 +1845,127 @@ CREATE TRIGGER update_user_notification_preferences_updated_at
   BEFORE UPDATE ON public.user_notification_preferences
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 -- ============================================================
+
+
+-- ============================================================
+-- Migration: Tables questionnaire dynamique
+-- Date: 2026-03-11
+-- ============================================================
+
+-- Table des résultats (prestations identifiées)
+CREATE TABLE public.questionnaire_resultats (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  domaine_code text NOT NULL,
+  slug text NOT NULL UNIQUE,
+  nom text NOT NULL,
+  description text,
+  unite_prix text NOT NULL DEFAULT 'TTC_forfait',
+  prix_min numeric,
+  prix_max numeric,
+  duree_min_minutes integer,
+  duree_max_minutes integer,
+  urgence_disponible boolean NOT NULL DEFAULT true,
+  garantie_jours integer,
+  image_url text,
+  notes_internes text,
+  is_active boolean NOT NULL DEFAULT true,
+  display_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Table des questions
+CREATE TABLE public.questionnaire_questions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  domaine_code text NOT NULL,
+  libelle text NOT NULL,
+  sous_libelle text,
+  type_champ text NOT NULL DEFAULT 'radio',
+  parent_reponse_id uuid,
+  est_racine boolean NOT NULL DEFAULT false,
+  display_order integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  image_url text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Table des réponses
+CREATE TABLE public.questionnaire_reponses (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  question_id uuid NOT NULL REFERENCES public.questionnaire_questions(id) ON DELETE CASCADE,
+  label text NOT NULL,
+  icone text,
+  image_url text,
+  next_question_id uuid REFERENCES public.questionnaire_questions(id),
+  resultat_id uuid REFERENCES public.questionnaire_resultats(id),
+  display_order integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- FK parent_reponse sur questions
+ALTER TABLE public.questionnaire_questions
+  ADD CONSTRAINT fk_parent_reponse
+  FOREIGN KEY (parent_reponse_id) REFERENCES public.questionnaire_reponses(id);
+
+-- Table des variantes de résultat
+CREATE TABLE public.questionnaire_variantes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  resultat_id uuid NOT NULL REFERENCES public.questionnaire_resultats(id) ON DELETE CASCADE,
+  nom text NOT NULL,
+  description text,
+  image_url text,
+  prix_min numeric,
+  prix_max numeric,
+  is_active boolean NOT NULL DEFAULT true,
+  display_order integer NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE public.questionnaire_resultats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.questionnaire_questions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.questionnaire_reponses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.questionnaire_variantes ENABLE ROW LEVEL SECURITY;
+
+-- Policies: lecture publique, gestion admin
+CREATE POLICY "Anyone can view questionnaire resultats" ON public.questionnaire_resultats FOR SELECT USING (true);
+CREATE POLICY "Admins can manage questionnaire resultats" ON public.questionnaire_resultats FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Anyone can view questionnaire questions" ON public.questionnaire_questions FOR SELECT USING (true);
+CREATE POLICY "Admins can manage questionnaire questions" ON public.questionnaire_questions FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Anyone can view questionnaire reponses" ON public.questionnaire_reponses FOR SELECT USING (true);
+CREATE POLICY "Admins can manage questionnaire reponses" ON public.questionnaire_reponses FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Anyone can view questionnaire variantes" ON public.questionnaire_variantes FOR SELECT USING (true);
+CREATE POLICY "Admins can manage questionnaire variantes" ON public.questionnaire_variantes FOR ALL USING (true) WITH CHECK (true);
+
+-- Trigger updated_at
+CREATE TRIGGER update_questionnaire_resultats_updated_at
+  BEFORE UPDATE ON public.questionnaire_resultats
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+-- ============================================================
+
+
+-- ============================================================
+-- Migration: Colonnes questionnaire + prix sur interventions
+-- Date: 2026-03-11
+-- ============================================================
+ALTER TABLE public.interventions
+  ADD COLUMN IF NOT EXISTS questionnaire_resultat_id uuid REFERENCES public.questionnaire_resultats(id),
+  ADD COLUMN IF NOT EXISTS questionnaire_answers jsonb DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS prix_min numeric,
+  ADD COLUMN IF NOT EXISTS prix_max numeric;
+-- ============================================================
+
+
+-- ============================================================
+-- Migration: Colonnes remboursement sur disputes
+-- Date: 2026-03-11
+-- ============================================================
+ALTER TABLE public.disputes
+  ADD COLUMN IF NOT EXISTS refund_amount numeric,
+  ADD COLUMN IF NOT EXISTS refund_type text,
+  ADD COLUMN IF NOT EXISTS refund_stripe_id text;
+-- ============================================================
