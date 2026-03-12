@@ -1,7 +1,7 @@
 -- ============================================================
 -- FICHIER CONSOLIDÉ DE TOUTES LES MIGRATIONS
 -- Généré automatiquement - À mettre à jour à chaque nouvelle migration
--- Dernière mise à jour : 2026-02-22
+-- Dernière mise à jour : 2026-03-12
 -- ============================================================
 
 -- ============================================================
