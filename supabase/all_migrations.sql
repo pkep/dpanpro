@@ -1749,17 +1749,15 @@ COMMENT ON COLUMN public.interventions.quote_pdf_url IS 'URL of the signed quote
 
 
 -- ============================================================
--- NOTE: La migration 20260204214458 (adresse entreprise) n'a pas été trouvée
--- mais la colonne company_address existe dans le schéma actuel.
--- Si nécessaire, voici la commande :
--- ALTER TABLE public.users ADD COLUMN IF NOT EXISTS company_address text;
+-- Migration: 20260204214458 - Adresse entreprise users
 -- ============================================================
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS company_address text;
+
 
 -- ============================================================
--- NOTE: La migration pour rendre intervention_id nullable dans
--- payment_authorizations n'est pas listée ci-dessus mais existe :
--- ALTER TABLE public.payment_authorizations ALTER COLUMN intervention_id DROP NOT NULL;
+-- Migration: payment_authorizations intervention_id nullable
 -- ============================================================
+ALTER TABLE public.payment_authorizations ALTER COLUMN intervention_id DROP NOT NULL;
 
 -- ============================================================
 -- MIGRATION: Email Verification Tokens
