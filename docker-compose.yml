@@ -1,0 +1,93 @@
+version: '3.9'
+
+services:
+  # ---- PostgreSQL ----
+  postgres:
+    image: postgres:16-alpine
+    container_name: depanpro-postgres
+    environment:
+      POSTGRES_DB: depanpro
+      POSTGRES_USER: depanpro
+      POSTGRES_PASSWORD: depanpro
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U depanpro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---- Spring Boot Gateway ----
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: depanpro-gateway
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/depanpro
+      DB_USER: depanpro
+      DB_PASSWORD: depanpro
+      JWT_SECRET: ${JWT_SECRET:-depanpro-super-secret-key-at-least-256-bits}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_USER: ${MAIL_USER:-contact@depan-pro.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ---- Frontend ----
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: depanpro-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+
+  # ---- Prometheus ----
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: depanpro-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+
+  # ---- Grafana ----
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: depanpro-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-depanpro123}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
