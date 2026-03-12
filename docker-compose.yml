@@ -48,7 +48,7 @@ services:
   # ---- Frontend ----
   frontend:
     build:
-      context: ./frontend
+      context: .
       dockerfile: Dockerfile
     container_name: depanpro-frontend
     ports:
