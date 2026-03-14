@@ -536,7 +536,8 @@ export function StartInterventionDialog({
     try {
       const intervention = await services.interventions.getIntervention(interventionId);
       const savedSignature = signatureData || intervention?.quoteSignatureData || null;
-      const { base64, fileName } = await api.quotePDF.generateQuoteBase64(intervention, savedSignature);
+      const { quotePDFService } = await import('@/services/components/quote-pdf/quote-pdf.service');
+      const { base64, fileName } = await quotePDFService.generateQuoteBase64(intervention, savedSignature);
       
       await supabase.functions.invoke('send-quote-email', {
         body: {

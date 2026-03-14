@@ -47,7 +47,8 @@ export function SignedQuoteCard({
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      await api.quotePDF.generateAndDownloadQuote(
+      const { quotePDFService } = await import('@/services/components/quote-pdf/quote-pdf.service');
+      await quotePDFService.generateAndDownloadQuote(
         intervention,
         intervention.quoteSignatureData || undefined
       );
