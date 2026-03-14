@@ -32,7 +32,7 @@ export function ServicesSettingsTab() {
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      servicesService.toggleServiceActive(id, isActive),
+      api.services.toggleServiceActive(id, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services-all'] });
       toast.success('Service mis à jour');
