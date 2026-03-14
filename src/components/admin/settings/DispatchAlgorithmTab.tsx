@@ -32,7 +32,7 @@ export function DispatchAlgorithmTab() {
   const { data: config, isLoading } = useQuery({
     queryKey: ['dispatch-algorithm-config'],
     queryFn: async () => {
-      return configurationService.getDispatchAlgorithmConfig();
+      return api.configuration.getDispatchAlgorithmConfig();
     },
   });
 
