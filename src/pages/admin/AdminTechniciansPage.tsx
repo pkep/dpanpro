@@ -1,8 +1,9 @@
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, CheckCircle, Clock, Wallet, AlertTriangle } from 'lucide-react';
+import { Users, CheckCircle, Clock, Wallet, AlertTriangle, XCircle } from 'lucide-react';
 import { PendingTechniciansTab } from '@/components/admin/technicians/PendingTechniciansTab';
 import { ActiveTechniciansTab } from '@/components/admin/technicians/ActiveTechniciansTab';
+import { RejectedTechniciansTab } from '@/components/admin/technicians/RejectedTechniciansTab';
 import { DispatchTab } from '@/components/admin/technicians/DispatchTab';
 import { PayoutsTab } from '@/components/admin/technicians/PayoutsTab';
 import { DisputesTab } from '@/components/admin/technicians/DisputesTab';
@@ -21,6 +22,10 @@ export default function AdminTechniciansPage() {
             <TabsTrigger value="active" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
               <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Actifs
+            </TabsTrigger>
+            <TabsTrigger value="rejected" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              Refusés
             </TabsTrigger>
             <TabsTrigger value="dispatch" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
               <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -42,6 +47,9 @@ export default function AdminTechniciansPage() {
           </TabsContent>
           <TabsContent value="active">
             <ActiveTechniciansTab />
+          </TabsContent>
+          <TabsContent value="rejected">
+            <RejectedTechniciansTab />
           </TabsContent>
           <TabsContent value="dispatch">
             <DispatchTab />

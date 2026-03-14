@@ -1411,6 +1411,23 @@ paths:
           schema:
             type: string
             enum: [pending, approved, rejected]
+        - name: search
+          in: query
+          description: Recherche par nom ou email du candidat
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          description: Date de début (ISO 8601) pour filtrer par date de mise à jour
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          description: Date de fin (ISO 8601) pour filtrer par date de mise à jour
+          schema:
+            type: string
+            format: date-time
         - $ref: '#/components/parameters/PageParam'
         - $ref: '#/components/parameters/SizeParam'
       responses:

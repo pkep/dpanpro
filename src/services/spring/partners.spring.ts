@@ -1,5 +1,4 @@
-import type { IPartnersService } from '@/services/interfaces/partners.interface';
-import type { PartnerApplicationData } from '@/services/supabase/partners.service';
+import type { IPartnersService, PartnerApplicationData } from '@/services/interfaces/partners.interface';
 import { springHttp } from './http-client';
 
 export class SpringPartnersService implements IPartnersService {
