@@ -151,7 +151,7 @@ export default function InterventionDetails() {
   useEffect(() => {
     const fetchTechnicians = async () => {
       try {
-        const data = await usersService.getTechnicians();
+        const data = await api.users.getTechnicians();
         setTechnicians(data);
       } catch (err) {
         console.error('Error fetching technicians:', err);
