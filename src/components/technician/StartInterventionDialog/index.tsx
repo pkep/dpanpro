@@ -451,7 +451,7 @@ export function StartInterventionDialog({
             quantity: item.quantity,
           })),
         });
-        await quoteModificationsService.approveModification(modification.id, signatureData || undefined);
+        await services.quoteModifications.approveModification(modification.id, signatureData || undefined);
       }
 
       // === NOW SEND PAYMENT REQUEST ===
