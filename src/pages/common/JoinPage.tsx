@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { services as api } from '@/services/factory';
+import { AddressAutocomplete } from '@/components/interventions/steps/AddressAutocomplete';
 import { Header } from '@/components/home/Header';
 import { Footer } from '@/components/home/Footer';
 import { Button } from '@/components/ui/button';
