@@ -36,6 +36,14 @@ import { rolesService as supabaseRolesService } from '@/services/supabase/roles.
 import { performanceService as supabasePerformanceService } from '@/services/supabase/performance.service';
 import { pricingService as supabasePricingService } from '@/services/supabase/pricing.service';
 import { quoteModificationsService as supabaseQuoteModificationsService } from '@/services/supabase/quote-modifications.service';
+import { payoutsService as supabasePayoutsService } from '@/services/supabase/payouts.service';
+import { disputesService as supabaseDisputesService } from '@/services/supabase/disputes.service';
+import { siteSettingsService as supabaseSiteSettingsService } from '@/services/supabase/site-settings.service';
+import { notificationsService as supabaseNotificationsService } from '@/services/supabase/notifications.service';
+import { geocodingService as supabaseGeocodingService } from '@/services/components/geocoding/geocoding.service';
+import { questionnaireService as supabaseQuestionnaireService } from '@/services/components/questionnaire/questionnaire.service';
+import { invoiceService as supabaseInvoiceService } from '@/services/components/invoice/invoice.service';
+import { storageService as supabaseStorageService } from '@/services/components/utils/storage/storage.service';
 
 // --- Spring implementations ---
 import { SpringAuthService } from '@/services/spring/auth.spring';
@@ -43,6 +51,7 @@ import { SpringInterventionsService } from '@/services/spring/interventions.spri
 import { SpringUsersService } from '@/services/spring/users.spring';
 import { SpringDispatchService } from '@/services/spring/dispatch.spring';
 import { SpringPaymentService } from '@/services/spring/payment.spring';
+import { SpringQuotesService } from '@/services/spring/quotes.spring';
 import { SpringRatingsService } from '@/services/spring/ratings.spring';
 import { SpringMessagesService } from '@/services/spring/messages.spring';
 import { SpringScheduleService } from '@/services/spring/schedule.spring';
@@ -60,6 +69,14 @@ import { SpringRolesService } from '@/services/spring/roles.spring';
 import { SpringPerformanceService } from '@/services/spring/performance.spring';
 import { SpringPricingService } from '@/services/spring/pricing.spring';
 import { SpringQuoteModificationsService } from '@/services/spring/quote-modifications.spring';
+import { SpringPayoutsService } from '@/services/spring/payouts.spring';
+import { SpringDisputesService } from '@/services/spring/disputes.spring';
+import { SpringSiteSettingsService } from '@/services/spring/site-settings.spring';
+import { SpringNotificationsService } from '@/services/spring/notifications.spring';
+import { SpringStorageService } from '@/services/spring/storage.spring';
+import { SpringGeocodingService } from '@/services/spring/geocoding.spring';
+import { SpringQuestionnaireService } from '@/services/spring/questionnaire.spring';
+import { SpringInvoiceService } from '@/services/spring/invoice.spring';
 
 // --- Interfaces ---
 import type { IAuthService } from '@/services/interfaces/auth.interface';
@@ -85,6 +102,14 @@ import type { IRolesService } from '@/services/interfaces/roles.interface';
 import type { IPerformanceService } from '@/services/interfaces/performance.interface';
 import type { IPricingService } from '@/services/interfaces/pricing.interface';
 import type { IQuoteModificationsService } from '@/services/interfaces/quote-modifications.interface';
+import type { IPayoutsService } from '@/services/interfaces/payouts.interface';
+import type { IDisputesService } from '@/services/interfaces/disputes.interface';
+import type { ISiteSettingsService } from '@/services/interfaces/site-settings.interface';
+import type { INotificationsService } from '@/services/interfaces/notifications.interface';
+import type { IStorageService } from '@/services/interfaces/storage.interface';
+import type { IGeocodingService } from '@/services/interfaces/geocoding.interface';
+import type { IQuestionnaireService } from '@/services/interfaces/questionnaire.interface';
+import type { IInvoiceService } from '@/services/interfaces/invoice.interface';
 
 export interface ServiceContainer {
   auth: IAuthService;
@@ -110,6 +135,14 @@ export interface ServiceContainer {
   performance: IPerformanceService;
   pricing: IPricingService;
   quoteModifications: IQuoteModificationsService;
+  payouts: IPayoutsService;
+  disputes: IDisputesService;
+  siteSettings: ISiteSettingsService;
+  notifications: INotificationsService;
+  storage: IStorageService;
+  geocoding: IGeocodingService;
+  questionnaire: IQuestionnaireService;
+  invoice: IInvoiceService;
 }
 
 function createSupabaseServices(): ServiceContainer {
@@ -137,6 +170,14 @@ function createSupabaseServices(): ServiceContainer {
     performance: supabasePerformanceService,
     pricing: supabasePricingService,
     quoteModifications: supabaseQuoteModificationsService,
+    payouts: supabasePayoutsService,
+    disputes: supabaseDisputesService,
+    siteSettings: supabaseSiteSettingsService,
+    notifications: supabaseNotificationsService,
+    storage: supabaseStorageService,
+    geocoding: supabaseGeocodingService,
+    questionnaire: supabaseQuestionnaireService,
+    invoice: supabaseInvoiceService,
   };
 }
 
@@ -147,7 +188,7 @@ function createSpringServices(): ServiceContainer {
     users: new SpringUsersService(),
     dispatch: new SpringDispatchService(),
     payment: new SpringPaymentService(),
-    quotes: supabaseQuotesService, // Quotes has client-side logic, keep Supabase for now
+    quotes: supabaseQuotesService, // Quotes has client-side pricing logic, keep Supabase
     ratings: new SpringRatingsService(),
     messages: new SpringMessagesService(),
     schedule: new SpringScheduleService(),
@@ -165,6 +206,14 @@ function createSpringServices(): ServiceContainer {
     performance: new SpringPerformanceService(),
     pricing: new SpringPricingService(),
     quoteModifications: new SpringQuoteModificationsService(),
+    payouts: new SpringPayoutsService(),
+    disputes: new SpringDisputesService(),
+    siteSettings: new SpringSiteSettingsService(),
+    notifications: new SpringNotificationsService(),
+    storage: new SpringStorageService(),
+    geocoding: new SpringGeocodingService(),
+    questionnaire: new SpringQuestionnaireService(),
+    invoice: new SpringInvoiceService(),
   };
 }
 
