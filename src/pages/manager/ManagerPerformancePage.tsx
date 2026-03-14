@@ -168,15 +168,15 @@ export default function ManagerPerformancePage() {
                 Résolution 1er passage
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {kpis?.firstPassRate ? `${kpis.firstPassRate.toFixed(0)}%` : '--%'}
                   </div>
-                  <p className={`text-xs ${getStatusColor(kpis?.firstPassRate || null, 85, false)}`}>
+                  <p className={`text-[10px] sm:text-xs ${getStatusColor(kpis?.firstPassRate || null, 85, false)}`}>
                     Objectif: &gt;85%
                   </p>
                 </>
@@ -185,8 +185,8 @@ export default function ManagerPerformancePage() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground leading-tight">
                 Satisfaction client
               </CardTitle>
             </CardHeader>
