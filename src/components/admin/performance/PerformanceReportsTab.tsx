@@ -40,7 +40,7 @@ export function PerformanceReportsTab() {
 
   const { data: performances, isLoading } = useQuery({
     queryKey: ['technician-performances', dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
-    queryFn: () => performanceService.getTechnicianPerformances(dateRange),
+    queryFn: () => api.performance.getTechnicianPerformances(dateRange),
   });
 
   const handlePeriodChange = (newPeriod: PeriodType, range: DateRange) => {

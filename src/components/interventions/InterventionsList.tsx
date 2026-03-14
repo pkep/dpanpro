@@ -36,7 +36,7 @@ export function InterventionsList({ clientId, onInterventionClick }: Interventio
       setError(null);
       
       try {
-        const data = await interventionsService.getInterventions({
+        const data = await api.interventions.getInterventions({
           clientId,
           isActive: true,
         });

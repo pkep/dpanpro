@@ -39,7 +39,7 @@ export function DispatchAlgorithmTab() {
   const updateMutation = useMutation({
     mutationFn: async (weights: WeightConfig) => {
       if (!user?.id) throw new Error('User not authenticated');
-      await configurationService.updateDispatchAlgorithmConfig(
+      await api.configuration.updateDispatchAlgorithmConfig(
         {
           weightProximity: weights.proximity,
           weightSkills: weights.skills,

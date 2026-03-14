@@ -65,7 +65,7 @@ export function TechnicianScheduleModal({ technician, open, onOpenChange }: Tech
         setOverrides(overridesData);
 
         // Fetch interventions for the technician
-        const allInterventions = await interventionsService.getInterventions({ isActive: true });
+        const allInterventions = await api.interventions.getInterventions({ isActive: true });
         const techInterventions = allInterventions.filter(
           (i) => i.technicianId === technician.id
         );

@@ -40,8 +40,8 @@ export function InterventionTimeline({ interventionId, refreshKey }: Interventio
       try {
         setLoading(true);
         const [historyData, usersData] = await Promise.all([
-          historyService.getHistoryForIntervention(interventionId),
-          usersService.getUsers(),
+          api.history.getHistoryForIntervention(interventionId),
+          api.users.getUsers(),
         ]);
         
         setHistory(historyData);

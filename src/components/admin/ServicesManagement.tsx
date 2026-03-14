@@ -259,7 +259,7 @@ export function ServicesManagement() {
                 const isActive = getDisplayValue(service, 'isActive') as boolean;
                 const multiplier = multipliers.find((m) => m.priority === defaultPriority);
                 const multiplierValue = multiplier ? getMultiplierValue(multiplier) : 1;
-                const estimatedPrice = pricingService.calculateEstimatedPrice(totalHT, multiplierValue);
+                const estimatedPrice = api.pricing.calculateEstimatedPrice(totalHT, multiplierValue);
 
                 return (
                   <TableRow key={service.id}>

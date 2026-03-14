@@ -100,7 +100,7 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
   const handleAssignTechnician = async (interventionId: string, technicianId: string) => {
     try {
       setUpdatingId(interventionId);
-      await interventionsService.assignTechnician(interventionId, technicianId);
+      await api.interventions.assignTechnician(interventionId, technicianId);
       await fetchData();
       onInterventionUpdated?.();
       toast.success('Technicien assigné');
