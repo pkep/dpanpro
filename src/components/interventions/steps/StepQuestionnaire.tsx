@@ -64,7 +64,7 @@ export function StepQuestionnaire({
     const load = async () => {
       setIsLoading(true);
       try {
-        const tree = await questionnaireService.getQuestionnaireTree();
+        const tree = await api.questionnaire.getQuestionnaireTree();
         if (cancelled) return;
         const d = tree[category] || null;
         setDomain(d);
