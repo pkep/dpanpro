@@ -35,7 +35,8 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, Loader2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { AlertCircle, Loader2, ChevronLeft, ChevronRight, Check, Upload, FileText, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const skills = [
