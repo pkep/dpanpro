@@ -9,7 +9,7 @@ import { DispatchAssignmentCard } from '@/components/dispatch/DispatchAssignment
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wrench, CheckCircle, Clock, AlertTriangle, Star, MapPin, Play } from 'lucide-react';
-import { interventionsService } from '@/services/supabase/interventions.service';
+import { services as api } from '@/services/factory';
 import { useTechnicianGeolocation } from '@/hooks/useTechnicianGeolocation';
 import { useTechnicianPushNotifications } from '@/hooks/useFirebaseMessaging';
 import type { Intervention } from '@/types/intervention.types';

@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { photosService } from '@/services/supabase/photos.service';
-import { historyService } from '@/services/supabase/history.service';
+import { services as api } from '@/services/factory';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { usersService } from '@/services/supabase/users.service';
-import { interventionsService } from '@/services/supabase/interventions.service';
+import { services as api } from '@/services/factory';
 import type { User } from '@/types/auth.types';
 import type { Intervention } from '@/types/intervention.types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

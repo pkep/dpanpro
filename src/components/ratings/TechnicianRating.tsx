@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ratingsService } from '@/services/supabase/ratings.service';
+import { services as api } from '@/services/factory';
 import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

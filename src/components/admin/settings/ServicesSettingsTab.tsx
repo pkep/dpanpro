@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Wrench, Pencil, Loader2, ChevronUp, ChevronDown, GripVertical, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { servicesService, Service } from '@/services/supabase/services.service';
+import { services as api } from '@/services/factory';
+import type { Service } from '@/services/interfaces/services.interface';
 
 export function ServicesSettingsTab() {
   const queryClient = useQueryClient();

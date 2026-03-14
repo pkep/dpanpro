@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Trophy, Medal, Star, TrendingUp, Briefcase } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { performanceService } from '@/services/supabase/performance.service';
+import { services as api } from '@/services/factory';
 import { PeriodFilter, getDateRangeForPeriod, type DateRange } from './PeriodFilter';
 
 function formatCurrency(value: number): string {

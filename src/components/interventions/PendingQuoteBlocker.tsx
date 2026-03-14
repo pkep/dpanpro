@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { quoteModificationsService, type QuoteModification } from '@/services/supabase/quote-modifications.service';
+import { services as api } from '@/services/factory';
+import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
 import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
