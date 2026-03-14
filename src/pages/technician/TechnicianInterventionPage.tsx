@@ -169,8 +169,8 @@ export default function TechnicianInterventionPage() {
     
     setIsUpdatingStatus(true);
     try {
-      await interventionsService.updateStatus(intervention.id, newStatus);
-      await historyService.addHistoryEntry({
+      await api.interventions.updateStatus(intervention.id, newStatus);
+      await api.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'status_changed',
