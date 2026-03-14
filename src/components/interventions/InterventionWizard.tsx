@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { services } from '@/services/factory';
+import { services as api } from '@/services/factory';
 import type { Service } from '@/services/interfaces/services.interface';
 import { InterventionCategory, CATEGORY_LABELS } from '@/types/intervention.types';
 import { Button } from '@/components/ui/button';
