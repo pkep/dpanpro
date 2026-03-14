@@ -30,6 +30,7 @@ import {
   LogOut,
   CreditCard,
   Bell,
+  HelpCircle,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -47,6 +48,7 @@ const paymentItems = [
 ];
 
 const adminOnlyItems = [
+  { title: "Questionnaire", url: "/admin/questionnaire", icon: HelpCircle },
   { title: "Administration", url: "/admin/settings", icon: Settings },
   { title: "Notifications", url: "/admin/notifications", icon: Bell },
   { title: "Historique Config", url: "/admin/config-history", icon: History },
