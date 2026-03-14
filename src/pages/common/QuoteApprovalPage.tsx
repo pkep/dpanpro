@@ -141,7 +141,7 @@ export default function QuoteApprovalPage() {
     
     setProcessing(true);
     try {
-      const result = await quoteModificationsService.approveModification(modification.id, signature);
+      const result = await api.quoteModifications.approveModification(modification.id, signature);
       setModification({ ...modification, status: 'approved' });
       
       if (result.incrementResult) {
