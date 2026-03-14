@@ -48,7 +48,7 @@ export function ServicesManagement() {
       setIsLoading(true);
       const [servicesData, multipliersData] = await Promise.all([
         loadServicesWithPricing(),
-        pricingService.getPriorityMultipliers(),
+        api.pricing.getPriorityMultipliers(),
       ]);
       setServices(servicesData);
       setMultipliers(multipliersData);
