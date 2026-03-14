@@ -178,7 +178,7 @@ export function StartInterventionDialog({
 
   const loadQuoteData = async () => {
     try {
-      const lines = await quotesService.getQuoteLines(interventionId);
+      const lines = await services.quotes.getQuoteLines(interventionId);
       setQuoteLines(lines);
 
       // Load client company status
