@@ -201,6 +201,21 @@ const JoinPage = () => {
     setError(null);
 
     try {
+      // Upload Kbis file
+      let kbisUrl: string | undefined;
+      if (kbisFile) {
+        const fileExt = kbisFile.name.split('.').pop();
+        const fileName = `kbis/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('technician-photos')
+          .upload(fileName, kbisFile);
+        if (uploadError) throw new Error('Erreur lors de l\'upload du Kbis');
+        const { data: urlData } = supabase.storage
+          .from('technician-photos')
+          .getPublicUrl(fileName);
+        kbisUrl = urlData.publicUrl;
+      }
+
       await api.partners.submitApplication({
         firstName: step1Data.firstName,
         lastName: step1Data.lastName,
@@ -220,6 +235,7 @@ const JoinPage = () => {
         insurancePolicyNumber: step2Data.insurancePolicyNumber,
         insuranceExpiryDate: step2Data.insuranceExpiryDate,
         hasDecennialInsurance: step2Data.hasDecennialInsurance,
+        kbisUrl,
         skills: step3Data.skills,
         yearsExperience: step3Data.yearsExperience,
         motivation: step3Data.motivation,
