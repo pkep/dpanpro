@@ -27,7 +27,7 @@ export function ServicesSettingsTab() {
 
   const { data: services, isLoading } = useQuery({
     queryKey: ['services-all'],
-    queryFn: () => servicesService.getAllServices(),
+    queryFn: () => api.services.getAllServices(),
   });
 
   const toggleMutation = useMutation({
