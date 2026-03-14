@@ -117,7 +117,7 @@ export default function QuoteApprovalPage() {
           });
 
           // Fetch initial quote lines
-          const lines = await quotesService.getQuoteLines(mod.interventionId);
+          const lines = await api.quotes.getQuoteLines(mod.interventionId);
           setQuoteLines(lines);
         }
       } catch (err) {
