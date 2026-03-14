@@ -105,7 +105,7 @@ export function StartInterventionDialog({
   const detectCompletedSteps = async () => {
     try {
       // Check if before photos already exist
-      const existingPhotos = await workPhotosService.getPhotos(interventionId);
+      const existingPhotos = await services.workPhotos.getPhotos(interventionId);
       const hasBeforePhotos = existingPhotos.some(p => p.photoType === 'before');
 
       // Check if quote is already signed
