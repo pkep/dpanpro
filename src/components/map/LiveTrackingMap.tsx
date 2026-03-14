@@ -354,7 +354,7 @@ export function LiveTrackingMap({
 
     const fetchInterventions = async () => {
       try {
-        const data = await interventionsService.getInterventions({ 
+        const data = await api.interventions.getInterventions({ 
           isActive: true,
         });
         // Filter to only show non-completed interventions
