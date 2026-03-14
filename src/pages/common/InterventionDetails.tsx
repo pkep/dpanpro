@@ -89,7 +89,7 @@ export default function InterventionDetails() {
     if (!intervention) return;
     try {
       setDownloadingInvoice(true);
-      await invoiceService.generateAndDownloadInvoice(intervention);
+      await api.invoice.generateAndDownloadInvoice(intervention);
       toast.success('Facture téléchargée avec succès');
     } catch (error) {
       console.error('Error downloading invoice:', error);
