@@ -176,8 +176,8 @@ export default function InterventionDetails() {
       setQuoteDataLoading(true);
       try {
         const [lines, modifications] = await Promise.all([
-          quotesService.getQuoteLines(intervention.id),
-          quoteModificationsService.getModificationsByIntervention(intervention.id),
+          api.quotes.getQuoteLines(intervention.id),
+          api.quoteModifications.getModificationsByIntervention(intervention.id),
         ]);
         setQuoteLines(lines);
         setApprovedModifications(modifications.filter(m => m.status === 'approved'));
