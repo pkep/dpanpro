@@ -112,7 +112,7 @@ export default function InterventionDetails() {
 
       if (result.success) {
         // Add history entry for cancellation
-        await historyService.addHistoryEntry({
+        await api.history.addHistoryEntry({
           interventionId: intervention.id,
           userId: user.id,
           action: 'status_changed',
