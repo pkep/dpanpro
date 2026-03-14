@@ -48,7 +48,7 @@ export function TechnicianInterventionsList({ technicianId, onInterventionClick 
     
     setIsProcessing(true);
     try {
-      const result = await dispatchService.cancelAssignment(selectedIntervention.id, technicianId, reason);
+      const result = await api.dispatch.cancelAssignment(selectedIntervention.id, technicianId, reason);
       if (result.success) {
         toast.success('Intervention annulée', {
           description: 'Elle sera reproposée à d\'autres techniciens.',
