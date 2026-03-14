@@ -44,18 +44,18 @@ const TechnicianSchedulePage = () => {
       try {
         setLoading(true);
         
-        let scheduleData = await scheduleService.getSchedule(user.id);
+        let scheduleData = await api.schedule.getSchedule(user.id);
         
         if (scheduleData.length === 0) {
-          await scheduleService.initializeDefaultSchedule(user.id);
-          scheduleData = await scheduleService.getSchedule(user.id);
+          await api.schedule.initializeDefaultSchedule(user.id);
+          scheduleData = await api.schedule.getSchedule(user.id);
         }
         
         setSchedule(scheduleData);
         
         const start = startOfMonth(subMonths(currentMonth, 1));
         const end = endOfMonth(addMonths(currentMonth, 1));
-        const overridesData = await scheduleService.getOverrides(user.id, start, end);
+        const overridesData = await api.schedule.getOverrides(user.id, start, end);
         setOverrides(overridesData);
         
       } catch (err) {
@@ -89,7 +89,7 @@ const TechnicianSchedulePage = () => {
       setSaving(true);
       
       for (const day of schedule) {
-        await scheduleService.updateDaySchedule(
+        await api.schedule.updateDaySchedule(
           user.id,
           day.dayOfWeek,
           day.isWorkingDay,
@@ -134,7 +134,7 @@ const TechnicianSchedulePage = () => {
     if (!user || !overrideDate) return;
     
     try {
-      await scheduleService.setOverride(
+      await api.schedule.setOverride(
         user.id,
         overrideDate,
         overrideIsAvailable,
@@ -145,7 +145,7 @@ const TechnicianSchedulePage = () => {
       
       const start = startOfMonth(subMonths(currentMonth, 1));
       const end = endOfMonth(addMonths(currentMonth, 1));
-      const overridesData = await scheduleService.getOverrides(user.id, start, end);
+      const overridesData = await api.schedule.getOverrides(user.id, start, end);
       setOverrides(overridesData);
       
       toast.success('Exception enregistrée');
@@ -158,7 +158,7 @@ const TechnicianSchedulePage = () => {
 
   const deleteOverride = async (overrideId: string) => {
     try {
-      await scheduleService.deleteOverride(overrideId);
+      await api.schedule.deleteOverride(overrideId);
       setOverrides(overrides.filter(o => o.id !== overrideId));
       toast.success('Exception supprimée');
       setOverrideDialogOpen(false);
@@ -457,7 +457,7 @@ const TechnicianSchedulePage = () => {
                   }).map(day => (
                     <div key={day.dayOfWeek} className="flex items-center gap-4 p-3 rounded-lg border">
                       <div className="w-24 font-medium">
-                        {scheduleService.getDayName(day.dayOfWeek)}
+                        {api.schedule.getDayName(day.dayOfWeek)}
                       </div>
                       
                       <div className="flex items-center gap-2">

@@ -33,8 +33,8 @@ const TechnicianRevenuePage = () => {
 
       try {
         const [revenue, payout] = await Promise.all([
-          revenueService.getRevenueStats(user.id),
-          revenueService.getMonthlyPayout(user.id),
+          api.revenue.getRevenueStats(user.id),
+          api.revenue.getMonthlyPayout(user.id),
         ]);
 
         setRevenueStats(revenue);
@@ -53,7 +53,7 @@ const TechnicianRevenuePage = () => {
     if (historyLoaded || !user) return;
     setHistoryLoading(true);
     try {
-      const history = await revenueService.getPayoutHistory(user.id);
+      const history = await api.revenue.getPayoutHistory(user.id);
       setPayoutHistory(history);
       setHistoryLoaded(true);
     } catch (error) {
