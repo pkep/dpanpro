@@ -126,7 +126,7 @@ export function FinalizeInterventionDialog({
       }
 
       // Get modifications
-      const modifications = await quoteModificationsService.getModificationsByIntervention(intervention.id);
+      const modifications = await services.quoteModifications.getModificationsByIntervention(intervention.id);
       const pendingMod = modifications.find((m) => m.status === 'pending');
       const declinedMod = modifications.find((m) => m.status === 'declined');
       const approvedMods = modifications.filter((m) => m.status === 'approved');
