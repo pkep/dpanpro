@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { services as api } from '@/services/factory';
-import type { DailyStats, CategoryStats, StatusStats, PerformanceStats, TechnicianStats } from '@/services/interfaces/statistics.interface';
+import type { DailyStats, CategoryStats, StatusStats, StatisticsPerformanceStats as PerformanceStats, TechnicianStats } from '@/services/interfaces/statistics.interface';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS } from '@/types/intervention.types';
 import { ExportButton } from '@/components/export/ExportButton';

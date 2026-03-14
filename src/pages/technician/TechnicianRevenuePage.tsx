@@ -53,7 +53,7 @@ const TechnicianRevenuePage = () => {
     if (historyLoaded || !user) return;
     setHistoryLoading(true);
     try {
-      const history = await revenueService.getPayoutHistory(user.id);
+      const history = await api.revenue.getPayoutHistory(user.id);
       setPayoutHistory(history);
       setHistoryLoaded(true);
     } catch (error) {

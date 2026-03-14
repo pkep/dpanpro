@@ -457,7 +457,7 @@ const TechnicianSchedulePage = () => {
                   }).map(day => (
                     <div key={day.dayOfWeek} className="flex items-center gap-4 p-3 rounded-lg border">
                       <div className="w-24 font-medium">
-                        {scheduleService.getDayName(day.dayOfWeek)}
+                        {api.schedule.getDayName(day.dayOfWeek)}
                       </div>
                       
                       <div className="flex items-center gap-2">

@@ -32,9 +32,9 @@ const TechnicianStatsPage = () => {
 
       try {
         const [performance, weekly, insurance] = await Promise.all([
-          revenueService.getPerformanceStats(user.id),
-          revenueService.getWeeklyStats(user.id),
-          revenueService.getInsuranceExpiryDate(user.id),
+          api.revenue.getPerformanceStats(user.id),
+          api.revenue.getWeeklyStats(user.id),
+          api.revenue.getInsuranceExpiryDate(user.id),
         ]);
 
         setPerformanceStats(performance);
