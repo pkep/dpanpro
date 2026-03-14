@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Star, Clock, Navigation } from 'lucide-react';
-import { techniciansService, NearbyTechnician } from '@/services/supabase/technicians.service';
-import { geocodingService } from '@/services/components/geocoding/geocoding.service';
+import { services } from '@/services/factory';
+import type { NearbyTechnician } from '@/services/interfaces/technicians.interface';
 
 interface NearbyTechniciansCardProps {
   address: string;
@@ -24,7 +24,7 @@ export function NearbyTechniciansCard({ address, postalCode, city }: NearbyTechn
         setError(null);
 
         // Geocode the intervention address
-        const geoResult = await geocodingService.geocodeAddress(address, city, postalCode);
+        const geoResult = await services.geocoding.geocodeAddress(address, city, postalCode);
         
         if (!geoResult) {
           setError('Impossible de géolocaliser l\'adresse');
@@ -32,7 +32,7 @@ export function NearbyTechniciansCard({ address, postalCode, city }: NearbyTechn
         }
 
         // Get nearest technicians
-        const nearest = await techniciansService.getNearestTechnicians(
+        const nearest = await services.technicians.getNearestTechnicians(
           geoResult.latitude,
           geoResult.longitude,
           3

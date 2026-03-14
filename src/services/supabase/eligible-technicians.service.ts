@@ -1,24 +1,10 @@
 // Service de récupération des techniciens éligibles pour le dispatch manuel
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/utils/geolocation';
+import type { EligibleTechnician } from '@/services/interfaces/technicians.interface';
 
-export interface EligibleTechnician {
-  id: string;
-  userId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string | null;
-  avatarUrl: string | null;
-  companyName: string;
-  currentCity: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  skills: string[];
-  averageRating: number | null;
-  distanceKm: number;
-  estimatedArrivalMinutes: number;
-}
+// Re-export types for backward compatibility
+export type { EligibleTechnician } from '@/services/interfaces/technicians.interface';
 
 interface GetEligibleParams {
   interventionId: string;

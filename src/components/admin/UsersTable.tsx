@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usersService } from '@/services/supabase/users.service';
+import { services } from '@/services/factory';
 import type { User, UserRole } from '@/types/auth.types';
 import {
   Table,
@@ -57,7 +57,7 @@ export function UsersTable({ onUserUpdated }: UsersTableProps) {
     try {
       setLoading(true);
       setError(null);
-      const data = await usersService.getUsers();
+      const data = await services.users.getUsers();
       setUsers(data);
     } catch (err) {
       setError('Erreur lors du chargement des utilisateurs');
@@ -74,7 +74,7 @@ export function UsersTable({ onUserUpdated }: UsersTableProps) {
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
       setUpdatingId(userId);
-      await usersService.updateRole(userId, newRole);
+      await services.users.updateRole(userId, newRole);
       await fetchUsers();
       onUserUpdated?.();
       toast.success('Rôle mis à jour');
@@ -89,7 +89,7 @@ export function UsersTable({ onUserUpdated }: UsersTableProps) {
   const handleToggleActive = async (userId: string, isActive: boolean) => {
     try {
       setUpdatingId(userId);
-      await usersService.toggleActive(userId, !isActive);
+      await services.users.toggleActive(userId, !isActive);
       await fetchUsers();
       onUserUpdated?.();
       toast.success(isActive ? 'Utilisateur désactivé' : 'Utilisateur activé');

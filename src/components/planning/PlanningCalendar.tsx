@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { usersService } from '@/services/supabase/users.service';
+import { services } from '@/services/factory';
 import type { Intervention } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { CATEGORY_ICONS, STATUS_LABELS, CATEGORY_LABELS } from '@/types/intervention.types';
@@ -44,8 +43,8 @@ export function PlanningCalendar({ onInterventionClick }: PlanningCalendarProps)
       try {
         setLoading(true);
         const [interventionsData, techniciansData] = await Promise.all([
-          interventionsService.getInterventions({ isActive: true }),
-          usersService.getTechnicians(),
+          services.interventions.getInterventions({ isActive: true }),
+          services.users.getTechnicians(),
         ]);
         setInterventions(interventionsData);
         setTechnicians(techniciansData);

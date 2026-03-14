@@ -1,28 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { DispatchAlgorithmConfig, ConfigurationHistoryEntry } from '@/services/interfaces/configuration.interface';
 
-export interface DispatchAlgorithmConfig {
-  id: string;
-  weightProximity: number;
-  weightSkills: number;
-  weightWorkload: number;
-  weightRating: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string | null;
-}
-
-export interface ConfigurationHistoryEntry {
-  id: string;
-  tableName: string;
-  recordId: string;
-  fieldName: string;
-  oldValue: string | null;
-  newValue: string | null;
-  changedBy: string;
-  changedAt: string;
-  changeReason: string | null;
-}
+// Re-export types for backward compatibility
+export type { DispatchAlgorithmConfig, ConfigurationHistoryEntry } from '@/services/interfaces/configuration.interface';
 
 interface DbDispatchConfig {
   id: string;

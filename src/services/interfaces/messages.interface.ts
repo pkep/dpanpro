@@ -1,4 +1,12 @@
-import type { InterventionMessage } from '@/services/supabase/messages.service';
+export interface InterventionMessage {
+  id: string;
+  interventionId: string;
+  senderId: string;
+  senderRole: 'technician' | 'client';
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
 
 export interface IMessagesService {
   sendMessage(params: {

@@ -1,4 +1,20 @@
-import type { Service } from '@/services/supabase/services.service';
+export interface Service {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  isActive: boolean;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  defaultPriority: string;
+  displacementPrice: number;
+  securityPrice: number;
+  vatRateIndividual: number;
+  vatRateProfessional: number;
+  targetArrivalTimeMinutes: number;
+}
 
 export interface IServicesService {
   getActiveServices(): Promise<Service[]>;

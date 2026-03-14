@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { interventionsService } from '@/services/supabase/interventions.service';
+import { services } from '@/services/factory';
 import type { Intervention } from '@/types/intervention.types';
 
 export function useRealtimeIntervention(interventionId: string | undefined) {
@@ -14,7 +14,7 @@ export function useRealtimeIntervention(interventionId: string | undefined) {
     try {
       setLoading(true);
       setError(null);
-      const data = await interventionsService.getIntervention(interventionId);
+      const data = await services.interventions.getIntervention(interventionId);
       setIntervention(data);
     } catch (err) {
       setError('Erreur lors du chargement de l\'intervention');

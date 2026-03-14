@@ -1,14 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Rating } from '@/services/interfaces/ratings.interface';
 
-export interface Rating {
-  id: string;
-  interventionId: string;
-  clientId: string;
-  rating: number;
-  comment: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export types for backward compatibility
+export type { Rating } from '@/services/interfaces/ratings.interface';
 
 interface DbRating {
   id: string;

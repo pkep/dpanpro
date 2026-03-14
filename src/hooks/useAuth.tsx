@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
-import { authService } from '@/services/supabase/auth.service';
+import { services } from '@/services/factory';
 import type { User, AuthState, LoginCredentials, RegisterCredentials, AuthResponse } from '@/types/auth.types';
 
 interface AuthContextType extends AuthState {
@@ -18,16 +18,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    // Initialize auth state
-    const user = authService.getCurrentUser();
+    const user = services.auth.getCurrentUser();
     setAuthState({
       user,
       isLoading: false,
       isAuthenticated: !!user,
     });
 
-    // Subscribe to auth changes
-    const unsubscribe = authService.subscribe((user) => {
+    const unsubscribe = services.auth.subscribe((user) => {
       setAuthState({
         user,
         isLoading: false,
@@ -39,17 +37,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
-    const response = await authService.login(credentials);
+    const response = await services.auth.login(credentials);
     return response;
   }, []);
 
   const register = useCallback(async (credentials: RegisterCredentials) => {
-    const response = await authService.register(credentials);
+    const response = await services.auth.register(credentials);
     return response;
   }, []);
 
   const logout = useCallback(async () => {
-    await authService.logout();
+    await services.auth.logout();
   }, []);
 
   return (

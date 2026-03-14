@@ -1,28 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/utils/geolocation';
+import type { TechnicianWithLocation, NearbyTechnician } from '@/services/interfaces/technicians.interface';
 
-export interface TechnicianWithLocation {
-  id: string;
-  userId: string;
-  companyName: string;
-  currentCity: string | null;
-  department: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  skills: string[];
-  averageRating: number | null;
-  totalRatings: number;
-  user: {
-    firstName: string;
-    lastName: string;
-  };
-}
-
-export interface NearbyTechnician extends TechnicianWithLocation {
-  distanceKm: number;
-  estimatedTravelTimeMinutes: number;
-  estimatedArrivalTime: Date;
-}
+// Re-export types for backward compatibility
+export type { TechnicianWithLocation, NearbyTechnician } from '@/services/interfaces/technicians.interface';
 
 class TechniciansService {
   async updateTechnicianLocation(

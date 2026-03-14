@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { messagesService, InterventionMessage } from '@/services/supabase/messages.service';
+import { services } from '@/services/factory';
+import type { InterventionMessage } from '@/services/interfaces/messages.interface';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,10 +25,9 @@ export function InterventionChat({ interventionId, userId, userRole }: Intervent
 
   const fetchMessages = async () => {
     try {
-      const data = await messagesService.getMessages(interventionId);
+      const data = await services.messages.getMessages(interventionId);
       setMessages(data);
-      // Mark messages as read
-      await messagesService.markAsRead(interventionId, userId);
+      await services.messages.markAsRead(interventionId, userId);
     } catch (err) {
       console.error('Error fetching messages:', err);
     }
@@ -92,7 +92,7 @@ export function InterventionChat({ interventionId, userId, userRole }: Intervent
 
     setIsSending(true);
     try {
-      await messagesService.sendMessage({
+      await services.messages.sendMessage({
         interventionId,
         senderId: userId,
         senderRole: userRole,

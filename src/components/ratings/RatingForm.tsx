@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { ratingsService, Rating } from '@/services/supabase/ratings.service';
+import { services } from '@/services/factory';
+import type { Rating } from '@/services/interfaces/ratings.interface';
 import { StarRating } from './StarRating';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -39,7 +40,7 @@ export function RatingForm({
     const fetchRating = async () => {
       try {
         setLoading(true);
-        const data = await ratingsService.getRating(interventionId);
+        const data = await services.ratings.getRating(interventionId);
         if (data) {
           setExistingRating(data);
           setRating(data.rating);
@@ -65,7 +66,7 @@ export function RatingForm({
       setSubmitting(true);
       
       if (existingRating) {
-        const updated = await ratingsService.updateRating(
+        const updated = await services.ratings.updateRating(
           existingRating.id,
           rating,
           comment
@@ -73,7 +74,7 @@ export function RatingForm({
         setExistingRating(updated);
         toast.success('Avis mis à jour avec succès');
       } else {
-        const created = await ratingsService.createRating(
+        const created = await services.ratings.createRating(
           interventionId,
           clientId,
           rating,

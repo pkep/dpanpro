@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { dispatchService, DispatchAttempt } from '@/services/supabase/dispatch.service';
+import { services } from '@/services/factory';
+import type { DispatchAttempt } from '@/services/interfaces/dispatch.interface';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { getRouteWithFallback, RouteResult } from '@/services/components/utils/routing/routing.service';
@@ -47,13 +48,13 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
 
       if (interventionId) {
         // Get specific intervention assignment
-        const attempts = await dispatchService.getDispatchAttempts(interventionId);
+        const attempts = await services.dispatch.getDispatchAttempts(interventionId);
         assignment = attempts.find(
           a => a.technicianId === user.id && a.status === 'pending' && a.notifiedAt
         ) || null;
       } else {
         // Get any pending assignment for this technician
-        const assignments = await dispatchService.getTechnicianPendingAssignments(user.id);
+        const assignments = await services.dispatch.getTechnicianPendingAssignments(user.id);
         assignment = assignments[0] || null;
       }
 
@@ -227,7 +228,7 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
 
     setIsLoading(true);
     try {
-      const result = await dispatchService.acceptAssignment(
+      const result = await services.dispatch.acceptAssignment(
         pendingAssignment.interventionId,
         user.id
       );
@@ -257,7 +258,7 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
 
     setIsLoading(true);
     try {
-      const result = await dispatchService.rejectAssignment(
+      const result = await services.dispatch.rejectAssignment(
         pendingAssignment.interventionId,
         user.id
       );

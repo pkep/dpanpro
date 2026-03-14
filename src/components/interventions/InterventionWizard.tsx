@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { dispatchService } from '@/services/supabase/dispatch.service';
-import { servicesService, Service } from '@/services/supabase/services.service';
+import { services as api } from '@/services/factory';
+import type { Service } from '@/services/interfaces/services.interface';
 import { InterventionCategory, CATEGORY_LABELS } from '@/types/intervention.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -70,7 +69,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   useEffect(() => {
     const loadServices = async () => {
       try {
-        const activeServices = await servicesService.getActiveServices();
+        const activeServices = await api.services.getActiveServices();
         setServices(activeServices);
       } catch (error) {
         console.error('Error loading services:', error);
@@ -157,7 +156,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
       const prixMin = priceMatch ? parseFloat(priceMatch[1]) : null;
       const prixMax = priceMatch ? parseFloat(priceMatch[2]) : null;
 
-      const intervention = await interventionsService.createIntervention(clientId, {
+      const intervention = await api.interventions.createIntervention(clientId, {
         category,
         description: `${questionnaireResult.nom}${description ? `\n\n${description}` : ''}`,
         address,

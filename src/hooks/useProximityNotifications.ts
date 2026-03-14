@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { geocodingService } from '@/services/components/geocoding/geocoding.service';
+import { services } from '@/services/factory';
 import { calculateDistance, formatDistance } from '@/utils/geolocation';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
@@ -119,7 +118,7 @@ export function useProximityNotifications({
 
     const fetchInterventions = async () => {
       try {
-        const data = await interventionsService.getInterventions({
+        const data = await services.interventions.getInterventions({
           technicianId: user.id,
           isActive: true,
         });
@@ -148,7 +147,7 @@ export function useProximityNotifications({
       const toGeocode = interventions.filter(i => !i.latitude || !i.longitude);
       
       for (const intervention of toGeocode) {
-        const result = await geocodingService.geocodeAddress(
+        const result = await services.geocoding.geocodeAddress(
           intervention.address,
           intervention.city,
           intervention.postalCode

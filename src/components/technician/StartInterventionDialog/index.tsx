@@ -21,14 +21,10 @@ import {
   CreditCard
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
-import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
-import { quoteModificationsService } from '@/services/supabase/quote-modifications.service';
-import { servicesService } from '@/services/supabase/services.service';
+import { services } from '@/services/factory';
+import type { WorkPhoto } from '@/services/interfaces/work-photos.interface';
+import type { QuoteLine } from '@/services/interfaces/quotes.interface';
 import { quotePDFService } from '@/services/components/quote-pdf/quote-pdf.service';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { historyService } from '@/services/supabase/history.service';
-import { paymentService } from '@/services/supabase/payment.service';
 import { supabase } from '@/integrations/supabase/client';
 import { PhotoStep } from './PhotoStep';
 import { QuoteReviewStep } from './QuoteReviewStep';
@@ -109,7 +105,7 @@ export function StartInterventionDialog({
   const detectCompletedSteps = async () => {
     try {
       // Check if before photos already exist
-      const existingPhotos = await workPhotosService.getPhotos(interventionId);
+      const existingPhotos = await services.workPhotos.getPhotos(interventionId);
       const hasBeforePhotos = existingPhotos.some(p => p.photoType === 'before');
 
       // Check if quote is already signed
@@ -182,7 +178,7 @@ export function StartInterventionDialog({
 
   const loadQuoteData = async () => {
     try {
-      const lines = await quotesService.getQuoteLines(interventionId);
+      const lines = await services.quotes.getQuoteLines(interventionId);
       setQuoteLines(lines);
 
       // Load client company status
@@ -200,8 +196,8 @@ export function StartInterventionDialog({
       }
 
       // Load service config
-      const services = await servicesService.getActiveServices();
-      const service = services.find((s) => s.code === category);
+      const svcList = await services.services.getActiveServices();
+      const service = svcList.find((s) => s.code === category);
       let currentVatRate = 10;
       let displacementPrice = 0;
       let securityPrice = 0;
@@ -417,13 +413,13 @@ export function StartInterventionDialog({
           newLines.push({ lineType: 'repair', label: 'Main d\'œuvre', basePrice: laborPrice, multiplier: 1 });
         }
         if (newLines.length > 0) {
-          await quotesService.saveQuoteLines(interventionId, newLines);
+          await services.quotes.saveQuoteLines(interventionId, newLines);
         }
       }
 
       // 2. Upload before photos
       if (selectedFiles.length > 0) {
-        await workPhotosService.uploadPhotos(
+        await services.workPhotos.uploadPhotos(
           interventionId,
           selectedFiles,
           'before',
@@ -444,7 +440,7 @@ export function StartInterventionDialog({
 
       // 4. Handle pending items (quote modifications)
       if (pendingItems.length > 0) {
-        const modification = await quoteModificationsService.createModification({
+        const modification = await services.quoteModifications.createModification({
           interventionId,
           createdBy: userId,
           items: pendingItems.map((item) => ({
@@ -455,13 +451,13 @@ export function StartInterventionDialog({
             quantity: item.quantity,
           })),
         });
-        await quoteModificationsService.approveModification(modification.id, signatureData || undefined);
+        await services.quoteModifications.approveModification(modification.id, signatureData || undefined);
       }
 
       // === NOW SEND PAYMENT REQUEST ===
 
       // Create payment authorization in DB (pending)
-      await paymentService.createPaymentIntent({
+      await services.payment.createPaymentIntent({
         interventionId,
         amount: totalTTC,
         clientEmail: email,
@@ -490,7 +486,7 @@ export function StartInterventionDialog({
 
     try {
       // Get existing before photos
-      const existingPhotos = await workPhotosService.getPhotos(interventionId);
+      const existingPhotos = await services.workPhotos.getPhotos(interventionId);
       const uploadedPhotos = existingPhotos.filter(p => p.photoType === 'before');
 
       // Increment authorization if there are pending additional items
@@ -511,8 +507,8 @@ export function StartInterventionDialog({
       }
 
       // Update status to in_progress FIRST (most important action)
-      await interventionsService.updateStatus(interventionId, 'in_progress', 'arrived');
-      await historyService.addHistoryEntry({
+      await services.interventions.updateStatus(interventionId, 'in_progress', 'arrived');
+      await services.history.addHistoryEntry({
         interventionId,
         userId,
         action: 'status_changed',
@@ -538,7 +534,7 @@ export function StartInterventionDialog({
 
   const generateAndSendQuotePDF = async () => {
     try {
-      const intervention = await interventionsService.getIntervention(interventionId);
+      const intervention = await services.interventions.getIntervention(interventionId);
       const savedSignature = signatureData || intervention?.quoteSignatureData || null;
       const { base64, fileName } = await quotePDFService.generateQuoteBase64(intervention, savedSignature);
       

@@ -1,19 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
 import { storageService } from '@/services/components/utils/storage/storage.service';
+import type { WorkPhoto, WorkPhotoType } from '@/services/interfaces/work-photos.interface';
+
+// Re-export types for backward compatibility
+export type { WorkPhoto, WorkPhotoType } from '@/services/interfaces/work-photos.interface';
 
 const BUCKET_NAME = 'intervention-photos';
-
-export type WorkPhotoType = 'before' | 'after';
-
-export interface WorkPhoto {
-  id: string;
-  interventionId: string;
-  photoUrl: string;
-  photoType: WorkPhotoType;
-  uploadedBy: string;
-  description?: string | null;
-  createdAt: string;
-}
 
 interface DbWorkPhoto {
   id: string;

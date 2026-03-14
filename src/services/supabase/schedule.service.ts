@@ -1,23 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { TechnicianSchedule, ScheduleOverride } from '@/services/interfaces/schedule.interface';
 
-export interface TechnicianSchedule {
-  id: string;
-  technicianId: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  isWorkingDay: boolean;
-}
-
-export interface ScheduleOverride {
-  id: string;
-  technicianId: string;
-  overrideDate: string;
-  isAvailable: boolean;
-  startTime: string | null;
-  endTime: string | null;
-  reason: string | null;
-}
+// Re-export types for backward compatibility
+export type { TechnicianSchedule, ScheduleOverride } from '@/services/interfaces/schedule.interface';
 
 const DAY_NAMES = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 

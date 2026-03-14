@@ -1,7 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { techniciansService } from '@/services/supabase/technicians.service';
-import { geocodingService } from '@/services/components/geocoding/geocoding.service';
+import { services } from '@/services/factory';
 
 interface GeolocationState {
   latitude: number | null;
@@ -48,7 +47,7 @@ export function useTechnicianGeolocation() {
       const { latitude, longitude } = position.coords;
 
       // Use detailed reverse geocoding to get properly structured city and department
-      const addressInfo = await geocodingService.reverseGeocodeDetailed(latitude, longitude);
+      const addressInfo = await services.geocoding.reverseGeocodeDetailed(latitude, longitude);
       
       const city = addressInfo?.city || null;
       const department = addressInfo?.department || null;
@@ -56,7 +55,7 @@ export function useTechnicianGeolocation() {
       console.log('Geolocation update:', { latitude, longitude, city, department, addressInfo });
 
       // Update database
-      await techniciansService.updateTechnicianLocation(
+      await services.technicians.updateTechnicianLocation(
         user.id,
         latitude,
         longitude,

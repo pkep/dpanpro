@@ -1,4 +1,40 @@
-import type { QuoteModification, CreateQuoteModificationInput } from '@/services/supabase/quote-modifications.service';
+export interface QuoteModification {
+  id: string;
+  interventionId: string;
+  createdBy: string;
+  status: 'pending' | 'approved' | 'declined';
+  totalAdditionalAmount: number;
+  clientNotifiedAt: string | null;
+  clientRespondedAt: string | null;
+  notificationToken: string;
+  createdAt: string;
+  updatedAt: string;
+  items: QuoteModificationItem[];
+}
+
+export interface QuoteModificationItem {
+  id: string;
+  modificationId: string;
+  itemType: 'service' | 'equipment' | 'other';
+  label: string;
+  description: string | null;
+  unitPrice: number;
+  quantity: number;
+  totalPrice: number;
+  createdAt: string;
+}
+
+export interface CreateQuoteModificationInput {
+  interventionId: string;
+  createdBy: string;
+  items: {
+    itemType: 'service' | 'equipment' | 'other';
+    label: string;
+    description?: string;
+    unitPrice: number;
+    quantity: number;
+  }[];
+}
 
 export interface IQuoteModificationsService {
   createModification(input: CreateQuoteModificationInput): Promise<QuoteModification>;

@@ -5,10 +5,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, CheckCircle, AlertTriangle, PenTool, Eraser, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
-import { quoteModificationsService, QuoteModificationItem } from '@/services/supabase/quote-modifications.service';
-import { historyService } from '@/services/supabase/history.service';
+import { services } from '@/services/factory';
+import type { QuoteLine } from '@/services/interfaces/quotes.interface';
+import type { QuoteModificationItem } from '@/services/interfaces/quote-modifications.interface';
 import { invoiceService } from '@/services/components/invoice/invoice.service';
 import { useAuth } from '@/hooks/useAuth';
 import type { Intervention } from '@/types/intervention.types';
@@ -88,7 +87,7 @@ export function FinalizeInterventionDialog({
     setIsLoading(true);
     try {
       // Get base quote lines
-      const lines = await quotesService.getQuoteLines(intervention.id);
+      const lines = await services.quotes.getQuoteLines(intervention.id);
       setQuoteLines(lines);
       const baseTotal = lines.reduce((sum, line) => sum + line.calculatedPrice, 0);
       setBaseQuoteTotal(baseTotal);
@@ -127,7 +126,7 @@ export function FinalizeInterventionDialog({
       }
 
       // Get modifications
-      const modifications = await quoteModificationsService.getModificationsByIntervention(intervention.id);
+      const modifications = await services.quoteModifications.getModificationsByIntervention(intervention.id);
       const pendingMod = modifications.find((m) => m.status === 'pending');
       const declinedMod = modifications.find((m) => m.status === 'declined');
       const approvedMods = modifications.filter((m) => m.status === 'approved');
@@ -285,7 +284,7 @@ export function FinalizeInterventionDialog({
       }
 
       // Update intervention status
-      await interventionsService.updateStatus(intervention.id, 'completed');
+      await services.interventions.updateStatus(intervention.id, 'completed');
 
       // Update final price
       await supabase
@@ -294,7 +293,7 @@ export function FinalizeInterventionDialog({
         .eq('id', intervention.id);
 
       // Add history entry for finalization
-      await historyService.addHistoryEntry({
+      await services.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'status_changed',
@@ -341,9 +340,9 @@ export function FinalizeInterventionDialog({
         console.error('Error cancelling payment:', cancelError);
       }
 
-      await interventionsService.updateStatus(intervention.id, 'cancelled');
+      await services.interventions.updateStatus(intervention.id, 'cancelled');
 
-      await historyService.addHistoryEntry({
+      await services.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'status_changed',

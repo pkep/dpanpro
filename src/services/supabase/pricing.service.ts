@@ -1,14 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { PriorityMultiplier } from '@/services/interfaces/pricing.interface';
 
-export interface PriorityMultiplier {
-  id: string;
-  priority: string;
-  multiplier: number;
-  label: string;
-  displayOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export types for backward compatibility
+export type { PriorityMultiplier } from '@/services/interfaces/pricing.interface';
 
 interface DbPriorityMultiplier {
   id: string;

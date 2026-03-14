@@ -1,24 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { UserRole } from '@/types/auth.types';
+import type { AppRole, UserRoleRecord, ManagerPermissions } from '@/services/interfaces/roles.interface';
 
-export type AppRole = 'admin' | 'manager' | 'technician' | 'client' | 'guest' | 'payment';
-
-export interface UserRoleRecord {
-  id: string;
-  userId: string;
-  role: AppRole;
-  createdAt: string;
-  createdBy: string | null;
-}
-
-export interface ManagerPermissions {
-  id: string;
-  userId: string;
-  canCreateManagers: boolean;
-  createdAt: string;
-  updatedAt: string;
-  grantedBy: string | null;
-}
+// Re-export types for backward compatibility
+export type { AppRole, UserRoleRecord, ManagerPermissions } from '@/services/interfaces/roles.interface';
 
 interface DbUserRole {
   id: string;
