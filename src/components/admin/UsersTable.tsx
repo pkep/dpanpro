@@ -57,7 +57,7 @@ export function UsersTable({ onUserUpdated }: UsersTableProps) {
     try {
       setLoading(true);
       setError(null);
-      const data = await usersService.getUsers();
+      const data = await services.users.getUsers();
       setUsers(data);
     } catch (err) {
       setError('Erreur lors du chargement des utilisateurs');
