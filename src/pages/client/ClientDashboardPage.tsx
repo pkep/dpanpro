@@ -78,7 +78,7 @@ export default function ClientDashboardPage() {
     
     setIsCancelling(true);
     try {
-      const result = await cancellationService.cancelInterventionWithFees(
+      const result = await api.cancellation.cancelInterventionWithFees(
         selectedIntervention.id,
         reason,
         hasFees
