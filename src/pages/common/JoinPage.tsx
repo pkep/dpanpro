@@ -160,6 +160,7 @@ const JoinPage = () => {
 
   const step4Form = useForm<Step4Data>({
     resolver: zodResolver(step4Schema),
+    mode: 'onChange',
     defaultValues: {
       bankAccountHolder: '',
       bankName: '',
@@ -762,7 +763,7 @@ const JoinPage = () => {
                         <ChevronLeft className="mr-2 h-4 w-4" />
                         Précédent
                       </Button>
-                      <Button type="submit" disabled={isSubmitting}>
+                      <Button type="submit" disabled={isSubmitting || !step4Form.formState.isValid}>
                         {isSubmitting ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
