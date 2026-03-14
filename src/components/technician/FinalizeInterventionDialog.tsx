@@ -340,7 +340,7 @@ export function FinalizeInterventionDialog({
         console.error('Error cancelling payment:', cancelError);
       }
 
-      await interventionsService.updateStatus(intervention.id, 'cancelled');
+      await services.interventions.updateStatus(intervention.id, 'cancelled');
 
       await historyService.addHistoryEntry({
         interventionId: intervention.id,
