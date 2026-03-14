@@ -486,7 +486,7 @@ export function StartInterventionDialog({
 
     try {
       // Get existing before photos
-      const existingPhotos = await workPhotosService.getPhotos(interventionId);
+      const existingPhotos = await services.workPhotos.getPhotos(interventionId);
       const uploadedPhotos = existingPhotos.filter(p => p.photoType === 'before');
 
       // Increment authorization if there are pending additional items
