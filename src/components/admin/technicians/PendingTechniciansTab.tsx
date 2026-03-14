@@ -114,16 +114,13 @@ export function PendingTechniciansTab() {
     setProcessing(true);
     try {
       if (actionType === 'accept') {
+        // Mark application as approved
         await supabase
           .from('partner_applications')
           .update({ status: 'approved' })
           .eq('id', selectedApp.id);
 
-        await supabase
-          .from('users')
-          .update({ is_active: true })
-          .eq('id', selectedApp.user_id);
-
+        // Add technician role but keep account INACTIVE until email activation
         await supabase
           .from('user_roles')
           .insert({
@@ -131,6 +128,7 @@ export function PendingTechniciansTab() {
             role: 'technician',
           });
 
+        // Send acceptance email with activation link
         await supabase.functions.invoke('notify-technician-application', {
           body: {
             technicianId: selectedApp.user_id,
@@ -140,7 +138,7 @@ export function PendingTechniciansTab() {
           },
         });
 
-        toast.success('Candidature acceptée et email envoyé');
+        toast.success('Candidature acceptée. Un email d\'activation a été envoyé au technicien.');
       } else {
         await supabase
           .from('partner_applications')
