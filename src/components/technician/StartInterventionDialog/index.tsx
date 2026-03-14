@@ -419,7 +419,7 @@ export function StartInterventionDialog({
 
       // 2. Upload before photos
       if (selectedFiles.length > 0) {
-        await workPhotosService.uploadPhotos(
+        await services.workPhotos.uploadPhotos(
           interventionId,
           selectedFiles,
           'before',
