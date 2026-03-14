@@ -93,7 +93,7 @@ const Dashboard = () => {
           toast.success('Demande annulée avec succès');
         }
         if (user) {
-          const data = await interventionsService.getInterventions({ clientId: user.id });
+          const data = await api.interventions.getInterventions({ clientId: user.id });
           setInterventions(data);
           setStats({
             total: data.length,
