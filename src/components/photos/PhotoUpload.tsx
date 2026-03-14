@@ -48,7 +48,7 @@ export function PhotoUpload({
 
       const newUrls: string[] = [];
       for (let i = 0; i < validFiles.length; i++) {
-        const url = await photosService.uploadPhoto(interventionId, validFiles[i]);
+        const url = await api.photos.uploadPhoto(interventionId, validFiles[i]);
         newUrls.push(url);
         setProgress(((i + 1) / validFiles.length) * 100);
       }
