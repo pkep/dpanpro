@@ -129,7 +129,7 @@ const TechnicianProfilePage = () => {
       if (!user) return;
 
       try {
-        const profile = await partnersService.getPartnerProfile(user.id);
+        const profile = await api.partners.getPartnerProfile(user.id);
         if (profile) {
           personalForm.reset({
             firstName: profile.user.firstName,
