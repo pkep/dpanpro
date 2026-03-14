@@ -24,7 +24,7 @@ export function NearbyTechniciansCard({ address, postalCode, city }: NearbyTechn
         setError(null);
 
         // Geocode the intervention address
-        const geoResult = await geocodingService.geocodeAddress(address, city, postalCode);
+        const geoResult = await services.geocoding.geocodeAddress(address, city, postalCode);
         
         if (!geoResult) {
           setError('Impossible de géolocaliser l\'adresse');
