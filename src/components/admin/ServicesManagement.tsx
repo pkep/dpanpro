@@ -125,7 +125,7 @@ export function ServicesManagement() {
 
       // Save multiplier changes
       for (const [multiplierId, multiplier] of Object.entries(editedMultipliers)) {
-        await pricingService.updateMultiplier(multiplierId, multiplier);
+        await api.pricing.updateMultiplier(multiplierId, multiplier);
       }
 
       toast.success('Modifications enregistrées');
