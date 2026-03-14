@@ -28,6 +28,7 @@ import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage";
 import CookiePolicyPage from "./pages/common/CookiePolicyPage";
 import LegalNoticePage from "./pages/common/LegalNoticePage";
 import ContactPage from "./pages/common/ContactPage";
+import TrackingSearchPage from "./pages/common/TrackingSearchPage";
 import NotFound from "./pages/common/NotFound";
 import { GlobalPendingActions } from "./components/client/GlobalPendingActions";
 
