@@ -32,7 +32,7 @@ export function WorkPhotosGallery({
   const loadPhotos = async () => {
     setLoading(true);
     try {
-      const data = await workPhotosService.getPhotos(interventionId);
+      const data = await api.workPhotos.getPhotos(interventionId);
       setPhotos(data);
     } catch (error) {
       console.error('Error loading work photos:', error);
