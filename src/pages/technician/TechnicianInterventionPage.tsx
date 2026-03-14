@@ -25,9 +25,8 @@ import {
   MapPinCheck
 } from 'lucide-react';
 import { CATEGORY_LABELS, CATEGORY_ICONS, STATUS_LABELS, PRIORITY_LABELS } from '@/types/intervention.types';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { historyService } from '@/services/supabase/history.service';
-import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
+import { services as api } from '@/services/factory';
+import type { WorkPhoto } from '@/services/interfaces/work-photos.interface';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { InterventionChat } from '@/components/technician/InterventionChat';
