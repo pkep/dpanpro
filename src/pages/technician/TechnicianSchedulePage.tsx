@@ -44,11 +44,11 @@ const TechnicianSchedulePage = () => {
       try {
         setLoading(true);
         
-        let scheduleData = await scheduleService.getSchedule(user.id);
+        let scheduleData = await api.schedule.getSchedule(user.id);
         
         if (scheduleData.length === 0) {
-          await scheduleService.initializeDefaultSchedule(user.id);
-          scheduleData = await scheduleService.getSchedule(user.id);
+          await api.schedule.initializeDefaultSchedule(user.id);
+          scheduleData = await api.schedule.getSchedule(user.id);
         }
         
         setSchedule(scheduleData);
