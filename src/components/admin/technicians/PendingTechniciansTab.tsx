@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { CheckCircle, XCircle, Eye, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Loader2, Briefcase, MapPin, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -19,6 +20,22 @@ interface PendingApplication {
   skills: string[];
   years_experience: number;
   created_at: string;
+  address: string;
+  postal_code: string;
+  city: string;
+  birth_date: string;
+  birth_place: string;
+  insurance_company: string;
+  insurance_policy_number: string;
+  insurance_expiry_date: string;
+  has_decennial_insurance: boolean;
+  vat_number: string | null;
+  motivation: string;
+  bank_account_holder: string;
+  bank_name: string;
+  iban: string;
+  bic: string;
+  kbis_url: string | null;
   user: {
     first_name: string;
     last_name: string;
@@ -40,6 +57,7 @@ export function PendingTechniciansTab() {
   const [applications, setApplications] = useState<PendingApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApp, setSelectedApp] = useState<PendingApplication | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
   const [actionType, setActionType] = useState<'accept' | 'reject' | null>(null);
   const [processing, setProcessing] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -50,21 +68,17 @@ export function PendingTechniciansTab() {
       const { data, error } = await supabase
         .from('partner_applications')
         .select(`
-          id,
-          user_id,
-          company_name,
-          siret,
-          legal_status,
-          skills,
-          years_experience,
-          created_at
+          id, user_id, company_name, siret, legal_status, skills,
+          years_experience, created_at, address, postal_code, city,
+          birth_date, birth_place, insurance_company, insurance_policy_number,
+          insurance_expiry_date, has_decennial_insurance, vat_number, motivation,
+          bank_account_holder, bank_name, iban, bic, kbis_url
         `)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Fetch user info for each application
       const applicationsWithUsers: PendingApplication[] = [];
       for (const app of data || []) {
         const { data: userData } = await supabase
@@ -100,19 +114,16 @@ export function PendingTechniciansTab() {
     setProcessing(true);
     try {
       if (actionType === 'accept') {
-        // Update application status
         await supabase
           .from('partner_applications')
           .update({ status: 'approved' })
           .eq('id', selectedApp.id);
 
-        // Activate user account
         await supabase
           .from('users')
           .update({ is_active: true })
           .eq('id', selectedApp.user_id);
 
-        // Add technician role
         await supabase
           .from('user_roles')
           .insert({
@@ -120,7 +131,6 @@ export function PendingTechniciansTab() {
             role: 'technician',
           });
 
-        // Send acceptance email
         await supabase.functions.invoke('notify-technician-application', {
           body: {
             technicianId: selectedApp.user_id,
@@ -132,13 +142,11 @@ export function PendingTechniciansTab() {
 
         toast.success('Candidature acceptée et email envoyé');
       } else {
-        // Update application status
         await supabase
           .from('partner_applications')
           .update({ status: 'rejected' })
           .eq('id', selectedApp.id);
 
-        // Send rejection email
         await supabase.functions.invoke('notify-technician-application', {
           body: {
             technicianId: selectedApp.user_id,
@@ -154,6 +162,7 @@ export function PendingTechniciansTab() {
 
       setSelectedApp(null);
       setActionType(null);
+      setShowDetails(false);
       setRejectReason('');
       fetchApplications();
     } catch (error) {
@@ -221,7 +230,7 @@ export function PendingTechniciansTab() {
                       className="flex-1 sm:flex-none"
                       onClick={() => {
                         setSelectedApp(app);
-                        setActionType(null);
+                        setShowDetails(true);
                       }}
                     >
                       <Eye className="h-4 w-4 mr-1" />
@@ -258,6 +267,197 @@ export function PendingTechniciansTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Details Dialog */}
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Détails de la candidature
+            </DialogTitle>
+            <DialogDescription>
+              {selectedApp?.user.first_name} {selectedApp?.user.last_name} — {selectedApp?.company_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedApp && (
+            <div className="space-y-4">
+              {/* Personal info */}
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Informations personnelles</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Nom :</span>
+                    <p className="font-medium">{selectedApp.user.first_name} {selectedApp.user.last_name}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Email :</span>
+                    <p className="font-medium">{selectedApp.user.email}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Téléphone :</span>
+                    <p className="font-medium">{selectedApp.user.phone || 'Non renseigné'}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Date de naissance :</span>
+                    <p className="font-medium">{format(new Date(selectedApp.birth_date), 'dd MMMM yyyy', { locale: fr })}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Lieu de naissance :</span>
+                    <p className="font-medium">{selectedApp.birth_place}</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Professional info */}
+              <div>
+                <h4 className="text-sm font-semibold mb-2 flex items-center gap-1">
+                  <Briefcase className="h-4 w-4" />
+                  Informations professionnelles
+                </h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Entreprise :</span>
+                    <p className="font-medium">{selectedApp.company_name}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Statut juridique :</span>
+                    <p className="font-medium">{selectedApp.legal_status}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">SIRET :</span>
+                    <p className="font-medium font-mono">{selectedApp.siret}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">N° TVA :</span>
+                    <p className="font-medium font-mono">{selectedApp.vat_number || 'Non renseigné'}</p>
+                  </div>
+                </div>
+                <div className="mt-2 text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    Adresse :
+                  </span>
+                  <p className="font-medium">{selectedApp.address}, {selectedApp.postal_code} {selectedApp.city}</p>
+                </div>
+                {selectedApp.kbis_url && (
+                  <div className="mt-2">
+                    <a
+                      href={selectedApp.kbis_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Voir l'extrait Kbis
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Skills */}
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Compétences & expérience</h4>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {selectedApp.skills.map((skill) => (
+                    <Badge key={skill} variant="outline">
+                      {SKILL_LABELS[skill] || skill}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">{selectedApp.years_experience} ans d'expérience</p>
+                <div className="mt-2">
+                  <span className="text-sm text-muted-foreground">Motivation :</span>
+                  <p className="text-sm mt-1 bg-muted/50 p-2 rounded">{selectedApp.motivation}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Insurance */}
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Assurance</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Compagnie :</span>
+                    <p className="font-medium">{selectedApp.insurance_company}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">N° Police :</span>
+                    <p className="font-medium font-mono">{selectedApp.insurance_policy_number}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Expiration :</span>
+                    <p className="font-medium">{format(new Date(selectedApp.insurance_expiry_date), 'dd/MM/yyyy')}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Décennale :</span>
+                    <Badge variant={selectedApp.has_decennial_insurance ? 'default' : 'secondary'}>
+                      {selectedApp.has_decennial_insurance ? 'Oui' : 'Non'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Banking */}
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Coordonnées bancaires</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Banque :</span>
+                    <p className="font-medium">{selectedApp.bank_name}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Titulaire :</span>
+                    <p className="font-medium">{selectedApp.bank_account_holder}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">IBAN :</span>
+                    <p className="font-medium font-mono text-xs">{selectedApp.iban}</p>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">BIC :</span>
+                    <p className="font-medium font-mono">{selectedApp.bic}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setShowDetails(false)}>
+              Fermer
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                setShowDetails(false);
+                setActionType('accept');
+              }}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Accepter
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setShowDetails(false);
+                setActionType('reject');
+              }}
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              Refuser
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Action Dialog */}
       <Dialog open={actionType !== null} onOpenChange={() => setActionType(null)}>
