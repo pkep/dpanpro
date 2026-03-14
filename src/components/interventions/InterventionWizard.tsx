@@ -69,7 +69,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
   useEffect(() => {
     const loadServices = async () => {
       try {
-        const activeServices = await servicesService.getActiveServices();
+        const activeServices = await services.services.getActiveServices();
         setServices(activeServices);
       } catch (error) {
         console.error('Error loading services:', error);
