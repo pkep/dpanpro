@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Intervention, InterventionStatus, STATUS_LABELS } from '@/types/intervention.types';
-import { interventionsService } from '@/services/supabase/interventions.service';
+import { services as api } from '@/services/factory';
 import { InterventionCard } from './InterventionCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';

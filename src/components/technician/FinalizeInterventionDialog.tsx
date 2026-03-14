@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { services } from '@/services/factory';
 import type { QuoteLine } from '@/services/interfaces/quotes.interface';
 import type { QuoteModificationItem } from '@/services/interfaces/quote-modifications.interface';
-import { invoiceService } from '@/services/components/invoice/invoice.service';
+import { services as api } from '@/services/factory';
 import { useAuth } from '@/hooks/useAuth';
 import type { Intervention } from '@/types/intervention.types';
 

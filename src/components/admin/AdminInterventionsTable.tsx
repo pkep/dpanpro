@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { usersService } from '@/services/supabase/users.service';
-import { ratingsService } from '@/services/supabase/ratings.service';
+import { services as api } from '@/services/factory';
 import type { Intervention, InterventionStatus } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { STATUS_LABELS, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';

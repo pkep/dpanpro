@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Camera, Trash2, Download, ZoomIn } from 'lucide-react';
-import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
+import { services as api } from '@/services/factory';
+import type { WorkPhoto } from '@/services/interfaces/work-photos.interface';
 import { toast } from 'sonner';
 
 interface WorkPhotosGalleryProps {

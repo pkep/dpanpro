@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { partnersService } from '@/services/supabase/partners.service';
+import { services as api } from '@/services/factory';
 import { Header } from '@/components/home/Header';
 import { Footer } from '@/components/home/Footer';
 import { Button } from '@/components/ui/button';

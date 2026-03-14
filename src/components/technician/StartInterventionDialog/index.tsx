@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 import { services } from '@/services/factory';
 import type { WorkPhoto } from '@/services/interfaces/work-photos.interface';
 import type { QuoteLine } from '@/services/interfaces/quotes.interface';
-import { quotePDFService } from '@/services/components/quote-pdf/quote-pdf.service';
+import { services as api } from '@/services/factory';
 import { supabase } from '@/integrations/supabase/client';
 import { PhotoStep } from './PhotoStep';
 import { QuoteReviewStep } from './QuoteReviewStep';

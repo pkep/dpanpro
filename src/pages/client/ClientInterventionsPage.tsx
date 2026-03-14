@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ClientLayout } from '@/components/client/ClientLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { interventionsService } from '@/services/supabase/interventions.service';
+import { services as api } from '@/services/factory';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

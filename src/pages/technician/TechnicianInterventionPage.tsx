@@ -39,8 +39,7 @@ import { WorkPhotoCapture } from '@/components/technician/WorkPhotoCapture';
 import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
 import { StartInterventionDialog } from '@/components/technician/StartInterventionDialog/index';
 import { FinalizePhotosDialog } from '@/components/technician/FinalizePhotosDialog';
-import { dispatchService } from '@/services/supabase/dispatch.service';
-import { quoteModificationsService } from '@/services/supabase/quote-modifications.service';
+import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
