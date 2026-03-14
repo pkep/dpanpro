@@ -117,10 +117,10 @@ export default function ManagerPerformancePage() {
     <ManagerLayout title="Dashboard Performance" subtitle="KPIs et analyses">
       <div className="space-y-6">
         {/* KPIs Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground leading-tight">
                 Temps réponse moyen
               </CardTitle>
             </CardHeader>
