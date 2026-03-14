@@ -25,10 +25,9 @@ export function InterventionChat({ interventionId, userId, userRole }: Intervent
 
   const fetchMessages = async () => {
     try {
-      const data = await messagesService.getMessages(interventionId);
+      const data = await services.messages.getMessages(interventionId);
       setMessages(data);
-      // Mark messages as read
-      await messagesService.markAsRead(interventionId, userId);
+      await services.messages.markAsRead(interventionId, userId);
     } catch (err) {
       console.error('Error fetching messages:', err);
     }
