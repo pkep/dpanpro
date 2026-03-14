@@ -46,7 +46,7 @@ export function WorkPhotosGallery({
     
     setIsDeleting(photo.id);
     try {
-      await workPhotosService.deletePhoto(photo.id);
+      await api.workPhotos.deletePhoto(photo.id);
       setPhotos(prev => prev.filter(p => p.id !== photo.id));
       toast.success('Photo supprimée');
       onPhotosChange?.();

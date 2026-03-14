@@ -66,7 +66,7 @@ export function WorkPhotoCapture({
 
     setIsUploading(true);
     try {
-      const uploadedPhotos = await workPhotosService.uploadPhotos(
+      const uploadedPhotos = await api.workPhotos.uploadPhotos(
         interventionId,
         selectedFiles,
         photoType,

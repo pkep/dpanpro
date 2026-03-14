@@ -135,7 +135,7 @@ export function StepQuestionnaire({
           toast.error('Seules les images sont acceptées');
           continue;
         }
-        const publicUrl = await storageService.uploadFile('intervention-photos', file, 'temp');
+        const publicUrl = await api.storage.uploadFile('intervention-photos', file, 'temp');
         newPhotos.push(publicUrl);
       }
       if (newPhotos.length > 0) {

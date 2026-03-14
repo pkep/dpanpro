@@ -27,7 +27,7 @@ export function StepServiceSelection({ selectedCategory, onSelect }: StepService
   useEffect(() => {
     const loadServices = async () => {
       try {
-        const activeServices = await servicesService.getActiveServices();
+        const activeServices = await api.services.getActiveServices();
         setServices(activeServices);
       } catch (error) {
         console.error('Error loading services:', error);

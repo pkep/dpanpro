@@ -310,7 +310,7 @@ export function FinalizeInterventionDialog({
 
       // Send invoice by email (no automatic download)
       try {
-        await invoiceService.sendInvoiceByEmail(intervention);
+        await api.invoice.sendInvoiceByEmail(intervention);
       } catch (invoiceErr) {
         console.error('Error sending invoice:', invoiceErr);
         toast.info('La facture n\'a pas pu être envoyée automatiquement par email.');
