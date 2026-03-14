@@ -38,7 +38,7 @@ export default function ClientProfilePage() {
 
     setIsSaving(true);
     try {
-      await usersService.updateUser(user.id, {
+      await api.users.updateUser(user.id, {
         firstName,
         lastName,
         phone: phone || undefined,

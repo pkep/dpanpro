@@ -191,7 +191,7 @@ const JoinPage = () => {
     setError(null);
 
     try {
-      await partnersService.submitApplication({
+      await api.partners.submitApplication({
         firstName: step1Data.firstName,
         lastName: step1Data.lastName,
         email: step1Data.email,

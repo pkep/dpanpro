@@ -74,12 +74,12 @@ export default function StatisticsDashboard() {
       try {
         setLoading(true);
         const [daily, category, status, performance, technicians, allInterventions] = await Promise.all([
-          statisticsService.getDailyStats(parseInt(period)),
-          statisticsService.getCategoryStats(),
-          statisticsService.getStatusStats(),
-          statisticsService.getPerformanceStats(),
-          statisticsService.getTechnicianStats(),
-          interventionsService.getInterventions(),
+          api.statistics.getDailyStats(parseInt(period)),
+          api.statistics.getCategoryStats(),
+          api.statistics.getStatusStats(),
+          api.statistics.getPerformanceStats(),
+          api.statistics.getTechnicianStats(),
+          api.interventions.getInterventions(),
         ]);
         
         setDailyStats(daily);

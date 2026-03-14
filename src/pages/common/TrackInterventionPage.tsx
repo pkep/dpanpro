@@ -252,7 +252,7 @@ export default function TrackInterventionPage() {
   const handleAuthorizationSuccess = async () => {
     try {
       if (paymentAuthorizationId) {
-        await paymentService.updateAuthorizationStatus(paymentAuthorizationId, 'authorized');
+        await api.payment.updateAuthorizationStatus(paymentAuthorizationId, 'authorized');
       }
       setPaymentAuthorized(true);
       setPaymentStatus('authorized');

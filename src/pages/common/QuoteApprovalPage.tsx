@@ -163,7 +163,7 @@ export default function QuoteApprovalPage() {
     
     setProcessing(true);
     try {
-      await quoteModificationsService.declineModification(modification.id, reason);
+      await api.quoteModifications.declineModification(modification.id, reason);
       setModification({ ...modification, status: 'declined' });
       setShowDeclineDialog(false);
       toast.success('Modification refusée');

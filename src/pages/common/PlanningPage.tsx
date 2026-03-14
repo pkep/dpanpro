@@ -37,8 +37,8 @@ export default function PlanningPage() {
     try {
       setLoading(true);
       const [interventionsData, techniciansData] = await Promise.all([
-        interventionsService.getInterventions({ isActive: true }),
-        usersService.getTechnicians(),
+        api.interventions.getInterventions({ isActive: true }),
+        api.users.getTechnicians(),
       ]);
       
       // Filter unscheduled interventions

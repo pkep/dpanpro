@@ -132,7 +132,7 @@ const Dashboard = () => {
       
       try {
         setLoading(true);
-        const data = await interventionsService.getInterventions({ clientId: user.id });
+        const data = await api.interventions.getInterventions({ clientId: user.id });
         setInterventions(data);
 
         // Calculate stats

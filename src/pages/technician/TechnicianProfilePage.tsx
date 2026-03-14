@@ -222,7 +222,7 @@ const TechnicianProfilePage = () => {
     if (!user) return;
     setIsSaving(true);
     try {
-      await partnersService.updatePartnerProfile(user.id, {
+      await api.partners.updatePartnerProfile(user.id, {
         ...data,
         iban: data.iban.replace(/\s/g, ''),
       });

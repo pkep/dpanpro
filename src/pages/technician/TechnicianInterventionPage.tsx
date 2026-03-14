@@ -316,7 +316,7 @@ export default function TechnicianInterventionPage() {
     
     setIsCancelling(true);
     try {
-      const result = await dispatchService.cancelAssignment(intervention.id, user.id, reason);
+      const result = await api.dispatch.cancelAssignment(intervention.id, user.id, reason);
       if (result.success) {
         toast.success('Intervention annulée', {
           description: 'Elle sera reproposée à d\'autres techniciens.',
