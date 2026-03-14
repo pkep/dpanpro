@@ -44,7 +44,7 @@ export function ServicesSettingsTab() {
 
   const updateMutation = useMutation({
     mutationFn: (data: { id: string; updates: Partial<Service> }) =>
-      servicesService.updateService(data.id, data.updates),
+      api.services.updateService(data.id, data.updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services-all'] });
       toast.success('Service modifié avec succès');
