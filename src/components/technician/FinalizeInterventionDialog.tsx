@@ -87,7 +87,7 @@ export function FinalizeInterventionDialog({
     setIsLoading(true);
     try {
       // Get base quote lines
-      const lines = await quotesService.getQuoteLines(intervention.id);
+      const lines = await services.quotes.getQuoteLines(intervention.id);
       setQuoteLines(lines);
       const baseTotal = lines.reduce((sum, line) => sum + line.calculatedPrice, 0);
       setBaseQuoteTotal(baseTotal);
