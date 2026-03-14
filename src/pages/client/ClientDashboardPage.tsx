@@ -95,7 +95,7 @@ export default function ClientDashboardPage() {
         
         // Refresh interventions
         if (user) {
-          const data = await interventionsService.getInterventions({ clientId: user.id });
+          const data = await api.interventions.getInterventions({ clientId: user.id });
           setInterventions(data);
           setStats({
             total: data.length,
