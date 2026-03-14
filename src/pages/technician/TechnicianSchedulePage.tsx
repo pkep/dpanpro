@@ -158,7 +158,7 @@ const TechnicianSchedulePage = () => {
 
   const deleteOverride = async (overrideId: string) => {
     try {
-      await scheduleService.deleteOverride(overrideId);
+      await api.schedule.deleteOverride(overrideId);
       setOverrides(overrides.filter(o => o.id !== overrideId));
       toast.success('Exception supprimée');
       setOverrideDialogOpen(false);
