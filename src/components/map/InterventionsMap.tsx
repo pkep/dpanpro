@@ -130,7 +130,7 @@ export function InterventionsMap({
 
       let processed = 0;
       for (const intervention of toGeocode) {
-        const result = await geocodingService.geocodeAddress(
+        const result = await api.geocoding.geocodeAddress(
           intervention.address,
           intervention.city,
           intervention.postalCode
