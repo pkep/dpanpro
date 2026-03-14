@@ -43,6 +43,7 @@ export default function ClientProfilePage() {
         lastName,
         phone: phone || undefined,
       });
+      await refreshUser();
       toast.success('Profil mis à jour avec succès');
     } catch (error) {
       console.error('Error updating profile:', error);

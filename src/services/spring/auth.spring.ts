@@ -84,6 +84,18 @@ export class SpringAuthService implements IAuthService {
     return null;
   }
 
+  async refreshUser(): Promise<User | null> {
+    try {
+      const user = await springHttp.get<User>('/users/me');
+      this.currentUser = user;
+      localStorage.setItem('depanpro_user', JSON.stringify(user));
+      this.notifyListeners();
+      return user;
+    } catch {
+      return this.currentUser;
+    }
+  }
+
   isAuthenticated(): boolean {
     return !!this.getCurrentUser();
   }

@@ -188,6 +188,45 @@ class AuthService {
     return null;
   }
 
+  async refreshUser(): Promise<User | null> {
+    const current = this.getCurrentUser();
+    if (!current) return null;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', current.id)
+      .maybeSingle();
+
+    if (error || !data) return this.currentUser;
+
+    const dbUser = data as unknown as DbUser;
+    const user: User = {
+      id: dbUser.id,
+      email: dbUser.email,
+      firstName: dbUser.first_name,
+      lastName: dbUser.last_name,
+      phone: dbUser.phone,
+      role: dbUser.role as UserRole,
+      isActive: dbUser.is_active,
+      isCompany: dbUser.is_company,
+      companyName: dbUser.company_name,
+      companyAddress: dbUser.company_address,
+      siren: dbUser.siren,
+      vatNumber: dbUser.vat_number,
+      avatarUrl: dbUser.avatar_url,
+      companyLogoUrl: dbUser.company_logo_url,
+      mustChangePassword: dbUser.must_change_password,
+      createdAt: dbUser.created_at,
+      updatedAt: dbUser.updated_at,
+    };
+
+    this.currentUser = user;
+    localStorage.setItem('depanpro_user', JSON.stringify(user));
+    this.notifyListeners();
+    return user;
+  }
+
   isAuthenticated(): boolean {
     return !!this.getCurrentUser();
   }
