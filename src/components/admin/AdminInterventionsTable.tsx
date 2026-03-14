@@ -63,9 +63,9 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
       setLoading(true);
       setError(null);
       const [interventionsData, techniciansData, ratingsData] = await Promise.all([
-        interventionsService.getInterventions(),
-        usersService.getTechnicians(),
-        ratingsService.getAllTechniciansRatings(),
+        api.interventions.getInterventions(),
+        api.users.getTechnicians(),
+        api.ratings.getAllTechniciansRatings(),
       ]);
       setInterventions(interventionsData);
       setTechnicians(techniciansData);
