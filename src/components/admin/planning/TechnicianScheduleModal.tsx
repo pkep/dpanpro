@@ -42,7 +42,7 @@ export function TechnicianScheduleModal({ technician, open, onOpenChange }: Tech
       setLoading(true);
       try {
         // Fetch schedule
-        const scheduleData = await scheduleService.getSchedule(technician.id);
+        const scheduleData = await api.schedule.getSchedule(technician.id);
         setSchedule(scheduleData);
 
         // Determine date range based on view
