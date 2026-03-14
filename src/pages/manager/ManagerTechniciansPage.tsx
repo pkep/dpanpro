@@ -12,25 +12,27 @@ export default function ManagerTechniciansPage() {
     <ManagerLayout title="Gestion des Techniciens" subtitle="Validation, dispatch et suivi">
       <div className="space-y-6">
         <Tabs defaultValue="pending" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="pending" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              En attente
+          <TabsList className="flex flex-wrap h-auto gap-1">
+            <TabsTrigger value="pending" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">En attente</span>
+              <span className="xs:hidden">Attente</span>
             </TabsTrigger>
-            <TabsTrigger value="active" className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
+            <TabsTrigger value="active" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <CheckCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Actifs
             </TabsTrigger>
-            <TabsTrigger value="dispatch" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
+            <TabsTrigger value="dispatch" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Dispatch
             </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              Versements
+            <TabsTrigger value="payments" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Versements</span>
+              <span className="sm:hidden">Verse.</span>
             </TabsTrigger>
-            <TabsTrigger value="disputes" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
+            <TabsTrigger value="disputes" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Litiges
             </TabsTrigger>
           </TabsList>

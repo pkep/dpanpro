@@ -235,15 +235,15 @@ export default function ManagerPerformancePage() {
                 CA/Technicien
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {formatCurrency(kpis?.avgRevenuePerTech || 0)}
                   </div>
-                  <p className="text-xs text-muted-foreground">Ce mois</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Ce mois</p>
                 </>
               )}
             </CardContent>
@@ -252,21 +252,21 @@ export default function ManagerPerformancePage() {
 
         {/* Detailed Tabs */}
         <Tabs defaultValue="reports" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
+          <TabsList className="flex flex-wrap h-auto gap-1">
+            <TabsTrigger value="reports" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Rapports
             </TabsTrigger>
-            <TabsTrigger value="analysis" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
+            <TabsTrigger value="analysis" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Analyse
             </TabsTrigger>
-            <TabsTrigger value="heatmap" className="flex items-center gap-2">
-              <Map className="h-4 w-4" />
+            <TabsTrigger value="heatmap" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <Map className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Heatmap
             </TabsTrigger>
-            <TabsTrigger value="ranking" className="flex items-center gap-2">
-              <Award className="h-4 w-4" />
+            <TabsTrigger value="ranking" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Classement
             </TabsTrigger>
           </TabsList>

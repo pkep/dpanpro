@@ -110,7 +110,7 @@ export default function ManagerDashboardPage() {
         </div>
 
         {/* Quick Access */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
