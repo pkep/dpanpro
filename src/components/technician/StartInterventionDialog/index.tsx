@@ -196,8 +196,8 @@ export function StartInterventionDialog({
       }
 
       // Load service config
-      const services = await servicesService.getActiveServices();
-      const service = services.find((s) => s.code === category);
+      const svcList = await services.services.getActiveServices();
+      const service = svcList.find((s) => s.code === category);
       let currentVatRate = 10;
       let displacementPrice = 0;
       let securityPrice = 0;
