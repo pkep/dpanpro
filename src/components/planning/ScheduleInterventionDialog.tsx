@@ -93,7 +93,7 @@ export function ScheduleInterventionDialog({
       if (error) throw error;
 
       // Add history entry
-      await historyService.addHistoryEntry({
+      await api.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'updated',
