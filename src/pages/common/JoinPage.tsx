@@ -118,6 +118,8 @@ const JoinPage = () => {
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step2Data, setStep2Data] = useState<Step2Data | null>(null);
   const [step3Data, setStep3Data] = useState<Step3Data | null>(null);
+  const [kbisFile, setKbisFile] = useState<File | null>(null);
+  const [kbisError, setKbisError] = useState<string | null>(null);
 
   const step1Form = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
