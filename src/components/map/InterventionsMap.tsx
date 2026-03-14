@@ -109,7 +109,7 @@ export function InterventionsMap({
     const fetchInterventions = async () => {
       try {
         setLoading(true);
-        const data = await interventionsService.getInterventions({ isActive: true });
+        const data = await api.interventions.getInterventions({ isActive: true });
         setInterventions(data);
       } catch (error) {
         console.error('Error fetching interventions:', error);
