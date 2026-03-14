@@ -92,7 +92,7 @@ export function InterventionChat({ interventionId, userId, userRole }: Intervent
 
     setIsSending(true);
     try {
-      await messagesService.sendMessage({
+      await services.messages.sendMessage({
         interventionId,
         senderId: userId,
         senderRole: userRole,

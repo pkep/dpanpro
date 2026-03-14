@@ -89,7 +89,7 @@ export function UsersTable({ onUserUpdated }: UsersTableProps) {
   const handleToggleActive = async (userId: string, isActive: boolean) => {
     try {
       setUpdatingId(userId);
-      await usersService.toggleActive(userId, !isActive);
+      await services.users.toggleActive(userId, !isActive);
       await fetchUsers();
       onUserUpdated?.();
       toast.success(isActive ? 'Utilisateur désactivé' : 'Utilisateur activé');

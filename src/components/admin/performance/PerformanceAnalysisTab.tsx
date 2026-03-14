@@ -13,7 +13,7 @@ export function PerformanceAnalysisTab() {
 
   const { data: trends, isLoading } = useQuery({
     queryKey: ['performance-trends', dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
-    queryFn: () => performanceService.getPerformanceTrends(dateRange),
+    queryFn: () => services.performance.getPerformanceTrends(dateRange),
   });
 
   const formatXAxis = (value: string) => {

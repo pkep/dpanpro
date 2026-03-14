@@ -32,7 +32,7 @@ export function NearbyTechniciansCard({ address, postalCode, city }: NearbyTechn
         }
 
         // Get nearest technicians
-        const nearest = await techniciansService.getNearestTechnicians(
+        const nearest = await services.technicians.getNearestTechnicians(
           geoResult.latitude,
           geoResult.longitude,
           3

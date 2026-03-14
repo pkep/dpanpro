@@ -13,7 +13,7 @@ export function PerformanceHeatmapTab() {
 
   const { data: zones, isLoading } = useQuery({
     queryKey: ['intervention-zones', dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
-    queryFn: () => performanceService.getInterventionZones(dateRange),
+    queryFn: () => services.performance.getInterventionZones(dateRange),
   });
 
   const maxCount = zones?.reduce((max, z) => Math.max(max, z.count), 1) || 1;

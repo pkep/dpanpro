@@ -74,7 +74,7 @@ export function RatingForm({
         setExistingRating(updated);
         toast.success('Avis mis à jour avec succès');
       } else {
-        const created = await ratingsService.createRating(
+        const created = await services.ratings.createRating(
           interventionId,
           clientId,
           rating,

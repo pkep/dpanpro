@@ -43,8 +43,8 @@ export function PlanningCalendar({ onInterventionClick }: PlanningCalendarProps)
       try {
         setLoading(true);
         const [interventionsData, techniciansData] = await Promise.all([
-          interventionsService.getInterventions({ isActive: true }),
-          usersService.getTechnicians(),
+          services.interventions.getInterventions({ isActive: true }),
+          services.users.getTechnicians(),
         ]);
         setInterventions(interventionsData);
         setTechnicians(techniciansData);

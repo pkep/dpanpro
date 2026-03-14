@@ -156,7 +156,7 @@ export function InterventionWizard({ embedded = false }: InterventionWizardProps
       const prixMin = priceMatch ? parseFloat(priceMatch[1]) : null;
       const prixMax = priceMatch ? parseFloat(priceMatch[2]) : null;
 
-      const intervention = await interventionsService.createIntervention(clientId, {
+      const intervention = await services.interventions.createIntervention(clientId, {
         category,
         description: `${questionnaireResult.nom}${description ? `\n\n${description}` : ''}`,
         address,

@@ -39,7 +39,7 @@ export function QuoteModificationStatus({ interventionId, onRefresh }: QuoteModi
 
   const fetchPending = async () => {
     try {
-      const mod = await quoteModificationsService.getPendingModification(interventionId);
+      const mod = await services.quoteModifications.getPendingModification(interventionId);
       setPendingModification(mod);
     } catch (err) {
       console.error('Error fetching pending modification:', err);
