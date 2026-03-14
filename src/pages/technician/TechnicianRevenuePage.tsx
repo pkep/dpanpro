@@ -33,8 +33,8 @@ const TechnicianRevenuePage = () => {
 
       try {
         const [revenue, payout] = await Promise.all([
-          revenueService.getRevenueStats(user.id),
-          revenueService.getMonthlyPayout(user.id),
+          api.revenue.getRevenueStats(user.id),
+          api.revenue.getMonthlyPayout(user.id),
         ]);
 
         setRevenueStats(revenue);
