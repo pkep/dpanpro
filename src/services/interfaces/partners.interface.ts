@@ -29,6 +29,15 @@ export interface PartnerApplicationData {
   dataAccuracyConfirmed: boolean;
 }
 
+export interface PartnerApplicationListParams {
+  status?: 'pending' | 'approved' | 'rejected';
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  size?: number;
+}
+
 export interface IPartnersService {
   submitApplication(data: PartnerApplicationData): Promise<void>;
   getPartnerProfile(userId: string): Promise<{
