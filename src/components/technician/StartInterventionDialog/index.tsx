@@ -534,7 +534,7 @@ export function StartInterventionDialog({
 
   const generateAndSendQuotePDF = async () => {
     try {
-      const intervention = await interventionsService.getIntervention(interventionId);
+      const intervention = await services.interventions.getIntervention(interventionId);
       const savedSignature = signatureData || intervention?.quoteSignatureData || null;
       const { base64, fileName } = await quotePDFService.generateQuoteBase64(intervention, savedSignature);
       

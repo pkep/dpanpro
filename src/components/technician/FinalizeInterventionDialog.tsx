@@ -342,7 +342,7 @@ export function FinalizeInterventionDialog({
 
       await services.interventions.updateStatus(intervention.id, 'cancelled');
 
-      await historyService.addHistoryEntry({
+      await services.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'status_changed',
