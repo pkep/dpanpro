@@ -11,7 +11,7 @@ import { Loader2, Save, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ClientProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
