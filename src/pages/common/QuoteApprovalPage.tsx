@@ -88,7 +88,7 @@ export default function QuoteApprovalPage() {
       }
 
       try {
-        const mod = await quoteModificationsService.getModificationByToken(token);
+        const mod = await api.quoteModifications.getModificationByToken(token);
         
         if (!mod) {
           setError('Demande de modification non trouvée ou lien expiré');
