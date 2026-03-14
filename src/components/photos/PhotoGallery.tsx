@@ -55,9 +55,9 @@ export function PhotoGallery({
 
     try {
       setDeleting(true);
-      await photosService.deletePhoto(deleteUrl);
+      await api.photos.deletePhoto(deleteUrl);
       const updatedPhotos = photos.filter((p) => p !== deleteUrl);
-      await photosService.updateInterventionPhotos(interventionId, updatedPhotos);
+      await api.photos.updateInterventionPhotos(interventionId, updatedPhotos);
       onPhotosUpdated(updatedPhotos);
       
       // Add history entry for photo deletion
