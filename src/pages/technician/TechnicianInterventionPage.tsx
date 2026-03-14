@@ -207,7 +207,7 @@ export default function TechnicianInterventionPage() {
           .maybeSingle(),
       ]);
 
-      const existingPhotos = await workPhotosService.getPhotos(intervention.id);
+      const existingPhotos = await api.workPhotos.getPhotos(intervention.id);
       const hasBeforePhotos = existingPhotos.some(p => p.photoType === 'before');
 
       if (intData?.quote_signed_at && authData?.status === 'authorized' && hasBeforePhotos) {
