@@ -413,7 +413,7 @@ export function StartInterventionDialog({
           newLines.push({ lineType: 'repair', label: 'Main d\'œuvre', basePrice: laborPrice, multiplier: 1 });
         }
         if (newLines.length > 0) {
-          await quotesService.saveQuoteLines(interventionId, newLines);
+          await services.quotes.saveQuoteLines(interventionId, newLines);
         }
       }
 
