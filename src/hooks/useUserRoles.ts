@@ -23,8 +23,8 @@ export function useUserRoles() {
       setError(null);
       
       const [userRoles, managerPerms] = await Promise.all([
-        rolesService.getUserRoles(user.id),
-        rolesService.getManagerPermissions(user.id),
+        services.roles.getUserRoles(user.id),
+        services.roles.getManagerPermissions(user.id),
       ]);
       
       setRoles(userRoles);

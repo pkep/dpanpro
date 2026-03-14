@@ -14,7 +14,7 @@ export function useRealtimeIntervention(interventionId: string | undefined) {
     try {
       setLoading(true);
       setError(null);
-      const data = await interventionsService.getIntervention(interventionId);
+      const data = await services.interventions.getIntervention(interventionId);
       setIntervention(data);
     } catch (err) {
       setError('Erreur lors du chargement de l\'intervention');

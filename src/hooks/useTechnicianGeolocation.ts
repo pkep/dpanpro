@@ -55,7 +55,7 @@ export function useTechnicianGeolocation() {
       console.log('Geolocation update:', { latitude, longitude, city, department, addressInfo });
 
       // Update database
-      await techniciansService.updateTechnicianLocation(
+      await services.technicians.updateTechnicianLocation(
         user.id,
         latitude,
         longitude,

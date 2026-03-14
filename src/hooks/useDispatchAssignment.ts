@@ -258,7 +258,7 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
 
     setIsLoading(true);
     try {
-      const result = await dispatchService.rejectAssignment(
+      const result = await services.dispatch.rejectAssignment(
         pendingAssignment.interventionId,
         user.id
       );

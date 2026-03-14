@@ -147,7 +147,7 @@ export function useProximityNotifications({
       const toGeocode = interventions.filter(i => !i.latitude || !i.longitude);
       
       for (const intervention of toGeocode) {
-        const result = await geocodingService.geocodeAddress(
+        const result = await services.geocoding.geocodeAddress(
           intervention.address,
           intervention.city,
           intervention.postalCode
