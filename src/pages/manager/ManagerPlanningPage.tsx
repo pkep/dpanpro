@@ -115,7 +115,7 @@ export default function ManagerPlanningPage() {
     <ManagerLayout title="Planning" subtitle="Gestion des plannings techniciens">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
@@ -125,7 +125,7 @@ export default function ManagerPlanningPage() {
                 {totalCount} technicien(s) - Cliquez pour voir le planning
               </CardDescription>
             </div>
-            <div className="relative w-64">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Rechercher nom, prénom, email..."
