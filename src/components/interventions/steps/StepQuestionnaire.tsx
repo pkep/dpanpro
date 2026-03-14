@@ -13,6 +13,8 @@ import {
   QuestionnaireDomain 
 } from '@/data/questionnaire-tree';
 import { services as api } from '@/services/factory';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 interface HistoryEntry {
