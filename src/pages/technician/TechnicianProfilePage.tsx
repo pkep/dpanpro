@@ -184,6 +184,7 @@ const TechnicianProfilePage = () => {
     setIsSaving(true);
     try {
       await api.partners.updatePartnerProfile(user.id, data);
+      await refreshUser();
       toast.success('Informations personnelles mises à jour');
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors de la mise à jour');
