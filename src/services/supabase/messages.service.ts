@@ -1,14 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { InterventionMessage } from '@/services/interfaces/messages.interface';
 
-export interface InterventionMessage {
-  id: string;
-  interventionId: string;
-  senderId: string;
-  senderRole: 'technician' | 'client';
-  message: string;
-  isRead: boolean;
-  createdAt: string;
-}
+// Re-export types for backward compatibility
+export type { InterventionMessage } from '@/services/interfaces/messages.interface';
 
 interface DbInterventionMessage {
   id: string;

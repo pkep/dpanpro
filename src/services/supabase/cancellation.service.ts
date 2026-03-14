@@ -1,14 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { invoiceService } from '@/services/components/invoice/invoice.service';
 import type { Intervention } from '@/types/intervention.types';
+import type { CancellationResult } from '@/services/interfaces/cancellation.interface';
 
-export interface CancellationResult {
-  success: boolean;
-  hasFees: boolean;
-  feeAmount?: number;
-  invoiceSent?: boolean;
-  error?: string;
-}
+// Re-export types for backward compatibility
+export type { CancellationResult } from '@/services/interfaces/cancellation.interface';
 
 interface CancellationFeeInfo {
   displacementPriceHT: number;

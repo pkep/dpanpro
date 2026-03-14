@@ -1,38 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { DispatchResult, DispatchAttempt } from '@/services/interfaces/dispatch.interface';
 
-export interface DispatchResult {
-  success: boolean;
-  message: string;
-  assignedTechnician?: {
-    userId: string;
-    score: number;
-    distanceKm: number;
-    estimatedArrivalMinutes: number;
-  };
-  timeoutAt?: string;
-  totalCandidates?: number;
-  requiresManualAssignment?: boolean;
-  newTechnicianId?: string;
-}
-
-export interface DispatchAttempt {
-  id: string;
-  interventionId: string;
-  technicianId: string;
-  score: number;
-  scoreBreakdown: {
-    proximity: number;
-    skills: number;
-    workload: number;
-    rating: number;
-  };
-  status: 'pending' | 'accepted' | 'rejected' | 'timeout' | 'cancelled';
-  attemptOrder: number;
-  notifiedAt: string | null;
-  respondedAt: string | null;
-  timeoutAt: string | null;
-  createdAt: string;
-}
+// Re-export types for backward compatibility
+export type { DispatchResult, DispatchAttempt } from '@/services/interfaces/dispatch.interface';
 
 class DispatchService {
   /**

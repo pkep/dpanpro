@@ -1,45 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, format, lastDayOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import type { RevenueStats, WeeklyStats, PerformanceStats, PaymentPeriod, MonthlyPayout } from '@/services/interfaces/revenue.interface';
 
-export interface RevenueStats {
-  today: number;
-  thisWeek: number;
-  thisMonth: number;
-}
-
-export interface WeeklyStats {
-  grossRevenue: number;
-  missionsCount: number;
-  percentageChange: number | null;
-}
-
-export interface PerformanceStats {
-  completedMissions: number;
-  acceptanceRate: number;
-  averageRating: number | null;
-}
-
-export interface PaymentPeriod {
-  startDate: Date;
-  endDate: Date;
-  grossRevenue: number;
-  commissionRate: number;
-  netRevenue: number;
-  paymentDate: Date;
-  isPaid: boolean;
-}
-
-export interface MonthlyPayout {
-  periodStart: Date;
-  periodEnd: Date;
-  grossRevenue: number;
-  commissionRate: number;
-  netRevenue: number;
-  scheduledPaymentDate: Date;
-  isPaid: boolean;
-  paidAt: Date | null;
-}
+// Re-export types for backward compatibility
+export type { RevenueStats, WeeklyStats, PerformanceStats, PaymentPeriod, MonthlyPayout } from '@/services/interfaces/revenue.interface';
 
 class RevenueService {
   async getRevenueStats(technicianId: string): Promise<RevenueStats> {

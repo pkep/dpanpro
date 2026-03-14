@@ -1,44 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Service } from '@/services/supabase/services.service';
+import type { Service } from '@/services/interfaces/services.interface';
+import type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/quotes.interface';
 
-export interface QuoteLine {
-  id: string;
-  interventionId: string;
-  lineType: 'displacement' | 'security' | 'repair';
-  label: string;
-  basePrice: number;
-  multiplier: number;
-  calculatedPrice: number;
-  displayOrder: number;
-  createdAt: string;
-}
-
-interface DbQuoteLine {
-  id: string;
-  intervention_id: string;
-  line_type: string;
-  label: string;
-  base_price: number;
-  multiplier: number;
-  calculated_price: number;
-  display_order: number;
-  created_at: string;
-}
-
-export interface QuoteInput {
-  lineType: 'displacement' | 'security' | 'repair';
-  label: string;
-  basePrice: number;
-  multiplier: number;
-}
-
-export interface QuoteSummary {
-  lines: QuoteInput[];
-  totalHT: number;
-  vatRate: number;
-  vatAmount: number;
-  totalTTC: number;
-}
+// Re-export types for backward compatibility
+export type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/quotes.interface';
+export type { Service } from '@/services/interfaces/services.interface';
 
 const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label: string }> = {
   displacement: { label: 'Déplacement technicien' },

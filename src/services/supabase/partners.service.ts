@@ -1,45 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { PartnerApplicationData } from '@/services/interfaces/partners.interface';
 
-export interface PartnerApplicationData {
-  // Personal info
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  birthDate: string;
-  birthPlace: string;
-  address: string;
-  postalCode: string;
-  city: string;
-  password: string;
-  
-  // Professional info
-  companyName: string;
-  siret: string;
-  vatNumber?: string;
-  legalStatus: string;
-  
-  // Insurance
-  insuranceCompany: string;
-  insurancePolicyNumber: string;
-  insuranceExpiryDate: string;
-  hasDecennialInsurance: boolean;
-  
-  // Expertise
-  skills: string[];
-  yearsExperience: number;
-  motivation: string;
-  
-  // Banking
-  bankAccountHolder: string;
-  bankName: string;
-  iban: string;
-  bic: string;
-  
-  // Agreements
-  termsAccepted: boolean;
-  dataAccuracyConfirmed: boolean;
-}
+// Re-export types for backward compatibility
+export type { PartnerApplicationData } from '@/services/interfaces/partners.interface';
 
 class PartnersService {
   async submitApplication(data: PartnerApplicationData): Promise<void> {

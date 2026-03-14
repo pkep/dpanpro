@@ -1,22 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Service } from '@/services/interfaces/services.interface';
 
-export interface Service {
-  id: string;
-  code: string;
-  name: string;
-  description: string | null;
-  icon: string | null;
-  isActive: boolean;
-  displayOrder: number;
-  createdAt: string;
-  updatedAt: string;
-  defaultPriority: string;
-  displacementPrice: number;
-  securityPrice: number;
-  vatRateIndividual: number;
-  vatRateProfessional: number;
-  targetArrivalTimeMinutes: number;
-}
+// Re-export types for backward compatibility
+export type { Service } from '@/services/interfaces/services.interface';
 
 interface DbService {
   id: string;

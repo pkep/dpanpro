@@ -2,42 +2,12 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Intervention } from '@/types/intervention.types';
 import type { DbIntervention } from '@/types/database.types';
 import { subDays, format, differenceInMinutes, startOfDay, endOfDay } from 'date-fns';
+import type { DailyStats, CategoryStats, StatusStats, TechnicianStats } from '@/services/interfaces/statistics.interface';
+import type { StatisticsPerformanceStats as PerformanceStats } from '@/services/interfaces/statistics.interface';
 
-export interface DailyStats {
-  date: string;
-  created: number;
-  completed: number;
-}
-
-export interface CategoryStats {
-  category: string;
-  count: number;
-  percentage: number;
-}
-
-export interface StatusStats {
-  status: string;
-  count: number;
-  percentage: number;
-}
-
-export interface PerformanceStats {
-  avgResolutionTimeMinutes: number;
-  avgResolutionTimeFormatted: string;
-  totalInterventions: number;
-  completedInterventions: number;
-  completionRate: number;
-  urgentInterventions: number;
-  urgentCompletionRate: number;
-}
-
-export interface TechnicianStats {
-  id: string;
-  name: string;
-  completed: number;
-  inProgress: number;
-  avgResolutionMinutes: number;
-}
+// Re-export types for backward compatibility
+export type { DailyStats, CategoryStats, StatusStats, TechnicianStats } from '@/services/interfaces/statistics.interface';
+export { type StatisticsPerformanceStats as PerformanceStats } from '@/services/interfaces/statistics.interface';
 
 class StatisticsService {
   async getDailyStats(days: number = 30): Promise<DailyStats[]> {
