@@ -102,7 +102,7 @@ type ExpertiseData = z.infer<typeof expertiseSchema>;
 type BankingData = z.infer<typeof bankingSchema>;
 
 const TechnicianProfilePage = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -184,6 +184,7 @@ const TechnicianProfilePage = () => {
     setIsSaving(true);
     try {
       await api.partners.updatePartnerProfile(user.id, data);
+      await refreshUser();
       toast.success('Informations personnelles mises à jour');
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors de la mise à jour');

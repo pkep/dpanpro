@@ -6,6 +6,7 @@ interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
   register: (credentials: RegisterCredentials) => Promise<AuthResponse>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -50,8 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await services.auth.logout();
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    await services.auth.refreshUser();
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ ...authState, login, register, logout }}>
+    <AuthContext.Provider value={{ ...authState, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

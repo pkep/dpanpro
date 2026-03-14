@@ -11,7 +11,7 @@ import { Loader2, Save, User } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ClientProfilePage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -43,6 +43,7 @@ export default function ClientProfilePage() {
         lastName,
         phone: phone || undefined,
       });
+      await refreshUser();
       toast.success('Profil mis à jour avec succès');
     } catch (error) {
       console.error('Error updating profile:', error);

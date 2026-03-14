@@ -5,6 +5,7 @@ export interface IAuthService {
   register(credentials: RegisterCredentials): Promise<AuthResponse>;
   logout(): Promise<void>;
   getCurrentUser(): User | null;
+  refreshUser(): Promise<User | null>;
   isAuthenticated(): boolean;
   subscribe(callback: (user: User | null) => void): () => void;
 }
