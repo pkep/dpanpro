@@ -59,8 +59,8 @@ export function QuoteModificationForm({
     setIsLoading(true);
     try {
       const [lines, modifications] = await Promise.all([
-        quotesService.getQuoteLines(interventionId),
-        quoteModificationsService.getModificationsByIntervention(interventionId),
+        api.quotes.getQuoteLines(interventionId),
+        api.quoteModifications.getModificationsByIntervention(interventionId),
       ]);
       
       setQuoteLines(lines);
