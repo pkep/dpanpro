@@ -72,7 +72,7 @@ export function TechnicianInterventionsList({ technicianId, onInterventionClick 
     setError(null);
     
     try {
-      const data = await interventionsService.getInterventions({
+      const data = await api.interventions.getInterventions({
         technicianId,
         isActive: true,
       });

@@ -72,7 +72,7 @@ export function FinalizePhotosDialog({
     setUploadError(null);
     
     try {
-      const uploadedPhotos = await workPhotosService.uploadPhotos(
+      const uploadedPhotos = await api.workPhotos.uploadPhotos(
         interventionId,
         selectedFiles,
         'after',

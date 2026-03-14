@@ -44,8 +44,8 @@ export default function AdminDashboard() {
     try {
       setStatsLoading(true);
       const [users, interventions] = await Promise.all([
-        usersService.getUsers(),
-        interventionsService.getInterventions(),
+        api.users.getUsers(),
+        api.interventions.getInterventions(),
       ]);
 
       setStats({

@@ -32,7 +32,7 @@ const TechnicianDashboard = () => {
       if (!user) return;
       
       try {
-        const interventions = await interventionsService.getInterventions({
+        const interventions = await api.interventions.getInterventions({
           technicianId: user.id,
           isActive: true,
         });

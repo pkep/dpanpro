@@ -102,7 +102,7 @@ export function ScheduleInterventionDialog({
       });
 
       if (selectedTechnician && selectedTechnician !== intervention.technicianId) {
-        await historyService.addHistoryEntry({
+        await api.history.addHistoryEntry({
           interventionId: intervention.id,
           userId: user.id,
           action: 'assigned',

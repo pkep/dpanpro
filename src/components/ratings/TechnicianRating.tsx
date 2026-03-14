@@ -22,7 +22,7 @@ export function TechnicianRating({
   useEffect(() => {
     const fetchRating = async () => {
       try {
-        const data = await ratingsService.getTechnicianAverageRating(technicianId);
+        const data = await api.ratings.getTechnicianAverageRating(technicianId);
         setRating(data);
       } catch (error) {
         console.error('Error fetching technician rating:', error);

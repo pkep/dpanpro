@@ -27,7 +27,7 @@ export function PendingQuoteBlocker({ interventionId, onQuoteResolved }: Pending
   // Fetch pending quote modification
   const fetchPendingQuote = async () => {
     try {
-      const modification = await quoteModificationsService.getPendingModification(interventionId);
+      const modification = await api.quoteModifications.getPendingModification(interventionId);
       setPendingQuote(modification);
     } catch (error) {
       console.error('Error fetching pending quote:', error);

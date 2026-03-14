@@ -45,7 +45,7 @@ export function PerformanceRankingTab() {
 
   const { data: topTechnicians, isLoading } = useQuery({
     queryKey: ['top-technicians', dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
-    queryFn: () => performanceService.getTopTechnicians(7, dateRange),
+    queryFn: () => api.performance.getTopTechnicians(7, dateRange),
   });
 
   return (

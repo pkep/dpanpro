@@ -59,7 +59,7 @@ export function PhotoUpload({
       
       // Add history entry for each photo
       if (user) {
-        await historyService.addHistoryEntry({
+        await api.history.addHistoryEntry({
           interventionId,
           userId: user.id,
           action: 'updated',

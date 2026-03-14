@@ -22,7 +22,7 @@ export function ServicesSection() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const data = await servicesService.getActiveServices();
+        const data = await api.services.getActiveServices();
         setServices(data);
       } catch (error) {
         console.error('Error fetching services:', error);

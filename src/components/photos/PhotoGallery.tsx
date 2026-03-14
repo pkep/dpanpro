@@ -62,7 +62,7 @@ export function PhotoGallery({
       
       // Add history entry for photo deletion
       if (user) {
-        await historyService.addHistoryEntry({
+        await api.history.addHistoryEntry({
           interventionId,
           userId: user.id,
           action: 'updated',

@@ -57,7 +57,7 @@ export function ServicesSettingsTab() {
 
   const reorderMutation = useMutation({
     mutationFn: (data: { serviceId1: string; order1: number; serviceId2: string; order2: number }) =>
-      servicesService.swapServiceOrder(data.serviceId1, data.order1, data.serviceId2, data.order2),
+      api.services.swapServiceOrder(data.serviceId1, data.order1, data.serviceId2, data.order2),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services-all'] });
       toast.success('Ordre mis à jour');

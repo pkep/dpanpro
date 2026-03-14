@@ -162,7 +162,7 @@ export function QuoteModificationForm({
         console.error('Error sending notification:', notifyError);
         toast.warning('Modification créée mais notification non envoyée');
       } else {
-        await quoteModificationsService.markAsNotified(modification.id);
+        await api.quoteModifications.markAsNotified(modification.id);
         toast.success('Demande de modification envoyée au client');
       }
 
