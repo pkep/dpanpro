@@ -35,7 +35,8 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, Loader2, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { AlertCircle, Loader2, ChevronLeft, ChevronRight, Check, Upload, FileText, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const skills = [
@@ -117,6 +118,8 @@ const JoinPage = () => {
   const [step1Data, setStep1Data] = useState<Step1Data | null>(null);
   const [step2Data, setStep2Data] = useState<Step2Data | null>(null);
   const [step3Data, setStep3Data] = useState<Step3Data | null>(null);
+  const [kbisFile, setKbisFile] = useState<File | null>(null);
+  const [kbisError, setKbisError] = useState<string | null>(null);
 
   const step1Form = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
@@ -177,6 +180,11 @@ const JoinPage = () => {
   };
 
   const handleStep2Submit = (data: Step2Data) => {
+    if (!kbisFile) {
+      setKbisError('L\'extrait de Kbis est obligatoire');
+      return;
+    }
+    setKbisError(null);
     setStep2Data(data);
     setCurrentStep(3);
   };
@@ -193,6 +201,21 @@ const JoinPage = () => {
     setError(null);
 
     try {
+      // Upload Kbis file
+      let kbisUrl: string | undefined;
+      if (kbisFile) {
+        const fileExt = kbisFile.name.split('.').pop();
+        const fileName = `kbis/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('technician-photos')
+          .upload(fileName, kbisFile);
+        if (uploadError) throw new Error('Erreur lors de l\'upload du Kbis');
+        const { data: urlData } = supabase.storage
+          .from('technician-photos')
+          .getPublicUrl(fileName);
+        kbisUrl = urlData.publicUrl;
+      }
+
       await api.partners.submitApplication({
         firstName: step1Data.firstName,
         lastName: step1Data.lastName,
@@ -212,6 +235,7 @@ const JoinPage = () => {
         insurancePolicyNumber: step2Data.insurancePolicyNumber,
         insuranceExpiryDate: step2Data.insuranceExpiryDate,
         hasDecennialInsurance: step2Data.hasDecennialInsurance,
+        kbisUrl,
         skills: step3Data.skills,
         yearsExperience: step3Data.yearsExperience,
         motivation: step3Data.motivation,
@@ -562,6 +586,56 @@ const JoinPage = () => {
                         </FormItem>
                       )}
                     />
+
+                    <h3 className="mt-6 font-medium text-foreground">Extrait de Kbis</h3>
+
+                    <div className="space-y-2">
+                      <FormLabel>Extrait de Kbis *</FormLabel>
+                      {kbisFile ? (
+                        <div className="flex items-center gap-3 rounded-md border border-input bg-background p-3">
+                          <FileText className="h-5 w-5 text-primary shrink-0" />
+                          <span className="text-sm truncate flex-1">{kbisFile.name}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => setKbisFile(null)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-md border-2 border-dashed border-muted-foreground/30 p-6 transition-colors hover:border-primary/50 hover:bg-muted/50">
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Cliquez pour télécharger votre extrait de Kbis
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            PDF, JPG ou PNG (max 5 Mo)
+                          </span>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  setKbisError('Le fichier ne doit pas dépasser 5 Mo');
+                                  return;
+                                }
+                                setKbisFile(file);
+                                setKbisError(null);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                      {kbisError && (
+                        <p className="text-sm font-medium text-destructive">{kbisError}</p>
+                      )}
+                    </div>
 
                     <div className="flex justify-between pt-4">
                       <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>

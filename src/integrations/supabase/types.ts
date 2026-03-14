@@ -807,6 +807,7 @@ export type Database = {
           insurance_company: string
           insurance_expiry_date: string
           insurance_policy_number: string
+          kbis_url: string | null
           latitude: number | null
           legal_status: string
           longitude: number | null
@@ -840,6 +841,7 @@ export type Database = {
           insurance_company: string
           insurance_expiry_date: string
           insurance_policy_number: string
+          kbis_url?: string | null
           latitude?: number | null
           legal_status: string
           longitude?: number | null
@@ -873,6 +875,7 @@ export type Database = {
           insurance_company?: string
           insurance_expiry_date?: string
           insurance_policy_number?: string
+          kbis_url?: string | null
           latitude?: number | null
           legal_status?: string
           longitude?: number | null

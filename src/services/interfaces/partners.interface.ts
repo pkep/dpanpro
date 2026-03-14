@@ -17,6 +17,7 @@ export interface PartnerApplicationData {
   insurancePolicyNumber: string;
   insuranceExpiryDate: string;
   hasDecennialInsurance: boolean;
+  kbisUrl?: string;
   skills: string[];
   yearsExperience: number;
   motivation: string;

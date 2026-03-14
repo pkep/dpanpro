@@ -57,6 +57,7 @@ class PartnersService {
         insurance_policy_number: data.insurancePolicyNumber,
         insurance_expiry_date: data.insuranceExpiryDate,
         has_decennial_insurance: data.hasDecennialInsurance,
+        kbis_url: data.kbisUrl || null,
         skills: data.skills,
         years_experience: data.yearsExperience,
         motivation: data.motivation,
