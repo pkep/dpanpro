@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { interventionsService } from '@/services/supabase/interventions.service';
+import { services } from '@/services/factory';
 import type { Intervention } from '@/types/intervention.types';
 
 export function useRealtimeIntervention(interventionId: string | undefined) {

@@ -21,14 +21,10 @@ import {
   CreditCard
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
-import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
-import { quoteModificationsService } from '@/services/supabase/quote-modifications.service';
-import { servicesService } from '@/services/supabase/services.service';
+import { services } from '@/services/factory';
+import type { WorkPhoto } from '@/services/interfaces/work-photos.interface';
+import type { QuoteLine } from '@/services/interfaces/quotes.interface';
 import { quotePDFService } from '@/services/components/quote-pdf/quote-pdf.service';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { historyService } from '@/services/supabase/history.service';
-import { paymentService } from '@/services/supabase/payment.service';
 import { supabase } from '@/integrations/supabase/client';
 import { PhotoStep } from './PhotoStep';
 import { QuoteReviewStep } from './QuoteReviewStep';

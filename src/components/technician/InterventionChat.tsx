@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { messagesService, InterventionMessage } from '@/services/supabase/messages.service';
+import { services } from '@/services/factory';
+import type { InterventionMessage } from '@/services/interfaces/messages.interface';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

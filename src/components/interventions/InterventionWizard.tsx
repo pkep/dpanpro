@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { dispatchService } from '@/services/supabase/dispatch.service';
-import { servicesService, Service } from '@/services/supabase/services.service';
+import { services } from '@/services/factory';
+import type { Service } from '@/services/interfaces/services.interface';
 import { InterventionCategory, CATEGORY_LABELS } from '@/types/intervention.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';

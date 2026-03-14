@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MapPin, Star, Clock, Navigation } from 'lucide-react';
-import { techniciansService, NearbyTechnician } from '@/services/supabase/technicians.service';
-import { geocodingService } from '@/services/components/geocoding/geocoding.service';
+import { services } from '@/services/factory';
+import type { NearbyTechnician } from '@/services/interfaces/technicians.interface';
 
 interface NearbyTechniciansCardProps {
   address: string;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { dispatchService, DispatchAttempt } from '@/services/supabase/dispatch.service';
+import { services } from '@/services/factory';
+import type { DispatchAttempt } from '@/services/interfaces/dispatch.interface';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { getRouteWithFallback, RouteResult } from '@/services/components/utils/routing/routing.service';

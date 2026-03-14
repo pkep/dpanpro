@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Loader2, MapPin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { performanceService } from '@/services/supabase/performance.service';
+import { services } from '@/services/factory';
 import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { PeriodFilter, getDateRangeForPeriod, type DateRange } from './PeriodFilter';
