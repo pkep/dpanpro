@@ -137,7 +137,7 @@ export function QuoteModificationForm({
     setIsSubmitting(true);
     try {
       // Create the modification
-      const modification = await quoteModificationsService.createModification({
+      const modification = await api.quoteModifications.createModification({
         interventionId,
         createdBy: technicianId,
         items: items.map((item) => ({
