@@ -66,6 +66,7 @@ import AdminPlanningPage from "./pages/admin/AdminPlanningPage";
 import AdminLiveTrackingPage from "./pages/admin/AdminLiveTrackingPage";
 import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
 import AdminNotificationsPage from "./pages/admin/AdminNotificationsPage";
+import AdminQuestionnairePage from "./pages/admin/AdminQuestionnairePage";
 
 const queryClient = new QueryClient();
 
