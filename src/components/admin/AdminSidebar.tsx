@@ -30,6 +30,7 @@ import {
   LogOut,
   CreditCard,
   Bell,
+  HelpCircle,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
