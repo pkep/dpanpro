@@ -256,7 +256,7 @@ export function AvailableInterventionsList({
     
     setProcessingId(selectedIntervention.id);
     try {
-      const result = await dispatchService.declineIntervention(selectedIntervention.id, technicianId, reason);
+      const result = await api.dispatch.declineIntervention(selectedIntervention.id, technicianId, reason);
       if (result.success) {
         toast.success('Intervention refusée');
         fetchAvailableInterventions();
