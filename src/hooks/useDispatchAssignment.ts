@@ -54,7 +54,7 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
         ) || null;
       } else {
         // Get any pending assignment for this technician
-        const assignments = await dispatchService.getTechnicianPendingAssignments(user.id);
+        const assignments = await services.dispatch.getTechnicianPendingAssignments(user.id);
         assignment = assignments[0] || null;
       }
 
