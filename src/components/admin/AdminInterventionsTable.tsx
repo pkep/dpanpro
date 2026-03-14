@@ -85,7 +85,7 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
   const handleStatusChange = async (id: string, status: InterventionStatus) => {
     try {
       setUpdatingId(id);
-      await interventionsService.updateStatus(id, status);
+      await api.interventions.updateStatus(id, status);
       await fetchData();
       onInterventionUpdated?.();
       toast.success('Statut mis à jour');
