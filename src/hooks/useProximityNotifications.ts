@@ -118,7 +118,7 @@ export function useProximityNotifications({
 
     const fetchInterventions = async () => {
       try {
-        const data = await interventionsService.getInterventions({
+        const data = await services.interventions.getInterventions({
           technicianId: user.id,
           isActive: true,
         });
