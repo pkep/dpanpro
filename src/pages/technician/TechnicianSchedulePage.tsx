@@ -134,7 +134,7 @@ const TechnicianSchedulePage = () => {
     if (!user || !overrideDate) return;
     
     try {
-      await scheduleService.setOverride(
+      await api.schedule.setOverride(
         user.id,
         overrideDate,
         overrideIsAvailable,
