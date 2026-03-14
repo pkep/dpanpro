@@ -457,7 +457,7 @@ export function StartInterventionDialog({
       // === NOW SEND PAYMENT REQUEST ===
 
       // Create payment authorization in DB (pending)
-      await paymentService.createPaymentIntent({
+      await services.payment.createPaymentIntent({
         interventionId,
         amount: totalTTC,
         clientEmail: email,
