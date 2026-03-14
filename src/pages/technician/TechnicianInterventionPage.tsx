@@ -132,7 +132,7 @@ export default function TechnicianInterventionPage() {
   const loadWorkPhotos = async () => {
     if (!intervention?.id) return;
     try {
-      const allPhotos = await workPhotosService.getPhotos(intervention.id);
+      const allPhotos = await api.workPhotos.getPhotos(intervention.id);
       setBeforePhotos(allPhotos.filter(p => p.photoType === 'before'));
       setAfterPhotos(allPhotos.filter(p => p.photoType === 'after'));
       setWorkPhotosLoaded(true);
