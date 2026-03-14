@@ -121,6 +121,11 @@ const JoinPage = () => {
   const [kbisFile, setKbisFile] = useState<File | null>(null);
   const [kbisError, setKbisError] = useState<string | null>(null);
 
+  // Scroll to top on step change
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [currentStep]);
+
   const step1Form = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
     defaultValues: step1Data || {
