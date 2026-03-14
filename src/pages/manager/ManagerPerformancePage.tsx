@@ -117,22 +117,22 @@ export default function ManagerPerformancePage() {
     <ManagerLayout title="Dashboard Performance" subtitle="KPIs et analyses">
       <div className="space-y-6">
         {/* KPIs Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground leading-tight">
                 Temps réponse moyen
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {formatDuration(kpis?.avgResponseTime || null)}
                   </div>
-                  <p className={`text-xs ${getStatusColor(kpis?.avgResponseTime ? kpis.avgResponseTime / 60 : null, 30, true)}`}>
+                  <p className={`text-[10px] sm:text-xs ${getStatusColor(kpis?.avgResponseTime ? kpis.avgResponseTime / 60 : null, 30, true)}`}>
                     Objectif: &lt;30 min
                   </p>
                 </>
@@ -141,20 +141,20 @@ export default function ManagerPerformancePage() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground leading-tight">
                 Temps arrivée moyen
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {formatDuration(kpis?.avgArrivalTime || null)}
                   </div>
-                  <p className={`text-xs ${getStatusColor(kpis?.avgArrivalTime ? kpis.avgArrivalTime / 60 : null, 45, true)}`}>
+                  <p className={`text-[10px] sm:text-xs ${getStatusColor(kpis?.avgArrivalTime ? kpis.avgArrivalTime / 60 : null, 45, true)}`}>
                     Objectif: &lt;45 min
                   </p>
                 </>
@@ -163,20 +163,20 @@ export default function ManagerPerformancePage() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
-                Taux résolution 1er passage
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground leading-tight">
+                Résolution 1er passage
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {kpis?.firstPassRate ? `${kpis.firstPassRate.toFixed(0)}%` : '--%'}
                   </div>
-                  <p className={`text-xs ${getStatusColor(kpis?.firstPassRate || null, 85, false)}`}>
+                  <p className={`text-[10px] sm:text-xs ${getStatusColor(kpis?.firstPassRate || null, 85, false)}`}>
                     Objectif: &gt;85%
                   </p>
                 </>
@@ -185,21 +185,21 @@ export default function ManagerPerformancePage() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground leading-tight">
                 Satisfaction client
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold flex items-center gap-1">
+                  <div className="text-lg sm:text-xl font-bold flex items-center gap-1">
                     {kpis?.avgRating ? kpis.avgRating.toFixed(1) : '--'}/5 
-                    <Star className="h-4 w-4 text-yellow-500" />
+                    <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-yellow-500" />
                   </div>
-                  <p className={`text-xs ${getStatusColor(kpis?.avgRating || null, 4.5, false)}`}>
+                  <p className={`text-[10px] sm:text-xs ${getStatusColor(kpis?.avgRating || null, 4.5, false)}`}>
                     Objectif: &gt;4.5
                   </p>
                 </>
@@ -208,20 +208,20 @@ export default function ManagerPerformancePage() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
-                Taux acceptation tech.
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground leading-tight">
+                Taux acceptation
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {kpis?.acceptanceRate ? `${kpis.acceptanceRate.toFixed(0)}%` : '--%'}
                   </div>
-                  <p className={`text-xs ${getStatusColor(kpis?.acceptanceRate || null, 90, false)}`}>
+                  <p className={`text-[10px] sm:text-xs ${getStatusColor(kpis?.acceptanceRate || null, 90, false)}`}>
                     Objectif: &gt;90%
                   </p>
                 </>
@@ -230,20 +230,20 @@ export default function ManagerPerformancePage() {
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium text-muted-foreground">
+            <CardHeader className="pb-1 sm:pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-[10px] sm:text-xs font-medium text-muted-foreground leading-tight">
                 CA/Technicien
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <div className="text-xl font-bold">
+                  <div className="text-lg sm:text-xl font-bold">
                     {formatCurrency(kpis?.avgRevenuePerTech || 0)}
                   </div>
-                  <p className="text-xs text-muted-foreground">Ce mois</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Ce mois</p>
                 </>
               )}
             </CardContent>
@@ -252,21 +252,21 @@ export default function ManagerPerformancePage() {
 
         {/* Detailed Tabs */}
         <Tabs defaultValue="reports" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
+          <TabsList className="flex flex-wrap h-auto gap-1">
+            <TabsTrigger value="reports" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Rapports
             </TabsTrigger>
-            <TabsTrigger value="analysis" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
+            <TabsTrigger value="analysis" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Analyse
             </TabsTrigger>
-            <TabsTrigger value="heatmap" className="flex items-center gap-2">
-              <Map className="h-4 w-4" />
+            <TabsTrigger value="heatmap" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <Map className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Heatmap
             </TabsTrigger>
-            <TabsTrigger value="ranking" className="flex items-center gap-2">
-              <Award className="h-4 w-4" />
+            <TabsTrigger value="ranking" className="flex items-center gap-1.5 text-xs sm:text-sm sm:gap-2">
+              <Award className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               Classement
             </TabsTrigger>
           </TabsList>
