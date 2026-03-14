@@ -6,6 +6,18 @@ import type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/
 export type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/quotes.interface';
 export type { Service } from '@/services/interfaces/services.interface';
 
+interface DbQuoteLine {
+  id: string;
+  intervention_id: string;
+  line_type: string;
+  label: string;
+  base_price: number;
+  multiplier: number;
+  calculated_price: number;
+  display_order: number;
+  created_at: string;
+}
+
 const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label: string }> = {
   displacement: { label: 'Déplacement technicien' },
   security: { label: 'Mise en sécurité' },
