@@ -284,7 +284,7 @@ export function FinalizeInterventionDialog({
       }
 
       // Update intervention status
-      await interventionsService.updateStatus(intervention.id, 'completed');
+      await services.interventions.updateStatus(intervention.id, 'completed');
 
       // Update final price
       await supabase
