@@ -92,14 +92,6 @@ export function StepSummary({
             <p className="mt-1">Un technicien vous contactera rapidement au <strong>{phone}</strong></p>
           </div>
 
-          <Alert className="mt-4 border-amber-500/50 bg-amber-50/50 dark:bg-amber-900/10">
-            <Info className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-sm">
-              <strong className="text-amber-700 dark:text-amber-400">En cas d'annulation :</strong>
-              <br />
-              Si le technicien est arrivé sur le lieu ou est en route à moins de 5 minutes du lieu de l'intervention, les frais de déplacement seront automatiquement prélevés.
-            </AlertDescription>
-          </Alert>
         </div>
 
         <NextStepsCard />
