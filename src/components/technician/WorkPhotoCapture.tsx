@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Camera, Upload, Loader2, CheckCircle, Image, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { workPhotosService, WorkPhoto, WorkPhotoType } from '@/services/supabase/work-photos.service';
+import { services as api } from '@/services/factory';
+import type { WorkPhoto, WorkPhotoType } from '@/services/interfaces/work-photos.interface';
 
 interface WorkPhotoCaptureProps {
   interventionId: string;
@@ -65,7 +66,7 @@ export function WorkPhotoCapture({
 
     setIsUploading(true);
     try {
-      const uploadedPhotos = await workPhotosService.uploadPhotos(
+      const uploadedPhotos = await api.workPhotos.uploadPhotos(
         interventionId,
         selectedFiles,
         photoType,

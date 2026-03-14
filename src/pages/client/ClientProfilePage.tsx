@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ClientLayout } from '@/components/client/ClientLayout';
 import { useAuth } from '@/hooks/useAuth';
-import { usersService } from '@/services/supabase/users.service';
+import { services as api } from '@/services/factory';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -38,7 +38,7 @@ export default function ClientProfilePage() {
 
     setIsSaving(true);
     try {
-      await usersService.updateUser(user.id, {
+      await api.users.updateUser(user.id, {
         firstName,
         lastName,
         phone: phone || undefined,

@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { performanceService, type TechnicianPerformance } from '@/services/supabase/performance.service';
+import { services as api } from '@/services/factory';
+import type { TechnicianPerformance } from '@/services/interfaces/performance.interface';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -39,7 +40,7 @@ export function PerformanceReportsTab() {
 
   const { data: performances, isLoading } = useQuery({
     queryKey: ['technician-performances', dateRange.startDate.toISOString(), dateRange.endDate.toISOString()],
-    queryFn: () => performanceService.getTechnicianPerformances(dateRange),
+    queryFn: () => api.performance.getTechnicianPerformances(dateRange),
   });
 
   const handlePeriodChange = (newPeriod: PeriodType, range: DateRange) => {

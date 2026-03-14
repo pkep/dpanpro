@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Intervention, InterventionStatus, STATUS_LABELS, CATEGORY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { dispatchService } from '@/services/supabase/dispatch.service';
+import { services as api } from '@/services/factory';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, Inbox, MapPin, XCircle, Eye } from 'lucide-react';
@@ -49,7 +48,7 @@ export function TechnicianInterventionsList({ technicianId, onInterventionClick 
     
     setIsProcessing(true);
     try {
-      const result = await dispatchService.cancelAssignment(selectedIntervention.id, technicianId, reason);
+      const result = await api.dispatch.cancelAssignment(selectedIntervention.id, technicianId, reason);
       if (result.success) {
         toast.success('Intervention annulée', {
           description: 'Elle sera reproposée à d\'autres techniciens.',
@@ -73,7 +72,7 @@ export function TechnicianInterventionsList({ technicianId, onInterventionClick 
     setError(null);
     
     try {
-      const data = await interventionsService.getInterventions({
+      const data = await api.interventions.getInterventions({
         technicianId,
         isActive: true,
       });

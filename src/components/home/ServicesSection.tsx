@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { servicesService, type Service } from '@/services/supabase/services.service';
+import { services as api } from '@/services/factory';
+import type { Service } from '@/services/interfaces/services.interface';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, Key, Droplets, Zap, Square, Flame, Wind } from 'lucide-react';
@@ -21,7 +22,7 @@ export function ServicesSection() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const data = await servicesService.getActiveServices();
+        const data = await api.services.getActiveServices();
         setServices(data);
       } catch (error) {
         console.error('Error fetching services:', error);

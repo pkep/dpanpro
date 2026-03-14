@@ -3,8 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, Polyline, Toolt
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTechnicianTracking, TechnicianLocation } from '@/hooks/useTechnicianTracking';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { geocodingService } from '@/services/components/geocoding/geocoding.service';
+import { services as api } from '@/services/factory';
 import { calculateDistance, formatDistance } from '@/utils/geolocation';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
@@ -355,7 +354,7 @@ export function LiveTrackingMap({
 
     const fetchInterventions = async () => {
       try {
-        const data = await interventionsService.getInterventions({ 
+        const data = await api.interventions.getInterventions({ 
           isActive: true,
         });
         // Filter to only show non-completed interventions
@@ -380,7 +379,7 @@ export function LiveTrackingMap({
       const toGeocode = interventions.filter(i => !i.latitude || !i.longitude);
       
       for (const intervention of toGeocode) {
-        const result = await geocodingService.geocodeAddress(
+        const result = await api.geocoding.geocodeAddress(
           intervention.address,
           intervention.city,
           intervention.postalCode

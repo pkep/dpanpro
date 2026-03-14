@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { geocodingService } from '@/services/components/geocoding/geocoding.service';
+import { services as api } from '@/services/factory';
 import { Button } from '@/components/ui/button';
 import { MapPin, Navigation, Loader2 } from 'lucide-react';
 
@@ -78,7 +78,7 @@ export function SingleLocationMap({
       setLoading(true);
       setError(null);
 
-      const result = await geocodingService.geocodeAddress(address, city, postalCode);
+      const result = await api.geocoding.geocodeAddress(address, city, postalCode);
 
       if (result) {
         setCoordinates([result.latitude, result.longitude]);

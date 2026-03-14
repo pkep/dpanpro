@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { usersService } from '@/services/supabase/users.service';
-import { historyService } from '@/services/supabase/history.service';
+import { services as api } from '@/services/factory';
 import type { Intervention, InterventionStatus } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { CATEGORY_ICONS, STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS } from '@/types/intervention.types';
@@ -95,7 +93,7 @@ export function ScheduleInterventionDialog({
       if (error) throw error;
 
       // Add history entry
-      await historyService.addHistoryEntry({
+      await api.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'updated',
@@ -104,7 +102,7 @@ export function ScheduleInterventionDialog({
       });
 
       if (selectedTechnician && selectedTechnician !== intervention.technicianId) {
-        await historyService.addHistoryEntry({
+        await api.history.addHistoryEntry({
           interventionId: intervention.id,
           userId: user.id,
           action: 'assigned',

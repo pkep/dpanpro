@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { usersService } from '@/services/supabase/users.service';
-import { ratingsService } from '@/services/supabase/ratings.service';
+import { services as api } from '@/services/factory';
 import type { Intervention, InterventionStatus } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { STATUS_LABELS, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';
@@ -65,9 +63,9 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
       setLoading(true);
       setError(null);
       const [interventionsData, techniciansData, ratingsData] = await Promise.all([
-        interventionsService.getInterventions(),
-        usersService.getTechnicians(),
-        ratingsService.getAllTechniciansRatings(),
+        api.interventions.getInterventions(),
+        api.users.getTechnicians(),
+        api.ratings.getAllTechniciansRatings(),
       ]);
       setInterventions(interventionsData);
       setTechnicians(techniciansData);
@@ -87,7 +85,7 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
   const handleStatusChange = async (id: string, status: InterventionStatus) => {
     try {
       setUpdatingId(id);
-      await interventionsService.updateStatus(id, status);
+      await api.interventions.updateStatus(id, status);
       await fetchData();
       onInterventionUpdated?.();
       toast.success('Statut mis à jour');
@@ -102,7 +100,7 @@ export function AdminInterventionsTable({ onInterventionUpdated }: AdminInterven
   const handleAssignTechnician = async (interventionId: string, technicianId: string) => {
     try {
       setUpdatingId(interventionId);
-      await interventionsService.assignTechnician(interventionId, technicianId);
+      await api.interventions.assignTechnician(interventionId, technicianId);
       await fetchData();
       onInterventionUpdated?.();
       toast.success('Technicien assigné');

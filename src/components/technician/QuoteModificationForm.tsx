@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { quoteModificationsService, QuoteModification } from '@/services/supabase/quote-modifications.service';
-import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
+import { services as api } from '@/services/factory';
+import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
+import type { QuoteLine } from '@/services/interfaces/quotes.interface';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,8 +59,8 @@ export function QuoteModificationForm({
     setIsLoading(true);
     try {
       const [lines, modifications] = await Promise.all([
-        quotesService.getQuoteLines(interventionId),
-        quoteModificationsService.getModificationsByIntervention(interventionId),
+        api.quotes.getQuoteLines(interventionId),
+        api.quoteModifications.getModificationsByIntervention(interventionId),
       ]);
       
       setQuoteLines(lines);
@@ -136,7 +137,7 @@ export function QuoteModificationForm({
     setIsSubmitting(true);
     try {
       // Create the modification
-      const modification = await quoteModificationsService.createModification({
+      const modification = await api.quoteModifications.createModification({
         interventionId,
         createdBy: technicianId,
         items: items.map((item) => ({
@@ -161,7 +162,7 @@ export function QuoteModificationForm({
         console.error('Error sending notification:', notifyError);
         toast.warning('Modification créée mais notification non envoyée');
       } else {
-        await quoteModificationsService.markAsNotified(modification.id);
+        await api.quoteModifications.markAsNotified(modification.id);
         toast.success('Demande de modification envoyée au client');
       }
 

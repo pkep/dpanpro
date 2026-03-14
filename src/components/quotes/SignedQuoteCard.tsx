@@ -8,7 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { FileText, Download, CheckCircle, PenTool, ChevronDown, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { quotePDFService } from '@/services/components/quote-pdf/quote-pdf.service';
+import { services as api } from '@/services/factory';
 import type { Intervention } from '@/types/intervention.types';
 import type { QuoteLine } from '@/services/interfaces/quotes.interface';
 import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
@@ -47,6 +47,7 @@ export function SignedQuoteCard({
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
+      const { quotePDFService } = await import('@/services/components/quote-pdf/quote-pdf.service');
       await quotePDFService.generateAndDownloadQuote(
         intervention,
         intervention.quoteSignatureData || undefined

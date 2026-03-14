@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { partnersService } from '@/services/supabase/partners.service';
+import { services as api } from '@/services/factory';
 import { Header } from '@/components/home/Header';
 import { Footer } from '@/components/home/Footer';
 import { Button } from '@/components/ui/button';
@@ -191,7 +191,7 @@ const JoinPage = () => {
     setError(null);
 
     try {
-      await partnersService.submitApplication({
+      await api.partners.submitApplication({
         firstName: step1Data.firstName,
         lastName: step1Data.lastName,
         email: step1Data.email,

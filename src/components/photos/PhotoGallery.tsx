@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { photosService } from '@/services/supabase/photos.service';
-import { historyService } from '@/services/supabase/history.service';
+import { services as api } from '@/services/factory';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -56,14 +55,14 @@ export function PhotoGallery({
 
     try {
       setDeleting(true);
-      await photosService.deletePhoto(deleteUrl);
+      await api.photos.deletePhoto(deleteUrl);
       const updatedPhotos = photos.filter((p) => p !== deleteUrl);
-      await photosService.updateInterventionPhotos(interventionId, updatedPhotos);
+      await api.photos.updateInterventionPhotos(interventionId, updatedPhotos);
       onPhotosUpdated(updatedPhotos);
       
       // Add history entry for photo deletion
       if (user) {
-        await historyService.addHistoryEntry({
+        await api.history.addHistoryEntry({
           interventionId,
           userId: user.id,
           action: 'updated',

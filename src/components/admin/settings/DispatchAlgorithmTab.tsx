@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Cog, Edit2, Save, X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { configurationService, type DispatchAlgorithmConfig } from '@/services/supabase/configuration.service';
+import { services as api } from '@/services/factory';
+import type { DispatchAlgorithmConfig } from '@/services/interfaces/configuration.interface';
 import { useAuth } from '@/hooks/useAuth';
 
 interface WeightConfig {
@@ -31,14 +32,14 @@ export function DispatchAlgorithmTab() {
   const { data: config, isLoading } = useQuery({
     queryKey: ['dispatch-algorithm-config'],
     queryFn: async () => {
-      return configurationService.getDispatchAlgorithmConfig();
+      return api.configuration.getDispatchAlgorithmConfig();
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async (weights: WeightConfig) => {
       if (!user?.id) throw new Error('User not authenticated');
-      await configurationService.updateDispatchAlgorithmConfig(
+      await api.configuration.updateDispatchAlgorithmConfig(
         {
           weightProximity: weights.proximity,
           weightSkills: weights.skills,

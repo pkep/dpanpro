@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { TechnicianLayout } from '@/components/technician/TechnicianLayout';
 import { ProfileImagesTab } from '@/components/technician/ProfileImagesTab';
-import { partnersService } from '@/services/supabase/partners.service';
+import { services as api } from '@/services/factory';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -129,7 +129,7 @@ const TechnicianProfilePage = () => {
       if (!user) return;
 
       try {
-        const profile = await partnersService.getPartnerProfile(user.id);
+        const profile = await api.partners.getPartnerProfile(user.id);
         if (profile) {
           personalForm.reset({
             firstName: profile.user.firstName,
@@ -183,7 +183,7 @@ const TechnicianProfilePage = () => {
     if (!user) return;
     setIsSaving(true);
     try {
-      await partnersService.updatePartnerProfile(user.id, data);
+      await api.partners.updatePartnerProfile(user.id, data);
       toast.success('Informations personnelles mises à jour');
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors de la mise à jour');
@@ -196,7 +196,7 @@ const TechnicianProfilePage = () => {
     if (!user) return;
     setIsSaving(true);
     try {
-      await partnersService.updatePartnerProfile(user.id, data);
+      await api.partners.updatePartnerProfile(user.id, data);
       toast.success('Informations professionnelles mises à jour');
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors de la mise à jour');
@@ -209,7 +209,7 @@ const TechnicianProfilePage = () => {
     if (!user) return;
     setIsSaving(true);
     try {
-      await partnersService.updatePartnerProfile(user.id, data);
+      await api.partners.updatePartnerProfile(user.id, data);
       toast.success('Expertises mises à jour');
     } catch (err: any) {
       toast.error(err.message || 'Erreur lors de la mise à jour');
@@ -222,7 +222,7 @@ const TechnicianProfilePage = () => {
     if (!user) return;
     setIsSaving(true);
     try {
-      await partnersService.updatePartnerProfile(user.id, {
+      await api.partners.updatePartnerProfile(user.id, {
         ...data,
         iban: data.iban.replace(/\s/g, ''),
       });

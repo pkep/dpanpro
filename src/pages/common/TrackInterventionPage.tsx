@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { StatusTimeline } from '@/components/interventions/StatusTimeline';
 import { ClientTrackingMap } from '@/components/map/ClientTrackingMap';
 import { StripeCardForm } from '@/components/payment/StripeCardForm';
-import { paymentService } from '@/services/supabase/payment.service';
+import { services as api } from '@/services/factory';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -230,7 +230,7 @@ export default function TrackInterventionPage() {
       setPaymentLoading(true);
       setPaymentClientSecret(null);
 
-      const { id, clientSecret } = await paymentService.createPaymentIntent({
+      const { id, clientSecret } = await api.payment.createPaymentIntent({
         interventionId: intervention.id,
         amount: paymentTotal!,
         clientEmail: intervention.client_email!,
@@ -252,7 +252,7 @@ export default function TrackInterventionPage() {
   const handleAuthorizationSuccess = async () => {
     try {
       if (paymentAuthorizationId) {
-        await paymentService.updateAuthorizationStatus(paymentAuthorizationId, 'authorized');
+        await api.payment.updateAuthorizationStatus(paymentAuthorizationId, 'authorized');
       }
       setPaymentAuthorized(true);
       setPaymentStatus('authorized');

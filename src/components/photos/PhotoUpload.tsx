@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
-import { photosService } from '@/services/supabase/photos.service';
-import { historyService } from '@/services/supabase/history.service';
+import { services as api } from '@/services/factory';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -49,18 +48,18 @@ export function PhotoUpload({
 
       const newUrls: string[] = [];
       for (let i = 0; i < validFiles.length; i++) {
-        const url = await photosService.uploadPhoto(interventionId, validFiles[i]);
+        const url = await api.photos.uploadPhoto(interventionId, validFiles[i]);
         newUrls.push(url);
         setProgress(((i + 1) / validFiles.length) * 100);
       }
 
       const updatedPhotos = [...existingPhotos, ...newUrls];
-      await photosService.updateInterventionPhotos(interventionId, updatedPhotos);
+      await api.photos.updateInterventionPhotos(interventionId, updatedPhotos);
       onPhotosUpdated(updatedPhotos);
       
       // Add history entry for each photo
       if (user) {
-        await historyService.addHistoryEntry({
+        await api.history.addHistoryEntry({
           interventionId,
           userId: user.id,
           action: 'updated',

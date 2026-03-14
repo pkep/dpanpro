@@ -12,10 +12,9 @@ import {
   QuestionnaireResult, 
   QuestionnaireDomain 
 } from '@/data/questionnaire-tree';
-import { questionnaireService } from '@/services/components/questionnaire/questionnaire.service';
+import { services as api } from '@/services/factory';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { storageService } from '@/services/components/utils/storage/storage.service';
 import { toast } from 'sonner';
 
 interface HistoryEntry {
@@ -65,7 +64,7 @@ export function StepQuestionnaire({
     const load = async () => {
       setIsLoading(true);
       try {
-        const tree = await questionnaireService.getQuestionnaireTree();
+        const tree = await api.questionnaire.getQuestionnaireTree();
         if (cancelled) return;
         const d = tree[category] || null;
         setDomain(d);
@@ -136,7 +135,7 @@ export function StepQuestionnaire({
           toast.error('Seules les images sont acceptées');
           continue;
         }
-        const publicUrl = await storageService.uploadFile('intervention-photos', file, 'temp');
+        const publicUrl = await api.storage.uploadFile('intervention-photos', file, 'temp');
         newPhotos.push(publicUrl);
       }
       if (newPhotos.length > 0) {

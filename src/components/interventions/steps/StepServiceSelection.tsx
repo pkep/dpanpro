@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { servicesService, Service } from '@/services/supabase/services.service';
+import { services as api } from '@/services/factory';
+import type { Service } from '@/services/interfaces/services.interface';
 import { InterventionCategory } from '@/types/intervention.types';
 import { Loader2, Wrench, Key, Zap, Flame, Snowflake, Grid3X3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,7 +27,7 @@ export function StepServiceSelection({ selectedCategory, onSelect }: StepService
   useEffect(() => {
     const loadServices = async () => {
       try {
-        const activeServices = await servicesService.getActiveServices();
+        const activeServices = await api.services.getActiveServices();
         setServices(activeServices);
       } catch (error) {
         console.error('Error loading services:', error);

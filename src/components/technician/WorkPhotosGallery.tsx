@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Camera, Trash2, Download, ZoomIn } from 'lucide-react';
-import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
+import { services as api } from '@/services/factory';
+import type { WorkPhoto } from '@/services/interfaces/work-photos.interface';
 import { toast } from 'sonner';
 
 interface WorkPhotosGalleryProps {
@@ -31,7 +32,7 @@ export function WorkPhotosGallery({
   const loadPhotos = async () => {
     setLoading(true);
     try {
-      const data = await workPhotosService.getPhotos(interventionId);
+      const data = await api.workPhotos.getPhotos(interventionId);
       setPhotos(data);
     } catch (error) {
       console.error('Error loading work photos:', error);
@@ -45,7 +46,7 @@ export function WorkPhotosGallery({
     
     setIsDeleting(photo.id);
     try {
-      await workPhotosService.deletePhoto(photo.id);
+      await api.workPhotos.deletePhoto(photo.id);
       setPhotos(prev => prev.filter(p => p.id !== photo.id));
       toast.success('Photo supprimée');
       onPhotosChange?.();

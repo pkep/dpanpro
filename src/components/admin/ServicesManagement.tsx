@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { servicesService, Service } from '@/services/supabase/services.service';
-import { pricingService, PriorityMultiplier } from '@/services/supabase/pricing.service';
+import { services as api } from '@/services/factory';
+import type { Service } from '@/services/interfaces/services.interface';
+import type { PriorityMultiplier } from '@/services/interfaces/pricing.interface';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +48,7 @@ export function ServicesManagement() {
       setIsLoading(true);
       const [servicesData, multipliersData] = await Promise.all([
         loadServicesWithPricing(),
-        pricingService.getPriorityMultipliers(),
+        api.pricing.getPriorityMultipliers(),
       ]);
       setServices(servicesData);
       setMultipliers(multipliersData);
@@ -124,7 +125,7 @@ export function ServicesManagement() {
 
       // Save multiplier changes
       for (const [multiplierId, multiplier] of Object.entries(editedMultipliers)) {
-        await pricingService.updateMultiplier(multiplierId, multiplier);
+        await api.pricing.updateMultiplier(multiplierId, multiplier);
       }
 
       toast.success('Modifications enregistrées');
@@ -258,7 +259,7 @@ export function ServicesManagement() {
                 const isActive = getDisplayValue(service, 'isActive') as boolean;
                 const multiplier = multipliers.find((m) => m.priority === defaultPriority);
                 const multiplierValue = multiplier ? getMultiplierValue(multiplier) : 1;
-                const estimatedPrice = pricingService.calculateEstimatedPrice(totalHT, multiplierValue);
+                const estimatedPrice = api.pricing.calculateEstimatedPrice(totalHT, multiplierValue);
 
                 return (
                   <TableRow key={service.id}>

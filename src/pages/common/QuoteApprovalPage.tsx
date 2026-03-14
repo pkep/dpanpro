@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { quoteModificationsService, QuoteModification } from '@/services/supabase/quote-modifications.service';
-import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
+import { services as api } from '@/services/factory';
+import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
+import type { QuoteLine } from '@/services/interfaces/quotes.interface';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -87,7 +88,7 @@ export default function QuoteApprovalPage() {
       }
 
       try {
-        const mod = await quoteModificationsService.getModificationByToken(token);
+        const mod = await api.quoteModifications.getModificationByToken(token);
         
         if (!mod) {
           setError('Demande de modification non trouvée ou lien expiré');
@@ -116,7 +117,7 @@ export default function QuoteApprovalPage() {
           });
 
           // Fetch initial quote lines
-          const lines = await quotesService.getQuoteLines(mod.interventionId);
+          const lines = await api.quotes.getQuoteLines(mod.interventionId);
           setQuoteLines(lines);
         }
       } catch (err) {
@@ -140,7 +141,7 @@ export default function QuoteApprovalPage() {
     
     setProcessing(true);
     try {
-      const result = await quoteModificationsService.approveModification(modification.id, signature);
+      const result = await api.quoteModifications.approveModification(modification.id, signature);
       setModification({ ...modification, status: 'approved' });
       
       if (result.incrementResult) {
@@ -162,7 +163,7 @@ export default function QuoteApprovalPage() {
     
     setProcessing(true);
     try {
-      await quoteModificationsService.declineModification(modification.id, reason);
+      await api.quoteModifications.declineModification(modification.id, reason);
       setModification({ ...modification, status: 'declined' });
       setShowDeclineDialog(false);
       toast.success('Modification refusée');

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { historyService } from '@/services/supabase/history.service';
-import { usersService } from '@/services/supabase/users.service';
+import { services as api } from '@/services/factory';
 import type { InterventionHistory } from '@/types/history.types';
 import type { User } from '@/types/auth.types';
 import { ACTION_LABELS } from '@/types/history.types';
@@ -41,8 +40,8 @@ export function InterventionTimeline({ interventionId, refreshKey }: Interventio
       try {
         setLoading(true);
         const [historyData, usersData] = await Promise.all([
-          historyService.getHistoryForIntervention(interventionId),
-          usersService.getUsers(),
+          api.history.getHistoryForIntervention(interventionId),
+          api.users.getUsers(),
         ]);
         
         setHistory(historyData);

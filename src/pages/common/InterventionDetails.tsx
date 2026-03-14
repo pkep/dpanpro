@@ -2,14 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeIntervention } from '@/hooks/useRealtimeIntervention';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { cancellationService } from '@/services/supabase/cancellation.service';
-import { historyService } from '@/services/supabase/history.service';
-import { usersService } from '@/services/supabase/users.service';
-import { invoiceService } from '@/services/components/invoice/invoice.service';
-import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
-import { quoteModificationsService, QuoteModification } from '@/services/supabase/quote-modifications.service';
-import { servicesService } from '@/services/supabase/services.service';
+import { services as api } from '@/services/factory';
+import type { QuoteLine } from '@/services/interfaces/quotes.interface';
+import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
 import type { InterventionStatus } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { STATUS_LABELS, CATEGORY_LABELS, CATEGORY_ICONS, PRIORITY_LABELS } from '@/types/intervention.types';
@@ -94,7 +89,7 @@ export default function InterventionDetails() {
     if (!intervention) return;
     try {
       setDownloadingInvoice(true);
-      await invoiceService.generateAndDownloadInvoice(intervention);
+      await api.invoice.generateAndDownloadInvoice(intervention);
       toast.success('Facture téléchargée avec succès');
     } catch (error) {
       console.error('Error downloading invoice:', error);
@@ -109,7 +104,7 @@ export default function InterventionDetails() {
     
     setIsCancelling(true);
     try {
-      const result = await cancellationService.cancelInterventionWithFees(
+      const result = await api.cancellation.cancelInterventionWithFees(
         intervention.id,
         reason,
         hasFees
@@ -117,7 +112,7 @@ export default function InterventionDetails() {
 
       if (result.success) {
         // Add history entry for cancellation
-        await historyService.addHistoryEntry({
+        await api.history.addHistoryEntry({
           interventionId: intervention.id,
           userId: user.id,
           action: 'status_changed',
@@ -156,7 +151,7 @@ export default function InterventionDetails() {
   useEffect(() => {
     const fetchTechnicians = async () => {
       try {
-        const data = await usersService.getTechnicians();
+        const data = await api.users.getTechnicians();
         setTechnicians(data);
       } catch (err) {
         console.error('Error fetching technicians:', err);
@@ -181,14 +176,14 @@ export default function InterventionDetails() {
       setQuoteDataLoading(true);
       try {
         const [lines, modifications] = await Promise.all([
-          quotesService.getQuoteLines(intervention.id),
-          quoteModificationsService.getModificationsByIntervention(intervention.id),
+          api.quotes.getQuoteLines(intervention.id),
+          api.quoteModifications.getModificationsByIntervention(intervention.id),
         ]);
         setQuoteLines(lines);
         setApprovedModifications(modifications.filter(m => m.status === 'approved'));
 
         // Get VAT rate
-        const services = await servicesService.getActiveServices();
+        const services = await api.services.getActiveServices();
         const service = services.find(s => s.code === intervention.category);
         if (service) {
           // Determine if client is company - default to individual rate
@@ -209,8 +204,8 @@ export default function InterventionDetails() {
     try {
       setUpdating(true);
       const oldStatus = intervention.status;
-      await interventionsService.updateStatus(intervention.id, newStatus);
-      await historyService.addHistoryEntry({
+      await api.interventions.updateStatus(intervention.id, newStatus);
+      await api.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'status_changed',
@@ -233,8 +228,8 @@ export default function InterventionDetails() {
 
     try {
       setUpdating(true);
-      await interventionsService.assignTechnician(intervention.id, technicianId);
-      await historyService.addHistoryEntry({
+      await api.interventions.assignTechnician(intervention.id, technicianId);
+      await api.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'assigned',

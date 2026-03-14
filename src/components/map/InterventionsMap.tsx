@@ -2,8 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { geocodingService } from '@/services/components/geocoding/geocoding.service';
+import { services as api } from '@/services/factory';
 import type { Intervention, InterventionStatus, InterventionCategory } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
 import { Badge } from '@/components/ui/badge';
@@ -110,7 +109,7 @@ export function InterventionsMap({
     const fetchInterventions = async () => {
       try {
         setLoading(true);
-        const data = await interventionsService.getInterventions({ isActive: true });
+        const data = await api.interventions.getInterventions({ isActive: true });
         setInterventions(data);
       } catch (error) {
         console.error('Error fetching interventions:', error);
@@ -131,7 +130,7 @@ export function InterventionsMap({
 
       let processed = 0;
       for (const intervention of toGeocode) {
-        const result = await geocodingService.geocodeAddress(
+        const result = await api.geocoding.geocodeAddress(
           intervention.address,
           intervention.city,
           intervention.postalCode
@@ -199,7 +198,7 @@ export function InterventionsMap({
   const handleRefresh = async () => {
     setLoading(true);
     try {
-      const data = await interventionsService.getInterventions({ isActive: true });
+      const data = await api.interventions.getInterventions({ isActive: true });
       setInterventions(data);
     } catch (error) {
       console.error('Error refreshing interventions:', error);

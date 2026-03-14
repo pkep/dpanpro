@@ -25,9 +25,8 @@ import {
   MapPinCheck
 } from 'lucide-react';
 import { CATEGORY_LABELS, CATEGORY_ICONS, STATUS_LABELS, PRIORITY_LABELS } from '@/types/intervention.types';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { historyService } from '@/services/supabase/history.service';
-import { workPhotosService, WorkPhoto } from '@/services/supabase/work-photos.service';
+import { services as api } from '@/services/factory';
+import type { WorkPhoto } from '@/services/interfaces/work-photos.interface';
 import { PhotoUpload } from '@/components/photos/PhotoUpload';
 import { PhotoGallery } from '@/components/photos/PhotoGallery';
 import { InterventionChat } from '@/components/technician/InterventionChat';
@@ -40,8 +39,7 @@ import { WorkPhotoCapture } from '@/components/technician/WorkPhotoCapture';
 import { WorkPhotosGallery } from '@/components/technician/WorkPhotosGallery';
 import { StartInterventionDialog } from '@/components/technician/StartInterventionDialog/index';
 import { FinalizePhotosDialog } from '@/components/technician/FinalizePhotosDialog';
-import { dispatchService } from '@/services/supabase/dispatch.service';
-import { quoteModificationsService } from '@/services/supabase/quote-modifications.service';
+import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -134,7 +132,7 @@ export default function TechnicianInterventionPage() {
   const loadWorkPhotos = async () => {
     if (!intervention?.id) return;
     try {
-      const allPhotos = await workPhotosService.getPhotos(intervention.id);
+      const allPhotos = await api.workPhotos.getPhotos(intervention.id);
       setBeforePhotos(allPhotos.filter(p => p.photoType === 'before'));
       setAfterPhotos(allPhotos.filter(p => p.photoType === 'after'));
       setWorkPhotosLoaded(true);
@@ -171,8 +169,8 @@ export default function TechnicianInterventionPage() {
     
     setIsUpdatingStatus(true);
     try {
-      await interventionsService.updateStatus(intervention.id, newStatus);
-      await historyService.addHistoryEntry({
+      await api.interventions.updateStatus(intervention.id, newStatus);
+      await api.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'status_changed',
@@ -209,15 +207,15 @@ export default function TechnicianInterventionPage() {
           .maybeSingle(),
       ]);
 
-      const existingPhotos = await workPhotosService.getPhotos(intervention.id);
+      const existingPhotos = await api.workPhotos.getPhotos(intervention.id);
       const hasBeforePhotos = existingPhotos.some(p => p.photoType === 'before');
 
       if (intData?.quote_signed_at && authData?.status === 'authorized' && hasBeforePhotos) {
         // Everything already done — skip dialog and start directly
         setIsUpdatingStatus(true);
         try {
-          await interventionsService.updateStatus(intervention.id, 'in_progress', intervention.status);
-          await historyService.addHistoryEntry({
+          await api.interventions.updateStatus(intervention.id, 'in_progress', intervention.status);
+          await api.history.addHistoryEntry({
             interventionId: intervention.id,
             userId: user.id,
             action: 'status_changed',
@@ -232,7 +230,7 @@ export default function TechnicianInterventionPage() {
           (async () => {
             try {
               const { quotePDFService } = await import('@/services/components/quote-pdf/quote-pdf.service');
-              const fullIntervention = await interventionsService.getIntervention(intervention.id);
+              const fullIntervention = await api.interventions.getIntervention(intervention.id);
               const savedSignature = fullIntervention?.quoteSignatureData || null;
               const { base64, fileName } = await quotePDFService.generateQuoteBase64(fullIntervention, savedSignature);
               await supabase.functions.invoke('send-quote-email', {
@@ -287,7 +285,7 @@ export default function TechnicianInterventionPage() {
     
     // Check for pending quote modification
     try {
-      const pendingMod = await quoteModificationsService.getPendingModification(intervention.id);
+      const pendingMod = await api.quoteModifications.getPendingModification(intervention.id);
       if (pendingMod) {
         toast.warning('Action client requise', {
           description: 'Une modification de devis est en attente de validation. Vous pourrez finaliser une fois que le client aura répondu.',
@@ -318,7 +316,7 @@ export default function TechnicianInterventionPage() {
     
     setIsCancelling(true);
     try {
-      const result = await dispatchService.cancelAssignment(intervention.id, user.id, reason);
+      const result = await api.dispatch.cancelAssignment(intervention.id, user.id, reason);
       if (result.success) {
         toast.success('Intervention annulée', {
           description: 'Elle sera reproposée à d\'autres techniciens.',

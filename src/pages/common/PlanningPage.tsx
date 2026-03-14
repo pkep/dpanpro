@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { usersService } from '@/services/supabase/users.service';
+import { services as api } from '@/services/factory';
 import type { Intervention } from '@/types/intervention.types';
 import type { User } from '@/types/auth.types';
 import { CATEGORY_ICONS, STATUS_LABELS, CATEGORY_LABELS, PRIORITY_LABELS } from '@/types/intervention.types';
@@ -38,8 +37,8 @@ export default function PlanningPage() {
     try {
       setLoading(true);
       const [interventionsData, techniciansData] = await Promise.all([
-        interventionsService.getInterventions({ isActive: true }),
-        usersService.getTechnicians(),
+        api.interventions.getInterventions({ isActive: true }),
+        api.users.getTechnicians(),
       ]);
       
       // Filter unscheduled interventions

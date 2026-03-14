@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { StripeCardForm } from '@/components/payment/StripeCardForm';
-import { paymentService } from '@/services/supabase/payment.service';
+import { services as api } from '@/services/factory';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -226,7 +226,7 @@ export default function PaymentAuthorizationPage() {
     try {
       setPaymentLoading(true);
       setPaymentClientSecret(null);
-      const { id, clientSecret } = await paymentService.createPaymentIntent({
+      const { id, clientSecret } = await api.payment.createPaymentIntent({
         interventionId: intervention.id,
         amount: grandTotal,
         clientEmail: intervention.client_email!,
@@ -247,7 +247,7 @@ export default function PaymentAuthorizationPage() {
   const handleAuthorizationSuccess = async () => {
     try {
       if (paymentAuthorizationId) {
-        await paymentService.updateAuthorizationStatus(paymentAuthorizationId, 'authorized');
+        await api.payment.updateAuthorizationStatus(paymentAuthorizationId, 'authorized');
       }
       setPaymentAuthorized(true);
       setPaymentStatus('authorized');

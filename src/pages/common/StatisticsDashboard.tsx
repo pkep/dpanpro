@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { statisticsService } from '@/services/supabase/statistics.service';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import type { DailyStats, CategoryStats, StatusStats, PerformanceStats, TechnicianStats } from '@/services/supabase/statistics.service';
+import { services as api } from '@/services/factory';
+import type { DailyStats, CategoryStats, StatusStats, PerformanceStats, TechnicianStats } from '@/services/interfaces/statistics.interface';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS } from '@/types/intervention.types';
 import { ExportButton } from '@/components/export/ExportButton';
@@ -75,12 +74,12 @@ export default function StatisticsDashboard() {
       try {
         setLoading(true);
         const [daily, category, status, performance, technicians, allInterventions] = await Promise.all([
-          statisticsService.getDailyStats(parseInt(period)),
-          statisticsService.getCategoryStats(),
-          statisticsService.getStatusStats(),
-          statisticsService.getPerformanceStats(),
-          statisticsService.getTechnicianStats(),
-          interventionsService.getInterventions(),
+          api.statistics.getDailyStats(parseInt(period)),
+          api.statistics.getCategoryStats(),
+          api.statistics.getStatusStats(),
+          api.statistics.getPerformanceStats(),
+          api.statistics.getTechnicianStats(),
+          api.interventions.getInterventions(),
         ]);
         
         setDailyStats(daily);

@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Wrench, Pencil, Loader2, ChevronUp, ChevronDown, GripVertical, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { servicesService, Service } from '@/services/supabase/services.service';
+import { services as api } from '@/services/factory';
+import type { Service } from '@/services/interfaces/services.interface';
 
 export function ServicesSettingsTab() {
   const queryClient = useQueryClient();
@@ -26,12 +27,12 @@ export function ServicesSettingsTab() {
 
   const { data: services, isLoading } = useQuery({
     queryKey: ['services-all'],
-    queryFn: () => servicesService.getAllServices(),
+    queryFn: () => api.services.getAllServices(),
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
-      servicesService.toggleServiceActive(id, isActive),
+      api.services.toggleServiceActive(id, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services-all'] });
       toast.success('Service mis à jour');
@@ -43,7 +44,7 @@ export function ServicesSettingsTab() {
 
   const updateMutation = useMutation({
     mutationFn: (data: { id: string; updates: Partial<Service> }) =>
-      servicesService.updateService(data.id, data.updates),
+      api.services.updateService(data.id, data.updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services-all'] });
       toast.success('Service modifié avec succès');
@@ -56,7 +57,7 @@ export function ServicesSettingsTab() {
 
   const reorderMutation = useMutation({
     mutationFn: (data: { serviceId1: string; order1: number; serviceId2: string; order2: number }) =>
-      servicesService.swapServiceOrder(data.serviceId1, data.order1, data.serviceId2, data.order2),
+      api.services.swapServiceOrder(data.serviceId1, data.order1, data.serviceId2, data.order2),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services-all'] });
       toast.success('Ordre mis à jour');

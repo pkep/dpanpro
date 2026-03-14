@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { interventionsService } from '@/services/supabase/interventions.service';
-import { cancellationService } from '@/services/supabase/cancellation.service';
-import { invoiceService } from '@/services/components/invoice/invoice.service';
+import { services as api } from '@/services/factory';
 import { NotificationsDropdown } from '@/components/notifications/NotificationsDropdown';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS, STATUS_LABELS, PRIORITY_LABELS, CATEGORY_ICONS } from '@/types/intervention.types';
@@ -65,7 +63,7 @@ const Dashboard = () => {
   const handleDownloadInvoice = async (intervention: Intervention) => {
     try {
       setDownloadingInvoice(intervention.id);
-      await invoiceService.generateAndDownloadInvoice(intervention);
+      await api.invoice.generateAndDownloadInvoice(intervention);
       toast.success('Facture téléchargée avec succès');
     } catch (error) {
       console.error('Error downloading invoice:', error);
@@ -85,7 +83,7 @@ const Dashboard = () => {
     
     setIsCancelling(true);
     try {
-      const result = await cancellationService.cancelInterventionWithFees(selectedIntervention.id, reason, hasFees);
+      const result = await api.cancellation.cancelInterventionWithFees(selectedIntervention.id, reason, hasFees);
       if (result.success) {
         if (result.hasFees) {
           toast.success('Demande annulée', {
@@ -95,7 +93,7 @@ const Dashboard = () => {
           toast.success('Demande annulée avec succès');
         }
         if (user) {
-          const data = await interventionsService.getInterventions({ clientId: user.id });
+          const data = await api.interventions.getInterventions({ clientId: user.id });
           setInterventions(data);
           setStats({
             total: data.length,
@@ -134,7 +132,7 @@ const Dashboard = () => {
       
       try {
         setLoading(true);
-        const data = await interventionsService.getInterventions({ clientId: user.id });
+        const data = await api.interventions.getInterventions({ clientId: user.id });
         setInterventions(data);
 
         // Calculate stats

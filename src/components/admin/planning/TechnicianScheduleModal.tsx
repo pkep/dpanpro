@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addDays, addWeeks, addMonths, subDays, subWeeks, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { scheduleService, type TechnicianSchedule, type ScheduleOverride } from '@/services/supabase/schedule.service';
-import { interventionsService } from '@/services/supabase/interventions.service';
+import { services as api } from '@/services/factory';
+import type { TechnicianSchedule, ScheduleOverride } from '@/services/interfaces/schedule.interface';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_ICONS, STATUS_LABELS } from '@/types/intervention.types';
 import { cn } from '@/lib/utils';
@@ -42,7 +42,7 @@ export function TechnicianScheduleModal({ technician, open, onOpenChange }: Tech
       setLoading(true);
       try {
         // Fetch schedule
-        const scheduleData = await scheduleService.getSchedule(technician.id);
+        const scheduleData = await api.schedule.getSchedule(technician.id);
         setSchedule(scheduleData);
 
         // Determine date range based on view
@@ -61,11 +61,11 @@ export function TechnicianScheduleModal({ technician, open, onOpenChange }: Tech
         }
 
         // Fetch overrides for the period
-        const overridesData = await scheduleService.getOverrides(technician.id, startDate, endDate);
+        const overridesData = await api.schedule.getOverrides(technician.id, startDate, endDate);
         setOverrides(overridesData);
 
         // Fetch interventions for the technician
-        const allInterventions = await interventionsService.getInterventions({ isActive: true });
+        const allInterventions = await api.interventions.getInterventions({ isActive: true });
         const techInterventions = allInterventions.filter(
           (i) => i.technicianId === technician.id
         );
