@@ -1,4 +1,21 @@
-import type { UserRoleRecord, ManagerPermissions, AppRole } from '@/services/supabase/roles.service';
+export type AppRole = 'admin' | 'manager' | 'technician' | 'client' | 'guest' | 'payment';
+
+export interface UserRoleRecord {
+  id: string;
+  userId: string;
+  role: AppRole;
+  createdAt: string;
+  createdBy: string | null;
+}
+
+export interface ManagerPermissions {
+  id: string;
+  userId: string;
+  canCreateManagers: boolean;
+  createdAt: string;
+  updatedAt: string;
+  grantedBy: string | null;
+}
 
 export interface IRolesService {
   getUserRoles(userId: string): Promise<UserRoleRecord[]>;

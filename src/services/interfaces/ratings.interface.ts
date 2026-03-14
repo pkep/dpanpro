@@ -1,4 +1,12 @@
-import type { Rating } from '@/services/supabase/ratings.service';
+export interface Rating {
+  id: string;
+  interventionId: string;
+  clientId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface IRatingsService {
   getRating(interventionId: string): Promise<Rating | null>;

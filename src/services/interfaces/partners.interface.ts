@@ -1,4 +1,32 @@
-import type { PartnerApplicationData } from '@/services/supabase/partners.service';
+export interface PartnerApplicationData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  birthDate: string;
+  birthPlace: string;
+  address: string;
+  postalCode: string;
+  city: string;
+  password: string;
+  companyName: string;
+  siret: string;
+  vatNumber?: string;
+  legalStatus: string;
+  insuranceCompany: string;
+  insurancePolicyNumber: string;
+  insuranceExpiryDate: string;
+  hasDecennialInsurance: boolean;
+  skills: string[];
+  yearsExperience: number;
+  motivation: string;
+  bankAccountHolder: string;
+  bankName: string;
+  iban: string;
+  bic: string;
+  termsAccepted: boolean;
+  dataAccuracyConfirmed: boolean;
+}
 
 export interface IPartnersService {
   submitApplication(data: PartnerApplicationData): Promise<void>;

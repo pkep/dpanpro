@@ -1,4 +1,21 @@
-import type { TechnicianSchedule, ScheduleOverride } from '@/services/supabase/schedule.service';
+export interface TechnicianSchedule {
+  id: string;
+  technicianId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isWorkingDay: boolean;
+}
+
+export interface ScheduleOverride {
+  id: string;
+  technicianId: string;
+  overrideDate: string;
+  isAvailable: boolean;
+  startTime: string | null;
+  endTime: string | null;
+  reason: string | null;
+}
 
 export interface IScheduleService {
   getDayName(dayOfWeek: number): string;

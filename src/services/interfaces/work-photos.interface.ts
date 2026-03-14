@@ -1,4 +1,14 @@
-import type { WorkPhoto, WorkPhotoType } from '@/services/supabase/work-photos.service';
+export type WorkPhotoType = 'before' | 'after';
+
+export interface WorkPhoto {
+  id: string;
+  interventionId: string;
+  photoUrl: string;
+  photoType: WorkPhotoType;
+  uploadedBy: string;
+  description?: string | null;
+  createdAt: string;
+}
 
 export interface IWorkPhotosService {
   uploadPhotos(interventionId: string, files: File[], photoType: WorkPhotoType, uploadedBy: string, description?: string): Promise<WorkPhoto[]>;
