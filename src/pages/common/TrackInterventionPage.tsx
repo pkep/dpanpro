@@ -230,7 +230,7 @@ export default function TrackInterventionPage() {
       setPaymentLoading(true);
       setPaymentClientSecret(null);
 
-      const { id, clientSecret } = await paymentService.createPaymentIntent({
+      const { id, clientSecret } = await api.payment.createPaymentIntent({
         interventionId: intervention.id,
         amount: paymentTotal!,
         clientEmail: intervention.client_email!,
