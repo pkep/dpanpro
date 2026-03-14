@@ -47,7 +47,7 @@ export function useTechnicianGeolocation() {
       const { latitude, longitude } = position.coords;
 
       // Use detailed reverse geocoding to get properly structured city and department
-      const addressInfo = await geocodingService.reverseGeocodeDetailed(latitude, longitude);
+      const addressInfo = await services.geocoding.reverseGeocodeDetailed(latitude, longitude);
       
       const city = addressInfo?.city || null;
       const department = addressInfo?.department || null;
