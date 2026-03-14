@@ -160,6 +160,7 @@ const JoinPage = () => {
 
   const step4Form = useForm<Step4Data>({
     resolver: zodResolver(step4Schema),
+    mode: 'onChange',
     defaultValues: {
       bankAccountHolder: '',
       bankName: '',
