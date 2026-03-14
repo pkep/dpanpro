@@ -226,7 +226,7 @@ export default function PaymentAuthorizationPage() {
     try {
       setPaymentLoading(true);
       setPaymentClientSecret(null);
-      const { id, clientSecret } = await paymentService.createPaymentIntent({
+      const { id, clientSecret } = await api.payment.createPaymentIntent({
         interventionId: intervention.id,
         amount: grandTotal,
         clientEmail: intervention.client_email!,
