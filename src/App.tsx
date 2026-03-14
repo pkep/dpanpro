@@ -28,6 +28,7 @@ import PrivacyPolicyPage from "./pages/common/PrivacyPolicyPage";
 import CookiePolicyPage from "./pages/common/CookiePolicyPage";
 import LegalNoticePage from "./pages/common/LegalNoticePage";
 import ContactPage from "./pages/common/ContactPage";
+import TrackingSearchPage from "./pages/common/TrackingSearchPage";
 import NotFound from "./pages/common/NotFound";
 import { GlobalPendingActions } from "./components/client/GlobalPendingActions";
 
@@ -136,6 +137,7 @@ const App = () => (
             <Route path="/politique-cookies" element={<CookiePolicyPage />} />
             <Route path="/mentions-legales" element={<LegalNoticePage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/suivi" element={<TrackingSearchPage />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

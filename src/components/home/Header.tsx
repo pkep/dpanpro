@@ -23,6 +23,7 @@ export function Header() {
   const navLinks = [
     { href: "/new-intervention", label: "Dépannage" },
     { href: "/join", label: "Nous rejoindre" },
+    { href: "/suivi", label: "Suivre mon intervention" },
   ];
 
   return (
