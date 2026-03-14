@@ -40,7 +40,7 @@ export function RatingForm({
     const fetchRating = async () => {
       try {
         setLoading(true);
-        const data = await ratingsService.getRating(interventionId);
+        const data = await services.ratings.getRating(interventionId);
         if (data) {
           setExistingRating(data);
           setRating(data.rating);
