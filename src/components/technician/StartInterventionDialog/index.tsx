@@ -507,8 +507,8 @@ export function StartInterventionDialog({
       }
 
       // Update status to in_progress FIRST (most important action)
-      await interventionsService.updateStatus(interventionId, 'in_progress', 'arrived');
-      await historyService.addHistoryEntry({
+      await services.interventions.updateStatus(interventionId, 'in_progress', 'arrived');
+      await services.history.addHistoryEntry({
         interventionId,
         userId,
         action: 'status_changed',
