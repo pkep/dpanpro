@@ -89,7 +89,7 @@ const TechnicianSchedulePage = () => {
       setSaving(true);
       
       for (const day of schedule) {
-        await scheduleService.updateDaySchedule(
+        await api.schedule.updateDaySchedule(
           user.id,
           day.dayOfWeek,
           day.isWorkingDay,
