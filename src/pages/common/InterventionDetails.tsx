@@ -183,7 +183,7 @@ export default function InterventionDetails() {
         setApprovedModifications(modifications.filter(m => m.status === 'approved'));
 
         // Get VAT rate
-        const services = await servicesService.getActiveServices();
+        const services = await api.services.getActiveServices();
         const service = services.find(s => s.code === intervention.category);
         if (service) {
           // Determine if client is company - default to individual rate
