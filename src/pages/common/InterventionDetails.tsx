@@ -228,8 +228,8 @@ export default function InterventionDetails() {
 
     try {
       setUpdating(true);
-      await interventionsService.assignTechnician(intervention.id, technicianId);
-      await historyService.addHistoryEntry({
+      await api.interventions.assignTechnician(intervention.id, technicianId);
+      await api.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'assigned',

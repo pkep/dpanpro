@@ -198,7 +198,7 @@ export function InterventionsMap({
   const handleRefresh = async () => {
     setLoading(true);
     try {
-      const data = await interventionsService.getInterventions({ isActive: true });
+      const data = await api.interventions.getInterventions({ isActive: true });
       setInterventions(data);
     } catch (error) {
       console.error('Error refreshing interventions:', error);

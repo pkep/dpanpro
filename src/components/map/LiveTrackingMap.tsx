@@ -379,7 +379,7 @@ export function LiveTrackingMap({
       const toGeocode = interventions.filter(i => !i.latitude || !i.longitude);
       
       for (const intervention of toGeocode) {
-        const result = await geocodingService.geocodeAddress(
+        const result = await api.geocoding.geocodeAddress(
           intervention.address,
           intervention.city,
           intervention.postalCode

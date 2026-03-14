@@ -78,7 +78,7 @@ export function SingleLocationMap({
       setLoading(true);
       setError(null);
 
-      const result = await geocodingService.geocodeAddress(address, city, postalCode);
+      const result = await api.geocoding.geocodeAddress(address, city, postalCode);
 
       if (result) {
         setCoordinates([result.latitude, result.longitude]);
