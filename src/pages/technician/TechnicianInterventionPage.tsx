@@ -285,7 +285,7 @@ export default function TechnicianInterventionPage() {
     
     // Check for pending quote modification
     try {
-      const pendingMod = await quoteModificationsService.getPendingModification(intervention.id);
+      const pendingMod = await api.quoteModifications.getPendingModification(intervention.id);
       if (pendingMod) {
         toast.warning('Action client requise', {
           description: 'Une modification de devis est en attente de validation. Vous pourrez finaliser une fois que le client aura répondu.',
