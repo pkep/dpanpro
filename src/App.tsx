@@ -137,6 +137,7 @@ const App = () => (
             <Route path="/politique-cookies" element={<CookiePolicyPage />} />
             <Route path="/mentions-legales" element={<LegalNoticePage />} />
             <Route path="/contact" element={<ContactPage />} />
+            <Route path="/suivi" element={<TrackingSearchPage />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
