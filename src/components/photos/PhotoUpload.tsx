@@ -54,7 +54,7 @@ export function PhotoUpload({
       }
 
       const updatedPhotos = [...existingPhotos, ...newUrls];
-      await photosService.updateInterventionPhotos(interventionId, updatedPhotos);
+      await api.photos.updateInterventionPhotos(interventionId, updatedPhotos);
       onPhotosUpdated(updatedPhotos);
       
       // Add history entry for each photo
