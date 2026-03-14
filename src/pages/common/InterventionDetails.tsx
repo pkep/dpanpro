@@ -104,7 +104,7 @@ export default function InterventionDetails() {
     
     setIsCancelling(true);
     try {
-      const result = await cancellationService.cancelInterventionWithFees(
+      const result = await api.cancellation.cancelInterventionWithFees(
         intervention.id,
         reason,
         hasFees
