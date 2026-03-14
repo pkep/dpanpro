@@ -278,7 +278,7 @@ export function AvailableInterventionsList({
     const interventionId = selectedIntervention.id;
     setProcessingId(interventionId);
     try {
-      const result = await dispatchService.acceptAssignment(interventionId, technicianId);
+      const result = await api.dispatch.acceptAssignment(interventionId, technicianId);
       if (result.success) {
         toast.success('Intervention acceptée !', {
           description: 'Redirection vers l\'intervention...',
