@@ -58,7 +58,7 @@ export default function ClientDashboardPage() {
   const handleDownloadInvoice = async (intervention: Intervention) => {
     try {
       setDownloadingInvoice(intervention.id);
-      await invoiceService.generateAndDownloadInvoice(intervention);
+      await api.invoice.generateAndDownloadInvoice(intervention);
       toast.success('Facture téléchargée avec succès');
     } catch (error) {
       console.error('Error downloading invoice:', error);
