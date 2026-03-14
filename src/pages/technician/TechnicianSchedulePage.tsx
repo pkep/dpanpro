@@ -55,7 +55,7 @@ const TechnicianSchedulePage = () => {
         
         const start = startOfMonth(subMonths(currentMonth, 1));
         const end = endOfMonth(addMonths(currentMonth, 1));
-        const overridesData = await scheduleService.getOverrides(user.id, start, end);
+        const overridesData = await api.schedule.getOverrides(user.id, start, end);
         setOverrides(overridesData);
         
       } catch (err) {
