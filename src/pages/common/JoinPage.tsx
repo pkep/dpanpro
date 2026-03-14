@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -120,6 +120,11 @@ const JoinPage = () => {
   const [step3Data, setStep3Data] = useState<Step3Data | null>(null);
   const [kbisFile, setKbisFile] = useState<File | null>(null);
   const [kbisError, setKbisError] = useState<string | null>(null);
+
+  // Scroll to top on step change
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [currentStep]);
 
   const step1Form = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
