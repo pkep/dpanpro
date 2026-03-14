@@ -61,7 +61,7 @@ export function TechnicianScheduleModal({ technician, open, onOpenChange }: Tech
         }
 
         // Fetch overrides for the period
-        const overridesData = await scheduleService.getOverrides(technician.id, startDate, endDate);
+        const overridesData = await api.schedule.getOverrides(technician.id, startDate, endDate);
         setOverrides(overridesData);
 
         // Fetch interventions for the technician
