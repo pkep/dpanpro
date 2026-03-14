@@ -180,6 +180,11 @@ const JoinPage = () => {
   };
 
   const handleStep2Submit = (data: Step2Data) => {
+    if (!kbisFile) {
+      setKbisError('L\'extrait de Kbis est obligatoire');
+      return;
+    }
+    setKbisError(null);
     setStep2Data(data);
     setCurrentStep(3);
   };
