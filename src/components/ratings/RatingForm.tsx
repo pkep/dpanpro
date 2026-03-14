@@ -66,7 +66,7 @@ export function RatingForm({
       setSubmitting(true);
       
       if (existingRating) {
-        const updated = await ratingsService.updateRating(
+        const updated = await services.ratings.updateRating(
           existingRating.id,
           rating,
           comment
