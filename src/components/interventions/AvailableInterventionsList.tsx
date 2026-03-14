@@ -330,7 +330,7 @@ export function AvailableInterventionsList({
     
     setProcessingId(selectedIntervention.id);
     try {
-      const result = await dispatchService.goToIntervention(selectedIntervention.id, technicianId);
+      const result = await api.dispatch.goToIntervention(selectedIntervention.id, technicianId);
       if (result.success) {
         toast.success('En route !');
         navigate(`/technician/intervention/${selectedIntervention.id}`);
