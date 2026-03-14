@@ -230,7 +230,7 @@ export default function TechnicianInterventionPage() {
           (async () => {
             try {
               const { quotePDFService } = await import('@/services/components/quote-pdf/quote-pdf.service');
-              const fullIntervention = await interventionsService.getIntervention(intervention.id);
+              const fullIntervention = await api.interventions.getIntervention(intervention.id);
               const savedSignature = fullIntervention?.quoteSignatureData || null;
               const { base64, fileName } = await quotePDFService.generateQuoteBase64(fullIntervention, savedSignature);
               await supabase.functions.invoke('send-quote-email', {
