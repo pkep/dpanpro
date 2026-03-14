@@ -48,7 +48,7 @@ export function useDispatchAssignment(interventionId?: string): UseDispatchAssig
 
       if (interventionId) {
         // Get specific intervention assignment
-        const attempts = await dispatchService.getDispatchAttempts(interventionId);
+        const attempts = await services.dispatch.getDispatchAttempts(interventionId);
         assignment = attempts.find(
           a => a.technicianId === user.id && a.status === 'pending' && a.notifiedAt
         ) || null;
