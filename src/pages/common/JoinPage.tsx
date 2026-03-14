@@ -376,48 +376,14 @@ const JoinPage = () => {
                       />
                     </div>
 
-                    <FormField
-                      control={step1Form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Adresse *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="123 rue de la Paix" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                    <AddressAutocomplete
+                      address={step1Form.watch('address')}
+                      onAddressChange={(val) => step1Form.setValue('address', val, { shouldValidate: true })}
+                      postalCode={step1Form.watch('postalCode')}
+                      onPostalCodeChange={(val) => step1Form.setValue('postalCode', val, { shouldValidate: true })}
+                      city={step1Form.watch('city')}
+                      onCityChange={(val) => step1Form.setValue('city', val, { shouldValidate: true })}
                     />
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField
-                        control={step1Form.control}
-                        name="postalCode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Code postal *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="75001" maxLength={5} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={step1Form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Ville *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Paris" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <FormField
