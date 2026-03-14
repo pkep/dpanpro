@@ -102,7 +102,7 @@ type ExpertiseData = z.infer<typeof expertiseSchema>;
 type BankingData = z.infer<typeof bankingSchema>;
 
 const TechnicianProfilePage = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
