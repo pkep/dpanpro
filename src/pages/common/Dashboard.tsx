@@ -83,7 +83,7 @@ const Dashboard = () => {
     
     setIsCancelling(true);
     try {
-      const result = await cancellationService.cancelInterventionWithFees(selectedIntervention.id, reason, hasFees);
+      const result = await api.cancellation.cancelInterventionWithFees(selectedIntervention.id, reason, hasFees);
       if (result.success) {
         if (result.hasFees) {
           toast.success('Demande annulée', {
