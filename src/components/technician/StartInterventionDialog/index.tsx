@@ -440,7 +440,7 @@ export function StartInterventionDialog({
 
       // 4. Handle pending items (quote modifications)
       if (pendingItems.length > 0) {
-        const modification = await quoteModificationsService.createModification({
+        const modification = await services.quoteModifications.createModification({
           interventionId,
           createdBy: userId,
           items: pendingItems.map((item) => ({
