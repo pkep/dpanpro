@@ -1,0 +1,1 @@
+ALTER TABLE public.partner_applications ADD COLUMN kbis_url text;
