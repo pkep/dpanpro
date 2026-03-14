@@ -204,8 +204,8 @@ export default function InterventionDetails() {
     try {
       setUpdating(true);
       const oldStatus = intervention.status;
-      await interventionsService.updateStatus(intervention.id, newStatus);
-      await historyService.addHistoryEntry({
+      await api.interventions.updateStatus(intervention.id, newStatus);
+      await api.history.addHistoryEntry({
         interventionId: intervention.id,
         userId: user.id,
         action: 'status_changed',
