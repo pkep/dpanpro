@@ -1,11 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Loader2 } from 'lucide-react';
-import { questionnaireService } from '@/services/components/questionnaire/questionnaire.service';
 import { DomainTab } from './DomainTab';
 import { ResultatsManager } from './ResultatsManager';
 
