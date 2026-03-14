@@ -74,7 +74,7 @@ export function UsersTable({ onUserUpdated }: UsersTableProps) {
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
       setUpdatingId(userId);
-      await usersService.updateRole(userId, newRole);
+      await services.users.updateRole(userId, newRole);
       await fetchUsers();
       onUserUpdated?.();
       toast.success('Rôle mis à jour');
