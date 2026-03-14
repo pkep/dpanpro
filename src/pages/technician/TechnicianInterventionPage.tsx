@@ -214,8 +214,8 @@ export default function TechnicianInterventionPage() {
         // Everything already done — skip dialog and start directly
         setIsUpdatingStatus(true);
         try {
-          await interventionsService.updateStatus(intervention.id, 'in_progress', intervention.status);
-          await historyService.addHistoryEntry({
+          await api.interventions.updateStatus(intervention.id, 'in_progress', intervention.status);
+          await api.history.addHistoryEntry({
             interventionId: intervention.id,
             userId: user.id,
             action: 'status_changed',
