@@ -587,6 +587,56 @@ const JoinPage = () => {
                       )}
                     />
 
+                    <h3 className="mt-6 font-medium text-foreground">Extrait de Kbis</h3>
+
+                    <div className="space-y-2">
+                      <FormLabel>Extrait de Kbis *</FormLabel>
+                      {kbisFile ? (
+                        <div className="flex items-center gap-3 rounded-md border border-input bg-background p-3">
+                          <FileText className="h-5 w-5 text-primary shrink-0" />
+                          <span className="text-sm truncate flex-1">{kbisFile.name}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => setKbisFile(null)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-md border-2 border-dashed border-muted-foreground/30 p-6 transition-colors hover:border-primary/50 hover:bg-muted/50">
+                          <Upload className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Cliquez pour télécharger votre extrait de Kbis
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            PDF, JPG ou PNG (max 5 Mo)
+                          </span>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  setKbisError('Le fichier ne doit pas dépasser 5 Mo');
+                                  return;
+                                }
+                                setKbisFile(file);
+                                setKbisError(null);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                      {kbisError && (
+                        <p className="text-sm font-medium text-destructive">{kbisError}</p>
+                      )}
+                    </div>
+
                     <div className="flex justify-between pt-4">
                       <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>
                         <ChevronLeft className="mr-2 h-4 w-4" />
