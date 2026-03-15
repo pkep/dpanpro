@@ -5131,6 +5131,25 @@ components:
           type: string
           format: uri
 
+    TechnicianApplicationNotificationRequest:
+      type: object
+      required: [technicianId, action, email, firstName]
+      properties:
+        technicianId:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum: [accepted, rejected]
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        reason:
+          type: string
+          description: Motif du refus (requis si action = rejected)
+
     # ─── QUESTIONNAIRE ────────────────────────────────────────────────────────
     QuestionnaireDomain:
       type: object
