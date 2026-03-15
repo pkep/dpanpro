@@ -29,6 +29,8 @@ const EVENT_LABELS: Record<string, string> = {
   arrival_reminder: 'Rappel d\'arrivée',
   payout_notification: 'Versement technicien',
   client_cancellation: 'Annulation client',
+  technician_accepted: 'Acceptation technicien',
+  technician_rejected: 'Refus technicien',
 };
 
 const CHANNEL_CONFIG = {
