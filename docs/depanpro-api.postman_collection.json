@@ -1,0 +1,1286 @@
+{
+  "info": {
+    "name": "Depan.Pro Gateway API v2",
+    "_postman_id": "depanpro-v2-collection",
+    "description": "Collection complète des endpoints Depan.Pro Gateway — synchronisée avec docs/openapi-spec.yaml",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8080/api"},
+    {"key": "accessToken", "value": ""},
+    {"key": "refreshToken", "value": ""},
+    {"key": "userId", "value": ""},
+    {"key": "interventionId", "value": "20000000-0000-0000-0000-000000000001"},
+    {"key": "technicianId", "value": "00000000-0000-0000-0000-000000000010"},
+    {"key": "serviceId", "value": "10000000-0000-0000-0000-000000000001"},
+    {"key": "modificationId", "value": ""},
+    {"key": "disputeId", "value": ""},
+    {"key": "payoutId", "value": ""},
+    {"key": "overrideId", "value": ""},
+    {"key": "photoId", "value": ""},
+    {"key": "ratingId", "value": ""},
+    {"key": "applicationId", "value": ""},
+    {"key": "authorizationId", "value": ""},
+    {"key": "multiplierId", "value": ""}
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{accessToken}}"}]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (admin)",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) {",
+            "  pm.collectionVariables.set('accessToken', res.data.accessToken);",
+            "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+            "  pm.collectionVariables.set('userId', res.data.user.id);",
+            "}"
+          ]}}],
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST", "url": "{{baseUrl}}/auth/login",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"admin@depan-pro.com\",\n  \"password\": \"Password123!\"\n}"}
+          }
+        },
+        {
+          "name": "Login (client)",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) {",
+            "  pm.collectionVariables.set('accessToken', res.data.accessToken);",
+            "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+            "  pm.collectionVariables.set('userId', res.data.user.id);",
+            "}"
+          ]}}],
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST", "url": "{{baseUrl}}/auth/login",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"client1@example.com\",\n  \"password\": \"Password123!\"\n}"}
+          }
+        },
+        {
+          "name": "Login (technician)",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) {",
+            "  pm.collectionVariables.set('accessToken', res.data.accessToken);",
+            "  pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+            "  pm.collectionVariables.set('userId', res.data.user.id);",
+            "}"
+          ]}}],
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST", "url": "{{baseUrl}}/auth/login",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"tech1@depan-pro.com\",\n  \"password\": \"Password123!\"\n}"}
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST", "url": "{{baseUrl}}/auth/register",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"newuser@test.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"role\": \"client\"\n}"}
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST", "url": "{{baseUrl}}/auth/refresh",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"}
+          }
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/auth/verify-email?token=sample-token"
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Request Password Reset",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST", "url": "{{baseUrl}}/auth/password-reset/request",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"client1@example.com\"\n}"}
+          }
+        },
+        {
+          "name": "Confirm Password Reset",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST", "url": "{{baseUrl}}/auth/password-reset/confirm",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"token\": \"reset-token-here\",\n  \"newPassword\": \"NewPassword456!\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/users?page=0&size=20"
+          }
+        },
+        {
+          "name": "Get Me (profile)",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/users/me",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Alice Updated\",\n  \"phone\": \"+33600000099\"\n}"}
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/users/me/password",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"currentPassword\": \"Password123!\",\n  \"newPassword\": \"NewPassword456!\"\n}"}
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Update User by ID",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/users/{{userId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Name\"\n}"}
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/users/{{userId}}/role",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"role\": \"technician\"\n}"}
+          }
+        },
+        {
+          "name": "Toggle User Active",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/users/{{userId}}/active",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"active\": true\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Get User Roles",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/users/{{userId}}/roles"
+          }
+        },
+        {
+          "name": "Add Role to User",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/users/{{userId}}/roles",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"role\": \"manager\"\n}"}
+          }
+        },
+        {
+          "name": "Remove Role from User",
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/users/{{userId}}/roles/manager"
+          }
+        },
+        {
+          "name": "Get User Permissions",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/users/{{userId}}/permissions"
+          }
+        },
+        {
+          "name": "Update User Permissions",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/users/{{userId}}/permissions",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"canCreateManagers\": true\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Interventions",
+      "item": [
+        {
+          "name": "List All Interventions",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions?page=0&size=20"
+          }
+        },
+        {
+          "name": "List by Status (new)",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions?status=new"
+          }
+        },
+        {
+          "name": "My Interventions",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/my"
+          }
+        },
+        {
+          "name": "Unassigned Interventions",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/unassigned"
+          }
+        },
+        {
+          "name": "Track Intervention (Public)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/interventions/track/DPP-COMP001"
+          }
+        },
+        {
+          "name": "Get Intervention by ID",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}"
+          }
+        },
+        {
+          "name": "Create Intervention",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) pm.collectionVariables.set('interventionId', res.data.id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"category\": \"plumbing\",\n  \"priority\": \"urgent\",\n  \"title\": \"Fuite eau froide\",\n  \"description\": \"Fuite sous le lavabo\",\n  \"address\": \"10 rue de la Paix\",\n  \"city\": \"Paris\",\n  \"postalCode\": \"75001\",\n  \"latitude\": 48.87,\n  \"longitude\": 2.33\n}"}
+          }
+        },
+        {
+          "name": "Update Intervention",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/interventions/{{interventionId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"description\": \"Updated description\",\n  \"priority\": \"high\"\n}"}
+          }
+        },
+        {
+          "name": "Update Status",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/interventions/{{interventionId}}/status",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"status\": \"in_progress\"\n}"}
+          }
+        },
+        {
+          "name": "Toggle Active",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/interventions/{{interventionId}}/active",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"active\": false\n}"}
+          }
+        },
+        {
+          "name": "Assign Technician",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/assign",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"technicianId\": \"{{technicianId}}\"\n}"}
+          }
+        },
+        {
+          "name": "Cancel Intervention",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/cancel",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"reason\": \"Client a résolu le problème seul\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "History",
+      "item": [
+        {
+          "name": "Get Intervention History",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/history"
+          }
+        },
+        {
+          "name": "Add History Entry",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/history",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"action\": \"status_change\",\n  \"oldValue\": \"new\",\n  \"newValue\": \"assigned\",\n  \"comment\": \"Technicien assigné\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dispatch",
+      "item": [
+        {
+          "name": "Start Dispatch",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/dispatch/interventions/{{interventionId}}/start"
+          }
+        },
+        {
+          "name": "Manual Dispatch",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/dispatch/interventions/{{interventionId}}/manual",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"technicianId\": \"{{technicianId}}\"\n}"}
+          }
+        },
+        {
+          "name": "Accept Dispatch",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/dispatch/interventions/{{interventionId}}/accept"
+          }
+        },
+        {
+          "name": "Reject Dispatch",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/dispatch/interventions/{{interventionId}}/reject",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"reason\": \"Trop loin\"\n}"}
+          }
+        },
+        {
+          "name": "Go (En route)",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/dispatch/interventions/{{interventionId}}/go"
+          }
+        },
+        {
+          "name": "List Dispatch Attempts",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/dispatch/attempts?interventionId={{interventionId}}"
+          }
+        },
+        {
+          "name": "Current Attempt for Technician",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/dispatch/attempts/current?technicianId={{technicianId}}"
+          }
+        },
+        {
+          "name": "Pending Assignments for Technician",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/dispatch/technicians/{{technicianId}}/pending"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quotes",
+      "item": [
+        {
+          "name": "Get Quote Lines",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/quotes/lines"
+          }
+        },
+        {
+          "name": "Save Quote Lines",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/quotes/lines",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"lines\": [\n    {\n      \"label\": \"Déplacement\",\n      \"lineType\": \"displacement\",\n      \"basePrice\": 49,\n      \"multiplier\": 1\n    },\n    {\n      \"label\": \"Main d'œuvre\",\n      \"lineType\": \"labor\",\n      \"basePrice\": 80,\n      \"multiplier\": 1\n    }\n  ]\n}"}
+          }
+        },
+        {
+          "name": "Sign Quote",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/quotes/sign",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"signatureData\": \"data:image/png;base64,...\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quote Modifications",
+      "item": [
+        {
+          "name": "List Modifications",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/quote-modifications"
+          }
+        },
+        {
+          "name": "Create Modification",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) pm.collectionVariables.set('modificationId', res.data.id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/quote-modifications",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"items\": [\n    {\n      \"label\": \"Pièce supplémentaire\",\n      \"itemType\": \"part\",\n      \"unitPrice\": 25,\n      \"quantity\": 2,\n      \"totalPrice\": 50\n    }\n  ],\n  \"totalAdditionalAmount\": 50\n}"}
+          }
+        },
+        {
+          "name": "Pending Modification",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/quote-modifications/pending"
+          }
+        },
+        {
+          "name": "Get Modification by ID",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/quote-modifications/{{modificationId}}"
+          }
+        },
+        {
+          "name": "Get Modification by Token",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/quote-modifications/token/sample-token"
+          }
+        },
+        {
+          "name": "Approve Modification",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/quote-modifications/{{modificationId}}/approve",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"signatureData\": \"data:image/png;base64,...\"\n}"}
+          }
+        },
+        {
+          "name": "Decline Modification",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/quote-modifications/{{modificationId}}/decline",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"reason\": \"Trop cher\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Services",
+      "item": [
+        {
+          "name": "List Services (Public)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/services"
+          }
+        },
+        {
+          "name": "List Active Services Only",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/services?activeOnly=true"
+          }
+        },
+        {
+          "name": "Get Service by ID",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/services/{{serviceId}}"
+          }
+        },
+        {
+          "name": "Update Service (admin)",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/services/{{serviceId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Plomberie Pro\",\n  \"displacementPrice\": 55,\n  \"securityPrice\": 150\n}"}
+          }
+        },
+        {
+          "name": "Toggle Service Active (admin)",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/services/{{serviceId}}/active",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"active\": true\n}"}
+          }
+        },
+        {
+          "name": "Reorder Services (admin)",
+          "request": {
+            "method": "PUT", "url": "{{baseUrl}}/services/order",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"serviceId1\": \"{{serviceId}}\",\n  \"order1\": 1,\n  \"serviceId2\": \"10000000-0000-0000-0000-000000000002\",\n  \"order2\": 2\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Technicians",
+      "item": [
+        {
+          "name": "List Technicians",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians?page=0&size=20"
+          }
+        },
+        {
+          "name": "Technician Positions (Live Map)",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/positions"
+          }
+        },
+        {
+          "name": "Nearest Technicians (Public)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/technicians/nearest?latitude=48.87&longitude=2.33&limit=3"
+          }
+        },
+        {
+          "name": "Technician Profile",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/profile"
+          }
+        },
+        {
+          "name": "Update Location",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/technicians/{{technicianId}}/location",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"latitude\": 48.87,\n  \"longitude\": 2.33,\n  \"city\": \"Paris\",\n  \"department\": \"75\"\n}"}
+          }
+        },
+        {
+          "name": "Get Availability",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/availability"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Partners",
+      "item": [
+        {
+          "name": "Apply (Public)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "POST", "url": "{{baseUrl}}/partners/apply",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"partner@test.com\",\n  \"password\": \"Password123!\",\n  \"firstName\": \"Jean\",\n  \"lastName\": \"Dupont\",\n  \"phone\": \"+33600000001\",\n  \"companyName\": \"Dupont SARL\",\n  \"siret\": \"12345678901234\",\n  \"legalStatus\": \"SARL\",\n  \"skills\": [\"plumbing\", \"heating\"],\n  \"yearsExperience\": 5,\n  \"address\": \"10 rue de la Paix\",\n  \"city\": \"Paris\",\n  \"postalCode\": \"75001\",\n  \"birthDate\": \"1985-06-15\",\n  \"birthPlace\": \"Lyon\",\n  \"insuranceCompany\": \"AXA\",\n  \"insurancePolicyNumber\": \"POL-123456\",\n  \"insuranceExpiryDate\": \"2027-12-31\",\n  \"bankName\": \"BNP Paribas\",\n  \"iban\": \"FR7630006000011234567890189\",\n  \"bic\": \"BNPAFRPP\",\n  \"bankAccountHolder\": \"Jean Dupont\",\n  \"motivation\": \"Expérience de 5 ans en plomberie\"\n}"}
+          }
+        },
+        {
+          "name": "List Applications (admin)",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/partners/applications?status=pending&page=0&size=20"
+          }
+        },
+        {
+          "name": "Approve Application (admin)",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/partners/applications/{{applicationId}}/approve"
+          }
+        },
+        {
+          "name": "Reject Application (admin)",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/partners/applications/{{applicationId}}/reject",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"reason\": \"Documents manquants\"\n}"}
+          }
+        },
+        {
+          "name": "Get Partner Profile",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/partners/profile/{{userId}}"
+          }
+        },
+        {
+          "name": "Update Partner Profile",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/partners/profile/{{userId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"companyName\": \"Dupont & Fils SARL\",\n  \"skills\": [\"plumbing\", \"heating\", \"aircon\"]\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ratings",
+      "item": [
+        {
+          "name": "Get Rating",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/ratings"
+          }
+        },
+        {
+          "name": "Create Rating",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) pm.collectionVariables.set('ratingId', res.data.id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/ratings",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Excellent technicien !\"\n}"}
+          }
+        },
+        {
+          "name": "Update Rating",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/ratings/{{ratingId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Bon travail\"\n}"}
+          }
+        },
+        {
+          "name": "Technician Average Rating (Public)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/ratings/average"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "List Messages",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/messages"
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/messages",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"senderRole\": \"technician\",\n  \"message\": \"Bonjour, je serai là dans 20 minutes.\"\n}"}
+          }
+        },
+        {
+          "name": "Mark Messages as Read",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/messages/read"
+          }
+        },
+        {
+          "name": "Unread Count",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/messages/unread-count"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Photos",
+      "item": [
+        {
+          "name": "Upload Intervention Photos",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/photos",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "files", "type": "file", "src": ""}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Work Photos",
+      "item": [
+        {
+          "name": "List Work Photos",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/work-photos"
+          }
+        },
+        {
+          "name": "List Work Photos (before)",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/work-photos?photoType=before"
+          }
+        },
+        {
+          "name": "Upload Work Photos",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/work-photos",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "photoType", "value": "before", "type": "text"},
+                {"key": "description", "value": "État initial", "type": "text"},
+                {"key": "files", "type": "file", "src": ""}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Work Photos Count",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/work-photos/counts"
+          }
+        },
+        {
+          "name": "Delete Work Photo",
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/work-photos/{{photoId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Create Payment Intent",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/payment/intent",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"interventionId\": \"{{interventionId}}\",\n  \"amount\": 15000,\n  \"currency\": \"eur\"\n}"}
+          }
+        },
+        {
+          "name": "Create Authorization",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) pm.collectionVariables.set('authorizationId', res.data.id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/payment/authorization",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"interventionId\": \"{{interventionId}}\",\n  \"amount\": 15000,\n  \"currency\": \"eur\",\n  \"clientEmail\": \"client@test.com\"\n}"}
+          }
+        },
+        {
+          "name": "Get Authorization",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/payment/authorization/{{authorizationId}}"
+          }
+        },
+        {
+          "name": "Get Authorization by Intervention",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/payment/authorization/by-intervention/{{interventionId}}"
+          }
+        },
+        {
+          "name": "Update Authorization Status",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/payment/authorization/{{authorizationId}}/status",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"status\": \"authorized\"\n}"}
+          }
+        },
+        {
+          "name": "Link Authorization to Intervention",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/payment/authorization/{{authorizationId}}/link-intervention",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"interventionId\": \"{{interventionId}}\"\n}"}
+          }
+        },
+        {
+          "name": "Capture Payment",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/payment/authorization/{{authorizationId}}/capture",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"amount\": 12900\n}"}
+          }
+        },
+        {
+          "name": "Cancel Authorization",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/payment/authorization/{{authorizationId}}/cancel"
+          }
+        },
+        {
+          "name": "Increment Authorization",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/payment/authorization/{{authorizationId}}/increment",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"additionalAmount\": 50\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cancellation",
+      "item": [
+        {
+          "name": "Cancel with Fees",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/cancellation/cancel-with-fees",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"interventionId\": \"{{interventionId}}\",\n  \"reason\": \"Client absent\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedule",
+      "item": [
+        {
+          "name": "Get Schedule",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/schedule"
+          }
+        },
+        {
+          "name": "Initialize Default Schedule",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/technicians/{{technicianId}}/schedule"
+          }
+        },
+        {
+          "name": "Update Day",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/technicians/{{technicianId}}/schedule/days/1",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"isWorkingDay\": true,\n  \"startTime\": \"08:00:00\",\n  \"endTime\": \"18:00:00\"\n}"}
+          }
+        },
+        {
+          "name": "List Overrides",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/schedule/overrides?startDate=2026-03-01&endDate=2026-03-31"
+          }
+        },
+        {
+          "name": "Create Override",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) pm.collectionVariables.set('overrideId', res.data.id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/technicians/{{technicianId}}/schedule/overrides",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"date\": \"2026-03-20\",\n  \"isAvailable\": false,\n  \"reason\": \"Congé\"\n}"}
+          }
+        },
+        {
+          "name": "Delete Override",
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/technicians/{{technicianId}}/schedule/overrides/{{overrideId}}"
+          }
+        },
+        {
+          "name": "Check Availability at Datetime",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/schedule/available-at?datetime=2026-03-16T10:00:00Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Revenue",
+      "item": [
+        {
+          "name": "Revenue Stats",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/revenue/stats"
+          }
+        },
+        {
+          "name": "Weekly Stats",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/revenue/weekly"
+          }
+        },
+        {
+          "name": "Performance Stats",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/revenue/performance"
+          }
+        },
+        {
+          "name": "Commission Rate",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/revenue/commission-rate"
+          }
+        },
+        {
+          "name": "Payment Periods",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/revenue/payment-periods"
+          }
+        },
+        {
+          "name": "Payout History",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/technicians/{{technicianId}}/revenue/payout-history"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payouts",
+      "item": [
+        {
+          "name": "List Payouts",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/payouts?status=pending&page=0&size=20"
+          }
+        },
+        {
+          "name": "Create Payout",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) pm.collectionVariables.set('payoutId', res.data.id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/payouts",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"amount\": 500,\n  \"periodStart\": \"2026-03-01\",\n  \"periodEnd\": \"2026-03-15\"\n}"}
+          }
+        },
+        {
+          "name": "Update Payout Status",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/payouts/{{payoutId}}/status",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"status\": \"paid\",\n  \"paidAt\": \"2026-03-15T10:00:00Z\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Disputes",
+      "item": [
+        {
+          "name": "List Disputes",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/disputes?status=open&page=0&size=20"
+          }
+        },
+        {
+          "name": "Create Dispute",
+          "event": [{"listen": "test", "script": {"exec": [
+            "var res = pm.response.json();",
+            "if (res.success) pm.collectionVariables.set('disputeId', res.data.id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/disputes",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"interventionId\": \"{{interventionId}}\",\n  \"clientNotes\": \"Le travail n'a pas été effectué correctement\"\n}"}
+          }
+        },
+        {
+          "name": "Resolve Dispute",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/disputes/{{disputeId}}/resolve",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"adminNotes\": \"Remboursement partiel accordé\",\n  \"resolution\": \"partial_refund\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Statistics",
+      "item": [
+        {
+          "name": "Dashboard KPIs",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/statistics/dashboard"
+          }
+        },
+        {
+          "name": "Daily Stats",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/statistics/daily?days=30"
+          }
+        },
+        {
+          "name": "Category Stats",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/statistics/categories"
+          }
+        },
+        {
+          "name": "Status Stats",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/statistics/statuses"
+          }
+        },
+        {
+          "name": "Performance Stats",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/statistics/performance"
+          }
+        },
+        {
+          "name": "Technician Stats",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/statistics/technicians"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Performance",
+      "item": [
+        {
+          "name": "Technician Performance",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/performance/technicians?period=monthly"
+          }
+        },
+        {
+          "name": "Performance Trends",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/performance/trends?days=30"
+          }
+        },
+        {
+          "name": "Performance Zones (Heatmap)",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/performance/zones"
+          }
+        },
+        {
+          "name": "Top Technicians",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/performance/top-technicians?limit=7"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Configuration",
+      "item": [
+        {
+          "name": "Get Dispatch Algorithm Config",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/configuration/dispatch-algorithm"
+          }
+        },
+        {
+          "name": "Update Dispatch Algorithm Config",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/configuration/dispatch-algorithm",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"weightProximity\": 40,\n  \"weightSkills\": 25,\n  \"weightWorkload\": 20,\n  \"weightRating\": 15,\n  \"reason\": \"Ajustement des poids\"\n}"}
+          }
+        },
+        {
+          "name": "Configuration History",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/configuration/history?limit=50"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pricing",
+      "item": [
+        {
+          "name": "List Priority Multipliers (Public)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/pricing/priority-multipliers"
+          }
+        },
+        {
+          "name": "Update Multiplier (admin)",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/pricing/priority-multipliers/{{multiplierId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"multiplier\": 1.5\n}"}
+          }
+        },
+        {
+          "name": "Toggle Multiplier Active (admin)",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/pricing/priority-multipliers/{{multiplierId}}/active",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"active\": true\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "List All Settings",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/settings"
+          }
+        },
+        {
+          "name": "Get Setting by Key",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/settings/site_name"
+          }
+        },
+        {
+          "name": "Update Setting",
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/settings/site_name",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"value\": \"Depan.Pro v2\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Send Welcome Admin Email",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/notifications/welcome-admin",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"newadmin@depan-pro.com\",\n  \"firstName\": \"Admin\",\n  \"lastName\": \"Test\",\n  \"role\": \"admin\",\n  \"temporaryPassword\": \"TempPass123!\"\n}"}
+          }
+        },
+        {
+          "name": "Notify Technician Application",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/notifications/technician-application",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"technicianId\": \"{{technicianId}}\",\n  \"action\": \"accepted\",\n  \"email\": \"tech@test.com\",\n  \"firstName\": \"Jean\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Storage",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/storage/upload",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "bucket", "value": "intervention-photos", "type": "text"},
+                {"key": "folder", "value": "avatars", "type": "text"},
+                {"key": "file", "type": "file", "src": ""}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/storage/sample-file-key"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Geocoding",
+      "item": [
+        {
+          "name": "Forward Geocode",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/geocoding/forward?address=12+rue+de+la+Paix&city=Paris&postalCode=75002"
+          }
+        },
+        {
+          "name": "Reverse Geocode",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/geocoding/reverse?latitude=48.87&longitude=2.33"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Questionnaire",
+      "item": [
+        {
+          "name": "Get Questionnaire Tree (Public)",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/questionnaire/tree"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invoice",
+      "item": [
+        {
+          "name": "Download Invoice PDF",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/interventions/{{interventionId}}/invoice"
+          }
+        },
+        {
+          "name": "Send Invoice by Email",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/interventions/{{interventionId}}/invoice/send"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "{{baseUrl}}/health"
+          }
+        },
+        {
+          "name": "Actuator Health",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "http://localhost:8080/actuator/health"
+          }
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "http://localhost:8080/actuator/prometheus"
+          }
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "auth": {"type": "noauth"},
+            "method": "GET", "url": "http://localhost:8080/swagger-ui.html"
+          }
+        }
+      ]
+    }
+  ]
+}
