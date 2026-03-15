@@ -2880,6 +2880,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiResponse_Void'
 
+  /notifications/technician-application:
+    post:
+      tags: [Notifications]
+      summary: Notification d'acceptation ou de refus d'un technicien
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TechnicianApplicationNotificationRequest'
+      responses:
+        '200':
+          description: Notification envoyée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse_Void'
+
   # ==================== STORAGE ====================
   /storage/upload:
     post:
