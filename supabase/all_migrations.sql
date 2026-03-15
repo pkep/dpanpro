@@ -1958,7 +1958,17 @@ ALTER TABLE public.interventions
   ADD COLUMN IF NOT EXISTS prix_min numeric,
   ADD COLUMN IF NOT EXISTS prix_max numeric;
 -- ============================================================
+-- Migration: 2026-03-14 - Ajout colonne kbis_url sur partner_applications
+-- ============================================================
+ALTER TABLE public.partner_applications ADD COLUMN kbis_url text;
 
+-- ============================================================
+-- Migration: 2026-03-15 - Notification settings pour techniciens
+-- ============================================================
+INSERT INTO public.notification_settings (event_type, channel, is_enabled, applicable_roles, description)
+VALUES
+  ('technician_accepted', 'email', true, ARRAY['technician'], 'Email de félicitations lors de l''acceptation d''un technicien'),
+  ('technician_rejected', 'email', true, ARRAY['technician'], 'Email de refus de candidature technicien');
 
 -- ============================================================
 -- Migration: Colonnes remboursement sur disputes
@@ -1968,4 +1978,9 @@ ALTER TABLE public.disputes
   ADD COLUMN IF NOT EXISTS refund_amount numeric,
   ADD COLUMN IF NOT EXISTS refund_type text,
   ADD COLUMN IF NOT EXISTS refund_stripe_id text;
+-- ============================================================
+
+-- ============================================================
+-- FIN DU FICHIER
+-- Dernière mise à jour : 2026-03-15
 -- ============================================================
