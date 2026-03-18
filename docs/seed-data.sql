@@ -163,3 +163,25 @@ INSERT INTO public.user_roles (user_id, role) VALUES
   ('00000000-0000-0000-0000-000000000002', 'client'),
   ('00000000-0000-0000-0000-000000000003', 'technician')
 ON CONFLICT (user_id, role) DO NOTHING;
+
+-- ──────────────────────────────────────────────
+-- 9. UTILISATEUR MANAGER
+-- ──────────────────────────────────────────────
+INSERT INTO public.users (id, email, password_hash, first_name, last_name, phone, role, is_active, is_company, must_change_password)
+VALUES (
+  '00000000-0000-0000-0000-000000000004',
+  'manager@depanpro.fr',
+  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', -- Admin@2026!
+  'Lucas',
+  'Martin',
+  '+33 6 12 34 56 78',
+  'manager',
+  true,
+  false,
+  true
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.user_roles (user_id, role) VALUES
+  ('00000000-0000-0000-0000-000000000004', 'manager')
+ON CONFLICT (user_id, role) DO NOTHING;
