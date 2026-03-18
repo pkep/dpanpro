@@ -146,3 +146,20 @@ COMMIT;
 -- ✅ 1 commission globale (15%)
 -- ✅ 27 paramètres de notifications (12 event types × canaux)
 -- ============================================================
+
+-- ──────────────────────────────────────────────
+-- 8. UTILISATEURS SUPPLÉMENTAIRES
+-- ──────────────────────────────────────────────
+-- Mot de passe par défaut : Client@2026! (même hash bcrypt)
+
+INSERT INTO public.users (id, email, password_hash, first_name, last_name, phone, role, is_active, is_company, must_change_password)
+VALUES
+  ('00000000-0000-0000-0000-000000000002', 'pkarlenoch@gmail.com',      '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Pierre', 'Karlenoch', NULL, 'client',     true, false, true),
+  ('00000000-0000-0000-0000-000000000003', 'amgcheckertest@gmail.com',  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'AMG',    'Checker',   NULL, 'technician', true, false, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Rôles RBAC
+INSERT INTO public.user_roles (user_id, role) VALUES
+  ('00000000-0000-0000-0000-000000000002', 'client'),
+  ('00000000-0000-0000-0000-000000000003', 'technician')
+ON CONFLICT (user_id, role) DO NOTHING;
