@@ -48,7 +48,7 @@ serve(async (req) => {
     }
 
     // Create a checkout session with payment intent for authorization (manual capture)
-    const origin = req.headers.get("origin") || "https://id-preview--26413c4a-0f7f-4646-98a6-b3f5e8e66a14.lovable.app";
+    const origin = req.headers.get("origin") || Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

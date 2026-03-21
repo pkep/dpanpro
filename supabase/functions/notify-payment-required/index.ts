@@ -204,9 +204,7 @@ serve(async (req) => {
       clientEmail = clientEmail || fallback.email;
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const projectRef = supabaseUrl.match(/https:\/\/([^.]+)/)?.[1] || "";
-    const frontendUrl = `https://${projectRef.slice(0, 8)}-preview--${projectRef}.lovable.app`;
+    const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
     const trackingUrl = `${frontendUrl}/track/${trackingCode}`;
 
     console.log("[NOTIFY-PAYMENT] Tracking URL:", trackingUrl);
