@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     }
 
     // Build verification URL
-    const siteUrl = "https://dpanpro.lovable.app";
+    const siteUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
     const verificationUrl = `${siteUrl}/verify-email?token=${token}`;
 
     // Build email HTML

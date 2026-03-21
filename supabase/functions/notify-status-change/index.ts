@@ -217,7 +217,7 @@ serve(async (req) => {
     }
 
     const statusMessage = STATUS_MESSAGES[newStatus] || `Le statut de votre intervention a changé: ${STATUS_LABELS[newStatus] || newStatus}`;
-    const baseUrl = Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app";
+    const baseUrl = Deno.env.get("FRONTEND_URL") || Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app";
     const emoji = STATUS_EMOJI[newStatus] || "📋";
 
     const results: {

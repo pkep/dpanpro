@@ -69,9 +69,7 @@ serve(async (req) => {
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
     const trackingCode = intervention.tracking_code || "N/A";
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-    const projectRef = supabaseUrl.match(/https:\/\/([^.]+)/)?.[1] || "";
-    const frontendUrl = `https://${projectRef.slice(0, 8)}-preview--${projectRef}.lovable.app`;
+    const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
     const interventionUrl = `${frontendUrl}/technician/intervention/${interventionId}`;
 
     const results = { sms: false, email: false };

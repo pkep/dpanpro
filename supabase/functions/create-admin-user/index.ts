@@ -175,7 +175,7 @@ serve(async (req) => {
             lastName,
             role,
             tempPassword,
-            loginUrl: loginUrl || `${Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app"}/auth`,
+            loginUrl: loginUrl || `${Deno.env.get("FRONTEND_URL") || Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app"}/auth`,
           }),
         }
       );
