@@ -51,7 +51,7 @@ serve(async (req) => {
       throw new Error("Intervention not found");
     }
 
-    const baseUrl = Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app";
+    const baseUrl = Deno.env.get("FRONTEND_URL") || Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app";
     const approvalUrl = `${baseUrl}/quote-approval/${modification.notification_token}`;
 
     const emailHtml = buildQuoteModificationEmailHtml({
