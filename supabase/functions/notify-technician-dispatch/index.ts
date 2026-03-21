@@ -228,7 +228,7 @@ serve(async (req) => {
                   body: `${categoryLabel} à ${intervention.city} - ${intervention.address}`,
                   icon: '/icons/icon-192x192.png',
                   badge: '/icons/icon-72x72.png',
-                  click_action: 'https://dpanpro.lovable.app/technician',
+                  click_action: Deno.env.get("FRONTEND_URL") || 'https://dpanpro.lovable.app/technician',
                 },
                 data: {
                   type: 'dispatch_notification',

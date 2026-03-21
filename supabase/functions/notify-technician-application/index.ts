@@ -76,7 +76,7 @@ serve(async (req) => {
         throw new Error("Failed to create activation token");
       }
 
-      const siteUrl = "https://dpanpro.lovable.app";
+      const siteUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
       activationUrl = `${siteUrl}/verify-email?token=${token}`;
       console.log(`[NotifyTechnicianApplication] Activation URL generated for ${email}`);
     }
