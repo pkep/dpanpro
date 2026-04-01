@@ -450,6 +450,52 @@ export type Database = {
           },
         ]
       }
+      intervention_prestations: {
+        Row: {
+          created_at: string
+          id: string
+          intervention_id: string
+          prestation_id: string
+          variante_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intervention_id: string
+          prestation_id: string
+          variante_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intervention_id?: string
+          prestation_id?: string
+          variante_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_prestations_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervention_prestations_prestation_id_fkey"
+            columns: ["prestation_id"]
+            isOneToOne: false
+            referencedRelation: "prestation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervention_prestations_variante_id_fkey"
+            columns: ["variante_id"]
+            isOneToOne: false
+            referencedRelation: "prestation_variantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intervention_quotes: {
         Row: {
           base_price: number
@@ -597,6 +643,8 @@ export type Database = {
           is_active: boolean
           latitude: number | null
           longitude: number | null
+          other_prestation_label: string | null
+          other_prestation_price: number | null
           photos: string[] | null
           postal_code: string
           priority: string
@@ -636,6 +684,8 @@ export type Database = {
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
+          other_prestation_label?: string | null
+          other_prestation_price?: number | null
           photos?: string[] | null
           postal_code: string
           priority?: string
@@ -675,6 +725,8 @@ export type Database = {
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
+          other_prestation_label?: string | null
+          other_prestation_price?: number | null
           photos?: string[] | null
           postal_code?: string
           priority?: string
@@ -1041,6 +1093,107 @@ export type Database = {
             columns: ["intervention_id"]
             isOneToOne: false
             referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prestation: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          domain_code: string
+          emergency_available: boolean
+          guarantee: number | null
+          icon: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          max_duration: number | null
+          max_price: number | null
+          min_duration: number | null
+          min_price: number | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          domain_code: string
+          emergency_available?: boolean
+          guarantee?: number | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          max_duration?: number | null
+          max_price?: number | null
+          min_duration?: number | null
+          min_price?: number | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          domain_code?: string
+          emergency_available?: boolean
+          guarantee?: number | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          max_duration?: number | null
+          max_price?: number | null
+          min_duration?: number | null
+          min_price?: number | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prestation_variantes: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_active: boolean
+          max_price: number | null
+          min_price: number | null
+          name: string
+          prestation_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          max_price?: number | null
+          min_price?: number | null
+          name: string
+          prestation_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          max_price?: number | null
+          min_price?: number | null
+          name?: string
+          prestation_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prestation_variantes_prestation_id_fkey"
+            columns: ["prestation_id"]
+            isOneToOne: false
+            referencedRelation: "prestation"
             referencedColumns: ["id"]
           },
         ]
