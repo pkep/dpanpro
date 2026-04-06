@@ -1,0 +1,1 @@
+ALTER TABLE public.interventions ADD COLUMN invoice_pdf_url text DEFAULT NULL;
