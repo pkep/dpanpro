@@ -391,6 +391,35 @@ class QuotePDFService {
 
     return { base64, fileName };
   }
+
+  /**
+   * Generate quote PDF and archive it to storage.
+   * Path: {interventionId}/quotes/devis-{quoteNumber}.pdf
+   * Updates interventions.quote_pdf_url in DB.
+   */
+  async generateAndArchiveQuote(intervention: Intervention, signatureData?: string | null): Promise<string> {
+    const { storageService, buildInterventionPath } = await import('@/services/components/utils/storage/storage.service');
+
+    const data = await this.prepareQuotePDFData(intervention, signatureData);
+    const pdf = await this.generateQuotePDF(data);
+    const blob = pdf.output('blob');
+
+    const fileName = `devis-${data.quoteNumber}.pdf`;
+    const storagePath = buildInterventionPath(intervention.id, 'quotes', fileName);
+
+    const file = new File([blob], fileName, { type: 'application/pdf' });
+    const publicUrl = await storageService.uploadFileToPath('intervention-photos', storagePath, file);
+
+    // Update DB with URL
+    const { supabase } = await import('@/integrations/supabase/client');
+    await supabase
+      .from('interventions')
+      .update({ quote_pdf_url: publicUrl })
+      .eq('id', intervention.id);
+
+    console.log('[QuotePDF] Archived quote to:', publicUrl);
+    return publicUrl;
+  }
 }
 
 export const quotePDFService = new QuotePDFService();
