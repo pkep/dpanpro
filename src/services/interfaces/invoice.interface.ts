@@ -4,4 +4,5 @@ export interface IInvoiceService {
   generateAndDownloadInvoice(intervention: Intervention): Promise<void>;
   generateInvoiceBlob(intervention: Intervention): Promise<Blob>;
   sendInvoiceByEmail(intervention: Intervention): Promise<boolean>;
+  generateAndArchiveInvoice?(intervention: Intervention): Promise<string>;
 }

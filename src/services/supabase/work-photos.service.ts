@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { storageService } from '@/services/components/utils/storage/storage.service';
+import { storageService, buildInterventionPath, generateFileName } from '@/services/components/utils/storage/storage.service';
 import type { WorkPhoto, WorkPhotoType } from '@/services/interfaces/work-photos.interface';
 
 // Re-export types for backward compatibility
@@ -20,6 +20,7 @@ interface DbWorkPhoto {
 class WorkPhotosService {
   /**
    * Upload work photos for an intervention (before/after)
+   * New path: {interventionId}/work-photos/{before|after}/{fileName}
    * Uses Edge Function to bypass RLS restrictions
    */
   async uploadPhotos(
@@ -36,10 +37,11 @@ class WorkPhotosService {
       fileCount: files.length,
     });
 
-    // Step 1: Upload files to storage
+    // Step 1: Upload files to storage with new path structure
     let uploadedUrls: string[];
     try {
-      const folder = `work-photos/${interventionId}/${photoType}`;
+      // Build path: {interventionId}/work-photos/{before|after}/
+      const folder = buildInterventionPath(interventionId, 'work-photos', '', photoType).replace(/\/$/, '');
       console.log('[WorkPhotos] Step 1: Uploading to storage bucket:', BUCKET_NAME, 'folder:', folder);
       uploadedUrls = await storageService.uploadFiles(BUCKET_NAME, files, folder);
       console.log('[WorkPhotos] Step 1 SUCCESS: Files uploaded to storage', uploadedUrls);
@@ -81,7 +83,6 @@ class WorkPhotosService {
       console.log('[WorkPhotos] Step 2 SUCCESS: Records inserted via Edge Function', response?.data);
       return (response?.data as DbWorkPhoto[]).map(this.mapToWorkPhoto);
     } catch (dbError: any) {
-      // If it's already our formatted error, rethrow
       if (dbError.message?.startsWith('DATABASE_ERROR:') || dbError.message?.startsWith('STORAGE_ERROR:')) {
         throw dbError;
       }
@@ -143,7 +144,6 @@ class WorkPhotosService {
    * Delete a work photo
    */
   async deletePhoto(photoId: string): Promise<void> {
-    // Get the photo first to get the URL
     const { data: photo, error: fetchError } = await supabase
       .from('intervention_work_photos')
       .select('photo_url')
@@ -152,12 +152,10 @@ class WorkPhotosService {
 
     if (fetchError) throw fetchError;
 
-    // Delete from storage
     if (photo?.photo_url) {
       await storageService.deleteFile(BUCKET_NAME, photo.photo_url);
     }
 
-    // Delete from database
     const { error } = await supabase
       .from('intervention_work_photos')
       .delete()

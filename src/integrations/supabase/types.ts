@@ -640,6 +640,7 @@ export type Database = {
           final_price: number | null
           id: string
           intervention_duration_seconds: number | null
+          invoice_pdf_url: string | null
           is_active: boolean
           latitude: number | null
           longitude: number | null
@@ -681,6 +682,7 @@ export type Database = {
           final_price?: number | null
           id?: string
           intervention_duration_seconds?: number | null
+          invoice_pdf_url?: string | null
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
@@ -722,6 +724,7 @@ export type Database = {
           final_price?: number | null
           id?: string
           intervention_duration_seconds?: number | null
+          invoice_pdf_url?: string | null
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null

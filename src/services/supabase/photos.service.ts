@@ -4,12 +4,18 @@ import { storageService } from '@/services/components/utils/storage/storage.serv
 const BUCKET_NAME = 'intervention-photos';
 
 class PhotosService {
+  /**
+   * Upload a photo for an intervention.
+   * New path: {interventionId}/photos/{fileName}
+   */
   async uploadPhoto(interventionId: string, file: File): Promise<string> {
-    return storageService.uploadFile(BUCKET_NAME, file, interventionId);
+    const folder = `${interventionId}/photos`;
+    return storageService.uploadFile(BUCKET_NAME, file, folder);
   }
 
   async uploadPhotos(interventionId: string, files: File[]): Promise<string[]> {
-    return storageService.uploadFiles(BUCKET_NAME, files, interventionId);
+    const folder = `${interventionId}/photos`;
+    return storageService.uploadFiles(BUCKET_NAME, files, folder);
   }
 
   async deletePhoto(photoUrl: string): Promise<void> {

@@ -444,6 +444,34 @@ class InvoiceService {
       return false;
     }
   }
+
+  /**
+   * Generate invoice PDF and archive it to storage.
+   * Path: {interventionId}/invoices/facture-{invoiceNumber}.pdf
+   * Updates interventions.invoice_pdf_url in DB.
+   */
+  async generateAndArchiveInvoice(intervention: Intervention): Promise<string> {
+    const { storageService, buildInterventionPath } = await import('@/services/components/utils/storage/storage.service');
+
+    const data = await this.prepareInvoiceData(intervention);
+    const pdf = await this.generateInvoicePDF(data);
+    const blob = pdf.output('blob');
+
+    const fileName = `facture-${data.invoiceNumber}.pdf`;
+    const storagePath = buildInterventionPath(intervention.id, 'invoices', fileName);
+
+    const file = new File([blob], fileName, { type: 'application/pdf' });
+    const publicUrl = await storageService.uploadFileToPath('intervention-photos', storagePath, file);
+
+    // Update DB with URL
+    await supabase
+      .from('interventions')
+      .update({ invoice_pdf_url: publicUrl } as any)
+      .eq('id', intervention.id);
+
+    console.log('[Invoice] Archived invoice to:', publicUrl);
+    return publicUrl;
+  }
 }
 
 export const invoiceService = new InvoiceService();
