@@ -2016,7 +2016,7 @@ export type Database = {
           is_company?: boolean
           last_name: string
           must_change_password?: boolean | null
-          password_hash: string
+          password_hash?: string
           phone?: string | null
           role?: string
           siren?: string | null
