@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { buildDisputeRefundEmailHtml } from "../_shared/email-templates/dispute-refund.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -134,6 +135,11 @@ serve(async (req) => {
 
         if (resendApiKey && resendFromEmail && clientEmail) {
           const typeLabel = refundType === "full" ? "total" : "partiel";
+          const emailHtml = buildDisputeRefundEmailHtml({
+            interventionTitle: intervention.title || intervention.category,
+            refundType: typeLabel,
+            refundAmount: refundAmountEuros.toFixed(2),
+          });
           await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
@@ -141,13 +147,10 @@ serve(async (req) => {
               "Authorization": `Bearer ${resendApiKey}`,
             },
             body: JSON.stringify({
-              from: resendFromEmail,
+              from: `Depan.Pro <${resendFromEmail}>`,
               to: [clientEmail],
-              subject: `💰 Remboursement ${typeLabel} - ${refundAmountEuros.toFixed(2)} €`,
-              html: `<p>Bonjour,</p>
-                <p>Suite à votre litige concernant l'intervention <strong>${intervention.title || intervention.category}</strong>, nous avons procédé à un remboursement ${typeLabel} de <strong>${refundAmountEuros.toFixed(2)} €</strong>.</p>
-                <p>Ce montant sera crédité sur votre compte sous 5 à 10 jours ouvrés.</p>
-                <p>Cordialement,<br/>L'équipe Depan.Pro</p>`,
+              subject: `Depan.Pro : 💰 Remboursement ${typeLabel} - ${refundAmountEuros.toFixed(2)} €`,
+              html: emailHtml,
             }),
           });
           console.log("[REFUND] Client notification email sent");

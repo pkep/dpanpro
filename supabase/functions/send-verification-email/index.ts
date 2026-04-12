@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           from: fromEmail,
           to: [email],
-          subject: "Confirmez votre email - Depan.Pro",
+          subject: "Depan.Pro : Confirmez votre email",
           html,
         }),
       });

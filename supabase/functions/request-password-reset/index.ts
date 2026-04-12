@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildPasswordResetEmailHtml } from "../_shared/email-templates/password-reset.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -103,44 +104,10 @@ serve(async (req) => {
         from: `Depan.Pro <${resendFromEmail}>`,
         to: [user.email],
         subject: 'Depan.Pro : Réinitialisation de votre mot de passe',
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
-            <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; padding: 40px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-              <div style="text-align: center; margin-bottom: 24px;">
-                <img src="https://dpanpro.lovable.app/lovable-uploads/d21193e1-62b9-49fe-854f-eb8275099db9.png" alt="Depan.Pro" style="height: 50px;" />
-              </div>
-              
-              <h1 style="color: #333; margin-bottom: 24px; font-size: 24px;">Réinitialisation de mot de passe</h1>
-              
-              <p style="color: #666; font-size: 16px; line-height: 1.6;">Bonjour ${user.first_name || ''},</p>
-              
-              <p style="color: #666; font-size: 16px; line-height: 1.6;">
-                Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :
-              </p>
-              
-              <div style="text-align: center; margin: 32px 0;">
-                <a href="${fullResetUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
-                  Réinitialiser mon mot de passe
-                </a>
-              </div>
-              
-              <p style="color: #666; font-size: 14px; line-height: 1.6;">
-                Ce lien expire dans <strong>10 minutes</strong>. Si vous n'avez pas demandé cette réinitialisation, ignorez simplement cet email.
-              </p>
-              
-              <p style="color: #999; font-size: 12px; margin-top: 32px; padding-top: 16px; border-top: 1px solid #eee;">
-                Cet email a été envoyé automatiquement par Depan.Pro. Si vous n'avez pas fait cette demande, vous pouvez ignorer ce message.
-              </p>
-            </div>
-          </body>
-          </html>
-        `,
+        html: buildPasswordResetEmailHtml({
+          firstName: user.first_name || '',
+          resetUrl: fullResetUrl,
+        }),
       });
 
       if (emailError) {

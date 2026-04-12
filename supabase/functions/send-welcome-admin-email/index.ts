@@ -38,9 +38,9 @@ serve(async (req) => {
     const roleLabel = role === "admin" ? "Administrateur" : "Manager";
 
     const emailResponse = await resend.emails.send({
-      from: `Dépan.Pro <${fromEmail}>`,
+      from: `Depan.Pro <${fromEmail}>`,
       to: [email],
-      subject: `Bienvenue sur Dépan.Pro - Votre compte ${roleLabel}`,
+      subject: `Depan.Pro : Bienvenue - Votre compte ${roleLabel}`,
       html: buildWelcomeAdminEmailHtml({ firstName, email, roleLabel, tempPassword, loginUrl }),
     });
 
