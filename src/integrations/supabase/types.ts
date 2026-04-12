@@ -844,30 +844,30 @@ export type Database = {
       }
       partner_applications: {
         Row: {
-          address: string
-          bank_account_holder: string
-          bank_name: string
-          bic: string
-          birth_date: string
-          birth_place: string
-          city: string
+          address: string | null
+          bank_account_holder: string | null
+          bank_name: string | null
+          bic: string | null
+          birth_date: string | null
+          birth_place: string | null
+          city: string | null
           company_name: string
           created_at: string
           current_city: string | null
           data_accuracy_confirmed: boolean
           department: string | null
           has_decennial_insurance: boolean
-          iban: string
+          iban: string | null
           id: string
-          insurance_company: string
-          insurance_expiry_date: string
-          insurance_policy_number: string
+          insurance_company: string | null
+          insurance_expiry_date: string | null
+          insurance_policy_number: string | null
           kbis_url: string | null
           latitude: number | null
-          legal_status: string
+          legal_status: string | null
           longitude: number | null
-          motivation: string
-          postal_code: string
+          postal_code: string | null
+          presentation: string | null
           siret: string
           skills: string[]
           status: string
@@ -878,30 +878,30 @@ export type Database = {
           years_experience: number
         }
         Insert: {
-          address: string
-          bank_account_holder: string
-          bank_name: string
-          bic: string
-          birth_date: string
-          birth_place: string
-          city: string
+          address?: string | null
+          bank_account_holder?: string | null
+          bank_name?: string | null
+          bic?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          city?: string | null
           company_name: string
           created_at?: string
           current_city?: string | null
           data_accuracy_confirmed?: boolean
           department?: string | null
           has_decennial_insurance?: boolean
-          iban: string
+          iban?: string | null
           id?: string
-          insurance_company: string
-          insurance_expiry_date: string
-          insurance_policy_number: string
+          insurance_company?: string | null
+          insurance_expiry_date?: string | null
+          insurance_policy_number?: string | null
           kbis_url?: string | null
           latitude?: number | null
-          legal_status: string
+          legal_status?: string | null
           longitude?: number | null
-          motivation: string
-          postal_code: string
+          postal_code?: string | null
+          presentation?: string | null
           siret: string
           skills: string[]
           status?: string
@@ -912,30 +912,30 @@ export type Database = {
           years_experience: number
         }
         Update: {
-          address?: string
-          bank_account_holder?: string
-          bank_name?: string
-          bic?: string
-          birth_date?: string
-          birth_place?: string
-          city?: string
+          address?: string | null
+          bank_account_holder?: string | null
+          bank_name?: string | null
+          bic?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          city?: string | null
           company_name?: string
           created_at?: string
           current_city?: string | null
           data_accuracy_confirmed?: boolean
           department?: string | null
           has_decennial_insurance?: boolean
-          iban?: string
+          iban?: string | null
           id?: string
-          insurance_company?: string
-          insurance_expiry_date?: string
-          insurance_policy_number?: string
+          insurance_company?: string | null
+          insurance_expiry_date?: string | null
+          insurance_policy_number?: string | null
           kbis_url?: string | null
           latitude?: number | null
-          legal_status?: string
+          legal_status?: string | null
           longitude?: number | null
-          motivation?: string
-          postal_code?: string
+          postal_code?: string | null
+          presentation?: string | null
           siret?: string
           skills?: string[]
           status?: string

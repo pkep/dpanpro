@@ -60,7 +60,7 @@ class PartnersService {
         kbis_url: data.kbisUrl || null,
         skills: data.skills,
         years_experience: data.yearsExperience,
-        motivation: data.motivation,
+        presentation: data.motivation,
         bank_account_holder: data.bankAccountHolder,
         bank_name: data.bankName,
         iban: data.iban,
@@ -147,7 +147,7 @@ class PartnersService {
         hasDecennialInsurance: appData.has_decennial_insurance,
         skills: appData.skills,
         yearsExperience: appData.years_experience,
-        motivation: appData.motivation,
+        motivation: appData.presentation,
         bankAccountHolder: appData.bank_account_holder,
         bankName: appData.bank_name,
         iban: appData.iban,
@@ -218,7 +218,7 @@ class PartnersService {
     if (data.hasDecennialInsurance !== undefined) appUpdates.has_decennial_insurance = data.hasDecennialInsurance;
     if (data.skills) appUpdates.skills = data.skills;
     if (data.yearsExperience !== undefined) appUpdates.years_experience = data.yearsExperience;
-    if (data.motivation) appUpdates.motivation = data.motivation;
+    if (data.motivation) appUpdates.presentation = data.motivation;
     if (data.bankAccountHolder) appUpdates.bank_account_holder = data.bankAccountHolder;
     if (data.bankName) appUpdates.bank_name = data.bankName;
     if (data.iban) appUpdates.iban = data.iban;
