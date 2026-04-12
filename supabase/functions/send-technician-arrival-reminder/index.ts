@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: resendFromEmail,
+            from: `Depan.Pro <${resendFromEmail}>`,
             to: [technician.email],
             subject: emailData.subject,
             html: emailData.html,

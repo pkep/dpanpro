@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: fromEmail,
+          from: `Depan.Pro <${fromEmail}>`,
           to: [email],
           subject: "Depan.Pro : Confirmez votre email",
           html,
