@@ -79,7 +79,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: `Depan.Pro <${fromEmail}>`,
       to: [emailToSend],
-      subject: `Votre devis d'intervention - ${intervention.tracking_code || interventionId.slice(0, 8)}`,
+      subject: `Depan.Pro : Votre devis d'intervention - ${intervention.tracking_code || interventionId.slice(0, 8)}`,
       html: buildQuoteEmailHtml({
         trackingCode: intervention.tracking_code,
         interventionId,

@@ -106,7 +106,7 @@ serve(async (req) => {
             body: JSON.stringify({
               from: `Depan.Pro <${fromEmail}>`,
               to: [technician.email],
-              subject: `✅ Paiement autorisé - ${categoryLabel} à ${intervention.city}`,
+              subject: `Depan.Pro : ✅ Paiement autorisé - ${categoryLabel} à ${intervention.city}`,
               html: emailHtml,
             }),
           });

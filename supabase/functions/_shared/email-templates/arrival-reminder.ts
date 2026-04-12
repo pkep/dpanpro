@@ -30,7 +30,7 @@ export function buildArrivalReminderEmail(data: ArrivalReminderTemplateData): { 
     `;
 
     return {
-      subject: `Rappel - Mi-parcours: ${interventionTitle}`,
+      subject: `Depan.Pro : Rappel mi-parcours - ${interventionTitle}`,
       html: wrapInBaseLayout({
         headerTitle: `⏱️ Rappel mi-parcours`,
         headerSubtitle: interventionTitle,
@@ -50,7 +50,7 @@ export function buildArrivalReminderEmail(data: ArrivalReminderTemplateData): { 
   `;
 
   return {
-    subject: `⚠️ Urgent - 5 min restantes: ${interventionTitle}`,
+    subject: `Depan.Pro : ⚠️ Urgent - 5 min restantes - ${interventionTitle}`,
     html: wrapInBaseLayout({
       headerTitle: "⚠️ Urgent - 5 min restantes",
       headerSubtitle: interventionTitle,
