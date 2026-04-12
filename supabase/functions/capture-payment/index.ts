@@ -3,6 +3,7 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildPaymentCapturedSms } from "../_shared/sms/templates.ts";
+import { buildPaymentCapturedEmailHtml } from "../_shared/email-templates/payment-captured.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -217,13 +218,14 @@ serve(async (req) => {
                 "Authorization": `Bearer ${resendApiKey}`,
               },
               body: JSON.stringify({
-                from: resendFromEmail,
+                from: `Depan.Pro <${resendFromEmail}>`,
                 to: [techData.email],
-                subject: `Depan.pro : ✅ Paiement confirmé - ${capturedAmountEuros} €`,
-                html: `<p>Bonjour ${techData.first_name || ""},</p>
-                  <p>Le paiement de <strong>${capturedAmountEuros} €</strong> pour l'intervention <strong>${interventionData.title || interventionData.category}</strong> a été débité avec succès.</p>
-                  <p>Merci pour votre travail !</p>
-                  <p>L'équipe Depan.Pro</p>`,
+                subject: `Depan.Pro : ✅ Paiement confirmé - ${capturedAmountEuros} €`,
+                html: buildPaymentCapturedEmailHtml({
+                  firstName: techData.first_name || "",
+                  amount: capturedAmountEuros,
+                  interventionTitle: interventionData.title || interventionData.category,
+                }),
               }),
             });
             console.log("Technician payment email sent");
