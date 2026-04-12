@@ -17,7 +17,7 @@ export function buildPaymentAuthorizedTechEmailHtml(data: PaymentAuthorizedTechD
 
   const bodyContent = `
     <div style="background: #d1fae5; border: 1px solid #10b981; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-      <h2 style="color: #065f46; margin: 0 0 10px 0;">✅ Autorisation de paiement confirmée</h2>
+      <h2 style="color: #065f46; margin: 0 0 10px 0;">Depan.pro : ✅ Autorisation de paiement confirmée</h2>
       <p style="margin: 0; color: #047857;">Le client a autorisé le paiement pour cette intervention. Vous pouvez désormais reprendre et poursuivre l'intervention.</p>
     </div>
     

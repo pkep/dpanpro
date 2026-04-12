@@ -219,7 +219,7 @@ serve(async (req) => {
               body: JSON.stringify({
                 from: resendFromEmail,
                 to: [techData.email],
-                subject: `✅ Paiement confirmé - ${capturedAmountEuros} €`,
+                subject: `Depan.pro : ✅ Paiement confirmé - ${capturedAmountEuros} €`,
                 html: `<p>Bonjour ${techData.first_name || ""},</p>
                   <p>Le paiement de <strong>${capturedAmountEuros} €</strong> pour l'intervention <strong>${interventionData.title || interventionData.category}</strong> a été débité avec succès.</p>
                   <p>Merci pour votre travail !</p>
