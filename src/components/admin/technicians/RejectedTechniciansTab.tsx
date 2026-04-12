@@ -384,19 +384,6 @@ export function RejectedTechniciansTab() {
                   </span>
                   <p className="font-medium">{selectedApp.address}, {selectedApp.postal_code} {selectedApp.city}</p>
                 </div>
-                {selectedApp.kbis_url && (
-                  <div className="mt-2">
-                    <a
-                      href={selectedApp.kbis_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                    >
-                      <FileText className="h-4 w-4" />
-                      Voir l'extrait Kbis
-                    </a>
-                  </div>
-                )}
               </div>
 
               <Separator />
@@ -411,10 +398,12 @@ export function RejectedTechniciansTab() {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground">{selectedApp.years_experience} ans d'expérience</p>
+                {selectedApp.presentation && (
                 <div className="mt-2">
-                  <span className="text-sm text-muted-foreground">Motivation :</span>
-                  <p className="text-sm mt-1 bg-muted/50 p-2 rounded">{selectedApp.motivation}</p>
+                  <span className="text-sm text-muted-foreground">Présentation :</span>
+                  <p className="text-sm mt-1 bg-muted/50 p-2 rounded">{selectedApp.presentation}</p>
                 </div>
+                )}
               </div>
 
               <Separator />
