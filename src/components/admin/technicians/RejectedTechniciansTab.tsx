@@ -37,6 +37,7 @@ interface RejectedApplication {
   bank_name: string | null;
   iban: string | null;
   bic: string | null;
+  kbis_url: string | null;
   user: {
     first_name: string;
     last_name: string;
@@ -118,7 +119,7 @@ export function RejectedTechniciansTab() {
           years_experience, created_at, updated_at, address, postal_code, city,
           birth_date, birth_place, insurance_company, insurance_policy_number,
           insurance_expiry_date, has_decennial_insurance, vat_number, presentation,
-          bank_account_holder, bank_name, iban, bic
+          bank_account_holder, bank_name, iban, bic, kbis_url
         `)
         .eq('status', 'rejected')
         .order('updated_at', { ascending: false })
@@ -384,6 +385,19 @@ export function RejectedTechniciansTab() {
                   </span>
                   <p className="font-medium">{selectedApp.address}, {selectedApp.postal_code} {selectedApp.city}</p>
                 </div>
+                {selectedApp.kbis_url && (
+                  <div className="mt-2">
+                    <a
+                      href={selectedApp.kbis_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                    >
+                      <FileText className="h-4 w-4" />
+                      Voir l'extrait Kbis
+                    </a>
+                  </div>
+                )}
               </div>
 
               <Separator />
