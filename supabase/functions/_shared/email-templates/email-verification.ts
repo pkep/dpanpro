@@ -14,7 +14,7 @@ export function buildEmailVerificationHtml(data: EmailVerificationTemplateData):
 
   const bodyContent = `
     <h2 style="margin: 0 0 16px; color: #1f2937; font-size: 20px; font-weight: 600;">
-      Bienvenue ${firstName} !
+      Bienvenue !
     </h2>
     
     <p style="margin: 0 0 24px; color: #374151; font-size: 16px; line-height: 1.6;">
