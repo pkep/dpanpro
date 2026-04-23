@@ -1,21 +1,21 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Search, MapPin } from 'lucide-react';
-import { Header } from '@/components/home/Header';
-import { Footer } from '@/components/home/Footer';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, MapPin } from "lucide-react";
+import { Header } from "@/components/home/Header";
+import { Footer } from "@/components/home/Footer";
 
 const TrackingSearchPage = () => {
-  const [trackingCode, setTrackingCode] = useState('');
+  const [trackingCode, setTrackingCode] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const code = trackingCode.trim();
     if (code) {
-      navigate(`/track/${code}`);
+      navigate(`/mon-suivi?code=${code}`);
     }
   };
 
