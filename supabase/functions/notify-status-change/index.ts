@@ -9,10 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-);
+const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 
 interface NotifyStatusChangeRequest {
   interventionId: string;
@@ -33,10 +30,10 @@ const STATUS_MESSAGES: Record<string, string> = {
 async function sendEmail(
   to: string,
   subject: string,
-  htmlContent: string
+  htmlContent: string,
 ): Promise<{ ok: boolean; status?: number; error?: string }> {
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
-  
+
   if (!resendApiKey) {
     console.log("RESEND_API_KEY not configured");
     return { ok: false, error: "RESEND_API_KEY not configured" };
@@ -44,13 +41,13 @@ async function sendEmail(
 
   try {
     const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
-    
+
     console.log("Sending email to:", to, "from:", fromEmail);
-    
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -89,10 +86,10 @@ async function sendPushNotification(
   fcmToken: string,
   title: string,
   body: string,
-  data?: Record<string, string>
+  data?: Record<string, string>,
 ): Promise<boolean> {
   const firebaseServerKey = Deno.env.get("FIREBASE_SERVER_KEY");
-  
+
   if (!firebaseServerKey) {
     console.log("FIREBASE_SERVER_KEY not configured - skipping push notification");
     return false;
@@ -102,7 +99,7 @@ async function sendPushNotification(
     const response = await fetch("https://fcm.googleapis.com/fcm/send", {
       method: "POST",
       headers: {
-        "Authorization": `key=${firebaseServerKey}`,
+        Authorization: `key=${firebaseServerKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -145,31 +142,31 @@ async function sendPushNotification(
 // Get client FCM tokens from database
 async function getClientFcmTokens(clientId: string | null, clientEmail: string | null): Promise<string[]> {
   const tokens: string[] = [];
-  
+
   if (clientId) {
     const { data: tokensByUserId } = await supabase
-      .from('push_subscriptions')
-      .select('fcm_token')
-      .eq('user_id', clientId)
-      .eq('is_active', true);
-    
+      .from("push_subscriptions")
+      .select("fcm_token")
+      .eq("user_id", clientId)
+      .eq("is_active", true);
+
     if (tokensByUserId) {
-      tokens.push(...tokensByUserId.map(t => t.fcm_token));
+      tokens.push(...tokensByUserId.map((t) => t.fcm_token));
     }
   }
-  
+
   if (clientEmail) {
     const { data: tokensByEmail } = await supabase
-      .from('push_subscriptions')
-      .select('fcm_token')
-      .eq('email', clientEmail)
-      .eq('is_active', true);
-    
+      .from("push_subscriptions")
+      .select("fcm_token")
+      .eq("email", clientEmail)
+      .eq("is_active", true);
+
     if (tokensByEmail) {
-      tokens.push(...tokensByEmail.map(t => t.fcm_token));
+      tokens.push(...tokensByEmail.map((t) => t.fcm_token));
     }
   }
-  
+
   return [...new Set(tokens)];
 }
 
@@ -181,16 +178,18 @@ serve(async (req) => {
   try {
     const { interventionId, newStatus, oldStatus }: NotifyStatusChangeRequest = await req.json();
 
-    console.log(`Status change notification: ${oldStatus || 'unknown'} -> ${newStatus} for intervention ${interventionId}`);
+    console.log(
+      `Status change notification: ${oldStatus || "unknown"} -> ${newStatus} for intervention ${interventionId}`,
+    );
 
-    const notifiableStatuses = ['assigned', 'on_route', 'arrived', 'in_progress', 'completed', 'cancelled'];
-    
+    const notifiableStatuses = ["assigned", "on_route", "arrived", "in_progress", "completed", "cancelled"];
+
     if (!notifiableStatuses.includes(newStatus)) {
       console.log(`Status '${newStatus}' is not notifiable, skipping`);
-      return new Response(
-        JSON.stringify({ success: true, message: `No notification for status: ${newStatus}` }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true, message: `No notification for status: ${newStatus}` }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { data: intervention, error: intError } = await supabase
@@ -210,13 +209,15 @@ serve(async (req) => {
 
     if (!clientEmail && !clientPhone) {
       console.log("No client contact info available");
-      return new Response(
-        JSON.stringify({ success: true, message: "No client contact info" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true, message: "No client contact info" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const statusMessage = STATUS_MESSAGES[newStatus] || `Le statut de votre intervention a changé: ${STATUS_LABELS[newStatus] || newStatus}`;
+    const statusMessage =
+      STATUS_MESSAGES[newStatus] ||
+      `Le statut de votre intervention a changé: ${STATUS_LABELS[newStatus] || newStatus}`;
     const baseUrl = Deno.env.get("FRONTEND_URL") || Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app";
     const emoji = STATUS_EMOJI[newStatus] || "📋";
 
@@ -241,8 +242,8 @@ serve(async (req) => {
 
     // Send SMS if available
     if (clientPhone) {
-      const trackingUrl = intervention.tracking_code 
-        ? `${baseUrl}/track/${intervention.tracking_code}`
+      const trackingUrl = intervention.tracking_code
+        ? `${baseUrl}/mon-suivi?code=${intervention.tracking_code}`
         : baseUrl;
 
       const smsMessage = buildStatusChangeSms({
@@ -260,27 +261,25 @@ serve(async (req) => {
     // Send push notification if tokens available
     try {
       const fcmTokens = await getClientFcmTokens(clientId, clientEmail);
-      
+
       if (fcmTokens.length > 0) {
         console.log(`Found ${fcmTokens.length} FCM tokens for client`);
-        
+
         const pushTitle = `${emoji} ${STATUS_LABELS[newStatus]}`;
         const pushBody = statusMessage;
         const pushData = {
-          type: 'status_change',
+          type: "status_change",
           interventionId,
           status: newStatus,
-          trackingCode: intervention.tracking_code || '',
-          url: intervention.tracking_code 
-            ? `/track/${intervention.tracking_code}` 
-            : `/intervention/${interventionId}`,
+          trackingCode: intervention.tracking_code || "",
+          url: intervention.tracking_code ? `/track/${intervention.tracking_code}` : `/intervention/${interventionId}`,
         };
 
         const pushResults = await Promise.all(
-          fcmTokens.map(token => sendPushNotification(token, pushTitle, pushBody, pushData))
+          fcmTokens.map((token) => sendPushNotification(token, pushTitle, pushBody, pushData)),
         );
-        
-        results.push = pushResults.some(r => r === true);
+
+        results.push = pushResults.some((r) => r === true);
         results.push_reason = results.push ? undefined : "FCM send failed";
       } else {
         console.log("No FCM tokens found for client");
@@ -295,16 +294,16 @@ serve(async (req) => {
 
     console.log("Notification results:", results);
 
-    return new Response(
-      JSON.stringify({ success: true, results }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, results }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error in notify-status-change:", errorMessage);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
