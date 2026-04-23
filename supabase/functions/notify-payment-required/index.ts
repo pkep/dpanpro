@@ -9,10 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-);
+const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
 
 interface NotifyPaymentRequiredRequest {
   interventionId: string;
@@ -23,11 +20,7 @@ async function getUserContact(userId: string | null): Promise<{ phone: string | 
   if (!userId) return { phone: null, email: null };
 
   try {
-    const { data, error } = await supabase
-      .from("users")
-      .select("phone, email")
-      .eq("id", userId)
-      .maybeSingle();
+    const { data, error } = await supabase.from("users").select("phone, email").eq("id", userId).maybeSingle();
 
     if (error) {
       console.error("[NOTIFY-PAYMENT] Failed to fetch user contact:", error);
@@ -44,11 +37,7 @@ async function getUserContact(userId: string | null): Promise<{ phone: string | 
   }
 }
 
-async function sendEmail(
-  to: string,
-  subject: string,
-  htmlContent: string
-): Promise<boolean> {
+async function sendEmail(to: string, subject: string, htmlContent: string): Promise<boolean> {
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
   if (!resendApiKey) {
@@ -64,7 +53,7 @@ async function sendEmail(
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -89,12 +78,7 @@ async function sendEmail(
   }
 }
 
-async function sendPushNotification(
-  fcmToken: string,
-  title: string,
-  body: string,
-  url: string
-): Promise<boolean> {
+async function sendPushNotification(fcmToken: string, title: string, body: string, url: string): Promise<boolean> {
   const firebaseServerKey = Deno.env.get("FIREBASE_SERVER_KEY");
 
   if (!firebaseServerKey) {
@@ -106,7 +90,7 @@ async function sendPushNotification(
     const response = await fetch("https://fcm.googleapis.com/fcm/send", {
       method: "POST",
       headers: {
-        "Authorization": `key=${firebaseServerKey}`,
+        Authorization: `key=${firebaseServerKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -205,7 +189,7 @@ serve(async (req) => {
     }
 
     const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
-    const trackingUrl = `${frontendUrl}/track/${trackingCode}`;
+    const trackingUrl = `${frontendUrl}/mon-suivi?code=${trackingCode}`;
 
     console.log("[NOTIFY-PAYMENT] Tracking URL:", trackingUrl);
 
@@ -244,16 +228,16 @@ serve(async (req) => {
 
     console.log("[NOTIFY-PAYMENT] Notification results:", results);
 
-    return new Response(
-      JSON.stringify({ success: true, results }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, results }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("[NOTIFY-PAYMENT] Error:", errorMessage);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
