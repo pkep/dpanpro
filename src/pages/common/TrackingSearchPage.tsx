@@ -15,7 +15,7 @@ const TrackingSearchPage = () => {
     e.preventDefault();
     const code = trackingCode.trim();
     if (code) {
-      navigate(`/mon-suivi?code=${code}`);
+      navigate(`/track/${code}`);
     }
   };
 
