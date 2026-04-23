@@ -3,8 +3,7 @@ import { buildEmailVerificationHtml } from "../_shared/email-templates/email-ver
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
@@ -16,11 +15,13 @@ Deno.serve(async (req) => {
     const { userId, email, firstName } = await req.json();
 
     if (!userId || !email || !firstName) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    console.log(`[EMAIL-VERIFICATION] Try to email to :`, email);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -46,20 +47,18 @@ Deno.serve(async (req) => {
     // Create new token with 15min expiry
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-    const { error: tokenError } = await supabase
-      .from("email_verification_tokens")
-      .insert({
-        user_id: userId,
-        token,
-        expires_at: expiresAt,
-      });
+    const { error: tokenError } = await supabase.from("email_verification_tokens").insert({
+      user_id: userId,
+      token,
+      expires_at: expiresAt,
+    });
 
     if (tokenError) {
       console.error("Token creation error:", tokenError);
-      return new Response(
-        JSON.stringify({ error: "Failed to create verification token" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Failed to create verification token" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Build verification URL
@@ -85,6 +84,8 @@ Deno.serve(async (req) => {
         }),
       });
 
+      console.log(`[EMAIL-VERIFICATION] Verification email send to:`, email);
+
       if (!emailResponse.ok) {
         const errorData = await emailResponse.text();
         console.error("Resend error:", errorData);
@@ -94,15 +95,14 @@ Deno.serve(async (req) => {
       console.warn("RESEND_API_KEY not configured, email not sent");
     }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
