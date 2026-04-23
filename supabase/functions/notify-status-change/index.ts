@@ -272,7 +272,9 @@ serve(async (req) => {
           interventionId,
           status: newStatus,
           trackingCode: intervention.tracking_code || "",
-          url: intervention.tracking_code ? `/track/${intervention.tracking_code}` : `/intervention/${interventionId}`,
+          url: intervention.tracking_code
+            ? `/mon-suivi?code=${intervention.tracking_code}`
+            : `/intervention/${interventionId}`,
         };
 
         const pushResults = await Promise.all(
