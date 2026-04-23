@@ -25,16 +25,12 @@ export function formatPhoneNumber(phone: string): string {
  * @param logPrefix - Optional prefix for console logs (e.g. "[MyFunction]")
  * @returns true if sent successfully
  */
-export async function sendSMS(
-  to: string,
-  message: string,
-  logPrefix = "[SMS]"
-): Promise<boolean> {
+export async function sendSMS(to: string, message: string, logPrefix = "[SMS]"): Promise<boolean> {
   const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
   const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const fromNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+  const messagingSid = Deno.env.get("TWILIO_MESSAGING_SID");
 
-  if (!accountSid || !authToken || !fromNumber) {
+  if (!accountSid || !authToken || !messagingSid) {
     console.log(`${logPrefix} Twilio credentials not configured, skipping SMS`);
     return false;
   }
@@ -44,21 +40,18 @@ export async function sendSMS(
 
   try {
     const credentials = btoa(`${accountSid}:${authToken}`);
-    const response = await fetch(
-      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Basic ${credentials}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          To: formattedTo,
-          From: fromNumber,
-          Body: message,
-        }),
-      }
-    );
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: formattedTo,
+        MessagingServiceSid: messagingSid,
+        Body: message,
+      }),
+    });
 
     const result = await response.json();
 
