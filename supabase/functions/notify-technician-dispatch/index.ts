@@ -125,7 +125,7 @@ serve(async (req) => {
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
     const priorityLabel = PRIORITY_LABELS[intervention.priority] || intervention.priority;
     const isUrgent = intervention.priority === "urgent";
-    const acceptedUrl = frontendUrl + "/technician";
+    const acceptanceUrl = frontendUrl + "/technician";
 
     for (const tech of technicianInfos) {
       console.log(`[NotifyTechnicianDispatch] Processing technician ${tech.id} (${tech.firstName} ${tech.lastName})`);
@@ -139,7 +139,7 @@ serve(async (req) => {
             address: intervention.address,
             postalCode: intervention.postalCode,
             isUrgent,
-            acceptedUrl,
+            acceptanceUrl,
           });
           const sent = await sendSMS(tech.phone, smsMessage, "[NotifyTechnicianDispatch]");
           if (sent) {
