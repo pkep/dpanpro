@@ -84,12 +84,11 @@ Deno.serve(async (req) => {
         }),
       });
 
-      console.log(`[EMAIL-VERIFICATION] Verification email send to:`, email);
-
+      const responseBody = await emailResponse.text();
       if (!emailResponse.ok) {
-        const errorData = await emailResponse.text();
-        console.error("Resend error:", errorData);
-        // Don't fail the whole flow - user can resend later
+        console.error(`[EMAIL-VERIFICATION] Resend error [${emailResponse.status}] for ${email}:`, responseBody);
+      } else {
+        console.log(`[EMAIL-VERIFICATION] Resend OK for ${email} from=${fromEmail} response=${responseBody}`);
       }
     } else {
       console.warn("RESEND_API_KEY not configured, email not sent");
