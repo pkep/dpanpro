@@ -83,12 +83,12 @@ interface TechnicianDispatchSmsData {
   address: string;
   postalCode: string;
   isUrgent: boolean;
-  acceptedUrl: string;
+  acceptanceUrl: string;
 }
 
 export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): string {
   const urgentPrefix = data.isUrgent ? "URGENT - " : "";
-  return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}. ${data.address}, ${data.postalCode}. \nCliquez sur le lien pour accepter l'intervention: ${data.trackingUrl}.`;
+  return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}. ${data.address}, ${data.postalCode}. \nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
 }
 
 // ── Payment Captured (technician confirmation) ──────────────────────

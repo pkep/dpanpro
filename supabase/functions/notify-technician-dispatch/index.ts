@@ -31,17 +31,17 @@ interface TechnicianInfo {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  locksmith: 'Serrurerie',
-  plumbing: 'Plomberie',
-  electricity: 'Électricité',
-  glazing: 'Vitrerie',
-  heating: 'Chauffage',
-  aircon: 'Climatisation',
+  locksmith: "Serrurerie",
+  plumbing: "Plomberie",
+  electricity: "Électricité",
+  glazing: "Vitrerie",
+  heating: "Chauffage",
+  aircon: "Climatisation",
 };
 
 const PRIORITY_LABELS: Record<string, string> = {
-  urgent: '🚨 URGENT',
-  normal: 'Normal',
+  urgent: "🚨 URGENT",
+  normal: "Normal",
 };
 
 serve(async (req) => {
@@ -52,6 +52,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const frontendUrl = Deno.env.get("FRONTEND_URL")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { interventionId, technicianIds, interventionDetails }: NotifyTechnicianRequest = await req.json();
@@ -60,26 +61,26 @@ serve(async (req) => {
     console.log(`[NotifyTechnicianDispatch] Technicians to notify:`, technicianIds);
 
     if (!interventionId || !technicianIds || technicianIds.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Missing interventionId or technicianIds" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing interventionId or technicianIds" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let intervention = interventionDetails;
     if (!intervention) {
       const { data: intData, error: intError } = await supabase
-        .from('interventions')
-        .select('title, address, city, postal_code, category, priority')
-        .eq('id', interventionId)
+        .from("interventions")
+        .select("title, address, city, postal_code, category, priority")
+        .eq("id", interventionId)
         .single();
 
       if (intError || !intData) {
-        console.error('[NotifyTechnicianDispatch] Failed to fetch intervention:', intError);
-        return new Response(
-          JSON.stringify({ error: "Intervention not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        console.error("[NotifyTechnicianDispatch] Failed to fetch intervention:", intError);
+        return new Response(JSON.stringify({ error: "Intervention not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       intervention = {
@@ -93,19 +94,19 @@ serve(async (req) => {
     }
 
     const { data: technicians, error: techError } = await supabase
-      .from('users')
-      .select('id, email, phone, first_name, last_name')
-      .in('id', technicianIds);
+      .from("users")
+      .select("id, email, phone, first_name, last_name")
+      .in("id", technicianIds);
 
     if (techError) {
-      console.error('[NotifyTechnicianDispatch] Failed to fetch technicians:', techError);
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch technician details" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("[NotifyTechnicianDispatch] Failed to fetch technicians:", techError);
+      return new Response(JSON.stringify({ error: "Failed to fetch technician details" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const technicianInfos: TechnicianInfo[] = (technicians || []).map(t => ({
+    const technicianInfos: TechnicianInfo[] = (technicians || []).map((t) => ({
       id: t.id,
       email: t.email,
       phone: t.phone,
@@ -123,7 +124,8 @@ serve(async (req) => {
 
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
     const priorityLabel = PRIORITY_LABELS[intervention.priority] || intervention.priority;
-    const isUrgent = intervention.priority === 'urgent';
+    const isUrgent = intervention.priority === "urgent";
+    const acceptedUrl = frontendUrl + "/technician";
 
     for (const tech of technicianInfos) {
       console.log(`[NotifyTechnicianDispatch] Processing technician ${tech.id} (${tech.firstName} ${tech.lastName})`);
@@ -137,6 +139,7 @@ serve(async (req) => {
             address: intervention.address,
             postalCode: intervention.postalCode,
             isUrgent,
+            acceptedUrl,
           });
           const sent = await sendSMS(tech.phone, smsMessage, "[NotifyTechnicianDispatch]");
           if (sent) {
@@ -172,11 +175,11 @@ serve(async (req) => {
             isUrgent,
           });
 
-          const emailResponse = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
+          const emailResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
             headers: {
-              'Authorization': `Bearer ${resendApiKey}`,
-              'Content-Type': 'application/json',
+              Authorization: `Bearer ${resendApiKey}`,
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               from: `Depan.Pro <${resendFromEmail}>`,
@@ -197,7 +200,7 @@ serve(async (req) => {
             results.email.errors.push(`${tech.id}: ${errorText}`);
           }
         } else {
-          console.log('[NotifyTechnicianDispatch] Resend not configured, skipping email');
+          console.log("[NotifyTechnicianDispatch] Resend not configured, skipping email");
         }
       } catch (emailError: unknown) {
         const errorMessage = emailError instanceof Error ? emailError.message : String(emailError);
@@ -212,10 +215,10 @@ serve(async (req) => {
 
         if (firebaseServerKey) {
           const { data: pushSubs, error: pushError } = await supabase
-            .from('push_subscriptions')
-            .select('fcm_token')
-            .eq('user_id', tech.id)
-            .eq('is_active', true);
+            .from("push_subscriptions")
+            .select("fcm_token")
+            .eq("user_id", tech.id)
+            .eq("is_active", true);
 
           if (pushError) {
             console.error(`[NotifyTechnicianDispatch] Failed to fetch push tokens for ${tech.id}:`, pushError);
@@ -224,25 +227,25 @@ serve(async (req) => {
               const pushPayload = {
                 to: sub.fcm_token,
                 notification: {
-                  title: isUrgent ? '🚨 Mission Urgente !' : '📋 Nouvelle Mission',
+                  title: isUrgent ? "🚨 Mission Urgente !" : "📋 Nouvelle Mission",
                   body: `${categoryLabel} à ${intervention.city} - ${intervention.address}`,
-                  icon: '/icons/icon-192x192.png',
-                  badge: '/icons/icon-72x72.png',
-                  click_action: Deno.env.get("FRONTEND_URL") || 'https://dpanpro.lovable.app/technician',
+                  icon: "/icons/icon-192x192.png",
+                  badge: "/icons/icon-72x72.png",
+                  click_action: Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app/technician",
                 },
                 data: {
-                  type: 'dispatch_notification',
+                  type: "dispatch_notification",
                   interventionId: interventionId,
                   category: intervention.category,
                   priority: intervention.priority,
                 },
               };
 
-              const fcmResponse = await fetch('https://fcm.googleapis.com/fcm/send', {
-                method: 'POST',
+              const fcmResponse = await fetch("https://fcm.googleapis.com/fcm/send", {
+                method: "POST",
                 headers: {
-                  'Authorization': `key=${firebaseServerKey}`,
-                  'Content-Type': 'application/json',
+                  Authorization: `key=${firebaseServerKey}`,
+                  "Content-Type": "application/json",
                 },
                 body: JSON.stringify(pushPayload),
               });
@@ -268,7 +271,7 @@ serve(async (req) => {
             console.log(`[NotifyTechnicianDispatch] No push tokens for technician ${tech.id}`);
           }
         } else {
-          console.log('[NotifyTechnicianDispatch] Firebase not configured, skipping push');
+          console.log("[NotifyTechnicianDispatch] Firebase not configured, skipping push");
         }
       } catch (pushError: unknown) {
         const errorMessage = pushError instanceof Error ? pushError.message : String(pushError);
@@ -278,7 +281,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('[NotifyTechnicianDispatch] Notification results:', results);
+    console.log("[NotifyTechnicianDispatch] Notification results:", results);
 
     return new Response(
       JSON.stringify({
@@ -286,15 +289,14 @@ serve(async (req) => {
         results,
         techniciansNotified: technicianInfos.length,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('[NotifyTechnicianDispatch] Error:', error);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("[NotifyTechnicianDispatch] Error:", error);
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
