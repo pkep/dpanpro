@@ -7,6 +7,7 @@ import { wrapInBaseLayout } from "./base-layout.ts";
 interface PaymentRequiredTemplateData {
   trackingCode: string;
   trackingUrl: string;
+  paymentUrl: string;
 }
 
 export function buildPaymentRequiredEmailHtml(data: PaymentRequiredTemplateData): string {
@@ -15,8 +16,7 @@ export function buildPaymentRequiredEmailHtml(data: PaymentRequiredTemplateData)
   const bodyContent = `
     <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
       <h2 style="color: #92400e; margin: 0 0 10px 0;">Action requise de votre part</h2>
-      <p style="margin: 0; color: #78350f;">Votre technicien souhaite finaliser l'intervention, mais votre carte bancaire n'a pas été autorisée correctement.</p>
-      <p style="margin: 10px 0 0 0; color: #78350f;">Pour permettre le règlement et clôturer l'intervention, veuillez autoriser votre carte en cliquant sur le bouton ci-dessous.</p>
+      <p style="margin: 10px 0 0 0; color: #78350f;">Pour permettre le règlement de l'intervention, veuillez autoriser votre carte en cliquant sur le bouton ci-dessous.</p>
     </div>
     
     <div style="background: #f3f4f6; padding: 15px; border-radius: 6px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 2px; margin: 20px 0; color: #1f2937;">
@@ -24,7 +24,7 @@ export function buildPaymentRequiredEmailHtml(data: PaymentRequiredTemplateData)
     </div>
     
     <div style="text-align: center; margin: 24px 0;">
-      <a href="${trackingUrl}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+      <a href="${paymentUrl}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
         Autoriser ma carte maintenant
       </a>
     </div>
