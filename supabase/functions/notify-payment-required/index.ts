@@ -190,10 +190,13 @@ serve(async (req) => {
 
     const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
     const trackingUrl = `${frontendUrl}/mon-suivi?code=${trackingCode}`;
+    const paymentUrl = `${frontendUrl}/authorize-payment/${interventionId}`;
 
     console.log("[NOTIFY-PAYMENT] Tracking URL:", trackingUrl);
 
-    const smsMessage = buildPaymentRequiredSms({ trackingCode, trackingUrl });
+    console.log("[NOTIFY-PAYMENT] Payment URL:", paymentUrl);
+
+    const smsMessage = buildPaymentRequiredSms({ trackingCode, trackingUrl, paymentUrl });
 
     const emailSubject = "Depan.Pro : Autorisation de paiement requise";
     const emailHtml = buildPaymentRequiredEmailHtml({ trackingCode, trackingUrl });
