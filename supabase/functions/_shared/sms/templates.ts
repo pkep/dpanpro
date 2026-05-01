@@ -62,7 +62,7 @@ interface PaymentRequiredSmsData {
 }
 
 export function buildPaymentRequiredSms(data: PaymentRequiredSmsData): string {
-  return `${PREFIX} autorisation de paiement requise.\nOuvrez: ${data.trackingUrl}\nCode: ${data.trackingCode}`;
+  return `${PREFIX} autorisation de paiement requise.\nUne action est requise pour avancer dans l'intervention. Cliquer pour procéder au paiement: ${data.paymentUrl}\n\nPour suivre le étape de l'intervention ouvrez: ${data.trackingUrl}\nCode: ${data.trackingCode}`;
 }
 
 // ── Manual Dispatch (technician) ────────────────────────────────────
