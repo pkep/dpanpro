@@ -59,6 +59,7 @@ export function buildCancellationInvoiceSms(data: CancellationInvoiceSmsData): s
 interface PaymentRequiredSmsData {
   trackingCode: string;
   trackingUrl: string;
+  paymentUrl: string;
 }
 
 export function buildPaymentRequiredSms(data: PaymentRequiredSmsData): string {
