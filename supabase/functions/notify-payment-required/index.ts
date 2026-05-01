@@ -199,7 +199,7 @@ serve(async (req) => {
     const smsMessage = buildPaymentRequiredSms({ trackingCode, trackingUrl, paymentUrl });
 
     const emailSubject = "Depan.Pro : Autorisation de paiement requise";
-    const emailHtml = buildPaymentRequiredEmailHtml({ trackingCode, trackingUrl });
+    const emailHtml = buildPaymentRequiredEmailHtml({ trackingCode, trackingUrl, paymentUrl });
 
     const pushTitle = "⚠️ Autorisation de paiement requise";
     const pushBody = "Votre technicien attend votre autorisation carte pour finaliser l'intervention.";
