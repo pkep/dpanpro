@@ -29,15 +29,6 @@ export function buildPaymentRequiredEmailHtml(data: PaymentRequiredTemplateData)
       </a>
     </div>
 
-    <div style="text-align: center; margin: 24px 0;">
-    <p style="font-size: 13px; color: #6b7280;">
-      Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
-      <a href="${trackingUrl}" style="color: #0FB87F;">${trackingUrl}</a>
-    </p>
-      <a href="${trackingUrl}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
-        Suivre 
-      </a>
-    </div>
   `;
 
   return wrapInBaseLayout({
