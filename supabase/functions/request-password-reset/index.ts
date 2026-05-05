@@ -97,7 +97,7 @@ serve(async (req) => {
     }
 
     // Build reset URL
-    const fullResetUrl = `${siteUrl}?token=${encodeURIComponent(token)}`;
+    const fullResetUrl = `${siteUrl}/reset-password?token=${encodeURIComponent(token)}`;
 
     // Send email via Resend
     if (resendApiKey) {
