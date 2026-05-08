@@ -11,7 +11,7 @@ interface PaymentRequiredTemplateData {
 }
 
 export function buildPaymentRequiredEmailHtml(data: PaymentRequiredTemplateData): string {
-  const { trackingCode, trackingUrl } = data;
+  const { trackingCode, trackingUrl, paymentUrl } = data;
 
   const bodyContent = `
     <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
