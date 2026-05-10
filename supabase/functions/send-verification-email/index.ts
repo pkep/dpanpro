@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   try {
     const { userId, email, firstName } = await req.json();
 
-    if (!userId || !email || !firstName) {
+    if (!userId || !email) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
