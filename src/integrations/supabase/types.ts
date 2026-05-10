@@ -859,6 +859,7 @@ export type Database = {
           data_accuracy_confirmed: boolean
           department: string | null
           has_decennial_insurance: boolean
+          has_vehicle: boolean
           iban: string | null
           id: string
           insurance_company: string | null
@@ -878,6 +879,7 @@ export type Database = {
           user_id: string | null
           vat_number: string | null
           years_experience: number
+          zone: string | null
         }
         Insert: {
           address?: string | null
@@ -895,6 +897,7 @@ export type Database = {
           data_accuracy_confirmed?: boolean
           department?: string | null
           has_decennial_insurance?: boolean
+          has_vehicle?: boolean
           iban?: string | null
           id?: string
           insurance_company?: string | null
@@ -914,6 +917,7 @@ export type Database = {
           user_id?: string | null
           vat_number?: string | null
           years_experience: number
+          zone?: string | null
         }
         Update: {
           address?: string | null
@@ -931,6 +935,7 @@ export type Database = {
           data_accuracy_confirmed?: boolean
           department?: string | null
           has_decennial_insurance?: boolean
+          has_vehicle?: boolean
           iban?: string | null
           id?: string
           insurance_company?: string | null
@@ -950,6 +955,7 @@ export type Database = {
           user_id?: string | null
           vat_number?: string | null
           years_experience?: number
+          zone?: string | null
         }
         Relationships: [
           {
