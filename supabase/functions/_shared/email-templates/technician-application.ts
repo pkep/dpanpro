@@ -31,8 +31,8 @@ export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationT
           <b>Etape 2 :</b> Initialiser votre mot de passe en faisant mot de passe oublié
         </p>
         
-        <div style="text-align: center; margin: 20px 0;">
-          <a href="${activationUrl || "#"}" style="display: inline-block; background: linear-gradient(135deg, #22c55e, #16a34a); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${activationUrl}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
             Activer mon compte
           </a>
         </div>
