@@ -78,7 +78,7 @@ const step1Schema = z.object({
 // Step 2: Professional info
 const step2Schema = z.object({
   companyName: z.string().trim().min(2, 'Nom de l\'entreprise requis').max(100),
-  siret: z.string().trim().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres'),
+  siren: z.string().trim().regex(/^\d{9}$/, 'Le SIREN doit contenir 9 chiffres'),
   vatNumber: z.string().optional(),
   legalStatus: z.string().min(1, 'Statut juridique requis'),
   insuranceCompany: z.string().trim().min(2, 'Nom de l\'assurance requis').max(100),
