@@ -27,8 +27,8 @@ export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationT
         <h2 style="margin: 0 0 12px 0; color: #1f2937; font-size: 18px;">Activez votre compte</h2>
         <p style="color: #4b5563; margin: 0 0 16px 0;">
           Pour finaliser votre inscription et accéder à votre espace technicien, <br>
-          Etape 1 : veuillez activer votre compte en cliquant sur le bouton ci-dessous, <br>
-          Etape 2 : Initialiser votre mot de passe en faisant mot de passe oublié
+          <b>Etape 1</b> : Veuillez activer votre compte en cliquant sur le bouton ci-dessous, <br>
+          <b>Etape 2 :</b> Initialiser votre mot de passe en faisant mot de passe oublié
         </p>
         
         <div style="text-align: center; margin: 20px 0;">
