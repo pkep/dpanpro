@@ -78,7 +78,7 @@ const step1Schema = z.object({
 // Step 2: Professional info
 const step2Schema = z.object({
   companyName: z.string().trim().min(2, 'Nom de l\'entreprise requis').max(100),
-  siret: z.string().trim().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres'),
+  siren: z.string().trim().regex(/^\d{9}$/, 'Le SIREN doit contenir 9 chiffres'),
   vatNumber: z.string().optional(),
   legalStatus: z.string().min(1, 'Statut juridique requis'),
   insuranceCompany: z.string().trim().min(2, 'Nom de l\'assurance requis').max(100),
@@ -147,7 +147,7 @@ const JoinPage = () => {
     resolver: zodResolver(step2Schema),
     defaultValues: step2Data || {
       companyName: '',
-      siret: '',
+      siren: '',
       vatNumber: '',
       legalStatus: '',
       insuranceCompany: '',
@@ -233,7 +233,7 @@ const JoinPage = () => {
         city: step1Data.city,
         password: step1Data.password,
         companyName: step2Data.companyName,
-        siret: step2Data.siret,
+        siren: step2Data.siren,
         vatNumber: step2Data.vatNumber,
         legalStatus: step2Data.legalStatus,
         insuranceCompany: step2Data.insuranceCompany,
@@ -478,12 +478,12 @@ const JoinPage = () => {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <FormField
                         control={step2Form.control}
-                        name="siret"
+                        name="siren"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>SIRET *</FormLabel>
+                            <FormLabel>SIREN *</FormLabel>
                             <FormControl>
-                              <Input placeholder="12345678901234" maxLength={14} {...field} />
+                              <Input placeholder="123456789" maxLength={9} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

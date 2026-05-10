@@ -16,7 +16,7 @@ interface RejectedApplication {
   id: string;
   user_id: string;
   company_name: string;
-  siret: string;
+  siren: string;
   legal_status: string;
   skills: string[];
   years_experience: number;
@@ -115,7 +115,7 @@ export function RejectedTechniciansTab() {
       let dataQuery = supabase
         .from('partner_applications')
         .select(`
-          id, user_id, company_name, siret, legal_status, skills,
+          id, user_id, company_name, siren, legal_status, skills,
           years_experience, created_at, updated_at, address, postal_code, city,
           birth_date, birth_place, insurance_company, insurance_policy_number,
           insurance_expiry_date, has_decennial_insurance, vat_number, presentation,
@@ -371,8 +371,8 @@ export function RejectedTechniciansTab() {
                     <p className="font-medium">{selectedApp.legal_status}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">SIRET :</span>
-                    <p className="font-medium font-mono">{selectedApp.siret}</p>
+                    <span className="text-muted-foreground">SIREN :</span>
+                    <p className="font-medium font-mono">{selectedApp.siren}</p>
                   </div>
                   <div>
                     <span className="text-muted-foreground">N° TVA :</span>

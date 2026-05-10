@@ -50,7 +50,7 @@ class PartnersService {
         postal_code: data.postalCode,
         city: data.city,
         company_name: data.companyName,
-        siret: data.siret,
+        siren: data.siren,
         vat_number: data.vatNumber || null,
         legal_status: data.legalStatus,
         insurance_company: data.insuranceCompany,
@@ -90,7 +90,7 @@ class PartnersService {
       postalCode: string;
       city: string;
       companyName: string;
-      siret: string;
+      siren: string;
       vatNumber: string | null;
       legalStatus: string;
       insuranceCompany: string;
@@ -138,7 +138,7 @@ class PartnersService {
         postalCode: appData.postal_code,
         city: appData.city,
         companyName: appData.company_name,
-        siret: appData.siret,
+        siren: appData.siren,
         vatNumber: appData.vat_number,
         legalStatus: appData.legal_status,
         insuranceCompany: appData.insurance_company,
@@ -170,7 +170,7 @@ class PartnersService {
       postalCode?: string;
       city?: string;
       companyName?: string;
-      siret?: string;
+      siren?: string;
       vatNumber?: string;
       legalStatus?: string;
       insuranceCompany?: string;
@@ -209,7 +209,7 @@ class PartnersService {
     if (data.postalCode) appUpdates.postal_code = data.postalCode;
     if (data.city) appUpdates.city = data.city;
     if (data.companyName) appUpdates.company_name = data.companyName;
-    if (data.siret) appUpdates.siret = data.siret;
+    if (data.siren) appUpdates.siren = data.siren;
     if (data.vatNumber !== undefined) appUpdates.vat_number = data.vatNumber || null;
     if (data.legalStatus) appUpdates.legal_status = data.legalStatus;
     if (data.insuranceCompany) appUpdates.insurance_company = data.insuranceCompany;

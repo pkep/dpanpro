@@ -1,0 +1,1 @@
+ALTER TABLE public.partner_applications RENAME COLUMN siret TO siren;

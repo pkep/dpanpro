@@ -26,7 +26,7 @@ interface TechnicianData {
 interface PartnerApplication {
   id: string;
   company_name: string;
-  siret: string;
+  siren: string;
   vat_number: string | null;
   legal_status: string;
   address: string;
@@ -286,8 +286,8 @@ export function TechnicianDetailsModal({ technician, open, onOpenChange, onUpdat
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <span className="text-sm text-muted-foreground">SIRET</span>
-                      <p className="font-medium font-mono">{application.siret}</p>
+                      <span className="text-sm text-muted-foreground">SIREN</span>
+                      <p className="font-medium font-mono">{application.siren}</p>
                     </div>
                     <div className="space-y-1">
                       <span className="text-sm text-muted-foreground">N° TVA</span>

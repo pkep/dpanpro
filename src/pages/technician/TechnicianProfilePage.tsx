@@ -74,7 +74,7 @@ const personalSchema = z.object({
 
 const professionalSchema = z.object({
   companyName: z.string().trim().min(2, 'Nom de l\'entreprise requis').max(100),
-  siret: z.string().trim().regex(/^\d{14}$/, 'Le SIRET doit contenir 14 chiffres'),
+  siren: z.string().trim().regex(/^\d{9}$/, 'Le SIREN doit contenir 9 chiffres'),
   vatNumber: z.string().optional(),
   legalStatus: z.string().min(1, 'Statut juridique requis'),
   insuranceCompany: z.string().trim().min(2, 'Nom de l\'assurance requis').max(100),
@@ -144,7 +144,7 @@ const TechnicianProfilePage = () => {
 
           professionalForm.reset({
             companyName: profile.application.companyName,
-            siret: profile.application.siret,
+            siren: profile.application.siren,
             vatNumber: profile.application.vatNumber || '',
             legalStatus: profile.application.legalStatus,
             insuranceCompany: profile.application.insuranceCompany,
@@ -445,12 +445,12 @@ const TechnicianProfilePage = () => {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={professionalForm.control}
-                      name="siret"
+                      name="siren"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>SIRET *</FormLabel>
+                          <FormLabel>SIREN *</FormLabel>
                           <FormControl>
-                            <Input maxLength={14} {...field} />
+                            <Input maxLength={9} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
