@@ -11,7 +11,10 @@ interface TechnicianApplicationTemplateData {
   activationUrl?: string;
 }
 
-export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationTemplateData): { subject: string; html: string } {
+export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationTemplateData): {
+  subject: string;
+  html: string;
+} {
   const { firstName, action, reason, activationUrl } = data;
 
   if (action === "accepted") {
@@ -23,11 +26,13 @@ export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationT
       <div style="background: #f0fdf4; border-left: 4px solid #22c55e; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
         <h2 style="margin: 0 0 12px 0; color: #1f2937; font-size: 18px;">Activez votre compte</h2>
         <p style="color: #4b5563; margin: 0 0 16px 0;">
-          Pour finaliser votre inscription et accéder à votre espace technicien, veuillez activer votre compte en cliquant sur le bouton ci-dessous.
+          Pour finaliser votre inscription et accéder à votre espace technicien, <br>
+          Etape 1 : veuillez activer votre compte en cliquant sur le bouton ci-dessous, <br>
+          Etape 2 : Initialiser votre mot de passe en faisant mot de passe oublié
         </p>
         
         <div style="text-align: center; margin: 20px 0;">
-          <a href="${activationUrl || '#'}" style="display: inline-block; background: linear-gradient(135deg, #22c55e, #16a34a); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+          <a href="${activationUrl || "#"}" style="display: inline-block; background: linear-gradient(135deg, #22c55e, #16a34a); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
             Activer mon compte
           </a>
         </div>
@@ -47,14 +52,18 @@ export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationT
         <li>Vous recevrez des notifications dès qu'une mission sera disponible dans votre zone</li>
       </ul>
 
-      ${activationUrl ? `
+      ${
+        activationUrl
+          ? `
       <p style="margin: 20px 0 8px; color: #9ca3af; font-size: 13px; text-align: center;">
         Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre navigateur :
       </p>
       <p style="margin: 0 0 24px; color: #6b7280; font-size: 12px; text-align: center; word-break: break-all;">
         ${activationUrl}
       </p>
-      ` : ''}
+      `
+          : ""
+      }
       
       <p style="font-size: 14px; color: #6b7280;">
         Bienvenue dans l'équipe Depan.Pro ! Nous sommes impatients de travailler avec vous.
@@ -80,11 +89,15 @@ export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationT
       Après examen attentif de votre dossier, nous avons le regret de vous informer que nous ne pouvons pas donner suite à votre candidature pour le moment.
     </p>
     
-    ${reason ? `
+    ${
+      reason
+        ? `
       <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 0 8px 8px 0; margin: 20px 0;">
         <p style="margin: 0; color: #4b5563; font-style: italic;">"${reason}"</p>
       </div>
-    ` : ""}
+    `
+        : ""
+    }
     
     <p style="font-size: 14px; color: #6b7280;">
       Cette décision ne préjuge en rien de vos compétences. N'hésitez pas à nous recontacter ultérieurement si votre situation évolue.
