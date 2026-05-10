@@ -868,7 +868,7 @@ export type Database = {
           longitude: number | null
           postal_code: string | null
           presentation: string | null
-          siret: string
+          siren: string
           skills: string[]
           status: string
           terms_accepted: boolean
@@ -902,7 +902,7 @@ export type Database = {
           longitude?: number | null
           postal_code?: string | null
           presentation?: string | null
-          siret: string
+          siren: string
           skills: string[]
           status?: string
           terms_accepted?: boolean
@@ -936,7 +936,7 @@ export type Database = {
           longitude?: number | null
           postal_code?: string | null
           presentation?: string | null
-          siret?: string
+          siren?: string
           skills?: string[]
           status?: string
           terms_accepted?: boolean
