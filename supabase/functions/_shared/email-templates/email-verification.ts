@@ -29,8 +29,8 @@ export function buildEmailVerificationHtml(data: EmailVerificationTemplateData):
     </div>
     
     <!-- CTA Button -->
-    <div style="text-align: center; margin-bottom: 24px;">
-      <a href="${verificationUrl}" style="display: inline-block; background: linear-gradient(135deg, #0FB87F, #0a9e6a); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${verificationUrl}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
         Confirmer mon email
       </a>
     </div>
