@@ -6,7 +6,7 @@ import { wrapInBaseLayout } from "./base-layout.ts";
 
 interface TechnicianApplicationTemplateData {
   firstName: string;
-  action: "accepted" | "rejected";
+  action: "approved" | "rejected";
   reason?: string;
   activationUrl?: string;
 }
@@ -17,7 +17,7 @@ export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationT
 } {
   const { firstName, action, reason, activationUrl } = data;
 
-  if (action === "accepted") {
+  if (action === "approved") {
     const bodyContent = `
       <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
         Nous avons le plaisir de vous informer que votre candidature pour devenir technicien partenaire chez <strong>Depan.Pro</strong> a été acceptée !
