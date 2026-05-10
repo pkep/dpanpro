@@ -845,6 +845,7 @@ export type Database = {
       partner_applications: {
         Row: {
           address: string | null
+          availability: Database["public"]["Enums"]["partner_availability"][]
           bank_account_holder: string | null
           bank_name: string | null
           bic: string | null
@@ -879,6 +880,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          availability?: Database["public"]["Enums"]["partner_availability"][]
           bank_account_holder?: string | null
           bank_name?: string | null
           bic?: string | null
@@ -913,6 +915,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          availability?: Database["public"]["Enums"]["partner_availability"][]
           bank_account_holder?: string | null
           bank_name?: string | null
           bic?: string | null
@@ -2069,6 +2072,13 @@ export type Database = {
         | "client"
         | "guest"
         | "payment"
+      partner_availability:
+        | "week_day"
+        | "evening"
+        | "week_end"
+        | "public_holidays"
+        | "night"
+        | "anytime"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2203,6 +2213,14 @@ export const Constants = {
         "client",
         "guest",
         "payment",
+      ],
+      partner_availability: [
+        "week_day",
+        "evening",
+        "week_end",
+        "public_holidays",
+        "night",
+        "anytime",
       ],
     },
   },
