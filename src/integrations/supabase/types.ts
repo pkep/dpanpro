@@ -851,6 +851,7 @@ export type Database = {
           bic: string | null
           birth_date: string | null
           birth_place: string | null
+          certifications: string[]
           city: string | null
           company_name: string
           created_at: string
@@ -886,6 +887,7 @@ export type Database = {
           bic?: string | null
           birth_date?: string | null
           birth_place?: string | null
+          certifications?: string[]
           city?: string | null
           company_name: string
           created_at?: string
@@ -921,6 +923,7 @@ export type Database = {
           bic?: string | null
           birth_date?: string | null
           birth_place?: string | null
+          certifications?: string[]
           city?: string | null
           company_name?: string
           created_at?: string
