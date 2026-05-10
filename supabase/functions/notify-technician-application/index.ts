@@ -9,7 +9,7 @@ const corsHeaders = {
 
 interface NotifyApplicationRequest {
   technicianId: string;
-  action: 'accepted' | 'rejected';
+  action: "approved" | "rejected";
   email: string;
   firstName: string;
   reason?: string;
@@ -25,11 +25,11 @@ serve(async (req) => {
     const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
 
     if (!resendApiKey) {
-      console.log('[NotifyTechnicianApplication] Resend not configured');
-      return new Response(
-        JSON.stringify({ success: true, message: "Email not sent - Resend not configured" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.log("[NotifyTechnicianApplication] Resend not configured");
+      return new Response(JSON.stringify({ success: true, message: "Email not sent - Resend not configured" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { Resend } = await import("https://esm.sh/resend@2.0.0");
@@ -40,8 +40,8 @@ serve(async (req) => {
 
     let activationUrl: string | undefined;
 
-    // For accepted technicians, generate an activation token
-    if (action === 'accepted') {
+    // For approved technicians, generate an activation token
+    if (action === "approved") {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -63,13 +63,11 @@ serve(async (req) => {
       // Create new token with 15min expiry
       const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
-      const { error: tokenError } = await supabase
-        .from("email_verification_tokens")
-        .insert({
-          user_id: technicianId,
-          token,
-          expires_at: expiresAt,
-        });
+      const { error: tokenError } = await supabase.from("email_verification_tokens").insert({
+        user_id: technicianId,
+        token,
+        expires_at: expiresAt,
+      });
 
       if (tokenError) {
         console.error("Token creation error:", tokenError);
@@ -97,17 +95,16 @@ serve(async (req) => {
 
     console.log(`[NotifyTechnicianApplication] Email sent:`, emailResponse);
 
-    return new Response(
-      JSON.stringify({ success: true, emailResponse }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
+    return new Response(JSON.stringify({ success: true, emailResponse }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('[NotifyTechnicianApplication] Error:', error);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("[NotifyTechnicianApplication] Error:", error);
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
