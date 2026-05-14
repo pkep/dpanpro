@@ -641,6 +641,8 @@ export type Database = {
           id: string
           intervention_duration_seconds: number | null
           invoice_pdf_url: string | null
+          invoice_signature_data: string | null
+          invoice_signed_at: string | null
           is_active: boolean
           latitude: number | null
           longitude: number | null
@@ -683,6 +685,8 @@ export type Database = {
           id?: string
           intervention_duration_seconds?: number | null
           invoice_pdf_url?: string | null
+          invoice_signature_data?: string | null
+          invoice_signed_at?: string | null
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
@@ -725,6 +729,8 @@ export type Database = {
           id?: string
           intervention_duration_seconds?: number | null
           invoice_pdf_url?: string | null
+          invoice_signature_data?: string | null
+          invoice_signed_at?: string | null
           is_active?: boolean
           latitude?: number | null
           longitude?: number | null
