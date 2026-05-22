@@ -8,8 +8,13 @@ const corsHeaders = {
 
 interface RequestBody {
   phone: string;
-  code: string;
   interventionType: string;
+}
+
+function generateCode(): string {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return (buf[0] % 100000).toString().padStart(5, '0');
 }
 
 Deno.serve(async (req) => {
@@ -19,22 +24,16 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json() as RequestBody;
-    const { phone, code, interventionType } = body;
+    const { phone, interventionType } = body;
 
-    if (!phone || !code || !interventionType) {
+    if (!phone || !interventionType) {
       return new Response(
-        JSON.stringify({ error: 'phone, code et interventionType sont requis' }),
+        JSON.stringify({ error: 'phone et interventionType sont requis' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!/^\d{5}$/.test(code)) {
-      return new Response(
-        JSON.stringify({ error: 'Le code doit contenir 5 chiffres' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
+    const code = generateCode();
     const message = buildVerificationCodeSms({ code, interventionType });
     const sent = await sendSMS(phone, message, '[VerificationCode]');
 
@@ -46,7 +45,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, code }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
