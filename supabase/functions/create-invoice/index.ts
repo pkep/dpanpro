@@ -71,7 +71,7 @@ serve(async (req: Request): Promise<Response> => {
 
     // Quote lines
     const { data: quoteLinesRaw } = await supabase
-      .from("quote_lines")
+      .from("intervention_quotes")
       .select("*")
       .eq("intervention_id", interventionId)
       .order("display_order", { ascending: true });
