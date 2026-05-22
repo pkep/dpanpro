@@ -10,8 +10,6 @@ const corsHeaders = {
 
 interface SendInvoiceRequest {
   interventionId: string;
-  invoiceBase64: string;
-  invoiceFileName: string;
 }
 
 async function sendSMS(phoneNumber: string, message: string): Promise<boolean> {
@@ -26,26 +24,19 @@ async function sendSMS(phoneNumber: string, message: string): Promise<boolean> {
 
   try {
     const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
-    
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Authorization": "Basic " + btoa(`${accountSid}:${authToken}`),
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: new URLSearchParams({
-        To: phoneNumber,
-        From: fromNumber,
-        Body: message,
-      }),
+      body: new URLSearchParams({ To: phoneNumber, From: fromNumber, Body: message }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Twilio SMS error:", errorText);
+      console.error("Twilio SMS error:", await response.text());
       return false;
     }
-
     const result = await response.json();
     console.log("SMS sent successfully:", result.sid);
     return true;
@@ -65,9 +56,34 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { interventionId, invoiceBase64, invoiceFileName }: SendInvoiceRequest = await req.json();
+    const { interventionId }: SendInvoiceRequest = await req.json();
+    if (!interventionId) {
+      return new Response(JSON.stringify({ error: "interventionId required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
     console.log(`Sending invoice for intervention ${interventionId}`);
+
+    // Generate invoice PDF via create-invoice function
+    const createInvoiceResp = await fetch(`${supabaseUrl}/functions/v1/create-invoice`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${supabaseServiceKey}`,
+      },
+      body: JSON.stringify({ interventionId }),
+    });
+
+    if (!createInvoiceResp.ok) {
+      const errText = await createInvoiceResp.text();
+      console.error("create-invoice failed:", errText);
+      throw new Error("Failed to generate invoice");
+    }
+
+    const { invoiceBase64 } = await createInvoiceResp.json();
+    const invoiceFileName = "Facture.pdf";
 
     const { data: intervention, error: interventionError } = await supabase
       .from("interventions")
@@ -76,7 +92,6 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (interventionError || !intervention) {
-      console.error("Error fetching intervention:", interventionError);
       throw new Error("Intervention not found");
     }
 
@@ -96,18 +111,14 @@ serve(async (req: Request): Promise<Response> => {
     const trackingCode = intervention.tracking_code || "N/A";
     const finalPrice = intervention.final_price || 0;
 
-    const results = {
-      email: false,
-      sms: false,
-    };
+    const results = { email: false, sms: false };
 
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
-    
+
     if (resendApiKey && clientEmail) {
       try {
         const resend = new Resend(resendApiKey);
-
         const emailResponse = await resend.emails.send({
           from: `Depan.Pro <${resendFromEmail}>`,
           to: [clientEmail],
@@ -118,14 +129,8 @@ serve(async (req: Request): Promise<Response> => {
             address: `${intervention.address || "N/A"}, ${intervention.postal_code} ${intervention.city}`,
             finalPrice,
           }),
-          attachments: [
-            {
-              filename: invoiceFileName,
-              content: invoiceBase64,
-            },
-          ],
+          attachments: [{ filename: invoiceFileName, content: invoiceBase64 }],
         });
-
         console.log("Email sent successfully:", emailResponse);
         results.email = true;
       } catch (emailError) {
@@ -143,10 +148,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: results.email || results.sms,
-        results,
-      }),
+      JSON.stringify({ success: results.email || results.sms, results }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   } catch (error: any) {
