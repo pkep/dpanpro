@@ -1,3 +1,4 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildVerificationCodeSms } from "../_shared/sms/templates.ts";
 
@@ -34,6 +35,30 @@ Deno.serve(async (req) => {
     }
 
     const code = generateCode();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    const { error: insertError } = await supabase
+      .from('phone_verification_codes')
+      .insert({
+        phone,
+        code,
+        intervention_type: interventionType,
+        expires_at: expiresAt,
+      });
+
+    if (insertError) {
+      console.error('[VerificationCode] DB insert error:', insertError);
+      return new Response(
+        JSON.stringify({ error: 'Échec de l\'enregistrement du code' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const message = buildVerificationCodeSms({ code, interventionType });
     const sent = await sendSMS(phone, message, '[VerificationCode]');
 
@@ -45,7 +70,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, code }),
+      JSON.stringify({ success: true, expiresAt }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
