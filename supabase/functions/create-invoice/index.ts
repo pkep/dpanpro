@@ -31,7 +31,20 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 function formatDateFr(d: Date): string {
-  const months = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  const months = [
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
+  ];
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
@@ -56,10 +69,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     // Fetch intervention
     const { data: intervention, error: intErr } = await supabase
@@ -175,12 +185,18 @@ serve(async (req: Request): Promise<Response> => {
     doc.setTextColor(...textMuted);
     doc.setFont("helvetica", "normal");
     yPos += 13;
-    doc.text(COMPANY_INFO.address, 20, yPos); yPos += 5;
-    doc.text(COMPANY_INFO.city, 20, yPos); yPos += 5;
-    doc.text(`Tél: ${COMPANY_INFO.phone}`, 20, yPos); yPos += 5;
-    doc.text(`Email: ${COMPANY_INFO.email}`, 20, yPos); yPos += 5;
-    doc.text(`SIREN: ${COMPANY_INFO.siren}`, 20, yPos); yPos += 5;
-    doc.text(`SIRET: ${COMPANY_INFO.siret}`, 20, yPos); yPos += 5;
+    doc.text(COMPANY_INFO.address, 20, yPos);
+    yPos += 5;
+    doc.text(COMPANY_INFO.city, 20, yPos);
+    yPos += 5;
+    doc.text(`Tél: ${COMPANY_INFO.phone}`, 20, yPos);
+    yPos += 5;
+    doc.text(`Email: ${COMPANY_INFO.email}`, 20, yPos);
+    yPos += 5;
+    doc.text(`SIREN: ${COMPANY_INFO.siren}`, 20, yPos);
+    yPos += 5;
+    doc.text(`SIRET: ${COMPANY_INFO.siret}`, 20, yPos);
+    yPos += 5;
     doc.text(`N° TVA: ${COMPANY_INFO.tva}`, 20, yPos);
 
     doc.setFontSize(28);
@@ -214,12 +230,20 @@ serve(async (req: Request): Promise<Response> => {
     let cY = yPos + 16;
     if (isCompany && companyName) {
       doc.setFont("helvetica", "bold");
-      doc.text(companyName, pageWidth - 90, cY); cY += 6;
+      doc.text(companyName, pageWidth - 90, cY);
+      cY += 6;
       doc.setFont("helvetica", "normal");
     }
-    doc.text(clientName, pageWidth - 90, cY); cY += 6;
-    if (clientEmail) { doc.text(clientEmail, pageWidth - 90, cY); cY += 6; }
-    if (clientPhone) { doc.text(clientPhone, pageWidth - 90, cY); cY += 6; }
+    doc.text(clientName, pageWidth - 90, cY);
+    cY += 6;
+    if (clientEmail) {
+      doc.text(clientEmail, pageWidth - 90, cY);
+      cY += 6;
+    }
+    if (clientPhone) {
+      doc.text(clientPhone, pageWidth - 90, cY);
+      cY += 6;
+    }
     if (isCompany && siren) doc.text(`SIREN: ${siren}`, pageWidth - 90, cY);
 
     doc.setFontSize(10);
@@ -314,7 +338,6 @@ serve(async (req: Request): Promise<Response> => {
     doc.text("PAYÉE", pageWidth / 2, yPos + 13, { align: "center" });
 
     // Signature section
-    yPos += 30;
     doc.setFontSize(10);
     doc.setTextColor(...textDark);
     doc.setFont("helvetica", "bold");
@@ -331,7 +354,7 @@ serve(async (req: Request): Promise<Response> => {
         doc.text(
           `Signé le ${String(signedAt.getDate()).padStart(2, "0")}/${String(signedAt.getMonth() + 1).padStart(2, "0")}/${signedAt.getFullYear()}`,
           20,
-          yPos + 40
+          yPos + 40,
         );
       } catch (err) {
         console.error("Error adding signature to PDF:", err);
@@ -346,33 +369,36 @@ serve(async (req: Request): Promise<Response> => {
       doc.text("En attente de signature", 60, yPos + 25, { align: "center" });
     }
 
-
     const footerY = doc.internal.pageSize.getHeight() - 30;
     doc.setFontSize(8);
     doc.setTextColor(...textMuted);
     doc.setFont("helvetica", "normal");
     doc.text(
       `Merci pour votre confiance ! Pour toute question, contactez-nous à ${COMPANY_INFO.email}`,
-      pageWidth / 2, footerY, { align: "center" }
+      pageWidth / 2,
+      footerY,
+      { align: "center" },
     );
     doc.text(
       `${COMPANY_INFO.name} - SIRET ${COMPANY_INFO.siret} - N° TVA ${COMPANY_INFO.tva}`,
-      pageWidth / 2, footerY + 6, { align: "center" }
+      pageWidth / 2,
+      footerY + 6,
+      { align: "center" },
     );
 
     const dataUri = doc.output("datauristring");
     const invoiceBase64 = dataUri.split(",")[1];
     const invoiceFileName = `facture-${invoiceNumber}.pdf`;
 
-    return new Response(
-      JSON.stringify({ success: true, invoiceBase64, invoiceFileName, invoiceNumber }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return new Response(JSON.stringify({ success: true, invoiceBase64, invoiceFileName, invoiceNumber }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   } catch (error: any) {
     console.error("create-invoice error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 });
