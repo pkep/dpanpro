@@ -47,14 +47,14 @@ Deno.serve(async (req) => {
 
     if (!record) {
       return new Response(
-        JSON.stringify({ valid: false, reason: 'code_not_found' }),
+        JSON.stringify({ success: false, reason: 'code_not_found' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (record.code !== code) {
       return new Response(
-        JSON.stringify({ valid: false, reason: 'invalid_code' }),
+        JSON.stringify({ success: false, reason: 'invalid_code' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -62,14 +62,14 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     if (record.expires_at && now > record.expires_at) {
       return new Response(
-        JSON.stringify({ valid: false, reason: 'expired' }),
+        JSON.stringify({ success: false, reason: 'expired' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (record.used_at) {
       return new Response(
-        JSON.stringify({ valid: false, reason: 'already_used' }),
+        JSON.stringify({ success: false, reason: 'already_used' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -83,13 +83,13 @@ Deno.serve(async (req) => {
     if (updateError) {
       console.error('[CheckVerification] DB update error:', updateError);
       return new Response(
-        JSON.stringify({ valid: false, error: 'Échec de la mise à jour' }),
+        JSON.stringify({ success: false, error: 'Échec de la mise à jour' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     return new Response(
-      JSON.stringify({ valid: true }),
+      JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
