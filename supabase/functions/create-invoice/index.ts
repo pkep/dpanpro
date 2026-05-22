@@ -329,15 +329,8 @@ serve(async (req: Request): Promise<Response> => {
     doc.setTextColor(...primaryColor);
     doc.text(`${totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: "right" });
 
-    yPos += 55;
-    doc.setFillColor(220, 252, 231);
-    doc.roundedRect(20, yPos, pageWidth - 40, 20, 3, 3, "F");
-    doc.setFontSize(11);
-    doc.setTextColor(22, 163, 74);
-    doc.setFont("helvetica", "bold");
-    doc.text("PAYÉE", pageWidth / 2, yPos + 13, { align: "center" });
-
     // Signature section
+    yPos += 55;
     doc.setFontSize(10);
     doc.setTextColor(...textDark);
     doc.setFont("helvetica", "bold");
@@ -368,6 +361,14 @@ serve(async (req: Request): Promise<Response> => {
       doc.setTextColor(...textMuted);
       doc.text("En attente de signature", 60, yPos + 25, { align: "center" });
     }
+
+    yPos += 30;
+    doc.setFillColor(220, 252, 231);
+    doc.roundedRect(20, yPos, pageWidth - 40, 20, 3, 3, "F");
+    doc.setFontSize(11);
+    doc.setTextColor(22, 163, 74);
+    doc.setFont("helvetica", "bold");
+    doc.text("PAYÉE", pageWidth / 2, yPos + 13, { align: "center" });
 
     const footerY = doc.internal.pageSize.getHeight() - 30;
     doc.setFontSize(8);
