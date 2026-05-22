@@ -41,20 +41,54 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { error: insertError } = await supabase
+    const { data: existing, error: selectError } = await supabase
       .from('phone_verification_codes')
-      .insert({
-        phone,
-        code,
-        expires_at: expiresAt,
-      });
+      .select('id, attempts')
+      .eq('phone', phone)
+      .maybeSingle();
 
-    if (insertError) {
-      console.error('[VerificationCode] DB insert error:', insertError);
+    if (selectError) {
+      console.error('[VerificationCode] DB select error:', selectError);
       return new Response(
-        JSON.stringify({ error: 'Échec de l\'enregistrement du code' }),
+        JSON.stringify({ error: 'Échec de la vérification du numéro' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    if (existing) {
+      const { error: updateError } = await supabase
+        .from('phone_verification_codes')
+        .update({
+          code,
+          expires_at: expiresAt,
+          attempts: (existing.attempts ?? 0) + 1,
+          used_at: null,
+        })
+        .eq('id', existing.id);
+
+      if (updateError) {
+        console.error('[VerificationCode] DB update error:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Échec de la mise à jour du code' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      const { error: insertError } = await supabase
+        .from('phone_verification_codes')
+        .insert({
+          phone,
+          code,
+          expires_at: expiresAt,
+        });
+
+      if (insertError) {
+        console.error('[VerificationCode] DB insert error:', insertError);
+        return new Response(
+          JSON.stringify({ error: 'Échec de l\'enregistrement du code' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     const message = buildVerificationCodeSms({ code });
