@@ -84,3 +84,6 @@ verify_jwt = false
 [functions.check-verification-code]
 verify_jwt = false
 
+[functions.create-invoice]
+verify_jwt = false
+
