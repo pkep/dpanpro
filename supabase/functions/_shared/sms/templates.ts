@@ -132,10 +132,9 @@ export function buildArrivalReminderSms(data: ArrivalReminderSmsData): string {
 // ── Verification Code ───────────────────────────────────────────────
 interface VerificationCodeSmsData {
   code: string;
-  interventionType: string;
 }
 
 export function buildVerificationCodeSms(data: VerificationCodeSmsData): string {
-  return `${PREFIX} Bonjour,\nVeuillez saisir le code suivant :\n${data.code}\npour lancer l'intervention (${data.interventionType}).`;
+  return `${PREFIX} Bonjour,\nVeuillez saisir le code suivant :\n${data.code}\npour lancer l'intervention.`;
 }
 

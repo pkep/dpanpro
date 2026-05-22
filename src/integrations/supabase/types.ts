@@ -1125,7 +1125,6 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          intervention_type: string
           phone: string
           used_at: string | null
         }
@@ -1135,7 +1134,6 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
-          intervention_type: string
           phone: string
           used_at?: string | null
         }
@@ -1145,7 +1143,6 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          intervention_type?: string
           phone?: string
           used_at?: string | null
         }
