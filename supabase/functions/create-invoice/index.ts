@@ -313,6 +313,40 @@ serve(async (req: Request): Promise<Response> => {
     doc.setFont("helvetica", "bold");
     doc.text("PAYÉE", pageWidth / 2, yPos + 13, { align: "center" });
 
+    // Signature section
+    yPos += 30;
+    doc.setFontSize(10);
+    doc.setTextColor(...textDark);
+    doc.setFont("helvetica", "bold");
+    doc.text("Signature du client:", 20, yPos);
+
+    const signatureData: string | null = intervention.quote_signature_data || null;
+    if (signatureData) {
+      try {
+        doc.addImage(signatureData, "PNG", 20, yPos + 5, 60, 30);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...textMuted);
+        const signedAt = intervention.quote_signed_at ? new Date(intervention.quote_signed_at) : new Date();
+        doc.text(
+          `Signé le ${String(signedAt.getDate()).padStart(2, "0")}/${String(signedAt.getMonth() + 1).padStart(2, "0")}/${signedAt.getFullYear()}`,
+          20,
+          yPos + 40
+        );
+      } catch (err) {
+        console.error("Error adding signature to PDF:", err);
+      }
+    } else {
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(250, 250, 250);
+      doc.roundedRect(20, yPos + 5, 80, 35, 2, 2, "FD");
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(...textMuted);
+      doc.text("En attente de signature", 60, yPos + 25, { align: "center" });
+    }
+
+
     const footerY = doc.internal.pageSize.getHeight() - 30;
     doc.setFontSize(8);
     doc.setTextColor(...textMuted);
