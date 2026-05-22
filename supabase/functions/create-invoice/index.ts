@@ -362,7 +362,7 @@ serve(async (req: Request): Promise<Response> => {
       doc.text("En attente de signature", 60, yPos + 25, { align: "center" });
     }
 
-    yPos += 30;
+    yPos += 50;
     doc.setFillColor(220, 252, 231);
     doc.roundedRect(20, yPos, pageWidth - 40, 20, 3, 3, "F");
     doc.setFontSize(11);
