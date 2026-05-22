@@ -330,7 +330,7 @@ serve(async (req: Request): Promise<Response> => {
     doc.text(`${totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: "right" });
 
     // Signature section
-    yPos += 55;
+    //yPos += 55;
     doc.setFontSize(10);
     doc.setTextColor(...textDark);
     doc.setFont("helvetica", "bold");
