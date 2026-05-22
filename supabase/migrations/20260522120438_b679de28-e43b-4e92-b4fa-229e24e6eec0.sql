@@ -1,0 +1,1 @@
+ALTER TABLE public.phone_verification_codes DROP COLUMN intervention_type;

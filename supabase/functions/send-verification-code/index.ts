@@ -9,7 +9,6 @@ const corsHeaders = {
 
 interface RequestBody {
   phone: string;
-  interventionType: string;
 }
 
 function generateCode(): string {
@@ -25,11 +24,11 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json() as RequestBody;
-    const { phone, interventionType } = body;
+    const { phone } = body;
 
-    if (!phone || !interventionType) {
+    if (!phone) {
       return new Response(
-        JSON.stringify({ error: 'phone et interventionType sont requis' }),
+        JSON.stringify({ error: 'phone est requis' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -47,7 +46,6 @@ Deno.serve(async (req) => {
       .insert({
         phone,
         code,
-        intervention_type: interventionType,
         expires_at: expiresAt,
       });
 
@@ -59,7 +57,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const message = buildVerificationCodeSms({ code, interventionType });
+    const message = buildVerificationCodeSms({ code });
     const sent = await sendSMS(phone, message, '[VerificationCode]');
 
     if (!sent) {
