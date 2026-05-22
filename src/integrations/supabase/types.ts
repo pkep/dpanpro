@@ -1118,6 +1118,39 @@ export type Database = {
           },
         ]
       }
+      phone_verification_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          intervention_type: string
+          phone: string
+          used_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          intervention_type: string
+          phone: string
+          used_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          intervention_type?: string
+          phone?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       prestation: {
         Row: {
           created_at: string
