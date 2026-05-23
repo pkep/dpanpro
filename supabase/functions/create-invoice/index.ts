@@ -161,7 +161,7 @@ serve(async (req: Request): Promise<Response> => {
     const tva = totalHT * (vatRate / 100);
     const totalTTC = totalHT + tva;
 
-    const invoiceDate = new Date();
+    const invoiceDate = intervention.invoice_signed_at || new Date();
     const invoiceNumber = generateInvoiceNumber(interventionId, invoiceDate);
 
     // Build PDF
@@ -336,14 +336,14 @@ serve(async (req: Request): Promise<Response> => {
     doc.setFont("helvetica", "bold");
     doc.text("Signature du client:", 20, yPos);
 
-    const signatureData: string | null = intervention.quote_signature_data || null;
+    const signatureData: string | null = intervention.invoice_signature_data || null;
     if (signatureData) {
       try {
         doc.addImage(signatureData, "PNG", 20, yPos + 5, 60, 30);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
         doc.setTextColor(...textMuted);
-        const signedAt = intervention.quote_signed_at ? new Date(intervention.quote_signed_at) : new Date();
+        const signedAt = intervention.invoice_signed_at ? new Date(intervention.invoice_signed_at) : new Date();
         doc.text(
           `Signé le ${String(signedAt.getDate()).padStart(2, "0")}/${String(signedAt.getMonth() + 1).padStart(2, "0")}/${signedAt.getFullYear()}`,
           20,
