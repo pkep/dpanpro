@@ -161,7 +161,7 @@ serve(async (req: Request): Promise<Response> => {
     const tva = totalHT * (vatRate / 100);
     const totalTTC = totalHT + tva;
 
-    const invoiceDate = intervention.invoice_signed_at || new Date();
+    const invoiceDate = intervention.invoice_signed_at ? new Date(intervention.invoice_signed_at) : new Date();
     console.log("invoiceDate", invoiceDate);
     console.log("IID", interventionId);
     const invoiceNumber = generateInvoiceNumber(interventionId, invoiceDate);
