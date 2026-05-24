@@ -15,7 +15,7 @@ import { TechnicianPhotoUpload } from './TechnicianPhotoUpload';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const BUCKET_NAME = 'technician-photos';
+const BUCKET_NAME = 'technicians';
 
 interface RequiredPhotosModalProps {
   open: boolean;
