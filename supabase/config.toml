@@ -87,3 +87,9 @@ verify_jwt = false
 [functions.create-invoice]
 verify_jwt = false
 
+[functions.upload-quote-pdf]
+verify_jwt = false
+
+[functions.upload-invoice-pdf]
+verify_jwt = false
+
