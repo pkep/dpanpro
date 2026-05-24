@@ -52,7 +52,7 @@ function generateInvoiceNumber(interventionId: string, date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const shortId = interventionId.substring(0, 8).toUpperCase();
-  return `FAC-${year}${month}-${shortId}`;
+  return `${year}${month}-${shortId}`;
 }
 
 serve(async (req: Request): Promise<Response> => {
