@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { storageService } from '@/services/components/utils/storage/storage.service';
 
-const BUCKET_NAME = 'intervention-photos';
+const BUCKET_NAME = 'interventions';
 
 class PhotosService {
   /**

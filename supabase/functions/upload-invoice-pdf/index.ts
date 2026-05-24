@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const BUCKET = "intervention-photos";
+const BUCKET = "interventions";
 
 function base64ToUint8Array(base64: string): Uint8Array {
   const binary = atob(base64);

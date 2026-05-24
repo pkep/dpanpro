@@ -408,7 +408,7 @@ class QuotePDFService {
     const storagePath = buildInterventionPath(intervention.id, 'quotes', fileName);
 
     const file = new File([blob], fileName, { type: 'application/pdf' });
-    const publicUrl = await storageService.uploadFileToPath('intervention-photos', storagePath, file);
+    const publicUrl = await storageService.uploadFileToPath('interventions', storagePath, file);
 
     // Update DB with URL
     const { supabase } = await import('@/integrations/supabase/client');

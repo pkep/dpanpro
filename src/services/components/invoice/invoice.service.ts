@@ -461,7 +461,7 @@ class InvoiceService {
     const storagePath = buildInterventionPath(intervention.id, 'invoices', fileName);
 
     const file = new File([blob], fileName, { type: 'application/pdf' });
-    const publicUrl = await storageService.uploadFileToPath('intervention-photos', storagePath, file);
+    const publicUrl = await storageService.uploadFileToPath('interventions', storagePath, file);
 
     // Update DB with URL
     await supabase
