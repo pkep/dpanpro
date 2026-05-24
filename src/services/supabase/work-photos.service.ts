@@ -5,7 +5,7 @@ import type { WorkPhoto, WorkPhotoType } from '@/services/interfaces/work-photos
 // Re-export types for backward compatibility
 export type { WorkPhoto, WorkPhotoType } from '@/services/interfaces/work-photos.interface';
 
-const BUCKET_NAME = 'intervention-photos';
+const BUCKET_NAME = 'interventions';
 
 interface DbWorkPhoto {
   id: string;
