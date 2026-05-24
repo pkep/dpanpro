@@ -212,11 +212,11 @@ const JoinPage = () => {
         const fileExt = kbisFile.name.split('.').pop();
         const fileName = `kbis/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
-          .from('technician-photos')
+          .from('technicians')
           .upload(fileName, kbisFile);
         if (uploadError) throw new Error('Erreur lors de l\'upload du Kbis');
         const { data: urlData } = supabase.storage
-          .from('technician-photos')
+          .from('technicians')
           .getPublicUrl(fileName);
         kbisUrl = urlData.publicUrl;
       }

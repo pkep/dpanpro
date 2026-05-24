@@ -14,7 +14,7 @@ import { TechnicianPhotoUpload } from './TechnicianPhotoUpload';
 import { AlertCircle, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
-const BUCKET_NAME = 'technician-photos';
+const BUCKET_NAME = 'technicians';
 
 export function ProfileImagesTab() {
   const { user } = useAuth();
