@@ -11,7 +11,7 @@ export interface PartnerApplicationData {
   password: string;
   companyName: string;
   siren: string;
-  vatNumber?: string;
+  apeCode?: string;
   legalStatus: string;
   insuranceCompany: string;
   insurancePolicyNumber: string;
