@@ -75,7 +75,7 @@ const personalSchema = z.object({
 const professionalSchema = z.object({
   companyName: z.string().trim().min(2, 'Nom de l\'entreprise requis').max(100),
   siren: z.string().trim().regex(/^\d{9}$/, 'Le SIREN doit contenir 9 chiffres'),
-  vatNumber: z.string().optional(),
+  apeCode: z.string().optional(),
   legalStatus: z.string().min(1, 'Statut juridique requis'),
   insuranceCompany: z.string().trim().min(2, 'Nom de l\'assurance requis').max(100),
   insurancePolicyNumber: z.string().trim().min(5, 'Numéro de police requis').max(50),
@@ -145,7 +145,7 @@ const TechnicianProfilePage = () => {
           professionalForm.reset({
             companyName: profile.application.companyName,
             siren: profile.application.siren,
-            vatNumber: profile.application.vatNumber || '',
+            apeCode: profile.application.apeCode || '',
             legalStatus: profile.application.legalStatus,
             insuranceCompany: profile.application.insuranceCompany,
             insurancePolicyNumber: profile.application.insurancePolicyNumber,
@@ -458,10 +458,10 @@ const TechnicianProfilePage = () => {
                     />
                     <FormField
                       control={professionalForm.control}
-                      name="vatNumber"
+                      name="apeCode"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>N° TVA intracommunautaire</FormLabel>
+                          <FormLabel>Code APE</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>

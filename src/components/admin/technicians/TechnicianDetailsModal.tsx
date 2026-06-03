@@ -27,7 +27,7 @@ interface PartnerApplication {
   id: string;
   company_name: string;
   siren: string;
-  vat_number: string | null;
+  ape_code: string | null;
   legal_status: string;
   address: string;
   postal_code: string;
@@ -290,8 +290,8 @@ export function TechnicianDetailsModal({ technician, open, onOpenChange, onUpdat
                       <p className="font-medium font-mono">{application.siren}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-sm text-muted-foreground">N° TVA</span>
-                      <p className="font-medium font-mono">{application.vat_number || 'Non renseigné'}</p>
+                      <span className="text-sm text-muted-foreground">Code APE</span>
+                      <p className="font-medium font-mono">{application.ape_code || 'Non renseigné'}</p>
                     </div>
                   </div>
 

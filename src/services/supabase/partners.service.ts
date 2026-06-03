@@ -51,7 +51,7 @@ class PartnersService {
         city: data.city,
         company_name: data.companyName,
         siren: data.siren,
-        vat_number: data.vatNumber || null,
+        ape_code: data.apeCode || null,
         legal_status: data.legalStatus,
         insurance_company: data.insuranceCompany,
         insurance_policy_number: data.insurancePolicyNumber,
@@ -91,7 +91,7 @@ class PartnersService {
       city: string;
       companyName: string;
       siren: string;
-      vatNumber: string | null;
+      apeCode: string | null;
       legalStatus: string;
       insuranceCompany: string;
       insurancePolicyNumber: string;
@@ -139,7 +139,7 @@ class PartnersService {
         city: appData.city,
         companyName: appData.company_name,
         siren: appData.siren,
-        vatNumber: appData.vat_number,
+        apeCode: appData.ape_code,
         legalStatus: appData.legal_status,
         insuranceCompany: appData.insurance_company,
         insurancePolicyNumber: appData.insurance_policy_number,
@@ -171,7 +171,7 @@ class PartnersService {
       city?: string;
       companyName?: string;
       siren?: string;
-      vatNumber?: string;
+      apeCode?: string;
       legalStatus?: string;
       insuranceCompany?: string;
       insurancePolicyNumber?: string;
@@ -210,7 +210,7 @@ class PartnersService {
     if (data.city) appUpdates.city = data.city;
     if (data.companyName) appUpdates.company_name = data.companyName;
     if (data.siren) appUpdates.siren = data.siren;
-    if (data.vatNumber !== undefined) appUpdates.vat_number = data.vatNumber || null;
+    if (data.apeCode !== undefined) appUpdates.ape_code = data.apeCode || null;
     if (data.legalStatus) appUpdates.legal_status = data.legalStatus;
     if (data.insuranceCompany) appUpdates.insurance_company = data.insuranceCompany;
     if (data.insurancePolicyNumber) appUpdates.insurance_policy_number = data.insurancePolicyNumber;

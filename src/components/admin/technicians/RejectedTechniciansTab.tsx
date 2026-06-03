@@ -31,7 +31,7 @@ interface RejectedApplication {
   insurance_policy_number: string;
   insurance_expiry_date: string;
   has_decennial_insurance: boolean;
-  vat_number: string | null;
+  ape_code: string | null;
   presentation: string | null;
   bank_account_holder: string | null;
   bank_name: string | null;
@@ -118,7 +118,7 @@ export function RejectedTechniciansTab() {
           id, user_id, company_name, siren, legal_status, skills,
           years_experience, created_at, updated_at, address, postal_code, city,
           birth_date, birth_place, insurance_company, insurance_policy_number,
-          insurance_expiry_date, has_decennial_insurance, vat_number, presentation,
+          insurance_expiry_date, has_decennial_insurance, ape_code, presentation,
           bank_account_holder, bank_name, iban, bic, kbis_url
         `)
         .eq('status', 'rejected')
@@ -375,8 +375,8 @@ export function RejectedTechniciansTab() {
                     <p className="font-medium font-mono">{selectedApp.siren}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">N° TVA :</span>
-                    <p className="font-medium font-mono">{selectedApp.vat_number || 'Non renseigné'}</p>
+                    <span className="text-muted-foreground">Code APE :</span>
+                    <p className="font-medium font-mono">{selectedApp.ape_code || 'Non renseigné'}</p>
                   </div>
                 </div>
                 <div className="mt-2 text-sm">

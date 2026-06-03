@@ -79,7 +79,7 @@ const step1Schema = z.object({
 const step2Schema = z.object({
   companyName: z.string().trim().min(2, 'Nom de l\'entreprise requis').max(100),
   siren: z.string().trim().regex(/^\d{9}$/, 'Le SIREN doit contenir 9 chiffres'),
-  vatNumber: z.string().optional(),
+  apeCode: z.string().optional(),
   legalStatus: z.string().min(1, 'Statut juridique requis'),
   insuranceCompany: z.string().trim().min(2, 'Nom de l\'assurance requis').max(100),
   insurancePolicyNumber: z.string().trim().min(5, 'Numéro de police requis').max(50),
@@ -148,7 +148,7 @@ const JoinPage = () => {
     defaultValues: step2Data || {
       companyName: '',
       siren: '',
-      vatNumber: '',
+      apeCode: '',
       legalStatus: '',
       insuranceCompany: '',
       insurancePolicyNumber: '',
@@ -234,7 +234,7 @@ const JoinPage = () => {
         password: step1Data.password,
         companyName: step2Data.companyName,
         siren: step2Data.siren,
-        vatNumber: step2Data.vatNumber,
+        apeCode: step2Data.apeCode,
         legalStatus: step2Data.legalStatus,
         insuranceCompany: step2Data.insuranceCompany,
         insurancePolicyNumber: step2Data.insurancePolicyNumber,
@@ -491,12 +491,12 @@ const JoinPage = () => {
                       />
                       <FormField
                         control={step2Form.control}
-                        name="vatNumber"
+                        name="apeCode"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Numéro de TVA (optionnel)</FormLabel>
+                            <FormLabel>Code APE (optionnel)</FormLabel>
                             <FormControl>
-                              <Input placeholder="FR12345678901" {...field} />
+                              <Input placeholder="4321A" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
