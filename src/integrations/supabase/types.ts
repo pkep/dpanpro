@@ -851,6 +851,7 @@ export type Database = {
       partner_applications: {
         Row: {
           address: string | null
+          ape_code: string | null
           availability: Database["public"]["Enums"]["partner_availability"][]
           bank_account_holder: string | null
           bank_name: string | null
@@ -883,12 +884,12 @@ export type Database = {
           terms_accepted: boolean
           updated_at: string
           user_id: string | null
-          vat_number: string | null
           years_experience: number
           zone: string | null
         }
         Insert: {
           address?: string | null
+          ape_code?: string | null
           availability?: Database["public"]["Enums"]["partner_availability"][]
           bank_account_holder?: string | null
           bank_name?: string | null
@@ -921,12 +922,12 @@ export type Database = {
           terms_accepted?: boolean
           updated_at?: string
           user_id?: string | null
-          vat_number?: string | null
           years_experience: number
           zone?: string | null
         }
         Update: {
           address?: string | null
+          ape_code?: string | null
           availability?: Database["public"]["Enums"]["partner_availability"][]
           bank_account_holder?: string | null
           bank_name?: string | null
@@ -959,7 +960,6 @@ export type Database = {
           terms_accepted?: boolean
           updated_at?: string
           user_id?: string | null
-          vat_number?: string | null
           years_experience?: number
           zone?: string | null
         }

@@ -279,7 +279,7 @@ CREATE TABLE public.partner_applications (
   -- Informations professionnelles
   company_name text NOT NULL,
   siret text NOT NULL,
-  vat_number text,
+  ape_code text,
   legal_status text NOT NULL,
   
   -- Assurance

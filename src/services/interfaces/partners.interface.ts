@@ -11,7 +11,7 @@ export interface PartnerApplicationData {
   password: string;
   companyName: string;
   siren: string;
-  vatNumber?: string;
+  apeCode?: string;
   legalStatus: string;
   insuranceCompany: string;
   insurancePolicyNumber: string;
@@ -44,7 +44,7 @@ export interface IPartnersService {
     user: { firstName: string; lastName: string; email: string; phone: string | null };
     application: {
       birthDate: string; birthPlace: string; address: string; postalCode: string; city: string;
-      companyName: string; siren: string; vatNumber: string | null; legalStatus: string;
+      companyName: string; siren: string; apeCode: string | null; legalStatus: string;
       insuranceCompany: string; insurancePolicyNumber: string; insuranceExpiryDate: string;
       hasDecennialInsurance: boolean; skills: string[]; yearsExperience: number; motivation: string;
       bankAccountHolder: string; bankName: string; iban: string; bic: string;
