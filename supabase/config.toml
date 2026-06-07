@@ -93,7 +93,7 @@ verify_jwt = false
 [functions.upload-invoice-pdf]
 verify_jwt = false
 
-[functions.welcome-job-technician]
+[functions.notify-welcome-job-technician]
 verify_jwt = false
 
 
