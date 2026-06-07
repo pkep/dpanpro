@@ -150,6 +150,13 @@ class InterventionsService {
       console.error('Auto-dispatch failed:', err);
     });
 
+    // Notify client that intervention is taken into account (non-blocking)
+    supabase.functions.invoke('notify-new-intervention', {
+      body: { interventionId: intervention.id },
+    }).catch(err => {
+      console.error('notify-new-intervention failed:', err);
+    });
+
     return intervention;
   }
 
