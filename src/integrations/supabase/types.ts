@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_notification_recipients: {
+        Row: {
+          action: string
+          created_at: string
+          email: string[] | null
+          id: string
+          roles: Database["public"]["Enums"]["app_role"][] | null
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          email?: string[] | null
+          id?: string
+          roles?: Database["public"]["Enums"]["app_role"][] | null
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          email?: string[] | null
+          id?: string
+          roles?: Database["public"]["Enums"]["app_role"][] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cancelled_assignments: {
         Row: {
           cancelled_at: string
