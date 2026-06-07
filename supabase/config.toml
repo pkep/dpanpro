@@ -99,5 +99,8 @@ verify_jwt = false
 [functions.notify-manager-after-job-technician]
 verify_jwt = false
 
+[functions.notify-new-intervention]
+verify_jwt = false
+
 
 
