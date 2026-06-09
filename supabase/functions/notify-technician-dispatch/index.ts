@@ -110,12 +110,10 @@ serve(async (req) => {
 
     const results = {
       sms: { sent: 0, failed: 0, errors: [] as string[] },
-      email: { sent: 0, failed: 0, errors: [] as string[] },
       push: { sent: 0, failed: 0, errors: [] as string[] },
     };
 
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
-    const priorityLabel = PRIORITY_LABELS[intervention.priority] || intervention.priority;
     const isUrgent = intervention.priority === "urgent";
     const acceptanceUrl = frontendUrl + "/technician";
 
@@ -147,61 +145,7 @@ serve(async (req) => {
         }
       }
 
-      // 2. Send Email via Resend
-      try {
-        const resendApiKey = Deno.env.get("RESEND_API_KEY");
-        const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
-
-        if (resendApiKey) {
-          const emailSubject = isUrgent
-            ? `Depan.Pro : 🚨 URGENT - Nouvelle mission ${categoryLabel} à ${intervention.city}`
-            : `Depan.Pro : Nouvelle mission ${categoryLabel} à ${intervention.city}`;
-
-          const emailHtml = buildTechnicianDispatchEmailHtml({
-            firstName: tech.firstName,
-            categoryLabel,
-            address: intervention.address,
-            postalCode: intervention.postalCode,
-            city: intervention.city,
-            priorityLabel,
-            isUrgent,
-          });
-
-          const emailResponse = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${resendApiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: `Depan.Pro <${resendFromEmail}>`,
-              to: [tech.email],
-              subject: emailSubject,
-              html: emailHtml,
-            }),
-          });
-
-          if (emailResponse.ok) {
-            const emailData = await emailResponse.json();
-            console.log(`[NotifyTechnicianDispatch] Email sent to ${tech.email}, ID: ${emailData.id}`);
-            results.email.sent++;
-          } else {
-            const errorText = await emailResponse.text();
-            console.error(`[NotifyTechnicianDispatch] Email failed for ${tech.email}:`, errorText);
-            results.email.failed++;
-            results.email.errors.push(`${tech.id}: ${errorText}`);
-          }
-        } else {
-          console.log("[NotifyTechnicianDispatch] Resend not configured, skipping email");
-        }
-      } catch (emailError: unknown) {
-        const errorMessage = emailError instanceof Error ? emailError.message : String(emailError);
-        console.error(`[NotifyTechnicianDispatch] Email error for ${tech.id}:`, emailError);
-        results.email.failed++;
-        results.email.errors.push(`${tech.id}: ${errorMessage}`);
-      }
-
-      // 3. Send Push Notification via FCM
+      // 2. Send Push Notification via FCM
       try {
         const firebaseServerKey = Deno.env.get("FIREBASE_SERVER_KEY");
 
