@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildTechnicianDispatchEmailHtml } from "../_shared/email-templates/technician-dispatch.ts";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildTechnicianDispatchSms } from "../_shared/sms/templates.ts";
 
@@ -24,7 +23,6 @@ interface NotifyTechnicianRequest {
 
 interface TechnicianInfo {
   id: string;
-  email: string;
   phone: string | null;
   firstName: string;
   lastName: string;
@@ -37,11 +35,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   glazing: "Vitrerie",
   heating: "Chauffage",
   aircon: "Climatisation",
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  urgent: "🚨 URGENT",
-  normal: "Normal",
 };
 
 serve(async (req) => {
@@ -95,7 +88,7 @@ serve(async (req) => {
 
     const { data: technicians, error: techError } = await supabase
       .from("users")
-      .select("id, email, phone, first_name, last_name")
+      .select("id, phone, first_name, last_name")
       .in("id", technicianIds);
 
     if (techError) {
@@ -108,7 +101,6 @@ serve(async (req) => {
 
     const technicianInfos: TechnicianInfo[] = (technicians || []).map((t) => ({
       id: t.id,
-      email: t.email,
       phone: t.phone,
       firstName: t.first_name,
       lastName: t.last_name,
@@ -118,12 +110,10 @@ serve(async (req) => {
 
     const results = {
       sms: { sent: 0, failed: 0, errors: [] as string[] },
-      email: { sent: 0, failed: 0, errors: [] as string[] },
       push: { sent: 0, failed: 0, errors: [] as string[] },
     };
 
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
-    const priorityLabel = PRIORITY_LABELS[intervention.priority] || intervention.priority;
     const isUrgent = intervention.priority === "urgent";
     const acceptanceUrl = frontendUrl + "/technician";
 
@@ -155,61 +145,7 @@ serve(async (req) => {
         }
       }
 
-      // 2. Send Email via Resend
-      try {
-        const resendApiKey = Deno.env.get("RESEND_API_KEY");
-        const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
-
-        if (resendApiKey) {
-          const emailSubject = isUrgent
-            ? `Depan.Pro : 🚨 URGENT - Nouvelle mission ${categoryLabel} à ${intervention.city}`
-            : `Depan.Pro : Nouvelle mission ${categoryLabel} à ${intervention.city}`;
-
-          const emailHtml = buildTechnicianDispatchEmailHtml({
-            firstName: tech.firstName,
-            categoryLabel,
-            address: intervention.address,
-            postalCode: intervention.postalCode,
-            city: intervention.city,
-            priorityLabel,
-            isUrgent,
-          });
-
-          const emailResponse = await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${resendApiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              from: `Depan.Pro <${resendFromEmail}>`,
-              to: [tech.email],
-              subject: emailSubject,
-              html: emailHtml,
-            }),
-          });
-
-          if (emailResponse.ok) {
-            const emailData = await emailResponse.json();
-            console.log(`[NotifyTechnicianDispatch] Email sent to ${tech.email}, ID: ${emailData.id}`);
-            results.email.sent++;
-          } else {
-            const errorText = await emailResponse.text();
-            console.error(`[NotifyTechnicianDispatch] Email failed for ${tech.email}:`, errorText);
-            results.email.failed++;
-            results.email.errors.push(`${tech.id}: ${errorText}`);
-          }
-        } else {
-          console.log("[NotifyTechnicianDispatch] Resend not configured, skipping email");
-        }
-      } catch (emailError: unknown) {
-        const errorMessage = emailError instanceof Error ? emailError.message : String(emailError);
-        console.error(`[NotifyTechnicianDispatch] Email error for ${tech.id}:`, emailError);
-        results.email.failed++;
-        results.email.errors.push(`${tech.id}: ${errorMessage}`);
-      }
-
-      // 3. Send Push Notification via FCM
+      // 2. Send Push Notification via FCM
       try {
         const firebaseServerKey = Deno.env.get("FIREBASE_SERVER_KEY");
 
