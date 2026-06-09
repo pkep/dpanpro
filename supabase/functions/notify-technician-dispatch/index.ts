@@ -23,7 +23,6 @@ interface NotifyTechnicianRequest {
 
 interface TechnicianInfo {
   id: string;
-  email: string;
   phone: string | null;
   firstName: string;
   lastName: string;
@@ -36,11 +35,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   glazing: "Vitrerie",
   heating: "Chauffage",
   aircon: "Climatisation",
-};
-
-const PRIORITY_LABELS: Record<string, string> = {
-  urgent: "🚨 URGENT",
-  normal: "Normal",
 };
 
 serve(async (req) => {
