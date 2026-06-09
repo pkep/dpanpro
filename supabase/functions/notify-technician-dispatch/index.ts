@@ -88,7 +88,7 @@ serve(async (req) => {
 
     const { data: technicians, error: techError } = await supabase
       .from("users")
-      .select("id, email, phone, first_name, last_name")
+      .select("id, phone, first_name, last_name")
       .in("id", technicianIds);
 
     if (techError) {
@@ -101,7 +101,6 @@ serve(async (req) => {
 
     const technicianInfos: TechnicianInfo[] = (technicians || []).map((t) => ({
       id: t.id,
-      email: t.email,
       phone: t.phone,
       firstName: t.first_name,
       lastName: t.last_name,
