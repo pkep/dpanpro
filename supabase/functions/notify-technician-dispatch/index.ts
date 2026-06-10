@@ -151,6 +151,7 @@ serve(async (req) => {
             postalCode: intervention.postalCode,
             isUrgent,
             acceptanceUrl,
+            questionnaireAnswers,
           });
           const sent = await sendSMS(tech.phone, smsMessage, "[NotifyTechnicianDispatch]");
           if (sent) {
