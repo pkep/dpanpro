@@ -86,6 +86,27 @@ serve(async (req) => {
       };
     }
 
+    // Fetch questionnaire answers to include in the SMS
+    let questionnaireAnswers: string[] = [];
+    try {
+      const { data: qaData, error: qaError } = await supabase
+        .from("interventions")
+        .select("questionnaire_answers")
+        .eq("id", interventionId)
+        .single();
+
+      if (qaError) {
+        console.error("[NotifyTechnicianDispatch] Failed to fetch questionnaire answers:", qaError);
+      } else if (Array.isArray(qaData?.questionnaire_answers)) {
+        questionnaireAnswers = qaData.questionnaire_answers.filter(
+          (a: unknown): a is string => typeof a === "string" && a.trim().length > 0,
+        );
+      }
+    } catch (e) {
+      console.error("[NotifyTechnicianDispatch] Error fetching questionnaire answers:", e);
+    }
+    console.log(`[NotifyTechnicianDispatch] Questionnaire answers:`, questionnaireAnswers);
+
     const { data: technicians, error: techError } = await supabase
       .from("users")
       .select("id, phone, first_name, last_name")
@@ -130,6 +151,7 @@ serve(async (req) => {
             postalCode: intervention.postalCode,
             isUrgent,
             acceptanceUrl,
+            questionnaireAnswers,
           });
           const sent = await sendSMS(tech.phone, smsMessage, "[NotifyTechnicianDispatch]");
           if (sent) {

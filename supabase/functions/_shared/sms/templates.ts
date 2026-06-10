@@ -85,11 +85,16 @@ interface TechnicianDispatchSmsData {
   postalCode: string;
   isUrgent: boolean;
   acceptanceUrl: string;
+  questionnaireAnswers?: string[];
 }
 
 export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): string {
   const urgentPrefix = data.isUrgent ? "URGENT - " : "";
-  return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}. ${data.address}, ${data.postalCode}. \nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
+  const answersLine =
+    data.questionnaireAnswers && data.questionnaireAnswers.length > 0
+      ? `\nDetails: ${data.questionnaireAnswers.join(" | ")}.`
+      : "";
+  return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}. ${data.address}, ${data.postalCode}.${answersLine}\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
 }
 
 // ── Payment Captured (technician confirmation) ──────────────────────
