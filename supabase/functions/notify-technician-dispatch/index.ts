@@ -136,7 +136,7 @@ serve(async (req) => {
 
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
     const isUrgent = intervention.priority === "urgent";
-    const acceptanceUrl = frontendUrl + "/technician";
+    const acceptanceUrl = frontendUrl + "/technician?acceptIntervention=" + interventionId;
 
     for (const tech of technicianInfos) {
       console.log(`[NotifyTechnicianDispatch] Processing technician ${tech.id} (${tech.firstName} ${tech.lastName})`);
