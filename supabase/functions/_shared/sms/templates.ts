@@ -94,7 +94,7 @@ export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): str
     data.questionnaireAnswers && data.questionnaireAnswers.length > 0
       ? `\nDetails: ${data.questionnaireAnswers.join(" | ")}.`
       : "";
-  return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}. ${data.address}, ${data.postalCode}.${answersLine}\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
+  return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}.\n${data.address}, ${data.postalCode}.${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
 }
 
 // ── Payment Captured (technician confirmation) ──────────────────────
@@ -142,4 +142,3 @@ interface VerificationCodeSmsData {
 export function buildVerificationCodeSms(data: VerificationCodeSmsData): string {
   return `${PREFIX} Bonjour,\nVeuillez saisir le code suivant :\n${data.code}\npour lancer l'intervention.`;
 }
-
