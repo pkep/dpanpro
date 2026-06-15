@@ -1981,6 +1981,247 @@ ALTER TABLE public.disputes
 -- ============================================================
 
 -- ============================================================
--- FIN DU FICHIER
--- Dernière mise à jour : 2026-03-15
+-- Migration: 2026-04-06 - Ajout invoice_pdf_url sur interventions
 -- ============================================================
+ALTER TABLE public.interventions ADD COLUMN IF NOT EXISTS invoice_pdf_url text DEFAULT NULL;
+
+-- ============================================================
+-- Migration: 2026-04-12 - partner_applications: rename motivation->presentation + nullable columns
+-- ============================================================
+DO $$
+DECLARE
+  nullable_column text;
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'partner_applications' AND column_name = 'motivation'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'partner_applications' AND column_name = 'presentation'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.partner_applications RENAME COLUMN motivation TO presentation';
+  END IF;
+
+  FOREACH nullable_column IN ARRAY ARRAY[
+    'vat_number','legal_status','address','postal_code','city','birth_date','birth_place',
+    'insurance_company','insurance_policy_number','insurance_expiry_date','presentation',
+    'bank_account_holder','bank_name','iban','bic'
+  ]
+  LOOP
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'partner_applications'
+        AND column_name = nullable_column AND is_nullable = 'NO'
+    ) THEN
+      EXECUTE format('ALTER TABLE public.partner_applications ALTER COLUMN %I DROP NOT NULL', nullable_column);
+    END IF;
+  END LOOP;
+END
+$$;
+
+-- ============================================================
+-- Migration: 2026-05-10 - partner_applications: rename siret -> siren
+-- ============================================================
+ALTER TABLE public.partner_applications RENAME COLUMN siret TO siren;
+
+-- ============================================================
+-- Migration: 2026-05-10 - partner_applications: availability enum
+-- ============================================================
+DO $$ BEGIN
+  CREATE TYPE public.partner_availability AS ENUM ('week_day', 'evening', 'week_end', 'public_holidays', 'night', 'anytime');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+ALTER TABLE public.partner_applications
+  ADD COLUMN IF NOT EXISTS availability public.partner_availability[] NOT NULL DEFAULT '{}';
+
+-- ============================================================
+-- Migration: 2026-05-10 - partner_applications: certifications
+-- ============================================================
+ALTER TABLE public.partner_applications
+  ADD COLUMN IF NOT EXISTS certifications TEXT[] NOT NULL DEFAULT '{}';
+
+-- ============================================================
+-- Migration: 2026-05-10 - partner_applications: has_vehicle + zone
+-- ============================================================
+ALTER TABLE public.partner_applications
+  ADD COLUMN IF NOT EXISTS has_vehicle BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS zone TEXT DEFAULT NULL;
+
+-- ============================================================
+-- Migration: 2026-05-10 - user_roles permissive policies (custom auth)
+-- ============================================================
+DROP POLICY IF EXISTS "Admins can manage all roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Managers with permission can create manager roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Users can view their own roles" ON public.user_roles;
+
+CREATE POLICY "Anyone can view user roles" ON public.user_roles FOR SELECT USING (true);
+CREATE POLICY "Anyone can insert user roles" ON public.user_roles FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can update user roles" ON public.user_roles FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Anyone can delete user roles" ON public.user_roles FOR DELETE USING (true);
+
+-- ============================================================
+-- Migration: 2026-05-14 - interventions: invoice signature
+-- ============================================================
+ALTER TABLE public.interventions
+  ADD COLUMN IF NOT EXISTS invoice_signature_data TEXT,
+  ADD COLUMN IF NOT EXISTS invoice_signed_at TIMESTAMP WITHOUT TIME ZONE;
+
+COMMENT ON COLUMN public.interventions.invoice_signature_data IS 'Données de signature du client sur la facture finale (format base64/svg)';
+COMMENT ON COLUMN public.interventions.invoice_signed_at IS 'Date et heure de signature de la facture par le client';
+
+-- ============================================================
+-- Migration: 2026-05-22 - phone_verification_codes table
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.phone_verification_codes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  phone text NOT NULL,
+  code text NOT NULL,
+  expires_at timestamp with time zone NOT NULL,
+  used_at timestamp with time zone,
+  attempts integer NOT NULL DEFAULT 0,
+  created_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_phone_verification_codes_phone_code
+  ON public.phone_verification_codes (phone, code);
+CREATE INDEX IF NOT EXISTS idx_phone_verification_codes_expires_at
+  ON public.phone_verification_codes (expires_at);
+
+ALTER TABLE public.phone_verification_codes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can insert phone codes" ON public.phone_verification_codes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can view phone codes" ON public.phone_verification_codes FOR SELECT USING (true);
+CREATE POLICY "Anyone can update phone codes" ON public.phone_verification_codes FOR UPDATE USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- Migration: 2026-05-24 - Storage: nouveau bucket "interventions" + migration des fichiers
+-- ============================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('interventions', 'interventions', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Allow public read interventions" ON storage.objects FOR SELECT USING (bucket_id = 'interventions');
+CREATE POLICY "Allow upload interventions" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'interventions');
+CREATE POLICY "Allow delete interventions" ON storage.objects FOR DELETE USING (bucket_id = 'interventions');
+
+UPDATE storage.objects
+SET bucket_id = 'interventions',
+    name = regexp_replace(name, '^work-photos/([^/]+)/(before|after)/(.*)$', '\1/work-photos/\2/\3')
+WHERE bucket_id = 'intervention-photos'
+  AND name ~ '^work-photos/[^/]+/(before|after)/';
+
+UPDATE storage.objects
+SET bucket_id = 'interventions'
+WHERE bucket_id = 'intervention-photos' AND name LIKE 'temp/%';
+
+UPDATE storage.objects
+SET bucket_id = 'interventions',
+    name = regexp_replace(name, '^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([^/]+)$', '\1/photos/\2')
+WHERE bucket_id = 'intervention-photos'
+  AND name ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[^/]+$';
+
+UPDATE intervention_work_photos
+SET photo_url = regexp_replace(photo_url,
+  '/intervention-photos/work-photos/([^/]+)/(before|after)/',
+  '/interventions/\1/work-photos/\2/')
+WHERE photo_url LIKE '%/intervention-photos/work-photos/%';
+
+UPDATE interventions
+SET photos = ARRAY(
+  SELECT CASE
+    WHEN p LIKE '%/intervention-photos/temp/%'
+      THEN replace(p, '/intervention-photos/temp/', '/interventions/temp/')
+    WHEN p ~ '/intervention-photos/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[^/]+$'
+      THEN regexp_replace(p,
+        '/intervention-photos/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/([^/]+)$',
+        '/interventions/\1/photos/\2')
+    ELSE p END
+  FROM unnest(photos) AS p)
+WHERE EXISTS (SELECT 1 FROM unnest(photos) AS p WHERE p LIKE '%/intervention-photos/%');
+
+DROP POLICY IF EXISTS "Allow public read intervention photos" ON storage.objects;
+DROP POLICY IF EXISTS "Allow upload intervention photos" ON storage.objects;
+DROP POLICY IF EXISTS "Allow delete intervention photos" ON storage.objects;
+
+-- ============================================================
+-- Migration: 2026-05-24 - Storage: nouveau bucket "technicians" + migration
+-- ============================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('technicians', 'technicians', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Allow public read technicians" ON storage.objects FOR SELECT USING (bucket_id = 'technicians');
+CREATE POLICY "Allow uploads to technicians" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'technicians');
+CREATE POLICY "Allow updates to technicians" ON storage.objects FOR UPDATE USING (bucket_id = 'technicians') WITH CHECK (bucket_id = 'technicians');
+CREATE POLICY "Allow deletes from technicians" ON storage.objects FOR DELETE USING (bucket_id = 'technicians');
+
+UPDATE storage.objects SET bucket_id = 'technicians' WHERE bucket_id = 'technician-photos';
+
+UPDATE public.users
+SET avatar_url = REPLACE(avatar_url, '/technician-photos/', '/technicians/')
+WHERE avatar_url LIKE '%/technician-photos/%';
+
+UPDATE public.users
+SET company_logo_url = REPLACE(company_logo_url, '/technician-photos/', '/technicians/')
+WHERE company_logo_url LIKE '%/technician-photos/%';
+
+DROP POLICY IF EXISTS "Allow public read technician-photos" ON storage.objects;
+DROP POLICY IF EXISTS "Allow uploads to technician-photos" ON storage.objects;
+DROP POLICY IF EXISTS "Allow updates to technician-photos" ON storage.objects;
+DROP POLICY IF EXISTS "Allow deletes from technician-photos" ON storage.objects;
+DROP POLICY IF EXISTS "Public read access for technician photos" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload technician photos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own technician photos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own technician photos" ON storage.objects;
+
+-- ============================================================
+-- Migration: 2026-06-03 - partner_applications: rename vat_number -> ape_code
+-- ============================================================
+ALTER TABLE public.partner_applications RENAME COLUMN vat_number TO ape_code;
+
+-- ============================================================
+-- Migration: 2026-06-07 - action_notification_recipients table
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.action_notification_recipients (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  action TEXT NOT NULL,
+  roles public.app_role[] NULL,
+  email TEXT[] NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.action_notification_recipients TO authenticated;
+GRANT ALL ON public.action_notification_recipients TO service_role;
+
+ALTER TABLE public.action_notification_recipients ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins and managers can view recipients"
+  ON public.action_notification_recipients FOR SELECT TO authenticated
+  USING (public.is_admin_or_manager(auth.uid()));
+CREATE POLICY "Admins and managers can insert recipients"
+  ON public.action_notification_recipients FOR INSERT TO authenticated
+  WITH CHECK (public.is_admin_or_manager(auth.uid()));
+CREATE POLICY "Admins and managers can update recipients"
+  ON public.action_notification_recipients FOR UPDATE TO authenticated
+  USING (public.is_admin_or_manager(auth.uid())) WITH CHECK (public.is_admin_or_manager(auth.uid()));
+CREATE POLICY "Admins and managers can delete recipients"
+  ON public.action_notification_recipients FOR DELETE TO authenticated
+  USING (public.is_admin_or_manager(auth.uid()));
+
+CREATE TRIGGER update_action_notification_recipients_updated_at
+  BEFORE UPDATE ON public.action_notification_recipients
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE UNIQUE INDEX IF NOT EXISTS action_notification_recipients_action_key
+  ON public.action_notification_recipients(action);
+
+INSERT INTO public.action_notification_recipients (action, roles, email)
+VALUES ('welcome-job-technician', ARRAY['manager','admin']::public.app_role[], ARRAY['k3pcontact@gmail.com'])
+ON CONFLICT (action) DO NOTHING;
+
+-- ============================================================
+-- FIN DU FICHIER
+-- Dernière mise à jour : 2026-06-07
+-- ============================================================
+
