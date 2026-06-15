@@ -53,7 +53,7 @@ export default function AdminDashboard() {
         totalTechnicians: users.filter((u) => u.role === 'technician').length,
         totalClients: users.filter((u) => u.role === 'client').length,
         totalInterventions: interventions.length,
-        pendingInterventions: interventions.filter((i) => i.status === 'new').length,
+        pendingInterventions: interventions.filter((i) => i.status === 'new' && !i.technicianId).length,
         activeInterventions: interventions.filter((i) => ['assigned', 'en_route', 'in_progress'].includes(i.status)).length,
         completedInterventions: interventions.filter((i) => i.status === 'completed').length,
         urgentInterventions: interventions.filter((i) => i.priority === 'urgent' && i.status !== 'completed').length,
