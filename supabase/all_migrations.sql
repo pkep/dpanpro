@@ -2220,10 +2220,8 @@ INSERT INTO public.action_notification_recipients (action, roles, email)
 VALUES ('welcome-job-technician', ARRAY['manager','admin']::public.app_role[], ARRAY['k3pcontact@gmail.com'])
 ON CONFLICT (action) DO NOTHING;
 
--- ============================================================
--- FIN DU FICHIER
--- Dernière mise à jour : 2026-06-07
--- ============================================================
+
+
 
 
 -- ============================================================
