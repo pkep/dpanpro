@@ -99,7 +99,7 @@ const Dashboard = () => {
             total: data.length,
             active: data.filter(i => ['assigned', 'on_route', 'in_progress'].includes(i.status)).length,
             completed: data.filter(i => i.status === 'completed').length,
-            pending: data.filter(i => i.status === 'new').length,
+            pending: data.filter(i => i.status === 'new' && !i.technicianId).length,
             urgent: data.filter(i => i.priority === 'urgent' && !['completed', 'cancelled'].includes(i.status)).length,
           });
         }
@@ -140,7 +140,7 @@ const Dashboard = () => {
           total: data.length,
           active: data.filter(i => ['assigned', 'en_route', 'in_progress'].includes(i.status)).length,
           completed: data.filter(i => i.status === 'completed').length,
-          pending: data.filter(i => i.status === 'new').length,
+          pending: data.filter(i => i.status === 'new' && !i.technicianId).length,
           urgent: data.filter(i => i.priority === 'urgent' && !['completed', 'cancelled'].includes(i.status)).length,
         });
       } catch (err) {

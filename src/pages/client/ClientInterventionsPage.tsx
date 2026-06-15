@@ -59,9 +59,10 @@ export default function ClientInterventionsPage() {
   };
 
   // Filter interventions by status
-  const pendingInterventions = interventions.filter(i => i.status === 'new');
+  const pendingInterventions = interventions.filter(i => i.status === 'new' && !i.technicianId);
   const activeInterventions = interventions.filter(i => 
-    ['assigned', 'on_route', 'in_progress'].includes(i.status)
+    ['assigned', 'on_route', 'in_progress'].includes(i.status) ||
+    (i.status === 'new' && !!i.technicianId) // scheduled & accepted
   );
   const completedInterventions = interventions.filter(i => i.status === 'completed');
   const cancelledInterventions = interventions.filter(i => i.status === 'cancelled');
