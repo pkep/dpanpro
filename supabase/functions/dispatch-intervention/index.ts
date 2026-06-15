@@ -267,17 +267,43 @@ async function handleDispatch(supabase: any, interventionId: string) {
     );
   }
 
-  // Filter out technicians who declined or cancelled
-  const eligibleApplications = applications.filter((a: any) => 
-    !declinedTechnicianIds.has(a.user_id) && !cancelledTechnicianIds.has(a.user_id)
+  // 2d. Get technicians with a scheduled intervention within the next 2 hours
+  //     (they must remain free to honor that upcoming planned intervention)
+  const SCHEDULING_BUFFER_MS = 2 * 60 * 60 * 1000;
+  const nowMs = Date.now();
+  const horizonIso = new Date(nowMs + SCHEDULING_BUFFER_MS).toISOString();
+
+  const candidateUserIds = applications.map((a: any) => a.user_id).filter(Boolean);
+  const scheduledConflictTechIds = new Set<string>();
+  if (candidateUserIds.length > 0) {
+    const { data: scheduledRows } = await supabase
+      .from('interventions')
+      .select('technician_id, scheduled_at')
+      .in('technician_id', candidateUserIds)
+      .in('status', ['new', 'assigned'])
+      .not('scheduled_at', 'is', null)
+      .gt('scheduled_at', new Date(nowMs).toISOString())
+      .lte('scheduled_at', horizonIso);
+
+    for (const row of scheduledRows || []) {
+      if (row.technician_id) scheduledConflictTechIds.add(row.technician_id);
+    }
+  }
+
+  // Filter out technicians who declined, cancelled, or have a scheduled conflict
+  const eligibleApplications = applications.filter((a: any) =>
+    !declinedTechnicianIds.has(a.user_id) &&
+    !cancelledTechnicianIds.has(a.user_id) &&
+    !scheduledConflictTechIds.has(a.user_id)
   );
 
   if (eligibleApplications.length === 0) {
     return new Response(
-      JSON.stringify({ success: false, message: 'All eligible technicians have declined or cancelled' }),
+      JSON.stringify({ success: false, message: 'All eligible technicians have declined, cancelled or are busy with a scheduled intervention' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
+
 
   // Get user IDs from eligible applications
   const userIds = eligibleApplications.map((a: any) => a.user_id).filter(Boolean);
