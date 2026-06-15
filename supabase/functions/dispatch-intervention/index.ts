@@ -616,16 +616,42 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
     );
   }
 
-  // Get intervention to calculate response time and get old status
+  // Get intervention to calculate response time and check if it is scheduled
   const { data: intervention, error: getIntError } = await supabase
     .from('interventions')
-    .select('created_at, status')
+    .select('created_at, status, scheduled_at, title, address, city, postal_code, client_id, tracking_code')
     .eq('id', interventionId)
     .single();
 
   if (getIntError) throw getIntError;
 
   const oldStatus = intervention.status;
+  const isScheduled = intervention.scheduled_at !== null;
+
+  // For an IMMEDIATE acceptance, refuse if the tech has a scheduled intervention starting within 2h
+  if (!isScheduled) {
+    const horizon = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
+    const { data: upcomingScheduled } = await supabase
+      .from('interventions')
+      .select('id, scheduled_at')
+      .eq('technician_id', technicianId)
+      .in('status', ['new', 'assigned'])
+      .not('scheduled_at', 'is', null)
+      .gt('scheduled_at', now.toISOString())
+      .lte('scheduled_at', horizon)
+      .limit(1);
+
+    if (upcomingScheduled && upcomingScheduled.length > 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: 'Vous avez une intervention planifiée dans moins de 2 heures. Vous ne pouvez pas accepter cette urgence.',
+          conflict: upcomingScheduled[0],
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+  }
 
   // Calculate response time in seconds
   const createdAt = new Date(intervention.created_at);
@@ -652,12 +678,15 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
     .neq('technician_id', technicianId)
     .eq('status', 'pending');
 
-  // Update intervention status with technician_id, accepted_at and response_time_seconds
+  // For scheduled interventions, keep status='new' (T-2h batch will set it to 'assigned').
+  // For immediate interventions, technician goes on_route right away (legacy behavior).
+  const newStatus = isScheduled ? 'new' : 'on_route';
+
   const { error: intError } = await supabase
     .from('interventions')
-    .update({ 
+    .update({
       technician_id: technicianId,
-      status: 'on_route',
+      status: newStatus,
       accepted_at: now.toISOString(),
       response_time_seconds: responseTimeSeconds,
     })
@@ -665,36 +694,79 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
 
   if (intError) throw intError;
 
-  console.log(`[Dispatch] Intervention ${interventionId} accepted. Response time: ${responseTimeSeconds} seconds`);
+  console.log(`[Dispatch] Intervention ${interventionId} accepted (scheduled=${isScheduled}, status=${newStatus}). Response: ${responseTimeSeconds}s`);
 
-  // Notify client of status change (non-blocking)
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  notifyStatusChange(supabaseUrl, serviceRoleKey, interventionId, 'on_route', oldStatus).catch(err => {
-    console.error('[Dispatch] Failed to send notification:', err);
-  });
 
-  // Schedule arrival reminders based on service target time (non-blocking)
-  fetch(`${supabaseUrl}/functions/v1/schedule-arrival-reminders`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${serviceRoleKey}`,
-    },
-    body: JSON.stringify({
-      interventionId,
-      technicianId,
-      acceptedAt: now.toISOString(),
-    }),
-  }).catch(err => {
-    console.error('[Dispatch] Failed to schedule arrival reminders:', err);
-  });
+  if (isScheduled) {
+    // Notify the client that a technician has been assigned to their scheduled intervention
+    let clientEmail: string | null = null;
+    let clientPhone: string | null = null;
+    let clientFirstName: string | null = null;
+    if (intervention.client_id) {
+      const { data: client } = await supabase
+        .from('users')
+        .select('email, phone, first_name')
+        .eq('id', intervention.client_id)
+        .single();
+      if (client) {
+        clientEmail = client.email;
+        clientPhone = client.phone;
+        clientFirstName = client.first_name;
+      }
+    }
+
+    const { data: tech } = await supabase
+      .from('users')
+      .select('first_name, last_name')
+      .eq('id', technicianId)
+      .single();
+
+    fetch(`${supabaseUrl}/functions/v1/notify-technician-assigned`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceRoleKey}` },
+      body: JSON.stringify({
+        interventionId,
+        clientId: intervention.client_id,
+        clientEmail,
+        clientPhone,
+        clientFirstName,
+        technicianFirstName: tech?.first_name ?? 'Technicien',
+        technicianLastName: tech?.last_name ?? '',
+        interventionTitle: intervention.title,
+        interventionAddress: intervention.address,
+        interventionCity: intervention.city,
+        interventionPostalCode: intervention.postal_code,
+        scheduled_at: intervention.scheduled_at,
+        trackingCode: intervention.tracking_code || interventionId.substring(0, 8).toUpperCase(),
+      }),
+    }).catch(err => console.error('[Dispatch] notify-technician-assigned failed:', err));
+  } else {
+    // Immediate intervention: legacy status-change + arrival reminders
+    notifyStatusChange(supabaseUrl, serviceRoleKey, interventionId, 'on_route', oldStatus).catch(err => {
+      console.error('[Dispatch] Failed to send notification:', err);
+    });
+
+    fetch(`${supabaseUrl}/functions/v1/schedule-arrival-reminders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceRoleKey}` },
+      body: JSON.stringify({
+        interventionId,
+        technicianId,
+        acceptedAt: now.toISOString(),
+      }),
+    }).catch(err => {
+      console.error('[Dispatch] Failed to schedule arrival reminders:', err);
+    });
+  }
 
   return new Response(
-    JSON.stringify({ success: true, message: 'Assignment accepted', responseTimeSeconds }),
+    JSON.stringify({ success: true, message: 'Assignment accepted', responseTimeSeconds, scheduled: isScheduled }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 }
+
 
 // Handle technician rejecting assignment
 async function handleReject(supabase: any, interventionId: string, technicianId: string) {
