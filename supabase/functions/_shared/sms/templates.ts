@@ -142,3 +142,44 @@ interface VerificationCodeSmsData {
 export function buildVerificationCodeSms(data: VerificationCodeSmsData): string {
   return `${PREFIX} Bonjour,\nVeuillez saisir le code suivant :\n${data.code}\npour lancer l'intervention.`;
 }
+
+// ── Technician Assigned to Scheduled Intervention (client) ──────────
+interface TechnicianAssignedSmsData {
+  clientFirstName: string;
+  technicianFirstName: string;
+  technicianLastName: string;
+  scheduledAt: string; // ISO date
+  city: string;
+  trackingCode: string;
+  trackingUrl: string;
+}
+
+export function buildTechnicianAssignedSms(data: TechnicianAssignedSmsData): string {
+  const d = new Date(data.scheduledAt);
+  const dateStr = d.toLocaleString("fr-FR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${PREFIX} Bonjour ${data.clientFirstName}, ${data.technicianFirstName} ${data.technicianLastName} interviendra le ${dateStr} à ${data.city}. Ref: ${data.trackingCode}. Suivi: ${data.trackingUrl}`;
+}
+
+// ── Scheduled Reminder (technician, T-2h) ───────────────────────────
+interface ScheduledReminderSmsData {
+  technicianFirstName: string;
+  interventionTitle: string;
+  scheduledAt: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  trackingCode: string;
+}
+
+export function buildScheduledReminderSms(data: ScheduledReminderSmsData): string {
+  const d = new Date(data.scheduledAt);
+  const timeStr = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return `${PREFIX} Bonjour ${data.technicianFirstName}, votre intervention "${data.interventionTitle}" commence à ${timeStr}. ${data.address}, ${data.postalCode} ${data.city}. Préparez votre trajet. Ref: ${data.trackingCode}`;
+}
+

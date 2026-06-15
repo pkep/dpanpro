@@ -671,6 +671,7 @@ export type Database = {
           invoice_signature_data: string | null
           invoice_signed_at: string | null
           is_active: boolean
+          is_processing: boolean
           latitude: number | null
           longitude: number | null
           other_prestation_label: string | null
@@ -715,6 +716,7 @@ export type Database = {
           invoice_signature_data?: string | null
           invoice_signed_at?: string | null
           is_active?: boolean
+          is_processing?: boolean
           latitude?: number | null
           longitude?: number | null
           other_prestation_label?: string | null
@@ -759,6 +761,7 @@ export type Database = {
           invoice_signature_data?: string | null
           invoice_signed_at?: string | null
           is_active?: boolean
+          is_processing?: boolean
           latitude?: number | null
           longitude?: number | null
           other_prestation_label?: string | null
@@ -2135,6 +2138,19 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
+      lock_and_get_scheduled_interventions: {
+        Args: never
+        Returns: {
+          address: string
+          city: string
+          client_id: string
+          id: string
+          postal_code: string
+          scheduled_at: string
+          technician_id: string
+          title: string
+        }[]
+      }
     }
     Enums: {
       app_role:
