@@ -15,7 +15,7 @@ const LegalNoticePage = () => {
             <ul className="list-none space-y-1">
               <li><strong>Raison sociale :</strong> Dépan.Pro SAS</li>
               <li><strong>Siège social :</strong> Paris, France</li>
-              <li><strong>Email :</strong> contact@depan-pro.com</li>
+              <li><strong>Email :</strong> contact@depan.pro</li>
               <li><strong>Directeur de la publication :</strong> [Nom du directeur]</li>
             </ul>
           </section>

@@ -63,7 +63,7 @@ const PrivacyPolicyPage = () => {
               <li>Droit d'opposition au traitement</li>
               <li>Droit à la limitation du traitement</li>
             </ul>
-            <p>Pour exercer ces droits, contactez-nous à : contact@depan-pro.com</p>
+            <p>Pour exercer ces droits, contactez-nous à : contact@depan.pro</p>
           </section>
 
           <section>

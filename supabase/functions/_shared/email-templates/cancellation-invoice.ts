@@ -99,7 +99,7 @@ export function buildCancellationInvoicePdfHtml(data: CancellationInvoicePdfData
       <div class="header">
         <h1>Depan.Pro</h1>
         <p>7, place du 11 Novembre 1918, 93000 Bobigny</p>
-        <p>Tél: 01 84 60 86 30 | Email: contact@depan-pro.com</p>
+        <p>Tél: 01 84 60 86 30 | Email: contact@depan.pro</p>
         <p>SIREN: 992 525 576 | TVA: FR41 992 525 576</p>
       </div>
 

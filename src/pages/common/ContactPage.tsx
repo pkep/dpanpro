@@ -65,7 +65,7 @@ const ContactPage = () => {
                   <Mail className="h-5 w-5 text-primary" />
                   <div>
                     <p className="font-medium text-sm">Email</p>
-                    <p className="text-sm text-muted-foreground">contact@depan-pro.com</p>
+                    <p className="text-sm text-muted-foreground">contact@depan.pro</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
