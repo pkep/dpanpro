@@ -79,7 +79,7 @@ export function wrapInBaseLayout(options: BaseLayoutOptions): string {
             <td style="background-color: #1f2937; padding: 24px 32px; text-align: center;">
               <p style="margin: 0 0 4px 0; color: #d1d5db; font-size: 12px; font-weight: 600;">${BRAND_NAME} — Votre partenaire dépannage</p>
               <p style="margin: 0 0 4px 0; color: #9ca3af; font-size: 11px;">7, place du 11 Novembre 1918, 93000 Bobigny</p>
-              <p style="margin: 0 0 4px 0; color: #9ca3af; font-size: 11px;">Tél : 01 84 60 86 30 | contact@depan-pro.com</p>
+              <p style="margin: 0 0 4px 0; color: #9ca3af; font-size: 11px;">Tél : 01 84 60 86 30 | contact@depan.pro</p>
               <p style="margin: 0; color: #6b7280; font-size: 10px;">SIREN : 992 525 576 | TVA : FR41 992 525 576</p>
             </td>
           </tr>

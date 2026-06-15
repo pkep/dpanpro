@@ -13,7 +13,7 @@ const COMPANY_INFO = {
   address: "7, place du 11 Novembre 1918",
   city: "93000 Bobigny",
   phone: "01 84 60 86 30",
-  email: "contact@depan-pro.com",
+  email: "contact@depan.pro",
   siren: "992 525 576",
   siret: "992 525 576 00011",
   tva: "FR41 992 525 576",

@@ -125,8 +125,8 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary" />
-                <a href="mailto:contact@depan-pro.com" className="hover:text-foreground">
-                  contact@depan-pro.com
+                <a href="mailto:contact@depan.pro" className="hover:text-foreground">
+                  contact@depan.pro
                 </a>
               </li>
               <li className="flex items-start gap-2">
