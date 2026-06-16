@@ -173,6 +173,7 @@ export function buildTechnicianAssignedSms(data: TechnicianAssignedSmsData): str
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Paris",
   });
   return `${PREFIX} Bonjour ${data.clientFirstName}, ${data.technicianFirstName} ${data.technicianLastName} interviendra le ${dateStr} à ${data.city}. Ref: ${data.trackingCode}. Suivi: ${data.trackingUrl}`;
 }
