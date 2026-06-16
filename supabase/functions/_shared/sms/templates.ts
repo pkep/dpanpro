@@ -86,6 +86,7 @@ interface TechnicianDispatchSmsData {
   isUrgent: boolean;
   acceptanceUrl: string;
   questionnaireAnswers?: string[];
+  scheduledAt?: string; // ISO date, only for scheduled interventions
 }
 
 export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): string {
@@ -94,7 +95,16 @@ export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): str
     data.questionnaireAnswers && data.questionnaireAnswers.length > 0
       ? `\nDetails: ${data.questionnaireAnswers.join(" | ")}.`
       : "";
-  return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}.\n${data.address}, ${data.postalCode}.${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
+  const scheduledLine = data.scheduledAt
+    ? `\nPlanifié le ${new Date(data.scheduledAt).toLocaleString("fr-FR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+      })}.`
+    : "";
+  return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}.\n${data.address}, ${data.postalCode}.${scheduledLine}${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
 }
 
 // ── Payment Captured (technician confirmation) ──────────────────────

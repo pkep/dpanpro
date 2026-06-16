@@ -18,6 +18,7 @@ interface NotifyTechnicianRequest {
     postalCode: string;
     category: string;
     priority: string;
+    scheduledAt?: string;
   };
 }
 
@@ -64,7 +65,7 @@ serve(async (req) => {
     if (!intervention) {
       const { data: intData, error: intError } = await supabase
         .from("interventions")
-        .select("title, address, city, postal_code, category, priority")
+        .select("title, address, city, postal_code, category, priority, scheduled_at")
         .eq("id", interventionId)
         .single();
 
@@ -83,6 +84,7 @@ serve(async (req) => {
         postalCode: intData.postal_code,
         category: intData.category,
         priority: intData.priority,
+        scheduledAt: intData.scheduled_at,
       };
     }
 
@@ -152,6 +154,7 @@ serve(async (req) => {
             isUrgent,
             acceptanceUrl,
             questionnaireAnswers,
+            scheduledAt: intervention.scheduledAt,
           });
           const sent = await sendSMS(tech.phone, smsMessage, "[NotifyTechnicianDispatch]");
           if (sent) {
