@@ -121,6 +121,7 @@ async function notifyTechniciansDispatch(
     postalCode: string;
     category: string;
     priority: string;
+    scheduledAt?: string | null;
   }
 ): Promise<void> {
   try {
@@ -504,6 +505,7 @@ async function handleDispatch(supabase: any, interventionId: string) {
       postalCode: intervention.postal_code || '',
       category: intervention.category,
       priority: intervention.priority,
+      scheduledAt: intervention.scheduled_at ?? null,
     }
   );
 
@@ -574,6 +576,7 @@ async function handleNotify(supabase: any, interventionId: string) {
       postalCode: intervention.postal_code || '',
       category: intervention.category,
       priority: intervention.priority,
+      scheduledAt: intervention.scheduled_at ?? null,
     }
   );
 
