@@ -576,6 +576,7 @@ async function handleNotify(supabase: any, interventionId: string) {
       postalCode: intervention.postal_code || '',
       category: intervention.category,
       priority: intervention.priority,
+      scheduledAt: intervention.scheduled_at ?? null,
     }
   );
 
