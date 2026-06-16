@@ -191,6 +191,6 @@ interface ScheduledReminderSmsData {
 
 export function buildScheduledReminderSms(data: ScheduledReminderSmsData): string {
   const d = new Date(data.scheduledAt);
-  const timeStr = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const timeStr = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
   return `${PREFIX} Bonjour ${data.technicianFirstName}, votre intervention "${data.interventionTitle}" commence à ${timeStr}. ${data.address}, ${data.postalCode} ${data.city}. Préparez votre trajet. Ref: ${data.trackingCode}`;
 }
