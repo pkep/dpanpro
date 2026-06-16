@@ -96,7 +96,7 @@ export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): str
       ? `\nDetails: ${data.questionnaireAnswers.join(" | ")}.`
       : "";
   const scheduledLine = data.scheduledAt
-    ? `\nPlanifié le ${new Date(data.scheduledAt).toLocaleString("fr-FR", {
+    ? `\n\nPlanifié le ${new Date(data.scheduledAt).toLocaleString("fr-FR", {
         weekday: "long",
         day: "2-digit",
         month: "long",
