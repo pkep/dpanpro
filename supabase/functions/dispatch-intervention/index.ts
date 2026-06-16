@@ -505,6 +505,7 @@ async function handleDispatch(supabase: any, interventionId: string) {
       postalCode: intervention.postal_code || '',
       category: intervention.category,
       priority: intervention.priority,
+      scheduledAt: intervention.scheduled_at ?? null,
     }
   );
 
