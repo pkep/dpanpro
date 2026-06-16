@@ -102,6 +102,7 @@ export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): str
         month: "long",
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "Europe/Paris",
       })}.\n`
     : "";
   return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}.\n${data.address}, ${data.postalCode}.${scheduledLine}${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
