@@ -105,6 +105,7 @@ export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): str
       })}.`
     : "";
   return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}.\n${data.address}, ${data.postalCode}.${scheduledLine}${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
+}
 
 // ── Payment Captured (technician confirmation) ──────────────────────
 interface PaymentCapturedSmsData {
