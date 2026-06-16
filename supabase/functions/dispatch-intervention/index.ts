@@ -121,6 +121,7 @@ async function notifyTechniciansDispatch(
     postalCode: string;
     category: string;
     priority: string;
+    scheduledAt?: string | null;
   }
 ): Promise<void> {
   try {
