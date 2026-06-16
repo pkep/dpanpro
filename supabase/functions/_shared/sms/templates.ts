@@ -102,7 +102,7 @@ export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): str
         month: "long",
         hour: "2-digit",
         minute: "2-digit",
-      })}.`
+      })}.\n`
     : "";
   return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}.\n${data.address}, ${data.postalCode}.${scheduledLine}${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
 }
@@ -192,4 +192,3 @@ export function buildScheduledReminderSms(data: ScheduledReminderSmsData): strin
   const timeStr = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   return `${PREFIX} Bonjour ${data.technicianFirstName}, votre intervention "${data.interventionTitle}" commence à ${timeStr}. ${data.address}, ${data.postalCode} ${data.city}. Préparez votre trajet. Ref: ${data.trackingCode}`;
 }
-
