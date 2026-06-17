@@ -84,6 +84,8 @@ serve(async (req) => {
     }
 
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
+    const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
+    const dashboardUrl = `${frontendUrl}/technician`;
     const results = { sms: false, email: false, push: false };
 
     // 1. Send SMS via shared Twilio module
@@ -92,6 +94,7 @@ serve(async (req) => {
         categoryLabel,
         city: intervention.city,
         address: intervention.address,
+        dashboardUrl,
       });
       results.sms = await sendSMS(techData.phone, smsMessage, "[NotifyManualDispatch]");
     }
