@@ -71,10 +71,11 @@ interface ManualDispatchSmsData {
   categoryLabel: string;
   city: string;
   address: string;
+  dashboardUrl: string;
 }
 
 export function buildManualDispatchSms(data: ManualDispatchSmsData): string {
-  return `${PREFIX} Mission assignee par le manager: ${data.categoryLabel} a ${data.city}. ${data.address}. Ouvrez l'app pour voir les details.`;
+  return `${PREFIX} Mission assignee par le manager: ${data.categoryLabel} a ${data.city}. ${data.address}. Ouvrez l'app pour voir les details: ${data.dashboardUrl}`;
 }
 
 // ── Technician Dispatch ─────────────────────────────────────────────
