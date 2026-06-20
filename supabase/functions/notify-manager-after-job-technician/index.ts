@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface RequestBody {
   technicianId: string;
+  testRecipient?: string;
 }
 
 const ACTION_KEY = "welcome-job-technician";
@@ -19,7 +20,7 @@ serve(async (req) => {
   }
 
   try {
-    const { technicianId }: RequestBody = await req.json();
+    const { technicianId, testRecipient }: RequestBody = await req.json();
 
     if (!technicianId) {
       return new Response(JSON.stringify({ error: "technicianId is required" }), {
@@ -69,6 +70,10 @@ serve(async (req) => {
 
     const recipients = new Set<string>();
 
+    if (testRecipient) {
+      recipients.add(testRecipient);
+    } else {
+
     // Add custom emails
     if (config?.email && Array.isArray(config.email)) {
       for (const e of config.email) {
@@ -98,6 +103,7 @@ serve(async (req) => {
           }
         }
       }
+    }
     }
 
     if (recipients.size === 0) {
