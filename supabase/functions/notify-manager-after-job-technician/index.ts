@@ -35,7 +35,7 @@ serve(async (req) => {
     // Fetch technician user
     const { data: user, error: userError } = await supabase
       .from("users")
-      .select("first_name, last_name")
+      .select("first_name, last_name, email, phone")
       .eq("id", technicianId)
       .maybeSingle();
 
@@ -125,6 +125,8 @@ serve(async (req) => {
     const { subject, html } = buildNotifyManagerAfterJobTechnicianHtml({
       firstName: user.first_name || "",
       lastName: user.last_name || "",
+      email: user.email || "",
+      phone: user.phone || "",
       companyName: application?.company_name || "",
       siren: application?.siren || "",
       apeCode: application?.ape_code || "",
