@@ -24,14 +24,21 @@ const SKILL_LABELS: Record<string, string> = {
   aircon: "Climatisation",
 };
 
-export function buildNotifyManagerAfterJobTechnicianHtml(
-  data: NotifyManagerAfterJobTechnicianData
-): { subject: string; html: string } {
+export function buildNotifyManagerAfterJobTechnicianHtml(data: NotifyManagerAfterJobTechnicianData): {
+  subject: string;
+  html: string;
+} {
   const { firstName, lastName, email, phone, companyName, siren, apeCode, skills } = data;
 
-  const skillsList = (skills && skills.length > 0)
-    ? skills.map((s) => `<span style="display:inline-block;background:#ecfdf5;color:#065f46;border:1px solid #0FB87F;border-radius:999px;padding:4px 10px;margin:2px;font-size:12px;font-weight:600;">${SKILL_LABELS[s] || s}</span>`).join(" ")
-    : `<em style="color:#6b7280;">Aucune spécialité renseignée</em>`;
+  const skillsList =
+    skills && skills.length > 0
+      ? skills
+          .map(
+            (s) =>
+              `<span style="display:inline-block;background:#ecfdf5;color:#065f46;border:1px solid #0FB87F;border-radius:999px;padding:4px 10px;margin:2px;font-size:12px;font-weight:600;">${SKILL_LABELS[s] || s}</span>`,
+          )
+          .join(" ")
+      : `<em style="color:#6b7280;">Aucune spécialité renseignée</em>`;
 
   const bodyContent = `
     <p style="font-size: 16px; color: #374151; margin: 0 0 16px;">
@@ -54,7 +61,7 @@ export function buildNotifyManagerAfterJobTechnicianHtml(
     <div style="margin-bottom:20px;">${skillsList}</div>
 
     <p style="font-size: 15px; color: #374151; line-height: 1.6; margin: 20px 0 0;">
-      Vous avez la main pour contrôler sa candidature et revenir dans les plus brefs délais au client !
+      Vous avez la main pour contrôler sa candidature et revenir dans les plus brefs délais au technicien !
     </p>
 
     <p style="font-size: 14px; color: #6b7280; margin: 24px 0 0;">
