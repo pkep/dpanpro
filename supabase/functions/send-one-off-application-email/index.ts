@@ -24,7 +24,7 @@ serve(async (req) => {
 
     const result = await resend.emails.send({
       from: resendFromEmail,
-      to: ["k3pcontact@gmail.com"],
+      to: ["k3pcontact@gmail.com", "kpaulimus@depan.pro"],
       subject: `[Copie - destinataire initial: mgserrureriemayran@gmail.com] ${subject}`,
       html,
     });
