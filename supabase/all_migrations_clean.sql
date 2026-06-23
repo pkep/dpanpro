@@ -117,9 +117,6 @@ ALTER TABLE public.intervention_history ENABLE ROW LEVEL SECURITY;
 CREATE INDEX idx_intervention_history_intervention_id ON public.intervention_history(intervention_id);
 CREATE INDEX idx_intervention_history_created_at ON public.intervention_history(created_at DESC);
 
--- Enable realtime for interventions table
-ALTER PUBLICATION supabase_realtime ADD TABLE public.interventions;
-
 -- ============================================================
 -- Migration: 20260118020118_905cdbff-c794-4386-a548-e0797c38f6e9.sql
 -- ============================================================
@@ -461,9 +458,6 @@ BEFORE UPDATE ON public.technician_availability
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
 
--- Enable realtime for dispatch_attempts
-ALTER PUBLICATION supabase_realtime ADD TABLE public.dispatch_attempts;
-
 -- ============================================================
 -- Migration: 20260122002220_791637a0-06cc-4169-b968-1e20ffe94832.sql
 -- ============================================================
@@ -547,10 +541,6 @@ ALTER TABLE public.quote_modifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quote_modification_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.intervention_messages ENABLE ROW LEVEL SECURITY;
 
--- Enable realtime for messages
-ALTER PUBLICATION supabase_realtime ADD TABLE public.intervention_messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.quote_modifications;
-
 -- Triggers for updated_at
 CREATE TRIGGER update_quote_modifications_updated_at
   BEFORE UPDATE ON public.quote_modifications
@@ -621,9 +611,6 @@ EXECUTE FUNCTION public.update_updated_at_column();
 -- Create index for faster lookups
 CREATE INDEX idx_partner_statistics_partner_id ON public.partner_statistics(partner_id);
 CREATE INDEX idx_interventions_technician_completed ON public.interventions(technician_id, status) WHERE status = 'completed';
-
--- Enable realtime for partner_statistics
-ALTER PUBLICATION supabase_realtime ADD TABLE public.partner_statistics;
 
 -- ============================================================
 -- Migration: 20260123043517_b8c09ef3-70cd-4886-8430-cab17ca497bc.sql
@@ -1244,13 +1231,6 @@ ALTER TABLE public.interventions
     ADD COLUMN IF NOT EXISTS questionnaire_answers JSONB DEFAULT '[]',
     ADD COLUMN IF NOT EXISTS prix_min DECIMAL(8,2),
     ADD COLUMN IF NOT EXISTS prix_max DECIMAL(8,2);
-
-
--- ============================================================
--- Migration: 20260304213148_03b1c91f-d073-4a4f-ab68-dcf304e68d6f.sql
--- ============================================================
-
-ALTER PUBLICATION supabase_realtime ADD TABLE public.payment_authorizations;
 
 -- ============================================================
 -- Migration: 20260304231159_ca88eca0-9328-48b6-bdd5-1644d574b920.sql
@@ -1938,20 +1918,6 @@ UPDATE payment_authorizations SET status = 'cancelled', cancelled_at = now() WHE
 -- ============================================================
 
 UPDATE payment_authorizations SET status = 'cancelled', cancelled_at = now() WHERE intervention_id = '65e6dc42-8237-48cd-9375-6587c757268a' AND status = 'pending';
-
--- ============================================================
--- Migration: 20260308172619_51a635dd-b404-4046-8c67-89a74882ec46.sql
--- ============================================================
-
-UPDATE public.payment_authorizations SET status = 'cancelled', cancelled_at = now() WHERE intervention_id = '65e6dc42-8237-48cd-9375-6587c757268a' AND status = 'pending'
-
--- ============================================================
--- Migration: 20260308222516_457ec9d6-44f2-4609-a8f1-264c15262661.sql
--- ============================================================
-
-
--- Fix the self-referential bug in the INSERT policy for intervention_ratings
-DROP POLICY IF EXISTS "Clients can insert their own ratings" ON public.intervention_ratings;
 
 
 -- ============================================================
