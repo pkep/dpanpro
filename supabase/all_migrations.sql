@@ -3158,3 +3158,10 @@ CREATE INDEX IF NOT EXISTS idx_ip_prestation ON public.intervention_prestations(
 ALTER TABLE public.intervention_prestations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read intervention_prestations" ON public.intervention_prestations FOR SELECT USING (true);
 CREATE POLICY "Manage intervention_prestations" ON public.intervention_prestations FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- Migration: add other_prestation_label / other_prestation_price on interventions
+-- ============================================================
+ALTER TABLE public.interventions
+  ADD COLUMN IF NOT EXISTS other_prestation_label TEXT,
+  ADD COLUMN IF NOT EXISTS other_prestation_price NUMERIC;
