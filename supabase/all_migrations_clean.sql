@@ -2358,3 +2358,9 @@ CREATE TABLE IF NOT EXISTS public.intervention_prestations (
 CREATE INDEX IF NOT EXISTS idx_ip_intervention ON public.intervention_prestations(intervention_id);
 CREATE INDEX IF NOT EXISTS idx_ip_prestation ON public.intervention_prestations(prestation_id);
 ALTER TABLE public.intervention_prestations ENABLE ROW LEVEL SECURITY;
+-- ============================================================
+-- Migration: add other_prestation_label / other_prestation_price on interventions
+-- ============================================================
+ALTER TABLE public.interventions
+  ADD COLUMN IF NOT EXISTS other_prestation_label TEXT,
+  ADD COLUMN IF NOT EXISTS other_prestation_price NUMERIC;
