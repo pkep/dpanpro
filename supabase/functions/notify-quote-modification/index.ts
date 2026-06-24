@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { buildQuoteModificationEmailHtml } from "../_shared/email-templates/quote-modification.ts";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildQuoteModificationSms } from "../_shared/sms/templates.ts";
+import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -132,6 +133,7 @@ serve(async (req) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error in notify-quote-modification:", errorMessage);
+    await logError("notify-quote-modification", errorMessage, { error: String(error) });
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {

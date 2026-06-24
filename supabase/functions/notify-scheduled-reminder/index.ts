@@ -3,6 +3,7 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildScheduledReminderTechnicianSms } from "../_shared/sms/templates.ts";
 import { buildScheduledReminderEmail } from "../_shared/email-templates/scheduled-reminder.ts";
+import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -80,6 +81,7 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("[ScheduledReminder] Error:", error);
+    await logError("notify-scheduled-reminder", msg, { error: String(error) });
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
