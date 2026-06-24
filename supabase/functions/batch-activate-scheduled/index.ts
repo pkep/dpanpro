@@ -121,6 +121,18 @@ serve(async (req) => {
           console.error(`[BatchActivate] Failed to notify technician ${intervention.technician_id}:`, err),
         );
 
+        // Send SMS reminder to client
+        if (clientPhone) {
+          const clientSms = buildScheduledReminderClientSms({
+            clientFirstName: clientName,
+            technicianFirstName: technician.first_name || "votre technicien",
+            scheduledAt: intervention.scheduled_at,
+            trackingCode,
+            trackingUrl: `${frontendUrl}/intervention/${intervention.id}`,
+          });
+          await sendSMS(clientPhone, clientSms, "[BatchActivate]");
+        }
+
         activated++;
       } catch (itemError) {
         console.error(`[BatchActivate] Error processing ${intervention.id}:`, itemError);
