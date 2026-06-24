@@ -145,6 +145,10 @@ serve(async (req) => {
     }
 
     console.log(`[BatchActivate] Completed: ${activated}/${list.length} activated`);
+    await logInfo("batch-activate-scheduled", `Activated ${activated}/${list.length} interventions`, {
+      activated,
+      total: list.length,
+    });
 
     return new Response(
       JSON.stringify({
@@ -157,6 +161,7 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("[BatchActivate] Error:", error);
+    await logError("batch-activate-scheduled", msg, { error: String(error) });
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
