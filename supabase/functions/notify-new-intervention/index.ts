@@ -27,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    const { interventionId }: RequestBody = await req.json();
+    const { interventionId, testRecipient }: RequestBody = await req.json();
 
     if (!interventionId) {
       return new Response(JSON.stringify({ error: "interventionId is required" }), {
