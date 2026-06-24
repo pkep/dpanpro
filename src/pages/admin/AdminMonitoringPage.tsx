@@ -69,8 +69,10 @@ export default function AdminMonitoringPage() {
     setLoading(true);
     setError(null);
     try {
+      const user = services.auth.getCurrentUser();
       const { data: res, error: err } = await supabase.functions.invoke(
         "admin-monitoring-summary",
+        { body: { userId: user?.id } },
       );
       if (err) throw err;
       setData(res as Summary);
