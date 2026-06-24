@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { buildPaymentAuthorizedTechEmailHtml } from "../_shared/email-templates/payment-authorized-tech.ts";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildPaymentAuthorizedTechSms } from "../_shared/sms/templates.ts";
+import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -130,6 +131,7 @@ serve(async (req) => {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("[NOTIFY-PAYMENT-AUTHORIZED] Error:", msg);
+    await logError("notify-payment-authorized", msg, { error: String(error) });
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
