@@ -22,17 +22,17 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-  // Verify caller is admin/manager
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-    auth: { persistSession: false },
-  });
-  const { data: userData, error: userErr } = await userClient.auth.getUser();
-  if (userErr || !userData?.user) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+  // Custom auth (no Supabase session): caller must pass userId in body.
+  let userId: string | null = null;
+  try {
+    const body = await req.json();
+    userId = body?.userId ?? null;
+  } catch {
+    userId = null;
+  }
+  if (!userId) {
+    return new Response(JSON.stringify({ error: "Missing userId" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -42,15 +42,18 @@ Deno.serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  const { data: isAllowed } = await admin.rpc("is_admin_or_manager", {
-    _user_id: userData.user.id,
-  });
-  if (!isAllowed) {
+  const { data: userRow, error: userErr } = await admin
+    .from("users")
+    .select("role, is_active")
+    .eq("id", userId)
+    .maybeSingle();
+  if (userErr || !userRow || !userRow.is_active || !["admin", "manager"].includes(userRow.role)) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
 
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const since30min = new Date(Date.now() - 30 * 60 * 1000).toISOString();

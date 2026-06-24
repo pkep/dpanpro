@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { services } from "@/services/factory";
 import { AlertTriangle, RefreshCw, Activity, AlertCircle, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -68,8 +69,10 @@ export default function AdminMonitoringPage() {
     setLoading(true);
     setError(null);
     try {
+      const user = services.auth.getCurrentUser();
       const { data: res, error: err } = await supabase.functions.invoke(
         "admin-monitoring-summary",
+        { body: { userId: user?.id } },
       );
       if (err) throw err;
       setData(res as Summary);
