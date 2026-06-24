@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { services } from "@/services/factory";
 import { AlertTriangle, RefreshCw, Activity, AlertCircle, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
