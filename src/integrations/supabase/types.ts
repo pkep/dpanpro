@@ -1748,6 +1748,39 @@ export type Database = {
         }
         Relationships: []
       }
+      system_logs: {
+        Row: {
+          context: Json | null
+          created_at: string
+          id: string
+          intervention_id: string | null
+          level: string
+          message: string
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          intervention_id?: string | null
+          level: string
+          message: string
+          source: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          id?: string
+          intervention_id?: string | null
+          level?: string
+          message?: string
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       technician_availability: {
         Row: {
           created_at: string
