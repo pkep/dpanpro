@@ -31,8 +31,8 @@ interface LogRow {
 
 interface Summary {
   counts: {
-    errors24h: number;
-    warns24h: number;
+    errors7d: number;
+    warns7d: number;
     pendingDisputes: number;
     stuckInterventions: number;
   };
@@ -136,24 +136,24 @@ export default function AdminMonitoringPage() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xs font-medium text-muted-foreground">
-                    Erreurs 24h
+                    Erreurs 7j
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-destructive">
-                    {data?.counts.errors24h ?? "—"}
+                    {data?.counts.errors7d ?? "—"}
                   </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-xs font-medium text-muted-foreground">
-                    Avertissements 24h
+                    Avertissements 7j
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-amber-500">
-                    {data?.counts.warns24h ?? "—"}
+                    {data?.counts.warns7d ?? "—"}
                   </div>
                 </CardContent>
               </Card>
@@ -190,7 +190,7 @@ export default function AdminMonitoringPage() {
               <TabsList>
                 <TabsTrigger value="logs">Logs ({data?.recentLogs.length ?? 0})</TabsTrigger>
                 <TabsTrigger value="batches">Batchs</TabsTrigger>
-                <TabsTrigger value="dispatch">Dispatch 24h</TabsTrigger>
+                <TabsTrigger value="dispatch">Dispatch 7j</TabsTrigger>
                 <TabsTrigger value="stuck">
                   Interventions bloquées ({data?.stuckInterventions.length ?? 0})
                 </TabsTrigger>
@@ -310,7 +310,7 @@ export default function AdminMonitoringPage() {
               <TabsContent value="dispatch">
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Tentatives de dispatch (24h)</CardTitle>
+                    <CardTitle className="text-base">Tentatives de dispatch (7j)</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -322,7 +322,7 @@ export default function AdminMonitoringPage() {
                       ))}
                       {Object.keys(data?.dispatchByStatus ?? {}).length === 0 && (
                         <p className="text-sm text-muted-foreground col-span-full">
-                          Aucune tentative sur 24h.
+                          Aucune tentative sur 7j.
                         </p>
                       )}
                     </div>

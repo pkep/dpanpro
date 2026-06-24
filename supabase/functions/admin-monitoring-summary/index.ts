@@ -1,10 +1,11 @@
 // Returns a monitoring summary for the admin dashboard:
-// - error/warn counts (24h)
+// - error/warn counts (7d)
 // - recent system_logs
-// - dispatch attempts in last 24h (success vs timeout)
+// - dispatch attempts in last 7d (success vs timeout)
 // - last batch run markers (from system_logs source = 'batch-*')
 // - pending disputes count
 // - interventions stuck in 'new' with no technician for > 30min
+
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -51,8 +52,9 @@ Deno.serve(async (req) => {
     });
   }
 
-  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const since30min = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
 
   const [
     errorsHead,
@@ -67,12 +69,12 @@ Deno.serve(async (req) => {
       .from("system_logs")
       .select("id", { count: "exact", head: true })
       .eq("level", "error")
-      .gte("created_at", since24h),
+      .gte("created_at", since7d),
     admin
       .from("system_logs")
       .select("id", { count: "exact", head: true })
       .eq("level", "warn")
-      .gte("created_at", since24h),
+      .gte("created_at", since7d),
     admin
       .from("system_logs")
       .select("id, level, source, message, context, intervention_id, created_at")
@@ -81,7 +83,7 @@ Deno.serve(async (req) => {
     admin
       .from("dispatch_attempts")
       .select("status")
-      .gte("created_at", since24h),
+      .gte("created_at", since7d),
     admin
       .from("disputes")
       .select("id", { count: "exact", head: true })
@@ -124,8 +126,8 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       counts: {
-        errors24h: errorsHead.count ?? 0,
-        warns24h: warnsHead.count ?? 0,
+        errors7d: errorsHead.count ?? 0,
+        warns7d: warnsHead.count ?? 0,
         pendingDisputes: pendingDisputes.count ?? 0,
         stuckInterventions: (stuckInterventions.data ?? []).length,
       },
