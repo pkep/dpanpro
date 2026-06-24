@@ -67,6 +67,7 @@ import AdminLiveTrackingPage from "./pages/admin/AdminLiveTrackingPage";
 import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
 import AdminNotificationsPage from "./pages/admin/AdminNotificationsPage";
 import AdminQuestionnairePage from "./pages/admin/AdminQuestionnairePage";
+import AdminMonitoringPage from "./pages/admin/AdminMonitoringPage";
 
 const queryClient = new QueryClient();
 
@@ -120,6 +121,7 @@ const App = () => (
             <Route path="/admin/payments" element={<AdminPaymentsPage />} />
             <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
             <Route path="/admin/questionnaire" element={<AdminQuestionnairePage />} />
+            <Route path="/admin/monitoring" element={<AdminMonitoringPage />} />
             
             {/* Shared routes */}
             <Route path="/intervention/:id" element={<InterventionDetails />} />

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildScheduledReminderClientSms } from "../_shared/sms/templates.ts";
+import { logError, logInfo } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -144,6 +145,10 @@ serve(async (req) => {
     }
 
     console.log(`[BatchActivate] Completed: ${activated}/${list.length} activated`);
+    await logInfo("batch-activate-scheduled", `Activated ${activated}/${list.length} interventions`, {
+      activated,
+      total: list.length,
+    });
 
     return new Response(
       JSON.stringify({
@@ -156,6 +161,7 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("[BatchActivate] Error:", error);
+    await logError("batch-activate-scheduled", msg, { error: String(error) });
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

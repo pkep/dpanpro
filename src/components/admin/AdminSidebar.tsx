@@ -31,6 +31,7 @@ import {
   CreditCard,
   Bell,
   HelpCircle,
+  Activity,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -48,6 +49,7 @@ const paymentItems = [
 ];
 
 const adminOnlyItems = [
+  { title: "Monitoring", url: "/admin/monitoring", icon: Activity },
   { title: "Questionnaire", url: "/admin/questionnaire", icon: HelpCircle },
   { title: "Administration", url: "/admin/settings", icon: Settings },
   { title: "Notifications", url: "/admin/notifications", icon: Bell },
