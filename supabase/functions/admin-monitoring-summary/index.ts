@@ -69,12 +69,12 @@ Deno.serve(async (req) => {
       .from("system_logs")
       .select("id", { count: "exact", head: true })
       .eq("level", "error")
-      .gte("created_at", since24h),
+      .gte("created_at", since7d),
     admin
       .from("system_logs")
       .select("id", { count: "exact", head: true })
       .eq("level", "warn")
-      .gte("created_at", since24h),
+      .gte("created_at", since7d),
     admin
       .from("system_logs")
       .select("id, level, source, message, context, intervention_id, created_at")
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     admin
       .from("dispatch_attempts")
       .select("status")
-      .gte("created_at", since24h),
+      .gte("created_at", since7d),
     admin
       .from("disputes")
       .select("id", { count: "exact", head: true })
@@ -126,8 +126,8 @@ Deno.serve(async (req) => {
   return new Response(
     JSON.stringify({
       counts: {
-        errors24h: errorsHead.count ?? 0,
-        warns24h: warnsHead.count ?? 0,
+        errors7d: errorsHead.count ?? 0,
+        warns7d: warnsHead.count ?? 0,
         pendingDisputes: pendingDisputes.count ?? 0,
         stuckInterventions: (stuckInterventions.data ?? []).length,
       },
