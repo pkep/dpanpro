@@ -195,3 +195,18 @@ export function buildScheduledReminderSms(data: ScheduledReminderSmsData): strin
   const timeStr = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
   return `${PREFIX} Bonjour ${data.technicianFirstName}, votre intervention "${data.interventionTitle}" commence à ${timeStr}. ${data.address}, ${data.postalCode} ${data.city}. Préparez votre trajet. Ref: ${data.trackingCode}`;
 }
+
+// ── Scheduled Reminder (client, T-2h) ───────────────────────────────
+interface ScheduledReminderClientSmsData {
+  clientFirstName: string;
+  technicianFirstName: string;
+  scheduledAt: string;
+  trackingCode: string;
+  trackingUrl: string;
+}
+
+export function buildScheduledReminderClientSms(data: ScheduledReminderClientSmsData): string {
+  const d = new Date(data.scheduledAt);
+  const timeStr = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
+  return `${PREFIX} Bonjour ${data.clientFirstName}, votre technicien ${data.technicianFirstName} interviendra aujourd'hui à ${timeStr}. Ref: ${data.trackingCode}. Suivi en direct: ${data.trackingUrl}`;
+}
