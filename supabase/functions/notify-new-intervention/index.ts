@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface RequestBody {
   interventionId: string;
+  testRecipient?: string;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
