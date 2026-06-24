@@ -55,7 +55,7 @@ serve(async (req) => {
       });
     }
 
-    let recipientEmail: string | null = intervention.client_email || null;
+    let recipientEmail: string | null = testRecipient || intervention.client_email || null;
 
     if (!recipientEmail && intervention.client_id) {
       const { data: user } = await supabase
