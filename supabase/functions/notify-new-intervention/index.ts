@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface RequestBody {
   interventionId: string;
+  testRecipient?: string;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -26,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    const { interventionId }: RequestBody = await req.json();
+    const { interventionId, testRecipient }: RequestBody = await req.json();
 
     if (!interventionId) {
       return new Response(JSON.stringify({ error: "interventionId is required" }), {
@@ -54,7 +55,7 @@ serve(async (req) => {
       });
     }
 
-    let recipientEmail: string | null = intervention.client_email || null;
+    let recipientEmail: string | null = testRecipient || intervention.client_email || null;
 
     if (!recipientEmail && intervention.client_id) {
       const { data: user } = await supabase
