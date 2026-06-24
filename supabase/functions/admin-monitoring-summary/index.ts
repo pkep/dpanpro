@@ -1,10 +1,11 @@
 // Returns a monitoring summary for the admin dashboard:
-// - error/warn counts (24h)
+// - error/warn counts (7d)
 // - recent system_logs
-// - dispatch attempts in last 24h (success vs timeout)
+// - dispatch attempts in last 7d (success vs timeout)
 // - last batch run markers (from system_logs source = 'batch-*')
 // - pending disputes count
 // - interventions stuck in 'new' with no technician for > 30min
+
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
