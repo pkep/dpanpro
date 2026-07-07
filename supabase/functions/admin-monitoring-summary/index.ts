@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
 
 
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const since90d = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
   const since30min = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
 
