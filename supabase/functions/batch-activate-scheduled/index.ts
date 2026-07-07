@@ -41,6 +41,10 @@ serve(async (req) => {
 
     if (list.length === 0) {
       console.log("[BatchActivate] No interventions to activate");
+      await logInfo("batch-activate-scheduled", "No scheduled interventions to activate", {
+        activated: 0,
+        total: 0,
+      });
       return new Response(
         JSON.stringify({ activated: 0, message: "No interventions to activate" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
