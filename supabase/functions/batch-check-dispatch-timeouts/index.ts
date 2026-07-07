@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { logError } from "../_shared/logger.ts";
+import { logError, logInfo } from "../_shared/logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,6 +34,10 @@ Deno.serve(async (req) => {
 
     if (!timedOutAttempts || timedOutAttempts.length === 0) {
       console.log('[Timeout Check] No timed out attempts found');
+      await logInfo("batch-check-dispatch-timeouts", "No timed out dispatch attempts", {
+        processed: 0,
+        checkedAt: now.toISOString(),
+      });
       return new Response(
         JSON.stringify({ processed: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -65,6 +69,10 @@ Deno.serve(async (req) => {
       
       console.log(`[Timeout Check] Processed intervention ${interventionId}:`, result);
     }
+
+    await logInfo("batch-check-dispatch-timeouts", `Processed ${interventionIds.length} timed out dispatch interventions`, {
+      processed: interventionIds.length,
+    });
 
     return new Response(
       JSON.stringify({ 

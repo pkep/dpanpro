@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { logError } from "../_shared/logger.ts";
+import { logError, logInfo } from "../_shared/logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,6 +43,9 @@ Deno.serve(async (req) => {
 
     if (!partners || partners.length === 0) {
       console.log('No approved partners found');
+      await logInfo("batch-calculate-partner-statistics", "No approved partners to process", {
+        processed: 0,
+      });
       return new Response(
         JSON.stringify({ success: true, message: 'No partners to process', processed: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -161,6 +164,10 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Partner statistics calculation completed. Processed ${processed}/${statsToUpsert.length} partners.`);
+    await logInfo("batch-calculate-partner-statistics", `Processed ${processed}/${statsToUpsert.length} partner statistics`, {
+      processed,
+      total: statsToUpsert.length,
+    });
 
     return new Response(
       JSON.stringify({ 
