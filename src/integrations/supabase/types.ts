@@ -908,6 +908,7 @@ export type Database = {
           longitude: number | null
           postal_code: string | null
           presentation: string | null
+          rejection_reason: string | null
           siren: string
           skills: string[]
           status: string
@@ -946,6 +947,7 @@ export type Database = {
           longitude?: number | null
           postal_code?: string | null
           presentation?: string | null
+          rejection_reason?: string | null
           siren: string
           skills: string[]
           status?: string
@@ -984,6 +986,7 @@ export type Database = {
           longitude?: number | null
           postal_code?: string | null
           presentation?: string | null
+          rejection_reason?: string | null
           siren?: string
           skills?: string[]
           status?: string
