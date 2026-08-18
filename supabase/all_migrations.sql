@@ -3165,3 +3165,16 @@ CREATE POLICY "Manage intervention_prestations" ON public.intervention_prestatio
 ALTER TABLE public.interventions
   ADD COLUMN IF NOT EXISTS other_prestation_label TEXT,
   ADD COLUMN IF NOT EXISTS other_prestation_price NUMERIC;
+
+-- ============================================================
+-- Data API grants + lecture des photos de travail (auth custom)
+-- ============================================================
+GRANT SELECT ON public.intervention_work_photos TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.intervention_work_photos TO authenticated;
+GRANT ALL ON public.intervention_work_photos TO service_role;
+
+DROP POLICY IF EXISTS "Work photos are readable" ON public.intervention_work_photos;
+CREATE POLICY "Work photos are readable"
+ON public.intervention_work_photos
+FOR SELECT
+USING (true);
