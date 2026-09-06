@@ -44,6 +44,7 @@ import { geocodingService as supabaseGeocodingService } from '@/services/compone
 import { questionnaireService as supabaseQuestionnaireService } from '@/services/components/questionnaire/questionnaire.service';
 import { invoiceService as supabaseInvoiceService } from '@/services/components/invoice/invoice.service';
 import { storageService as supabaseStorageService } from '@/services/components/utils/storage/storage.service';
+import { affiliateService as supabaseAffiliateService } from '@/services/supabase/affiliate.service';
 
 // --- Spring implementations ---
 import { SpringAuthService } from '@/services/spring/auth.spring';
@@ -77,6 +78,7 @@ import { SpringStorageService } from '@/services/spring/storage.spring';
 import { SpringGeocodingService } from '@/services/spring/geocoding.spring';
 import { SpringQuestionnaireService } from '@/services/spring/questionnaire.spring';
 import { SpringInvoiceService } from '@/services/spring/invoice.spring';
+import { SpringAffiliateService } from '@/services/spring/affiliate.spring';
 
 // --- Interfaces ---
 import type { IAuthService } from '@/services/interfaces/auth.interface';
@@ -110,6 +112,7 @@ import type { IStorageService } from '@/services/interfaces/storage.interface';
 import type { IGeocodingService } from '@/services/interfaces/geocoding.interface';
 import type { IQuestionnaireService } from '@/services/interfaces/questionnaire.interface';
 import type { IInvoiceService } from '@/services/interfaces/invoice.interface';
+import type { IAffiliateService } from '@/services/interfaces/affiliate.interface';
 
 export interface ServiceContainer {
   auth: IAuthService;
@@ -143,6 +146,7 @@ export interface ServiceContainer {
   geocoding: IGeocodingService;
   questionnaire: IQuestionnaireService;
   invoice: IInvoiceService;
+  affiliates: IAffiliateService;
 }
 
 function createSupabaseServices(): ServiceContainer {
@@ -178,6 +182,7 @@ function createSupabaseServices(): ServiceContainer {
     geocoding: supabaseGeocodingService,
     questionnaire: supabaseQuestionnaireService,
     invoice: supabaseInvoiceService,
+    affiliates: supabaseAffiliateService,
   };
 }
 
@@ -214,6 +219,7 @@ function createSpringServices(): ServiceContainer {
     geocoding: new SpringGeocodingService(),
     questionnaire: new SpringQuestionnaireService(),
     invoice: new SpringInvoiceService(),
+    affiliates: new SpringAffiliateService(),
   };
 }
 
