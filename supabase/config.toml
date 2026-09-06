@@ -105,6 +105,11 @@ verify_jwt = false
 [functions.affiliate-send-email]
 verify_jwt = false
 
+[functions.affiliate-send-sms]
+verify_jwt = false
+
+
+
 
 
 
