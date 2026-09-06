@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendSMS } from "../_shared/sms/twilio.ts";
-import { buildScheduledReminderClientSms } from "../_shared/sms/templates.ts";
-import { logError, logInfo } from "../_shared/logger.ts";
+import { recordInterventionStatusChange } from "../_shared/intervention-history.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,10 +39,6 @@ serve(async (req) => {
 
     if (list.length === 0) {
       console.log("[BatchActivate] No interventions to activate");
-      await logInfo("batch-activate-scheduled", "No scheduled interventions to activate", {
-        activated: 0,
-        total: 0,
-      });
       return new Response(
         JSON.stringify({ activated: 0, message: "No interventions to activate" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -71,6 +65,8 @@ serve(async (req) => {
             .eq("id", intervention.id);
           continue;
         }
+
+        await recordInterventionStatusChange(supabase, intervention.id, "assigned");
 
         // Load technician + client
         const { data: technician } = await supabase
@@ -126,18 +122,6 @@ serve(async (req) => {
           console.error(`[BatchActivate] Failed to notify technician ${intervention.technician_id}:`, err),
         );
 
-        // Send SMS reminder to client
-        if (clientPhone) {
-          const clientSms = buildScheduledReminderClientSms({
-            clientFirstName: clientName,
-            technicianFirstName: technician.first_name || "votre technicien",
-            scheduledAt: intervention.scheduled_at,
-            trackingCode,
-            trackingUrl: `${frontendUrl}/intervention/${intervention.id}`,
-          });
-          await sendSMS(clientPhone, clientSms, "[BatchActivate]");
-        }
-
         activated++;
       } catch (itemError) {
         console.error(`[BatchActivate] Error processing ${intervention.id}:`, itemError);
@@ -149,10 +133,6 @@ serve(async (req) => {
     }
 
     console.log(`[BatchActivate] Completed: ${activated}/${list.length} activated`);
-    await logInfo("batch-activate-scheduled", `Activated ${activated}/${list.length} interventions`, {
-      activated,
-      total: list.length,
-    });
 
     return new Response(
       JSON.stringify({
@@ -165,7 +145,6 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("[BatchActivate] Error:", error);
-    await logError("batch-activate-scheduled", msg, { error: String(error) });
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
