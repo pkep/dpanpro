@@ -30,3 +30,11 @@ export type { INotificationsService, WelcomeNotificationInput } from './notifica
 export type { IStorageService } from './storage.interface';
 export type { IQuestionnaireService } from './questionnaire.interface';
 export type { IInvoiceService } from './invoice.interface';
+export type {
+  IAffiliateService,
+  Affiliate,
+  AffiliateInput,
+  AffiliateStats,
+  AffiliateTransaction,
+  MonthlyAggregate,
+} from './affiliate.interface';
