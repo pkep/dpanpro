@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -37,6 +37,33 @@ export type Database = {
           email?: string[] | null
           id?: string
           roles?: Database["public"]["Enums"]["app_role"][] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      agent_receiver: {
+        Row: {
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_name: string
+          id?: string
+          last_name: string
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string
           updated_at?: string
         }
         Relationships: []
@@ -138,6 +165,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_zone_to_deploy: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          postal_code: number
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id?: string
+          postal_code: number
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          postal_code?: number
+        }
+        Relationships: []
       }
       declined_interventions: {
         Row: {
@@ -425,6 +473,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "intervention_history_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intervention_history_status: {
+        Row: {
+          changed_at: string
+          id: string
+          intervention_id: string
+          status: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          intervention_id: string
+          status: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          intervention_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervention_history_status_intervention_id_fkey"
             columns: ["intervention_id"]
             isOneToOne: false
             referencedRelation: "interventions"
@@ -896,7 +973,6 @@ export type Database = {
           data_accuracy_confirmed: boolean
           department: string | null
           has_decennial_insurance: boolean
-          has_vehicle: boolean
           iban: string | null
           id: string
           insurance_company: string | null
@@ -915,6 +991,9 @@ export type Database = {
           terms_accepted: boolean
           updated_at: string
           user_id: string | null
+          validated_at: string | null
+          vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
+          vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
           zone: string | null
         }
@@ -935,7 +1014,6 @@ export type Database = {
           data_accuracy_confirmed?: boolean
           department?: string | null
           has_decennial_insurance?: boolean
-          has_vehicle?: boolean
           iban?: string | null
           id?: string
           insurance_company?: string | null
@@ -954,6 +1032,9 @@ export type Database = {
           terms_accepted?: boolean
           updated_at?: string
           user_id?: string | null
+          validated_at?: string | null
+          vehicle_types?: Database["public"]["Enums"]["vehicle_type"][] | null
+          vehicule_types?: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
           zone?: string | null
         }
@@ -974,7 +1055,6 @@ export type Database = {
           data_accuracy_confirmed?: boolean
           department?: string | null
           has_decennial_insurance?: boolean
-          has_vehicle?: boolean
           iban?: string | null
           id?: string
           insurance_company?: string | null
@@ -993,6 +1073,9 @@ export type Database = {
           terms_accepted?: boolean
           updated_at?: string
           user_id?: string | null
+          validated_at?: string | null
+          vehicle_types?: Database["public"]["Enums"]["vehicle_type"][] | null
+          vehicule_types?: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience?: number
           zone?: string | null
         }
@@ -2112,6 +2195,9 @@ export type Database = {
           must_change_password: boolean | null
           password_hash: string
           phone: string | null
+          photo_quality_checked_at: string | null
+          photo_quality_issues: string[] | null
+          photo_quality_ok: boolean | null
           role: string
           siren: string | null
           updated_at: string
@@ -2132,6 +2218,9 @@ export type Database = {
           must_change_password?: boolean | null
           password_hash?: string
           phone?: string | null
+          photo_quality_checked_at?: string | null
+          photo_quality_issues?: string[] | null
+          photo_quality_ok?: boolean | null
           role?: string
           siren?: string | null
           updated_at?: string
@@ -2152,6 +2241,9 @@ export type Database = {
           must_change_password?: boolean | null
           password_hash?: string
           phone?: string | null
+          photo_quality_checked_at?: string | null
+          photo_quality_issues?: string[] | null
+          photo_quality_ok?: boolean | null
           role?: string
           siren?: string | null
           updated_at?: string
@@ -2203,6 +2295,8 @@ export type Database = {
         | "public_holidays"
         | "night"
         | "anytime"
+      vehicle_type: "car" | "moto"
+      vehicule_type: "car" | "moto"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2218,12 +2312,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2247,11 +2341,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2272,11 +2366,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2297,11 +2391,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2314,11 +2408,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2346,6 +2440,8 @@ export const Constants = {
         "night",
         "anytime",
       ],
+      vehicle_type: ["car", "moto"],
+      vehicule_type: ["car", "moto"],
     },
   },
 } as const
