@@ -41,6 +41,108 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_transactions: {
+        Row: {
+          affiliate_id: string
+          commission_amount: number
+          commission_type: string
+          commission_value: number
+          confirmed_at: string | null
+          created_at: string
+          id: string
+          intervention_id: string
+          paid_at: string | null
+          revenue_amount: number
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          commission_amount: number
+          commission_type: string
+          commission_value: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          intervention_id: string
+          paid_at?: string | null
+          revenue_amount: number
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          commission_amount?: number
+          commission_type?: string
+          commission_value?: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: string
+          intervention_id?: string
+          paid_at?: string | null
+          revenue_amount?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_transactions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_transactions_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          code: string
+          commission_type: string
+          commission_value: number
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          is_active: boolean
+          last_name: string
+          notes: string | null
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          commission_type: string
+          commission_value: number
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          is_active?: boolean
+          last_name: string
+          notes?: string | null
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          commission_type?: string
+          commission_value?: number
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          notes?: string | null
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agent_receiver: {
         Row: {
           created_at: string
@@ -731,6 +833,8 @@ export type Database = {
         Row: {
           accepted_at: string | null
           address: string
+          affiliate_code: string | null
+          affiliate_id: string | null
           arrived_at: string | null
           category: string
           city: string
@@ -776,6 +880,8 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           address: string
+          affiliate_code?: string | null
+          affiliate_id?: string | null
           arrived_at?: string | null
           category: string
           city: string
@@ -821,6 +927,8 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           address?: string
+          affiliate_code?: string | null
+          affiliate_id?: string | null
           arrived_at?: string | null
           category?: string
           city?: string
@@ -864,6 +972,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "interventions_affiliate_code_fkey"
+            columns: ["affiliate_code"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "interventions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "interventions_questionnaire_resultat_id_fkey"
             columns: ["questionnaire_resultat_id"]
