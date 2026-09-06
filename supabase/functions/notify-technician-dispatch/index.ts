@@ -2,7 +2,6 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildTechnicianDispatchSms } from "../_shared/sms/templates.ts";
-import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -135,6 +134,7 @@ serve(async (req) => {
     const results = {
       sms: { sent: 0, failed: 0, errors: [] as string[] },
       push: { sent: 0, failed: 0, errors: [] as string[] },
+      agentsSms: { sent: 0, failed: 0, errors: [] as string[] },
     };
 
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
@@ -245,6 +245,44 @@ serve(async (req) => {
 
     console.log("[NotifyTechnicianDispatch] Notification results:", results);
 
+    // 3. Send SMS to agent receivers (dispatch SMS recipients, admin-managed)
+    try {
+      const { data: agents, error: agentsError } = await supabase.from("agent_receiver").select("phone");
+
+      if (agentsError) {
+        console.error("[NotifyTechnicianDispatch] Failed to fetch agent receivers:", agentsError);
+      } else {
+        for (const agent of agents || []) {
+          if (!agent.phone) continue;
+          try {
+            const smsMessage = buildTechnicianDispatchSms({
+              categoryLabel,
+              city: intervention.city,
+              address: intervention.address,
+              postalCode: intervention.postalCode,
+              isUrgent,
+              acceptanceUrl,
+              questionnaireAnswers,
+              scheduledAt: intervention.scheduledAt,
+            });
+            const sent = await sendSMS(agent.phone, smsMessage, "[NotifyTechnicianDispatch]");
+            if (sent) {
+              results.agentsSms.sent++;
+            } else {
+              results.agentsSms.failed++;
+            }
+          } catch (smsError: unknown) {
+            const errorMessage = smsError instanceof Error ? smsError.message : String(smsError);
+            console.error("[NotifyTechnicianDispatch] Agent SMS error:", smsError);
+            results.agentsSms.failed++;
+            results.agentsSms.errors.push(errorMessage);
+          }
+        }
+      }
+    } catch (agentsError: unknown) {
+      console.error("[NotifyTechnicianDispatch] Error notifying agent receivers:", agentsError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -256,7 +294,6 @@ serve(async (req) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("[NotifyTechnicianDispatch] Error:", error);
-    await logError("notify-technician-dispatch", errorMessage, { error: String(error) });
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
