@@ -155,6 +155,18 @@ export function buildVerificationCodeSms(data: VerificationCodeSmsData): string 
   return `${PREFIX} Bonjour,\nVeuillez saisir le code suivant :\n${data.code}\npour lancer l'intervention.`;
 }
 
+// ── Affiliate Welcome (QR Code) ─────────────────────────────────────
+interface AffiliateWelcomeSmsData {
+  firstName: string;
+  lastName: string;
+  code: string;
+  referralUrl: string;
+}
+
+export function buildAffiliateWelcomeSms(data: AffiliateWelcomeSmsData): string {
+  return `${PREFIX} Bienvenue ${data.firstName} ${data.lastName} ! Votre code affilié Depan.Pro est ${data.code}. Ci-joint le QR code à partager aux clients.`;
+}
+
 // ── Technician Assigned to Scheduled Intervention (client) ──────────
 interface TechnicianAssignedSmsData {
   clientFirstName: string;
@@ -190,23 +202,8 @@ interface ScheduledReminderSmsData {
   trackingCode: string;
 }
 
-export function buildScheduledReminderTechnicianSms(data: ScheduledReminderSmsData): string {
+export function buildScheduledReminderSms(data: ScheduledReminderSmsData): string {
   const d = new Date(data.scheduledAt);
   const timeStr = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
   return `${PREFIX} Bonjour ${data.technicianFirstName}, votre intervention "${data.interventionTitle}" commence à ${timeStr}. ${data.address}, ${data.postalCode} ${data.city}. Préparez votre trajet. Ref: ${data.trackingCode}`;
-}
-
-// ── Scheduled Reminder (client, T-2h) ───────────────────────────────
-interface ScheduledReminderClientSmsData {
-  clientFirstName: string;
-  technicianFirstName: string;
-  scheduledAt: string;
-  trackingCode: string;
-  trackingUrl: string;
-}
-
-export function buildScheduledReminderClientSms(data: ScheduledReminderClientSmsData): string {
-  const d = new Date(data.scheduledAt);
-  const timeStr = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
-  return `${PREFIX} Bonjour ${data.clientFirstName}, votre technicien ${data.technicianFirstName} interviendra aujourd'hui à ${timeStr}. Ref: ${data.trackingCode}. Suivi en direct: ${data.trackingUrl}`;
 }

@@ -18,6 +18,59 @@ export function formatPhoneNumber(phone: string): string {
 }
 
 /**
+ * Send an MMS via Twilio with an image (QR code).
+ * Uses MediaUrl to attach the QR code image to the message.
+ * @param to - Recipient phone number (will be auto-formatted)
+ * @param message - MMS body text
+ * @param mediaUrl - URL of the image to attach (QR code)
+ * @param logPrefix - Optional prefix for console logs
+ * @returns true if sent successfully
+ */
+export async function sendMMS(to: string, message: string, mediaUrl: string, logPrefix = "[MMS]"): Promise<boolean> {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const messagingSid = Deno.env.get("TWILIO_MESSAGING_SID");
+
+  if (!accountSid || !authToken || !messagingSid) {
+    console.log(`${logPrefix} Twilio credentials not configured, skipping MMS`);
+    return false;
+  }
+
+  const formattedTo = formatPhoneNumber(to);
+  console.log(`${logPrefix} Sending MMS to: ${formattedTo} with media: ${mediaUrl}`);
+
+  try {
+    const credentials = btoa(`${accountSid}:${authToken}`);
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: formattedTo,
+        MessagingServiceSid: messagingSid,
+        Body: message,
+        MediaUrl: mediaUrl,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log(`${logPrefix} MMS sent successfully: ${result.sid}`);
+      return true;
+    } else {
+      console.error(`${logPrefix} Twilio error:`, result);
+      return false;
+    }
+  } catch (error) {
+    console.error(`${logPrefix} Error sending MMS:`, error);
+    return false;
+  }
+}
+
+/**
  * Send an SMS via Twilio.
  * Automatically reads TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER from env.
  * @param to - Recipient phone number (will be auto-formatted)
