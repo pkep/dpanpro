@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { recordInterventionStatusChange } from '../_shared/intervention-history.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -38,15 +39,6 @@ interface Intervention {
   address?: string;
   city?: string;
   postal_code?: string;
-}
-
-interface TechnicianData {
-  id: string;
-  userId: string;
-  latitude: number;
-  longitude: number;
-  skills: string[];
-  currentCity: string | null;
 }
 
 // Haversine formula to calculate distance in meters
@@ -487,6 +479,8 @@ async function handleDispatch(supabase: any, interventionId: string) {
 
   if (updateError) throw updateError;
 
+  await recordInterventionStatusChange(supabase, interventionId, 'new');
+
   console.log(`[Dispatch] Notified top 3 technicians (attempts created):`, top3Technicians.map(t => t.userId));
 
   // Send SMS, Email, and Push notifications immediately
@@ -697,6 +691,8 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
 
   if (intError) throw intError;
 
+  await recordInterventionStatusChange(supabase, interventionId, newStatus);
+
   console.log(`[Dispatch] Intervention ${interventionId} accepted (scheduled=${isScheduled}, status=${newStatus}). Response: ${responseTimeSeconds}s`);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -851,6 +847,8 @@ async function reassignToNext(supabase: any, interventionId: string) {
 
     if (unassignError) throw unassignError;
 
+    await recordInterventionStatusChange(supabase, interventionId, 'new');
+
     console.log(`[Dispatch] No more technicians available for ${interventionId}`);
     
     return new Response(
@@ -887,6 +885,8 @@ async function reassignToNext(supabase: any, interventionId: string) {
     .eq('id', interventionId);
 
   if (updateError) throw updateError;
+
+  await recordInterventionStatusChange(supabase, interventionId, 'assigned');
 
   console.log(`[Dispatch] Reassigned to next technician: ${nextTech.technician_id}`);
 
@@ -986,6 +986,8 @@ async function handleCancel(supabase: any, interventionId: string, technicianId:
 
   if (updateError) throw updateError;
 
+  await recordInterventionStatusChange(supabase, interventionId, 'new');
+
   // Clear all previous dispatch attempts
   await supabase
     .from('dispatch_attempts')
@@ -1051,6 +1053,8 @@ async function handleGo(supabase: any, interventionId: string, technicianId: str
     .eq('id', interventionId);
 
   if (intError) throw intError;
+
+  await recordInterventionStatusChange(supabase, interventionId, 'on_route');
 
   console.log(`[Dispatch] Intervention ${interventionId} - Go! Response time: ${responseTimeSeconds} seconds`);
 
