@@ -1,10 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
 import { invoiceService } from '@/services/components/invoice/invoice.service';
 import type { Intervention } from '@/types/intervention.types';
-import type { CancellationResult } from '@/services/interfaces/cancellation.interface';
+import { recordInterventionStatusChange } from '@/services/supabase/intervention-history-status.service';
+import {ICancellationService} from "@/services/interfaces";
 
-// Re-export types for backward compatibility
-export type { CancellationResult } from '@/services/interfaces/cancellation.interface';
+export interface CancellationResult {
+  success: boolean;
+  hasFees: boolean;
+  feeAmount?: number;
+  invoiceSent?: boolean;
+  error?: string;
+}
 
 interface CancellationFeeInfo {
   displacementPriceHT: number;
@@ -13,7 +19,7 @@ interface CancellationFeeInfo {
   totalTTC: number;
 }
 
-class CancellationService {
+class SupabaseCancellationService implements ICancellationService{
   /**
    * Cancel an intervention with potential displacement fees
    * If status is 'arrived', 'in_progress', or 'on_route' with proximity < 5 min,
@@ -74,6 +80,9 @@ class CancellationService {
             })
             .eq('id', interventionId);
 
+          // Journaliser l'annulation
+          recordInterventionStatusChange(interventionId, 'cancelled');
+
           // Cancel any pending dispatch attempts
           await supabase
             .from('dispatch_attempts')
@@ -118,6 +127,9 @@ class CancellationService {
           is_active: false,
         })
         .eq('id', interventionId);
+
+      // Journaliser l'annulation
+      recordInterventionStatusChange(interventionId, 'cancelled');
 
       // Cancel any pending dispatch attempts
       await supabase
@@ -260,4 +272,4 @@ class CancellationService {
   }
 }
 
-export const cancellationService = new CancellationService();
+export const cancellationService = new SupabaseCancellationService();
