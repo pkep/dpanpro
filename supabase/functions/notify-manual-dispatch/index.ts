@@ -3,7 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildManualDispatchEmailHtml } from "../_shared/email-templates/manual-dispatch.ts";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildManualDispatchSms } from "../_shared/sms/templates.ts";
-import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,12 +22,12 @@ interface NotifyManualDispatchRequest {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  locksmith: 'Serrurerie',
-  plumbing: 'Plomberie',
-  electricity: 'Électricité',
-  glazing: 'Vitrerie',
-  heating: 'Chauffage',
-  aircon: 'Climatisation',
+  locksmith: "Serrurerie",
+  plumbing: "Plomberie",
+  electricity: "Électricité",
+  glazing: "Vitrerie",
+  heating: "Chauffage",
+  aircon: "Climatisation",
 };
 
 serve(async (req) => {
@@ -46,33 +45,33 @@ serve(async (req) => {
     console.log(`[NotifyManualDispatch] Notifying technician ${technicianId} for intervention ${interventionId}`);
 
     const { data: techData, error: techError } = await supabase
-      .from('users')
-      .select('email, phone, first_name, last_name')
-      .eq('id', technicianId)
+      .from("users")
+      .select("email, phone, first_name, last_name")
+      .eq("id", technicianId)
       .single();
 
     if (techError || !techData) {
-      console.error('[NotifyManualDispatch] Failed to fetch technician:', techError);
-      return new Response(
-        JSON.stringify({ error: "Technician not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.error("[NotifyManualDispatch] Failed to fetch technician:", techError);
+      return new Response(JSON.stringify({ error: "Technician not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let intervention = interventionDetails;
     if (!intervention) {
       const { data: intData, error: intError } = await supabase
-        .from('interventions')
-        .select('title, address, city, postal_code, category')
-        .eq('id', interventionId)
+        .from("interventions")
+        .select("title, address, city, postal_code, category")
+        .eq("id", interventionId)
         .single();
 
       if (intError || !intData) {
-        console.error('[NotifyManualDispatch] Failed to fetch intervention:', intError);
-        return new Response(
-          JSON.stringify({ error: "Intervention not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        console.error("[NotifyManualDispatch] Failed to fetch intervention:", intError);
+        return new Response(JSON.stringify({ error: "Intervention not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       intervention = {
@@ -87,7 +86,12 @@ serve(async (req) => {
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
     const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
     const dashboardUrl = `${frontendUrl}/technician`;
-    const results = { sms: false, email: false, push: false };
+    const results = {
+      sms: false,
+      email: false,
+      push: false,
+      agentsSms: { sent: 0, failed: 0, errors: [] as string[] },
+    };
 
     // 1. Send SMS via shared Twilio module
     if (techData.phone) {
@@ -124,10 +128,10 @@ serve(async (req) => {
           html: emailHtml,
         });
 
-        console.log('[NotifyManualDispatch] Email sent successfully');
+        console.log("[NotifyManualDispatch] Email sent successfully");
         results.email = true;
       } catch (emailError) {
-        console.error('[NotifyManualDispatch] Email error:', emailError);
+        console.error("[NotifyManualDispatch] Email error:", emailError);
       }
     }
 
@@ -136,31 +140,31 @@ serve(async (req) => {
     if (firebaseServerKey) {
       try {
         const { data: pushSubs } = await supabase
-          .from('push_subscriptions')
-          .select('fcm_token')
-          .eq('user_id', technicianId)
-          .eq('is_active', true);
+          .from("push_subscriptions")
+          .select("fcm_token")
+          .eq("user_id", technicianId)
+          .eq("is_active", true);
 
         if (pushSubs && pushSubs.length > 0) {
           for (const sub of pushSubs) {
             const pushPayload = {
               to: sub.fcm_token,
               notification: {
-                title: '📋 Mission Assignée',
+                title: "📋 Mission Assignée",
                 body: `${categoryLabel} à ${intervention.city} - Assignée par le manager`,
-                icon: '/icons/icon-192x192.png',
+                icon: "/icons/icon-192x192.png",
               },
               data: {
-                type: 'manual_dispatch',
+                type: "manual_dispatch",
                 interventionId: interventionId,
               },
             };
 
-            const fcmResponse = await fetch('https://fcm.googleapis.com/fcm/send', {
-              method: 'POST',
+            const fcmResponse = await fetch("https://fcm.googleapis.com/fcm/send", {
+              method: "POST",
               headers: {
-                'Authorization': `key=${firebaseServerKey}`,
-                'Content-Type': 'application/json',
+                Authorization: `key=${firebaseServerKey}`,
+                "Content-Type": "application/json",
               },
               body: JSON.stringify(pushPayload),
             });
@@ -169,25 +173,56 @@ serve(async (req) => {
               results.push = true;
             }
           }
-          console.log('[NotifyManualDispatch] Push sent successfully');
+          console.log("[NotifyManualDispatch] Push sent successfully");
         }
       } catch (pushError) {
-        console.error('[NotifyManualDispatch] Push error:', pushError);
+        console.error("[NotifyManualDispatch] Push error:", pushError);
       }
     }
 
-    return new Response(
-      JSON.stringify({ success: true, results }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // 4. Send SMS to agent receivers (dispatch SMS recipients, admin-managed)
+    try {
+      const { data: agents, error: agentsError } = await supabase.from("agent_receiver").select("phone");
 
+      if (agentsError) {
+        console.error("[NotifyManualDispatch] Failed to fetch agent receivers:", agentsError);
+      } else {
+        for (const agent of agents || []) {
+          if (!agent.phone) continue;
+          try {
+            const smsMessage = buildManualDispatchSms({
+              categoryLabel,
+              city: intervention.city,
+              address: intervention.address,
+              dashboardUrl,
+            });
+            const sent = await sendSMS(agent.phone, smsMessage, "[NotifyManualDispatch]");
+            if (sent) {
+              results.agentsSms.sent++;
+            } else {
+              results.agentsSms.failed++;
+            }
+          } catch (smsError: unknown) {
+            console.error("[NotifyManualDispatch] Agent SMS error:", smsError);
+            results.agentsSms.failed++;
+            results.agentsSms.errors.push(smsError instanceof Error ? smsError.message : String(smsError));
+          }
+        }
+      }
+    } catch (agentsError: unknown) {
+      console.error("[NotifyManualDispatch] Error notifying agent receivers:", agentsError);
+    }
+
+    return new Response(JSON.stringify({ success: true, results }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('[NotifyManualDispatch] Error:', error);
-    await logError("notify-manual-dispatch", errorMessage, { error: String(error) });
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("[NotifyManualDispatch] Error:", error);
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
