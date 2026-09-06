@@ -102,5 +102,10 @@ verify_jwt = false
 [functions.notify-new-intervention]
 verify_jwt = false
 
+[functions.affiliate-send-email]
+verify_jwt = false
+
+
+
 
 
