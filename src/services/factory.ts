@@ -45,6 +45,7 @@ import { questionnaireService as supabaseQuestionnaireService } from '@/services
 import { invoiceService as supabaseInvoiceService } from '@/services/components/invoice/invoice.service';
 import { storageService as supabaseStorageService } from '@/services/components/utils/storage/storage.service';
 import { affiliateService as supabaseAffiliateService } from '@/services/supabase/affiliate.service';
+import { siteStatsService as supabaseSiteStatsService } from '@/services/supabase/site-stats.service';
 
 // --- Spring implementations ---
 import { SpringAuthService } from '@/services/spring/auth.spring';
@@ -79,6 +80,7 @@ import { SpringGeocodingService } from '@/services/spring/geocoding.spring';
 import { SpringQuestionnaireService } from '@/services/spring/questionnaire.spring';
 import { SpringInvoiceService } from '@/services/spring/invoice.spring';
 import { SpringAffiliateService } from '@/services/spring/affiliate.spring';
+import { SpringSiteStatsService } from '@/services/spring/site-stats.spring';
 
 // --- Interfaces ---
 import type { IAuthService } from '@/services/interfaces/auth.interface';
@@ -113,6 +115,7 @@ import type { IGeocodingService } from '@/services/interfaces/geocoding.interfac
 import type { IQuestionnaireService } from '@/services/interfaces/questionnaire.interface';
 import type { IInvoiceService } from '@/services/interfaces/invoice.interface';
 import type { IAffiliateService } from '@/services/interfaces/affiliate.interface';
+import type { ISiteStatsService } from '@/services/interfaces/site-stats.interface';
 
 export interface ServiceContainer {
   auth: IAuthService;
@@ -147,6 +150,7 @@ export interface ServiceContainer {
   questionnaire: IQuestionnaireService;
   invoice: IInvoiceService;
   affiliates: IAffiliateService;
+  siteStats: ISiteStatsService;
 }
 
 function createSupabaseServices(): ServiceContainer {
@@ -183,6 +187,7 @@ function createSupabaseServices(): ServiceContainer {
     questionnaire: supabaseQuestionnaireService,
     invoice: supabaseInvoiceService,
     affiliates: supabaseAffiliateService,
+    siteStats: supabaseSiteStatsService,
   };
 }
 
@@ -220,6 +225,7 @@ function createSpringServices(): ServiceContainer {
     questionnaire: new SpringQuestionnaireService(),
     invoice: new SpringInvoiceService(),
     affiliates: new SpringAffiliateService(),
+    siteStats: new SpringSiteStatsService(),
   };
 }
 
