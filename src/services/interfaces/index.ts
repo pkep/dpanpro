@@ -38,3 +38,4 @@ export type {
   AffiliateTransaction,
   MonthlyAggregate,
 } from './affiliate.interface';
+export type { ISiteStatsService, SiteStats, SiteStatsDailyPoint, SiteStatsSlice } from './site-stats.interface';
