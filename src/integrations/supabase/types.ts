@@ -100,6 +100,8 @@ export type Database = {
       }
       affiliates: {
         Row: {
+          address: string | null
+          city: string | null
           code: string
           commission_type: string
           commission_value: number
@@ -111,9 +113,12 @@ export type Database = {
           last_name: string
           notes: string | null
           phone: string
+          postal_code: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          city?: string | null
           code: string
           commission_type: string
           commission_value: number
@@ -125,9 +130,12 @@ export type Database = {
           last_name: string
           notes?: string | null
           phone: string
+          postal_code?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          city?: string | null
           code?: string
           commission_type?: string
           commission_value?: number
@@ -139,6 +147,7 @@ export type Database = {
           last_name?: string
           notes?: string | null
           phone?: string
+          postal_code?: string | null
           updated_at?: string
         }
         Relationships: []
