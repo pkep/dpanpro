@@ -15,10 +15,6 @@ interface AffiliateQrCodeEmailData {
 }
 
 export function buildAffiliateQrCodeEmailHtml(data: AffiliateQrCodeEmailData): string {
-  const commissionLabel =
-    data.commissionType === "percentage"
-      ? `${data.commissionValue} % du CA`
-      : `${data.commissionValue} € par intervention`;
 
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.referralUrl)}`;
 
@@ -28,12 +24,6 @@ export function buildAffiliateQrCodeEmailHtml(data: AffiliateQrCodeEmailData): s
     <p style="font-size: 16px; color: #374151;">
       Bienvenue dans le programme d'affiliation <strong>Depan.Pro</strong> !
     </p>
-
-    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin: 20px 0; text-align: center;">
-      <p style="margin: 0 0 4px 0; font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Votre code affilié</p>
-      <p style="margin: 0; font-size: 28px; font-weight: 800; color: #0FB87F; letter-spacing: 0.1em;">${data.code}</p>
-      <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">Commission : <strong>${commissionLabel}</strong></p>
-    </div>
 
     <p style="font-size: 14px; color: #6b7280; text-align: center; margin: 16px 0 8px 0;">
       Partagez ce QR code ou le lien ci-dessous :
@@ -60,7 +50,7 @@ export function buildAffiliateQrCodeEmailHtml(data: AffiliateQrCodeEmailData): s
 
   return wrapInBaseLayout({
     headerTitle: "Votre QR Code affilié Depan.Pro",
-    headerSubtitle: `Code : ${data.code} — ${commissionLabel}`,
+    headerSubtitle: `Code : ${data.code}`,
     bodyContent,
   });
 }
