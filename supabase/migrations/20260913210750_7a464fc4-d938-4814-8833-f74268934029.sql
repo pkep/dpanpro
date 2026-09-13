@@ -1,0 +1,1 @@
+CREATE POLICY "Allow all on authors" ON public.authors FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
