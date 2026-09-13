@@ -179,6 +179,129 @@ export type Database = {
         }
         Relationships: []
       }
+      article_tags: {
+        Row: {
+          article_id: string
+          tag_id: string
+        }
+        Insert: {
+          article_id: string
+          tag_id: string
+        }
+        Update: {
+          article_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "article_tags_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "article_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      articles: {
+        Row: {
+          author_id: string
+          body: string
+          cover_image_alt: string | null
+          cover_image_height: number | null
+          cover_image_size_kb: number | null
+          cover_image_url: string | null
+          cover_image_width: number | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          published_at: string | null
+          slug: string
+          status: Database["public"]["Enums"]["article_status"]
+          theme_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          cover_image_alt?: string | null
+          cover_image_height?: number | null
+          cover_image_size_kb?: number | null
+          cover_image_url?: string | null
+          cover_image_width?: number | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["article_status"]
+          theme_id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          cover_image_alt?: string | null
+          cover_image_height?: number | null
+          cover_image_size_kb?: number | null
+          cover_image_url?: string | null
+          cover_image_width?: number | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["article_status"]
+          theme_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "articles_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      authors: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       cancelled_assignments: {
         Row: {
           cancelled_at: string
@@ -854,6 +977,7 @@ export type Database = {
           created_at: string
           description: string | null
           estimated_price: number | null
+          expected_completion_date: string | null
           final_price: number | null
           id: string
           intervention_duration_seconds: number | null
@@ -880,6 +1004,9 @@ export type Database = {
           scheduled_at: string | null
           started_at: string | null
           status: string
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
           technician_id: string | null
           title: string
           tracking_code: string | null
@@ -901,6 +1028,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           estimated_price?: number | null
+          expected_completion_date?: string | null
           final_price?: number | null
           id?: string
           intervention_duration_seconds?: number | null
@@ -927,6 +1055,9 @@ export type Database = {
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           technician_id?: string | null
           title: string
           tracking_code?: string | null
@@ -948,6 +1079,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           estimated_price?: number | null
+          expected_completion_date?: string | null
           final_price?: number | null
           id?: string
           intervention_duration_seconds?: number | null
@@ -974,6 +1106,9 @@ export type Database = {
           scheduled_at?: string | null
           started_at?: string | null
           status?: string
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           technician_id?: string | null
           title?: string
           tracking_code?: string | null
@@ -1000,6 +1135,13 @@ export type Database = {
             columns: ["questionnaire_resultat_id"]
             isOneToOne: false
             referencedRelation: "questionnaire_resultats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interventions_suspended_by_fkey"
+            columns: ["suspended_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -1123,6 +1265,7 @@ export type Database = {
           updated_at: string
           user_id: string | null
           validated_at: string | null
+          vat_number: string | null
           vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
           vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
@@ -1164,6 +1307,7 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           validated_at?: string | null
+          vat_number?: string | null
           vehicle_types?: Database["public"]["Enums"]["vehicle_type"][] | null
           vehicule_types?: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
@@ -1205,6 +1349,7 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           validated_at?: string | null
+          vat_number?: string | null
           vehicle_types?: Database["public"]["Enums"]["vehicle_type"][] | null
           vehicule_types?: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience?: number
@@ -1998,6 +2143,24 @@ export type Database = {
         }
         Relationships: []
       }
+      tags: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       technician_availability: {
         Row: {
           created_at: string
@@ -2233,6 +2396,27 @@ export type Database = {
           },
         ]
       }
+      themes: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       user_notification_preferences: {
         Row: {
           channel: string
@@ -2419,6 +2603,7 @@ export type Database = {
         | "client"
         | "guest"
         | "payment"
+      article_status: "draft" | "published" | "archived"
       partner_availability:
         | "week_day"
         | "evening"
@@ -2563,6 +2748,7 @@ export const Constants = {
         "guest",
         "payment",
       ],
+      article_status: ["draft", "published", "archived"],
       partner_availability: [
         "week_day",
         "evening",
