@@ -284,20 +284,20 @@ export type Database = {
       authors: {
         Row: {
           created_at: string
-          email: string
           id: string
+          lastname: string
           name: string
         }
         Insert: {
           created_at?: string
-          email: string
           id?: string
+          lastname: string
           name: string
         }
         Update: {
           created_at?: string
-          email?: string
           id?: string
+          lastname?: string
           name?: string
         }
         Relationships: []
