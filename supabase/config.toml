@@ -119,3 +119,6 @@ verify_jwt = false
 
 
 
+
+[functions.google-auth-sync]
+verify_jwt = false
