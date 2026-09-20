@@ -2,6 +2,8 @@ import type { User, LoginCredentials, RegisterCredentials, AuthResponse } from '
 
 export interface IAuthService {
   login(credentials: LoginCredentials): Promise<AuthResponse>;
+  loginWithGoogle(): Promise<{ error?: string }>;
+  completeGoogleSignIn(): Promise<AuthResponse>;
   register(credentials: RegisterCredentials): Promise<AuthResponse>;
   logout(): Promise<void>;
   getCurrentUser(): User | null;
