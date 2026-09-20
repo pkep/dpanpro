@@ -6,6 +6,7 @@ import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm';
 import { useAuth } from '@/hooks/useAuth';
 import { services as api } from '@/services/factory';
+import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@/types/auth.types';
 import { Wrench } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -27,7 +28,7 @@ export default function Auth() {
   useEffect(() => {
     const completeGoogle = async () => {
       if (isLoading || isAuthenticated) return;
-      const { data } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
       if (!data.session) return;
       setIsGoogleLoading(true);
       const response = await api.auth.completeGoogleSignIn();
@@ -80,7 +81,7 @@ export default function Auth() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isGoogleLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Chargement...</div>
