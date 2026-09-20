@@ -19,8 +19,26 @@ export default function Auth() {
     searchParams.get('register') === 'true' ? 'register' : 'login'
   );
   const [pendingUser, setPendingUser] = useState<User | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
+
+  // Retour de la connexion Google : synchroniser le compte puis rediriger
+  useEffect(() => {
+    const completeGoogle = async () => {
+      if (isLoading || isAuthenticated) return;
+      const { data } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
+      if (!data.session) return;
+      setIsGoogleLoading(true);
+      const response = await api.auth.completeGoogleSignIn();
+      setIsGoogleLoading(false);
+      if (response.success && response.user) {
+        navigateByRole(response.user);
+      }
+    };
+    completeGoogle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isAuthenticated]);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user && !user.mustChangePassword) {
