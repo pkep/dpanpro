@@ -29,6 +29,14 @@ export class SpringAuthService implements IAuthService {
     }
   }
 
+  async loginWithGoogle(): Promise<{ error?: string }> {
+    return { error: 'Connexion Google non disponible en mode Spring' };
+  }
+
+  async completeGoogleSignIn(): Promise<AuthResponse> {
+    return { success: false, error: 'Connexion Google non disponible en mode Spring' };
+  }
+
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
       // POST /auth/register → ApiResponse<AuthResponse>

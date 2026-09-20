@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable';
 import type { User, UserRole, LoginCredentials, RegisterCredentials, AuthResponse } from '@/types/auth.types';
 import type { DbUser, DbUserInsert } from '@/types/database.types';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
