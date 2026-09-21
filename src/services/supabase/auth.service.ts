@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable';
 import type { User, UserRole, LoginCredentials, RegisterCredentials, AuthResponse } from '@/types/auth.types';
 import type { DbUser, DbUserInsert } from '@/types/database.types';
 import type { Tables, TablesInsert } from '@/integrations/supabase/types';
@@ -98,45 +97,6 @@ class AuthService {
       updatedAt: dbUser.updated_at,
     };
   }
-
-  async loginWithGoogle(): Promise<{ error?: string }> {
-    const result = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: `${window.location.origin}/auth`,
-    });
-    if (result.error) {
-      return { error: result.error.message };
-    }
-    return {};
-  }
-
-  async completeGoogleSignIn(): Promise<AuthResponse> {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        return { success: false, error: 'no-google-session' };
-      }
-
-      // Synchroniser le compte Google avec la table applicative users
-      const { data, error } = await supabase.functions.invoke('google-auth-sync', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-
-      if (error || !data?.user) {
-        await supabase.auth.signOut();
-        return { success: false, error: data?.error || 'Erreur de connexion avec Google' };
-      }
-
-      const user = this.mapDbUser(data.user as unknown as DbUser);
-      this.currentUser = user;
-      localStorage.setItem('depanpro_user', JSON.stringify(user));
-      this.notifyListeners();
-      return { success: true, user };
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      return { success: false, error: 'Erreur de connexion avec Google' };
-    }
-  }
-
   async register(credentials: RegisterCredentials): Promise<AuthResponse> {
     try {
       // Vérifier si l'email existe déjà

@@ -2508,7 +2508,10 @@ export type Database = {
           is_company: boolean
           last_name: string
           must_change_password: boolean | null
-          password_hash: string
+          oauth_email_verified: boolean
+          oauth_provider: string | null
+          oauth_provider_id: string | null
+          password_hash: string | null
           phone: string | null
           photo_quality_checked_at: string | null
           photo_quality_issues: string[] | null
@@ -2531,7 +2534,10 @@ export type Database = {
           is_company?: boolean
           last_name: string
           must_change_password?: boolean | null
-          password_hash?: string
+          oauth_email_verified?: boolean
+          oauth_provider?: string | null
+          oauth_provider_id?: string | null
+          password_hash?: string | null
           phone?: string | null
           photo_quality_checked_at?: string | null
           photo_quality_issues?: string[] | null
@@ -2554,7 +2560,10 @@ export type Database = {
           is_company?: boolean
           last_name?: string
           must_change_password?: boolean | null
-          password_hash?: string
+          oauth_email_verified?: boolean
+          oauth_provider?: string | null
+          oauth_provider_id?: string | null
+          password_hash?: string | null
           phone?: string | null
           photo_quality_checked_at?: string | null
           photo_quality_issues?: string[] | null
