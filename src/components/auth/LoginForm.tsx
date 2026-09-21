@@ -15,7 +15,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useAuth } from '@/hooks/useAuth';
-import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import type { User } from '@/types/auth.types';
 
 const loginSchema = z.object({
@@ -170,8 +169,6 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword }: L
           </Button>
         </form>
       </Form>
-
-      <GoogleSignInButton />
 
       <div className="text-center text-sm">
         <span className="text-muted-foreground">Pas encore de compte ? </span>
