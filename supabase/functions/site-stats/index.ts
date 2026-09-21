@@ -21,7 +21,7 @@ async function getAccessToken(serviceAccountJson: string): Promise<string> {
   const unsigned = `${enc(header)}.${enc(payload)}`;
   // Import private key
   const pem = sa.private_key.replace(/\\n/g, "\n");
-  const pemBody = pem.replace(/-----BEGIN PRIVATE KEY-----/, "").replace(/-----END PRIVATE KEY-----/, "").replace(/\s/g, "");
+  const pemBody = pem.replace("-----BEGIN PRIVATE KEY-----", "").replace("-----END PRIVATE KEY-----", "").replace(/\s/g, "");
   const bin = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0));
   const key = await crypto.subtle.importKey("pkcs8", bin, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
@@ -49,6 +49,32 @@ async function runReport(propertyId: string, accessToken: string, body: unknown)
     throw new Error(`GA4 runReport failed ${res.status}: ${txt}`);
   }
   return await res.json();
+}
+
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function addDays(d: string, days: number): string {
+  const dt = new Date(`${d}T00:00:00Z`);
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return isoDate(dt);
+}
+
+function diffDays(from: string, to: string): number {
+  const a = new Date(`${from}T00:00:00Z`).getTime();
+  const b = new Date(`${to}T00:00:00Z`).getTime();
+  return Math.floor((b - a) / 86400000) + 1;
+}
+
+function addYears(d: string, years: number): string {
+  const dt = new Date(`${d}T00:00:00Z`);
+  dt.setUTCFullYear(dt.getUTCFullYear() + years);
+  return isoDate(dt);
+}
+
+function singleRange(from: string, to: string) {
+  return [{ startDate: from, endDate: to }];
 }
 
 serve(async (req) => {
@@ -85,23 +111,29 @@ serve(async (req) => {
     const now = new Date();
     if (!from || !to) {
       if (period === "all") {
-        from = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        to = now.toISOString().slice(0, 10);
+        from = isoDate(new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000));
+        to = isoDate(now);
       } else if (period === "month") {
-        from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-        to = now.toISOString().slice(0, 10);
+        from = isoDate(new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)));
+        to = isoDate(now);
       } else if (period === "week") {
-        from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        to = now.toISOString().slice(0, 10);
+        from = isoDate(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000));
+        to = isoDate(now);
       } else {
-        from = now.toISOString().slice(0, 10);
-        to = now.toISOString().slice(0, 10);
+        from = isoDate(now);
+        to = isoDate(now);
       }
     }
 
+    // Comparison windows: previous equal-length window + same window last year
+    const lengthDays = Math.max(1, diffDays(from, to));
+    const prevTo = addDays(from, -1);
+    const prevFrom = addDays(prevTo, -(lengthDays - 1));
+    const yoyFrom = addYears(from, -1);
+    const yoyTo = addYears(to, -1);
+
     const accessToken = await getAccessToken(GA4_SERVICE_ACCOUNT_JSON);
 
-    // Helper to run and parse
     const fetchSessionsOverTime = async () => {
       const data: any = await runReport(GA4_PROPERTY_ID, accessToken, {
         dateRanges: [{ startDate: from, endDate: to }],
@@ -165,39 +197,173 @@ serve(async (req) => {
       ];
     };
 
-    const fetchNewInterventionViews = async () => {
+    const fetchSessionsByChannel = async () => {
       const data: any = await runReport(GA4_PROPERTY_ID, accessToken, {
         dateRanges: [{ startDate: from, endDate: to }],
-        dimensions: [{ name: "pagePathPlusQueryString" }],
-        metrics: [{ name: "screenPageViews" }, { name: "totalUsers" }],
-        dimensionFilter: {
-          filter: {
-            fieldName: "pagePathPlusQueryString",
-            stringFilter: { matchType: "CONTAINS", value: "/new-intervention", caseSensitive: false },
-          },
-        },
+        dimensions: [{ name: "date" }, { name: "sessionDefaultChannelGroup" }],
+        metrics: [{ name: "sessions" }],
+        orderBys: [{ dimension: { dimensionName: "date" } }],
       });
-      let views = 0, users = 0;
-      for (const r of (data.rows || [])) {
-        views += parseInt(r.metricValues[0].value, 10) || 0;
-        users += parseInt(r.metricValues[1].value, 10) || 0;
-      }
-      return { views, users };
+      return (data.rows || []).map((r: any) => {
+        const d = r.dimensionValues[0].value;
+        const formatted = d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}` : d;
+        return { date: formatted, channel: r.dimensionValues[1].value, sessions: parseInt(r.metricValues[0].value, 10) || 0 };
+      });
     };
 
-    const [sessionsOverTime, acquisition, avg, newVsReturning, byDevice, pageViews] = await Promise.all([
+    const fetchNewInterventionRanged = async (): Promise<number[][]> => {
+      const out = [[0, 0], [0, 0], [0, 0]];
+      const starts = [from, prevFrom, yoyFrom];
+      const ends = [to, prevTo, yoyTo];
+      for (let i = 0; i < 3; i++) {
+        try {
+          const data: any = await runReport(GA4_PROPERTY_ID, accessToken, {
+            dateRanges: singleRange(starts[i], ends[i]),
+            dimensions: [{ name: "pagePathPlusQueryString" }],
+            metrics: [{ name: "screenPageViews" }, { name: "totalUsers" }],
+            dimensionFilter: {
+              filter: {
+                fieldName: "pagePathPlusQueryString",
+                stringFilter: { matchType: "CONTAINS", value: "/new-intervention", caseSensitive: false },
+              },
+            },
+          });
+          for (const r of (data.rows || [])) {
+            out[i][0] += parseInt(r.metricValues[0].value, 10) || 0;
+            out[i][1] += parseInt(r.metricValues[1].value, 10) || 0;
+          }
+        } catch (e) {
+          console.warn(`fetchNewInterventionRanged [${starts[i]} -> ${ends[i]}] failed:`, String(e));
+        }
+      }
+      return out;
+    };
+
+    const fetchAudienceRanged = async (): Promise<number[][]> => {
+      const out = [[0, 0], [0, 0], [0, 0]];
+      const starts = [from, prevFrom, yoyFrom];
+      const ends = [to, prevTo, yoyTo];
+      for (let i = 0; i < 3; i++) {
+        try {
+          const data: any = await runReport(GA4_PROPERTY_ID, accessToken, {
+            dateRanges: singleRange(starts[i], ends[i]),
+            metrics: [{ name: "activeUsers" }, { name: "newUsers" }],
+          });
+          const row = data.rows?.[0];
+          if (row) {
+            out[i][0] = parseInt(row.metricValues[0].value, 10) || 0;
+            out[i][1] = parseInt(row.metricValues[1].value, 10) || 0;
+          }
+        } catch (e) {
+          console.warn(`fetchAudienceRanged [${starts[i]} -> ${ends[i]}] failed:`, String(e));
+        }
+      }
+      return out;
+    };
+
+    const fetchFinalStepRanged = async (): Promise<number[][]> => {
+      const out = [[0, 0], [0, 0], [0, 0]];
+      const starts = [from, prevFrom, yoyFrom];
+      const ends = [to, prevTo, yoyTo];
+      for (let i = 0; i < 3; i++) {
+        try {
+          const data: any = await runReport(GA4_PROPERTY_ID, accessToken, {
+            dateRanges: singleRange(starts[i], ends[i]),
+            dimensions: [{ name: "eventName" }],
+            metrics: [{ name: "totalUsers" }, { name: "eventCount" }],
+            dimensionFilter: {
+              filter: {
+                fieldName: "eventName",
+                stringFilter: { matchType: "EXACT", value: "submit_success" },
+              },
+            },
+          });
+          for (const r of (data.rows || [])) {
+            out[i][0] += parseInt(r.metricValues[0].value, 10) || 0;
+            out[i][1] += parseInt(r.metricValues[1].value, 10) || 0;
+          }
+        } catch (e) {
+          console.warn(`fetchFinalStepRanged [${starts[i]} -> ${ends[i]}] failed:`, String(e));
+        }
+      }
+      return out;
+    };
+
+    const fetchCountries = async (totalActiveUsers: number) => {
+      const out: { country: string; countryId: string; activeUsers: number; share: number }[] = [];
+      try {
+        const data: any = await runReport(GA4_PROPERTY_ID, accessToken, {
+          dateRanges: [{ startDate: from, endDate: to }],
+          dimensions: [{ name: "country" }, { name: "countryId" }],
+          metrics: [{ name: "activeUsers" }],
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+          limit: 6,
+        });
+        const rows = data.rows || [];
+        let returnedTotal = 0;
+        for (const r of rows) returnedTotal += parseInt(r.metricValues[0].value, 10) || 0;
+        const denominator = totalActiveUsers > 0 ? totalActiveUsers : returnedTotal;
+        const limit = Math.min(5, rows.length);
+        let topSum = 0;
+        for (let i = 0; i < limit; i++) {
+          const users = parseInt(rows[i].metricValues[0].value, 10) || 0;
+          topSum += users;
+          const share = denominator > 0 ? (users * 100) / denominator : 0;
+          out.push({
+            country: rows[i].dimensionValues[0].value,
+            countryId: rows[i].dimensionValues[1].value,
+            activeUsers: users,
+            share: Math.round(share * 10) / 10,
+          });
+        }
+        if (denominator > topSum) {
+          const others = denominator - topSum;
+          out.push({ country: "Autres", countryId: "", activeUsers: others, share: Math.round((others * 100 / denominator) * 10) / 10 });
+        }
+      } catch (e) {
+        console.warn("fetchCountries failed:", String(e));
+      }
+      return out;
+    };
+
+    const countDb = async (start: string, end: string): Promise<number> => {
+      try {
+        const { count } = await supabase
+          .from("interventions")
+          .select("*", { count: "exact", head: true })
+          .gte("created_at", `${start}T00:00:00.000Z`)
+          .lt("created_at", `${addDays(end, 1)}T00:00:00.000Z`);
+        return count || 0;
+      } catch (e) {
+        console.warn("countDb failed:", String(e));
+        return 0;
+      }
+    };
+
+    const [sessionsOverTime, sessionsByChannel, acquisition, avg, newVsReturning, byDevice, newIntervention, audience, finalStep] = await Promise.all([
       fetchSessionsOverTime(),
+      fetchSessionsByChannel(),
       fetchAcquisition(),
       fetchAvg(),
       fetchNewVsReturning(),
       fetchByDevice(),
-      fetchNewInterventionViews(),
+      fetchNewInterventionRanged(),
+      fetchAudienceRanged(),
+      fetchFinalStepRanged(),
+    ]);
+
+    const [countries, dbCurrent, dbPrev, dbYoy] = await Promise.all([
+      fetchCountries(audience[0][0]),
+      countDb(from, to),
+      countDb(prevFrom, prevTo),
+      countDb(yoyFrom, yoyTo),
     ]);
 
     return new Response(JSON.stringify({
       sessionsOverTime,
-      newInterventionViews: pageViews.views,
-      newInterventionUsers: pageViews.users,
+      sessionsByChannel,
+      newInterventionViews: newIntervention[0][0],
+      newInterventionUsers: newIntervention[0][1],
       acquisition,
       avgSessionDurationSeconds: avg.avgSessionDurationSeconds,
       avgPagesPerSession: avg.avgPagesPerSession,
@@ -206,6 +372,30 @@ serve(async (req) => {
       period,
       from,
       to,
+      activeUsers: audience[0][0],
+      newUsers: audience[0][1],
+      prevActiveUsers: audience[1][0],
+      prevNewUsers: audience[1][1],
+      yoyActiveUsers: audience[2][0],
+      yoyNewUsers: audience[2][1],
+      prevNewInterventionViews: newIntervention[1][0],
+      prevNewInterventionUsers: newIntervention[1][1],
+      yoyNewInterventionViews: newIntervention[2][0],
+      yoyNewInterventionUsers: newIntervention[2][1],
+      finalStepUsers: finalStep[0][0],
+      finalStepEvents: finalStep[0][1],
+      prevFinalStepUsers: finalStep[1][0],
+      prevFinalStepEvents: finalStep[1][1],
+      yoyFinalStepUsers: finalStep[2][0],
+      yoyFinalStepEvents: finalStep[2][1],
+      dbInterventionsCreated: dbCurrent,
+      prevDbInterventionsCreated: dbPrev,
+      yoyDbInterventionsCreated: dbYoy,
+      countries,
+      prevFrom,
+      prevTo,
+      yoyFrom,
+      yoyTo,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (e) {
