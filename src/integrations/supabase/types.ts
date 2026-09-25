@@ -2580,6 +2580,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_technician_application: {
+        Args: { p_application_id: string }
+        Returns: {
+          address: string | null
+          ape_code: string | null
+          availability: Database["public"]["Enums"]["partner_availability"][]
+          bank_account_holder: string | null
+          bank_name: string | null
+          bic: string | null
+          birth_date: string | null
+          birth_place: string | null
+          certifications: string[]
+          city: string | null
+          company_name: string
+          created_at: string
+          current_city: string | null
+          data_accuracy_confirmed: boolean
+          department: string | null
+          has_decennial_insurance: boolean
+          iban: string | null
+          id: string
+          insurance_company: string | null
+          insurance_expiry_date: string | null
+          insurance_policy_number: string | null
+          kbis_url: string | null
+          latitude: number | null
+          legal_status: string | null
+          longitude: number | null
+          postal_code: string | null
+          presentation: string | null
+          rejection_reason: string | null
+          siren: string
+          skills: string[]
+          status: string
+          terms_accepted: boolean
+          updated_at: string
+          user_id: string | null
+          validated_at: string | null
+          vat_number: string | null
+          vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
+          vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
+          years_experience: number
+          zone: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_applications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       can_create_managers: { Args: { _user_id: string }; Returns: boolean }
       generate_tracking_code: { Args: never; Returns: string }
       has_role: {
@@ -2602,6 +2653,109 @@ export type Database = {
           technician_id: string
           title: string
         }[]
+      }
+      reject_technician_application: {
+        Args: { p_application_id: string; p_reason?: string }
+        Returns: {
+          address: string | null
+          ape_code: string | null
+          availability: Database["public"]["Enums"]["partner_availability"][]
+          bank_account_holder: string | null
+          bank_name: string | null
+          bic: string | null
+          birth_date: string | null
+          birth_place: string | null
+          certifications: string[]
+          city: string | null
+          company_name: string
+          created_at: string
+          current_city: string | null
+          data_accuracy_confirmed: boolean
+          department: string | null
+          has_decennial_insurance: boolean
+          iban: string | null
+          id: string
+          insurance_company: string | null
+          insurance_expiry_date: string | null
+          insurance_policy_number: string | null
+          kbis_url: string | null
+          latitude: number | null
+          legal_status: string | null
+          longitude: number | null
+          postal_code: string | null
+          presentation: string | null
+          rejection_reason: string | null
+          siren: string
+          skills: string[]
+          status: string
+          terms_accepted: boolean
+          updated_at: string
+          user_id: string | null
+          validated_at: string | null
+          vat_number: string | null
+          vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
+          vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
+          years_experience: number
+          zone: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_applications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      technician_status_counts: { Args: never; Returns: Json }
+      validate_technician_qualification: {
+        Args: { p_application_id: string }
+        Returns: {
+          address: string | null
+          ape_code: string | null
+          availability: Database["public"]["Enums"]["partner_availability"][]
+          bank_account_holder: string | null
+          bank_name: string | null
+          bic: string | null
+          birth_date: string | null
+          birth_place: string | null
+          certifications: string[]
+          city: string | null
+          company_name: string
+          created_at: string
+          current_city: string | null
+          data_accuracy_confirmed: boolean
+          department: string | null
+          has_decennial_insurance: boolean
+          iban: string | null
+          id: string
+          insurance_company: string | null
+          insurance_expiry_date: string | null
+          insurance_policy_number: string | null
+          kbis_url: string | null
+          latitude: number | null
+          legal_status: string | null
+          longitude: number | null
+          postal_code: string | null
+          presentation: string | null
+          rejection_reason: string | null
+          siren: string
+          skills: string[]
+          status: string
+          terms_accepted: boolean
+          updated_at: string
+          user_id: string | null
+          validated_at: string | null
+          vat_number: string | null
+          vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
+          vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
+          years_experience: number
+          zone: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_applications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
