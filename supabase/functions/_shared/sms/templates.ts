@@ -84,18 +84,35 @@ interface TechnicianDispatchSmsData {
   city: string;
   address: string;
   postalCode: string;
-  isUrgent: boolean;
+  /** Niveau d'urgence déduit de `interventions.priority`. */
+  priority?: string | null;
+  /** Utilisé si les réponses au questionnaire sont absentes. */
+  description?: string | null;
   acceptanceUrl: string;
   questionnaireAnswers?: string[];
   scheduledAt?: string; // ISO date, only for scheduled interventions
 }
 
+/** Libellés du niveau d'urgence (colonne « Urgence »). */
+const EMERGENCY_LEVELS: Record<string, string> = {
+  urgent: "Urgence",
+  high: "Prioritaire",
+  normal: "Standard",
+  low: "Standard",
+};
+
+function emergencyLevel(priority?: string | null): string {
+  return EMERGENCY_LEVELS[priority ?? ""] ?? "Standard";
+}
+
 export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): string {
-  const urgentPrefix = data.isUrgent ? "URGENT - " : "";
-  const answersLine =
+  // Détails : réponses au questionnaire, sinon la description (le client y explique son problème).
+  const details =
     data.questionnaireAnswers && data.questionnaireAnswers.length > 0
-      ? `\nDetails: ${data.questionnaireAnswers.join(" | ")}.`
-      : "";
+      ? data.questionnaireAnswers.join(" | ")
+      : (data.description ?? "").trim();
+  const answersLine = details ? `\nDetails: ${details}.` : "";
+
   const scheduledLine = data.scheduledAt
     ? `\n\nPlanifié le ${new Date(data.scheduledAt).toLocaleString("fr-FR", {
         weekday: "long",
@@ -106,7 +123,8 @@ export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): str
         timeZone: "Europe/Paris",
       })}.\n`
     : "";
-  return `${urgentPrefix}${PREFIX} Nouvelle mission ${data.categoryLabel} a ${data.city}.\n${data.address}, ${data.postalCode}.${scheduledLine}${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
+
+  return `${PREFIX} Nouvelle mission [${emergencyLevel(data.priority)}] : ${data.categoryLabel} a ${data.city}.\n${data.address}, ${data.postalCode}.${scheduledLine}${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
 }
 
 // ── Payment Captured (technician confirmation) ──────────────────────

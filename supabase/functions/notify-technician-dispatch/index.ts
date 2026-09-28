@@ -19,6 +19,7 @@ interface NotifyTechnicianRequest {
     category: string;
     priority: string;
     scheduledAt?: string;
+    description?: string | null;
   };
 }
 
@@ -65,7 +66,7 @@ serve(async (req) => {
     if (!intervention) {
       const { data: intData, error: intError } = await supabase
         .from("interventions")
-        .select("title, address, city, postal_code, category, priority, scheduled_at")
+        .select("title, address, city, postal_code, category, priority, scheduled_at, description")
         .eq("id", interventionId)
         .single();
 
@@ -85,6 +86,7 @@ serve(async (req) => {
         category: intData.category,
         priority: intData.priority,
         scheduledAt: intData.scheduled_at,
+        description: intData.description,
       };
     }
 
@@ -152,7 +154,8 @@ serve(async (req) => {
             city: intervention.city,
             address: intervention.address,
             postalCode: intervention.postalCode,
-            isUrgent,
+            priority: intervention.priority,
+            description: intervention.description,
             acceptanceUrl,
             questionnaireAnswers,
             scheduledAt: intervention.scheduledAt,
@@ -260,7 +263,8 @@ serve(async (req) => {
               city: intervention.city,
               address: intervention.address,
               postalCode: intervention.postalCode,
-              isUrgent,
+              priority: intervention.priority,
+              description: intervention.description,
               acceptanceUrl,
               questionnaireAnswers,
               scheduledAt: intervention.scheduledAt,
