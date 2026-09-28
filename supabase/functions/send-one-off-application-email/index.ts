@@ -17,15 +17,15 @@ serve(async (req) => {
 
     const siteUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
     const { subject, html } = buildTechnicianApplicationEmailHtml({
-      firstName: "MG Serrurerie Mayran",
+      firstName: "Gachel KUETI MUANZA",
       action: "approved",
       activationUrl: `${siteUrl}/verify-email?token=PLACEHOLDER`,
     });
 
     const result = await resend.emails.send({
       from: resendFromEmail,
-      to: ["k3pcontact@gmail.com", "kpaulimus@depan.pro"],
-      subject: `[Copie - destinataire initial: mgserrureriemayran@gmail.com] ${subject}`,
+      to: ["karlpaulimus@yahoo.com"],
+      subject: subject,
       html,
     });
 
