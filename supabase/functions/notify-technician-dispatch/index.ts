@@ -18,8 +18,8 @@ interface NotifyTechnicianRequest {
     postalCode: string;
     category: string;
     priority: string;
-    scheduledAt?: string;
     description?: string | null;
+    scheduledAt?: string;
   };
 }
 
@@ -66,7 +66,7 @@ serve(async (req) => {
     if (!intervention) {
       const { data: intData, error: intError } = await supabase
         .from("interventions")
-        .select("title, address, city, postal_code, category, priority, scheduled_at, description")
+        .select("title, address, city, postal_code, category, priority, description, scheduled_at")
         .eq("id", interventionId)
         .single();
 
@@ -85,8 +85,8 @@ serve(async (req) => {
         postalCode: intData.postal_code,
         category: intData.category,
         priority: intData.priority,
-        scheduledAt: intData.scheduled_at,
         description: intData.description,
+        scheduledAt: intData.scheduled_at,
       };
     }
 
@@ -250,7 +250,9 @@ serve(async (req) => {
 
     // 3. Send SMS to agent receivers (dispatch SMS recipients, admin-managed)
     try {
-      const { data: agents, error: agentsError } = await supabase.from("agent_receiver").select("phone");
+      const { data: agents, error: agentsError } = await supabase
+        .from("agent_receiver")
+        .select("phone");
 
       if (agentsError) {
         console.error("[NotifyTechnicianDispatch] Failed to fetch agent receivers:", agentsError);
