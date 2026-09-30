@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { buildQuoteEmailHtml } from "../_shared/email-templates/quote-email.ts";
 
@@ -13,13 +14,17 @@ serve(async () => {
       body: JSON.stringify({ interventionId: id }),
     });
     const { quoteBase64, quoteFileName } = await r.json();
+    const sb = createClient(url, key);
+    const { data: i } = await sb.from("interventions").select("address,postal_code,city,technician_id").eq("id", id).single();
+    let tn = "Technicien";
+    if (i?.technician_id) { const { data: t } = await sb.from("users").select("first_name,last_name").eq("id", i.technician_id).single(); if (t) tn = `${t.first_name} ${t.last_name}`; }
     const resend = new Resend(Deno.env.get("RESEND_API_KEY")!);
     const from = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
     const res = await resend.emails.send({
       from: `Depan.Pro <${from}>`,
       to: ["karlpaulimus@yahoo.com"],
       subject: "Depan.Pro : Votre devis d'intervention - DP-UUBL96",
-      html: buildQuoteEmailHtml({ trackingCode: "DP-UUBL96", interventionId: id, address: "", postalCode: "", city: "", technicianName: "Technicien" }),
+      html: buildQuoteEmailHtml({ trackingCode: "DP-UUBL96", interventionId: id, address: i?.address ?? "", postalCode: i?.postal_code ?? "", city: i?.city ?? "", technicianName: tn }),
       attachments: [{ filename: quoteFileName, content: quoteBase64 }],
     });
     return new Response(JSON.stringify(res));
