@@ -302,6 +302,223 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_invoices: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          number: string | null
+          paid_at: string | null
+          partner_id: string
+          pdf_url: string | null
+          period_end: string | null
+          period_start: string | null
+          sent_at: string | null
+          status: string
+          total_ht: number
+          total_ttc: number
+          updated_at: string
+          vat_amount: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          number?: string | null
+          paid_at?: string | null
+          partner_id: string
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          sent_at?: string | null
+          status?: string
+          total_ht?: number
+          total_ttc?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          number?: string | null
+          paid_at?: string | null
+          partner_id?: string
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          sent_at?: string | null
+          status?: string
+          total_ht?: number
+          total_ttc?: number
+          updated_at?: string
+          vat_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_invoices_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_invoices_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_invoices_lines: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          intervention_id: string | null
+          invoice_id: string
+          label: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          intervention_id?: string | null
+          invoice_id: string
+          label?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          intervention_id?: string | null
+          invoice_id?: string
+          label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_invoices_lines_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_invoices_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_locations: {
+        Row: {
+          address: string
+          city: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string | null
+          partner_id: string
+          postal_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          partner_id: string
+          postal_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          partner_id?: string
+          postal_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_locations_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_partners: {
+        Row: {
+          address: string | null
+          city: string | null
+          company_name: string
+          contact_email: string | null
+          contact_firstname: string | null
+          contact_lastname: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          postal_code: string | null
+          siret: string | null
+          updated_at: string
+          vat_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          company_name: string
+          contact_email?: string | null
+          contact_firstname?: string | null
+          contact_lastname?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          postal_code?: string | null
+          siret?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          company_name?: string
+          contact_email?: string | null
+          contact_firstname?: string | null
+          contact_lastname?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          postal_code?: string | null
+          siret?: string | null
+          updated_at?: string
+          vat_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_partners_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cancelled_assignments: {
         Row: {
           cancelled_at: string
@@ -673,6 +890,78 @@ export type Database = {
           },
         ]
       }
+      external_escalations: {
+        Row: {
+          category: string | null
+          company_name: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          intervention_id: string
+          notes: string | null
+          price: number | null
+          rating: number | null
+          status: string
+          technician_first_name: string | null
+          technician_information: string | null
+          technician_last_name: string | null
+          technician_phone: string | null
+          time_until_service: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intervention_id: string
+          notes?: string | null
+          price?: number | null
+          rating?: number | null
+          status?: string
+          technician_first_name?: string | null
+          technician_information?: string | null
+          technician_last_name?: string | null
+          technician_phone?: string | null
+          time_until_service?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          company_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intervention_id?: string
+          notes?: string | null
+          price?: number | null
+          rating?: number | null
+          status?: string
+          technician_first_name?: string | null
+          technician_information?: string | null
+          technician_last_name?: string | null
+          technician_phone?: string | null
+          time_until_service?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_escalations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "external_escalations_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intervention_history: {
         Row: {
           action: string
@@ -968,14 +1257,30 @@ export type Database = {
           affiliate_code: string | null
           affiliate_id: string | null
           arrived_at: string | null
+          b2b_invoice_id: string | null
+          b2b_location_id: string | null
+          b2b_partner_id: string | null
+          billing_mode: string | null
+          billing_type: string
           category: string
           city: string
           client_email: string | null
+          client_first_name: string | null
           client_id: string | null
+          client_last_name: string | null
           client_phone: string | null
           completed_at: string | null
           created_at: string
+          customer_consent: boolean | null
           description: string | null
+          escalation_completed_at: string | null
+          escalation_consent_signature_data: string | null
+          escalation_consent_signed_at: string | null
+          escalation_notes: string | null
+          escalation_photos: Json | null
+          escalation_reason: string | null
+          escalation_requested_at: string | null
+          escalation_type: string | null
           estimated_price: number | null
           expected_completion_date: string | null
           final_price: number | null
@@ -990,6 +1295,7 @@ export type Database = {
           longitude: number | null
           other_prestation_label: string | null
           other_prestation_price: number | null
+          parent_id_intervention: string | null
           photos: string[] | null
           postal_code: string
           priority: string
@@ -1002,6 +1308,7 @@ export type Database = {
           quote_signed_at: string | null
           response_time_seconds: number | null
           scheduled_at: string | null
+          service_started: boolean | null
           started_at: string | null
           status: string
           suspended_at: string | null
@@ -1019,14 +1326,30 @@ export type Database = {
           affiliate_code?: string | null
           affiliate_id?: string | null
           arrived_at?: string | null
+          b2b_invoice_id?: string | null
+          b2b_location_id?: string | null
+          b2b_partner_id?: string | null
+          billing_mode?: string | null
+          billing_type?: string
           category: string
           city: string
           client_email?: string | null
+          client_first_name?: string | null
           client_id?: string | null
+          client_last_name?: string | null
           client_phone?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_consent?: boolean | null
           description?: string | null
+          escalation_completed_at?: string | null
+          escalation_consent_signature_data?: string | null
+          escalation_consent_signed_at?: string | null
+          escalation_notes?: string | null
+          escalation_photos?: Json | null
+          escalation_reason?: string | null
+          escalation_requested_at?: string | null
+          escalation_type?: string | null
           estimated_price?: number | null
           expected_completion_date?: string | null
           final_price?: number | null
@@ -1041,6 +1364,7 @@ export type Database = {
           longitude?: number | null
           other_prestation_label?: string | null
           other_prestation_price?: number | null
+          parent_id_intervention?: string | null
           photos?: string[] | null
           postal_code: string
           priority?: string
@@ -1053,6 +1377,7 @@ export type Database = {
           quote_signed_at?: string | null
           response_time_seconds?: number | null
           scheduled_at?: string | null
+          service_started?: boolean | null
           started_at?: string | null
           status?: string
           suspended_at?: string | null
@@ -1070,14 +1395,30 @@ export type Database = {
           affiliate_code?: string | null
           affiliate_id?: string | null
           arrived_at?: string | null
+          b2b_invoice_id?: string | null
+          b2b_location_id?: string | null
+          b2b_partner_id?: string | null
+          billing_mode?: string | null
+          billing_type?: string
           category?: string
           city?: string
           client_email?: string | null
+          client_first_name?: string | null
           client_id?: string | null
+          client_last_name?: string | null
           client_phone?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_consent?: boolean | null
           description?: string | null
+          escalation_completed_at?: string | null
+          escalation_consent_signature_data?: string | null
+          escalation_consent_signed_at?: string | null
+          escalation_notes?: string | null
+          escalation_photos?: Json | null
+          escalation_reason?: string | null
+          escalation_requested_at?: string | null
+          escalation_type?: string | null
           estimated_price?: number | null
           expected_completion_date?: string | null
           final_price?: number | null
@@ -1092,6 +1433,7 @@ export type Database = {
           longitude?: number | null
           other_prestation_label?: string | null
           other_prestation_price?: number | null
+          parent_id_intervention?: string | null
           photos?: string[] | null
           postal_code?: string
           priority?: string
@@ -1104,6 +1446,7 @@ export type Database = {
           quote_signed_at?: string | null
           response_time_seconds?: number | null
           scheduled_at?: string | null
+          service_started?: boolean | null
           started_at?: string | null
           status?: string
           suspended_at?: string | null
@@ -1128,6 +1471,34 @@ export type Database = {
             columns: ["affiliate_id"]
             isOneToOne: false
             referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interventions_b2b_invoice_id_fkey"
+            columns: ["b2b_invoice_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interventions_b2b_location_id_fkey"
+            columns: ["b2b_location_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interventions_b2b_partner_id_fkey"
+            columns: ["b2b_partner_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interventions_parent_id_intervention_fkey"
+            columns: ["parent_id_intervention"]
+            isOneToOne: false
+            referencedRelation: "interventions"
             referencedColumns: ["id"]
           },
           {
