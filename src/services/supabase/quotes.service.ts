@@ -156,6 +156,13 @@ class QuotesService {
       display_order: index,
     }));
 
+    // Replace existing base quote lines to avoid duplicates on re-validation
+    const { error: deleteError } = await supabase
+      .from('intervention_quotes')
+      .delete()
+      .eq('intervention_id', interventionId);
+    if (deleteError) throw deleteError;
+
     const { data, error } = await supabase
       .from('intervention_quotes')
       .insert(insertData)
