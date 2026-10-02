@@ -413,50 +413,6 @@ export type Database = {
           },
         ]
       }
-      b2b_locations: {
-        Row: {
-          address: string
-          city: string | null
-          created_at: string
-          id: string
-          is_default: boolean
-          label: string | null
-          partner_id: string
-          postal_code: string | null
-          updated_at: string
-        }
-        Insert: {
-          address: string
-          city?: string | null
-          created_at?: string
-          id?: string
-          is_default?: boolean
-          label?: string | null
-          partner_id: string
-          postal_code?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string
-          city?: string | null
-          created_at?: string
-          id?: string
-          is_default?: boolean
-          label?: string | null
-          partner_id?: string
-          postal_code?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "b2b_locations_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "b2b_partners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       b2b_partners: {
         Row: {
           address: string | null
@@ -1258,7 +1214,7 @@ export type Database = {
           affiliate_id: string | null
           arrived_at: string | null
           b2b_invoice_id: string | null
-          b2b_location_id: string | null
+          b2b_order_reference: string | null
           b2b_partner_id: string | null
           billing_mode: string | null
           billing_type: string
@@ -1327,7 +1283,7 @@ export type Database = {
           affiliate_id?: string | null
           arrived_at?: string | null
           b2b_invoice_id?: string | null
-          b2b_location_id?: string | null
+          b2b_order_reference?: string | null
           b2b_partner_id?: string | null
           billing_mode?: string | null
           billing_type?: string
@@ -1396,7 +1352,7 @@ export type Database = {
           affiliate_id?: string | null
           arrived_at?: string | null
           b2b_invoice_id?: string | null
-          b2b_location_id?: string | null
+          b2b_order_reference?: string | null
           b2b_partner_id?: string | null
           billing_mode?: string | null
           billing_type?: string
@@ -1478,13 +1434,6 @@ export type Database = {
             columns: ["b2b_invoice_id"]
             isOneToOne: false
             referencedRelation: "b2b_invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "interventions_b2b_location_id_fkey"
-            columns: ["b2b_location_id"]
-            isOneToOne: false
-            referencedRelation: "b2b_locations"
             referencedColumns: ["id"]
           },
           {
