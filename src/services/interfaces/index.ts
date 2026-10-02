@@ -39,3 +39,12 @@ export type {
   MonthlyAggregate,
 } from './affiliate.interface';
 export type { ISiteStatsService, SiteStats, SiteStatsDailyPoint, SiteStatsSlice } from './site-stats.interface';
+export type {
+  IB2bService,
+  B2bPartner,
+  B2bPartnerInput,
+  B2bInvoice,
+  B2bInvoiceLine,
+  B2bInvoiceStatus,
+  B2bInvoiceGenerateInput,
+} from './b2b.interface';
