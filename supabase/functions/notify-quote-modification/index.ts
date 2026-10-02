@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { isB2bIntervention, b2bSkippedResponse } from "../_shared/notify/guard.ts";
 import { buildQuoteModificationEmailHtml } from "../_shared/email-templates/quote-modification.ts";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildQuoteModificationSms } from "../_shared/sms/templates.ts";
-import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,6 +40,11 @@ serve(async (req) => {
 
     if (modError || !modification) {
       throw new Error("Modification not found");
+    }
+
+    // B2B : pas de communication vers le client final
+    if (await isB2bIntervention(supabase, (modification as { intervention_id?: string }).intervention_id)) {
+      return b2bSkippedResponse(corsHeaders);
     }
 
     const { data: intervention, error: intError } = await supabase
@@ -133,7 +138,6 @@ serve(async (req) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error in notify-quote-modification:", errorMessage);
-    await logError("notify-quote-modification", errorMessage, { error: String(error) });
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {
