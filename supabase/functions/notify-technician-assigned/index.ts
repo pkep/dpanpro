@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isB2bIntervention, b2bSkippedResponse } from "../_shared/notify/guard.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildTechnicianAssignedSms } from "../_shared/sms/templates.ts";
 import { buildTechnicianAssignedEmail } from "../_shared/email-templates/technician-assigned.ts";
-import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,6 +38,8 @@ serve(async (req) => {
     const frontendUrl = Deno.env.get("FRONTEND_URL") ?? "https://dpanpro.lovable.app";
 
     const body: RequestBody = await req.json();
+    // B2B : pas de communication vers le client final
+    if (await isB2bIntervention(supabase, body.interventionId)) return b2bSkippedResponse(corsHeaders);
     console.log("[NotifyTechAssigned] Notifying client for intervention", body.interventionId);
 
     let clientEmail = body.clientEmail ?? null;
@@ -110,7 +112,6 @@ serve(async (req) => {
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.error("[NotifyTechAssigned] Error:", error);
-    await logError("notify-technician-assigned", msg, { error: String(error) });
     return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
