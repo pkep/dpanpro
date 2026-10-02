@@ -88,6 +88,8 @@ interface TechnicianDispatchSmsData {
   priority?: string | null;
   /** Utilisé si les réponses au questionnaire sont absentes. */
   description?: string | null;
+  /** Si renseigné : mission pour le compte d'un partenaire B2B. */
+  b2bCompanyName?: string | null;
   acceptanceUrl: string;
   questionnaireAnswers?: string[];
   scheduledAt?: string; // ISO date, only for scheduled interventions
@@ -124,7 +126,12 @@ export function buildTechnicianDispatchSms(data: TechnicianDispatchSmsData): str
       })}.\n`
     : "";
 
-  return `${PREFIX} Nouvelle mission [${emergencyLevel(data.priority)}] : ${data.categoryLabel} a ${data.city}.\n${data.address}, ${data.postalCode}.${scheduledLine}${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
+  // Mission B2B : préciser la société pour le compte de laquelle on intervient
+  const missionLine = data.b2bCompanyName
+    ? `Nouvelle mission [${emergencyLevel(data.priority)}] pour le compte de [${data.b2bCompanyName}] : ${data.categoryLabel} a ${data.city}.`
+    : `Nouvelle mission [${emergencyLevel(data.priority)}] : ${data.categoryLabel} a ${data.city}.`;
+
+  return `${PREFIX} ${missionLine}\n${data.address}, ${data.postalCode}.${scheduledLine}${answersLine}\n\nCliquez sur le lien pour accepter l'intervention: ${data.acceptanceUrl}.`;
 }
 
 // ── Payment Captured (technician confirmation) ──────────────────────
