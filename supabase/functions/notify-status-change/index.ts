@@ -1,9 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { isB2bIntervention, b2bSkippedResponse } from "../_shared/notify/guard.ts";
 import { buildStatusChangeEmailHtml, STATUS_LABELS, STATUS_EMOJI } from "../_shared/email-templates/status-change.ts";
 import { sendSMS } from "../_shared/sms/twilio.ts";
 import { buildStatusChangeSms } from "../_shared/sms/templates.ts";
-import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,6 +25,9 @@ const STATUS_MESSAGES: Record<string, string> = {
   in_progress: "L'intervention est en cours",
   completed: "L'intervention est terminée",
   cancelled: "L'intervention a été annulée",
+  complete_climbed: "Votre intervention a été transférée à un autre technicien",
+  complete_climbed_external: "Votre intervention a été transférée à un prestataire externe",
+  cancelled_escalation_declined: "Votre intervention a été annulée (remplacement refusé)",
 };
 
 // Send email via Resend
@@ -179,6 +182,9 @@ serve(async (req) => {
   try {
     const { interventionId, newStatus, oldStatus }: NotifyStatusChangeRequest = await req.json();
 
+    // B2B : aucune communication vers le client final (bénéficiaire)
+    if (await isB2bIntervention(supabase, interventionId)) return b2bSkippedResponse(corsHeaders);
+
     console.log(
       `Status change notification: ${oldStatus || "unknown"} -> ${newStatus} for intervention ${interventionId}`,
     );
@@ -304,7 +310,6 @@ serve(async (req) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error in notify-status-change:", errorMessage);
-    await logError("notify-status-change", errorMessage, { error: String(error) });
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
