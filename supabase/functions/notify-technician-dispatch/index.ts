@@ -19,6 +19,9 @@ interface NotifyTechnicianRequest {
     category: string;
     priority: string;
     description?: string | null;
+    billingType?: string | null;
+    b2bPartnerId?: string | null;
+    b2bCompanyName?: string | null;
     scheduledAt?: string;
   };
 }
@@ -66,7 +69,7 @@ serve(async (req) => {
     if (!intervention) {
       const { data: intData, error: intError } = await supabase
         .from("interventions")
-        .select("title, address, city, postal_code, category, priority, description, scheduled_at")
+        .select("title, address, city, postal_code, category, priority, description, billing_type, b2b_partner_id, scheduled_at")
         .eq("id", interventionId)
         .single();
 
@@ -86,6 +89,8 @@ serve(async (req) => {
         category: intData.category,
         priority: intData.priority,
         description: intData.description,
+        billingType: intData.billing_type,
+        b2bPartnerId: intData.b2b_partner_id,
         scheduledAt: intData.scheduled_at,
       };
     }
@@ -143,6 +148,17 @@ serve(async (req) => {
     const isUrgent = intervention.priority === "urgent";
     const acceptanceUrl = frontendUrl + "/technician?acceptIntervention=" + interventionId;
 
+    // Mission B2B : société pour le compte de laquelle on intervient
+    let b2bCompanyName: string | null = intervention.b2bCompanyName ?? null;
+    if (!b2bCompanyName && intervention.b2bPartnerId) {
+      const { data: partner } = await supabase
+        .from("b2b_partners")
+        .select("company_name")
+        .eq("id", intervention.b2bPartnerId)
+        .maybeSingle();
+      b2bCompanyName = partner?.company_name ?? null;
+    }
+
     for (const tech of technicianInfos) {
       console.log(`[NotifyTechnicianDispatch] Processing technician ${tech.id} (${tech.firstName} ${tech.lastName})`);
 
@@ -156,6 +172,7 @@ serve(async (req) => {
             postalCode: intervention.postalCode,
             priority: intervention.priority,
             description: intervention.description,
+            b2bCompanyName,
             acceptanceUrl,
             questionnaireAnswers,
             scheduledAt: intervention.scheduledAt,
@@ -267,6 +284,7 @@ serve(async (req) => {
               postalCode: intervention.postalCode,
               priority: intervention.priority,
               description: intervention.description,
+              b2bCompanyName,
               acceptanceUrl,
               questionnaireAnswers,
               scheduledAt: intervention.scheduledAt,
