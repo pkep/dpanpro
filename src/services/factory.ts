@@ -46,6 +46,7 @@ import { invoiceService as supabaseInvoiceService } from '@/services/components/
 import { storageService as supabaseStorageService } from '@/services/components/utils/storage/storage.service';
 import { affiliateService as supabaseAffiliateService } from '@/services/supabase/affiliate.service';
 import { siteStatsService as supabaseSiteStatsService } from '@/services/supabase/site-stats.service';
+import { b2bService as supabaseB2bService } from '@/services/supabase/b2b.service';
 
 // --- Spring implementations ---
 import { SpringAuthService } from '@/services/spring/auth.spring';
@@ -81,6 +82,7 @@ import { SpringQuestionnaireService } from '@/services/spring/questionnaire.spri
 import { SpringInvoiceService } from '@/services/spring/invoice.spring';
 import { SpringAffiliateService } from '@/services/spring/affiliate.spring';
 import { SpringSiteStatsService } from '@/services/spring/site-stats.spring';
+import { SpringB2bService } from '@/services/spring/b2b.spring';
 
 // --- Interfaces ---
 import type { IAuthService } from '@/services/interfaces/auth.interface';
@@ -116,6 +118,7 @@ import type { IQuestionnaireService } from '@/services/interfaces/questionnaire.
 import type { IInvoiceService } from '@/services/interfaces/invoice.interface';
 import type { IAffiliateService } from '@/services/interfaces/affiliate.interface';
 import type { ISiteStatsService } from '@/services/interfaces/site-stats.interface';
+import type { IB2bService } from '@/services/interfaces/b2b.interface';
 
 export interface ServiceContainer {
   auth: IAuthService;
@@ -151,6 +154,7 @@ export interface ServiceContainer {
   invoice: IInvoiceService;
   affiliates: IAffiliateService;
   siteStats: ISiteStatsService;
+  b2b: IB2bService;
 }
 
 function createSupabaseServices(): ServiceContainer {
@@ -188,6 +192,7 @@ function createSupabaseServices(): ServiceContainer {
     invoice: supabaseInvoiceService,
     affiliates: supabaseAffiliateService,
     siteStats: supabaseSiteStatsService,
+    b2b: supabaseB2bService,
   };
 }
 
@@ -226,6 +231,7 @@ function createSpringServices(): ServiceContainer {
     invoice: new SpringInvoiceService(),
     affiliates: new SpringAffiliateService(),
     siteStats: new SpringSiteStatsService(),
+    b2b: new SpringB2bService(),
   };
 }
 
