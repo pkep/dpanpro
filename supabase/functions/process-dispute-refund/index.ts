@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { isB2bIntervention, b2bSkippedResponse } from "../_shared/notify/guard.ts";
 import { buildDisputeRefundEmailHtml } from "../_shared/email-templates/dispute-refund.ts";
 
 const corsHeaders = {
@@ -33,6 +34,9 @@ serve(async (req) => {
     const { disputeId, interventionId, refundType, refundAmount }: RefundRequest = await req.json();
 
     console.log("[REFUND] Processing refund:", { disputeId, interventionId, refundType, refundAmount });
+
+    // B2B : pas de communication vers le client final
+    if (await isB2bIntervention(supabase, interventionId)) return b2bSkippedResponse(corsHeaders);
 
     // Get the payment authorization for this intervention
     const { data: auth, error: authError } = await supabase
