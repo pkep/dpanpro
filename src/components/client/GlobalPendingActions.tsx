@@ -1,4 +1,4 @@
-import { useAuth } from '@/hooks/useAuth';
+import { useOptionalAuth } from '@/hooks/useAuth';
 import { PendingActionsModal } from './PendingActionsModal';
 
 /**
@@ -6,9 +6,9 @@ import { PendingActionsModal } from './PendingActionsModal';
  * regardless of which page they are on.
  */
 export function GlobalPendingActions() {
-  const { user, isAuthenticated } = useAuth();
+  const auth = useOptionalAuth();
 
-  if (!isAuthenticated || !user || user.role !== 'client') {
+  if (!auth?.isAuthenticated || !auth.user || auth.user.role !== 'client') {
     return null;
   }
 
