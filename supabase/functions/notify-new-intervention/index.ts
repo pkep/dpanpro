@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isB2bIntervention, b2bSkippedResponse } from "../_shared/notify/guard.ts";
 import { buildNotifyNewInterventionHtml } from "../_shared/email-templates/notify-new-intervention.ts";
-import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +10,6 @@ const corsHeaders = {
 
 interface RequestBody {
   interventionId: string;
-  testRecipient?: string;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -28,7 +27,7 @@ serve(async (req) => {
   }
 
   try {
-    const { interventionId, testRecipient }: RequestBody = await req.json();
+    const { interventionId }: RequestBody = await req.json();
 
     if (!interventionId) {
       return new Response(JSON.stringify({ error: "interventionId is required" }), {
@@ -41,6 +40,9 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // B2B : pas de communication vers le client final
+    if (await isB2bIntervention(supabase, interventionId)) return b2bSkippedResponse(corsHeaders);
 
     const { data: intervention, error: intError } = await supabase
       .from("interventions")
@@ -56,7 +58,7 @@ serve(async (req) => {
       });
     }
 
-    let recipientEmail: string | null = testRecipient || intervention.client_email || null;
+    let recipientEmail: string | null = intervention.client_email || null;
 
     if (!recipientEmail && intervention.client_id) {
       const { data: user } = await supabase
@@ -109,7 +111,6 @@ serve(async (req) => {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[NotifyNewIntervention] Error:", error);
-    await logError("notify-new-intervention", (error instanceof Error ? error.message : String(error)), { error: String(error) });
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
