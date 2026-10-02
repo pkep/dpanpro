@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isB2bIntervention, b2bSkippedResponse } from "../_shared/notify/guard.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { buildCancellationInvoiceEmailHtml, buildCancellationInvoicePdfHtml } from "../_shared/email-templates/cancellation-invoice.ts";
 import { sendSMS } from "../_shared/sms/twilio.ts";
@@ -35,6 +36,9 @@ serve(async (req: Request): Promise<Response> => {
       vatAmount,
       totalTTC,
     }: SendCancellationInvoiceRequest = await req.json();
+
+    // B2B : pas de communication vers le client final
+    if (await isB2bIntervention(supabase, interventionId)) return b2bSkippedResponse(corsHeaders);
 
     console.log(`Sending cancellation invoice for intervention ${interventionId}`);
 
