@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendClientEmail, sendClientSms } from "../_shared/notify/send.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { buildQuoteEmailHtml } from "../_shared/email-templates/quote-email.ts";
 import { sendSMS } from "../_shared/sms/twilio.ts";
@@ -88,41 +89,31 @@ serve(async (req: Request): Promise<Response> => {
 
     const results = { email: false, sms: false };
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const resendFromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "onboarding@resend.dev";
+    const emailRes = await sendClientEmail({
+      supabase,
+      interventionId,
+      to: clientEmail,
+      subject: `Depan.Pro : Votre devis d'intervention - ${trackingCode}`,
+      html: buildQuoteEmailHtml({
+        trackingCode,
+        interventionId,
+        address: intervention.address,
+        postalCode: intervention.postal_code,
+        city: intervention.city,
+        technicianName,
+      }),
+      attachments: [{ filename: quoteFileName, content: quoteBase64 }],
+    });
+    results.email = emailRes.sent;
 
-    if (resendApiKey && clientEmail) {
-      try {
-        const resend = new Resend(resendApiKey);
-        const emailResponse = await resend.emails.send({
-          from: `Depan.Pro <${resendFromEmail}>`,
-          to: [clientEmail],
-          subject: `Depan.Pro : Votre devis d'intervention - ${trackingCode}`,
-          html: buildQuoteEmailHtml({
-            trackingCode,
-            interventionId,
-            address: intervention.address,
-            postalCode: intervention.postal_code,
-            city: intervention.city,
-            technicianName,
-          }),
-          attachments: [{ filename: quoteFileName, content: quoteBase64 }],
-        });
-        console.log("Quote email sent successfully:", emailResponse);
-        results.email = true;
-      } catch (emailError) {
-        console.error("Error sending email:", emailError);
-      }
-    } else {
-      console.log("Email not sent: RESEND_API_KEY not configured or no client email");
-    }
-
-    if (clientPhone) {
-      const smsMessage = buildQuoteSignedSms({ trackingCode });
-      results.sms = await sendSMS(clientPhone, smsMessage, "[QuoteEmail]");
-    } else {
-      console.log("SMS not sent: no client phone number");
-    }
+    const smsRes = await sendClientSms({
+      supabase,
+      interventionId,
+      to: clientPhone,
+      body: buildQuoteSignedSms({ trackingCode }),
+      context: "[QuoteEmail]",
+    });
+    results.sms = smsRes.sent;
 
     return new Response(
       JSON.stringify({ success: results.email || results.sms, results }),
