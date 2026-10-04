@@ -1225,6 +1225,7 @@ export type Database = {
           client_id: string | null
           client_last_name: string | null
           client_phone: string | null
+          client_photos_count: number | null
           completed_at: string | null
           created_at: string
           customer_consent: boolean | null
@@ -1294,6 +1295,7 @@ export type Database = {
           client_id?: string | null
           client_last_name?: string | null
           client_phone?: string | null
+          client_photos_count?: number | null
           completed_at?: string | null
           created_at?: string
           customer_consent?: boolean | null
@@ -1363,6 +1365,7 @@ export type Database = {
           client_id?: string | null
           client_last_name?: string | null
           client_phone?: string | null
+          client_photos_count?: number | null
           completed_at?: string | null
           created_at?: string
           customer_consent?: boolean | null
