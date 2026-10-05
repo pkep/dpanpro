@@ -125,6 +125,30 @@ export class SpringInterventionsService implements IInterventionsService {
   // ============================================================
   // CORE METHODS
   // ============================================================
+  getInterventions(filters: {
+    status?: InterventionStatus | InterventionStatus[];
+    category?: InterventionCategory;
+    clientId?: string;
+    technicianId?: string;
+    isActive?: boolean;
+    unassignedOnly?: boolean;
+    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
+    orderDirection?: ('asc' | 'desc')[];
+    page: number;
+    size?: number;
+  }): Promise<PaginatedResponse<Intervention>>;
+  getInterventions(filters?: {
+    status?: InterventionStatus | InterventionStatus[];
+    category?: InterventionCategory;
+    clientId?: string;
+    technicianId?: string;
+    isActive?: boolean;
+    unassignedOnly?: boolean;
+    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
+    orderDirection?: ('asc' | 'desc')[];
+    page?: undefined;
+    size?: number;
+  }): Promise<Intervention[]>;
   async getInterventions(filters?: {
     status?: InterventionStatus | InterventionStatus[];
     category?: InterventionCategory;
