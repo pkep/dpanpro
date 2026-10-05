@@ -2297,8 +2297,11 @@ export type Database = {
       }
       quote_modifications: {
         Row: {
+          approved_channel: string | null
           client_notified_at: string | null
           client_responded_at: string | null
+          client_signature_at: string | null
+          client_signature_data: string | null
           created_at: string
           created_by: string
           decline_reason: string | null
@@ -2310,8 +2313,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_channel?: string | null
           client_notified_at?: string | null
           client_responded_at?: string | null
+          client_signature_at?: string | null
+          client_signature_data?: string | null
           created_at?: string
           created_by: string
           decline_reason?: string | null
@@ -2323,8 +2329,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_channel?: string | null
           client_notified_at?: string | null
           client_responded_at?: string | null
+          client_signature_at?: string | null
+          client_signature_data?: string | null
           created_at?: string
           created_by?: string
           decline_reason?: string | null
