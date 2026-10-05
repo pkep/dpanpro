@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import autoTable from "https://esm.sh/jspdf-autotable@3.8.2";
 import { resolveClientName } from "../_shared/client-name.ts";
+import { LOGO_DATA_URI, CERTIFIE_DATA_URI, LOGO_WIDTH, LOGO_HEIGHT, CERTIFIE_WIDTH, CERTIFIE_HEIGHT } from "../_shared/assets.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -192,15 +193,13 @@ serve(async (req: Request): Promise<Response> => {
     doc.setFillColor(...primaryColor);
     doc.rect(0, 0, pageWidth, 8, "F");
 
-    doc.setFontSize(22);
-    doc.setTextColor(...primaryColor);
-    doc.setFont("helvetica", "bold");
-    doc.text(COMPANY_INFO.name, 20, yPos + 5);
+    // Logo (remplace le titre texte « Depan.Pro »)
+    doc.addImage(LOGO_DATA_URI, "PNG", 20, 13.33, LOGO_WIDTH, LOGO_HEIGHT);
 
     doc.setFontSize(10);
     doc.setTextColor(...textMuted);
     doc.setFont("helvetica", "normal");
-    yPos += 13;
+    yPos = 36;
     doc.text(COMPANY_INFO.address, 20, yPos);
     yPos += 5;
     doc.text(COMPANY_INFO.city, 20, yPos);
@@ -225,12 +224,12 @@ serve(async (req: Request): Promise<Response> => {
     doc.text(`N° ${quoteNumber}`, pageWidth - 20, 38, { align: "right" });
     doc.text(`Date: ${formatDateFr(quoteDate)}`, pageWidth - 20, 45, { align: "right" });
 
-    yPos = 70;
+    yPos = 72;
     doc.setDrawColor(...primaryColor);
     doc.setLineWidth(0.5);
     doc.line(20, yPos, pageWidth - 20, yPos);
 
-    yPos = 75;
+    yPos = 77;
     const clientBoxHeight = isCompany ? 50 : 40;
     doc.setFillColor(240, 253, 244);
     doc.roundedRect(pageWidth - 95, yPos, 75, clientBoxHeight, 3, 3, "F");
@@ -277,7 +276,7 @@ serve(async (req: Request): Promise<Response> => {
     doc.text(`Technicien: ${technicianName}`, 20, yPos + 40);
     if (intervention.tracking_code) doc.text(`Réf: ${intervention.tracking_code}`, 20, yPos + 46);
 
-    yPos = 140;
+    yPos = 128;
 
     const tableData: (string | number)[][] = [];
     quoteLines.forEach((line: any) => {
@@ -345,27 +344,28 @@ serve(async (req: Request): Promise<Response> => {
     doc.setTextColor(...primaryColor);
     doc.text(`${totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: "right" });
 
-    // Signature
-    doc.setFontSize(10);
-    doc.setTextColor(...textDark);
-    doc.setFont("helvetica", "bold");
-    doc.text("Signature du client:", 20, yPos);
-
+    // Signature « certifiée » (la signature manuscrite n'est plus affichée)
+    yPos += 48;
     const signatureData: string | null = intervention.quote_signature_data || null;
     if (signatureData) {
       try {
-        doc.addImage(signatureData, "PNG", 20, yPos + 5, 60, 30);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(...textMuted);
-        const signedAt = intervention.quote_signed_at ? new Date(intervention.quote_signed_at) : new Date();
-        doc.text(
-          `Signé le ${String(signedAt.getDate()).padStart(2, "0")}/${String(signedAt.getMonth() + 1).padStart(2, "0")}/${signedAt.getFullYear()}`,
-          20,
-          yPos + 40,
+        doc.setFontSize(10);
+        doc.setTextColor(...textDark);
+        const at = intervention.quote_signed_at ? new Date(intervention.quote_signed_at) : null;
+        const label = at ? ` le ${String(at.getDate()).padStart(2, "0")}/${String(at.getMonth() + 1).padStart(2, "0")}/${at.getFullYear()} ${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}` : "";
+        const signText = `Signé électroniquement${label}`;
+        doc.text(signText, 20, yPos);
+        doc.addImage(
+          CERTIFIE_DATA_URI,
+          "JPEG",
+          20 + doc.getTextWidth(signText) / 2 - CERTIFIE_WIDTH / 2,
+          yPos + 6,
+          CERTIFIE_WIDTH,
+          CERTIFIE_HEIGHT,
         );
       } catch (err) {
-        console.error("Error adding signature to PDF:", err);
+        console.error("Error adding certified badge to PDF:", err);
       }
     } else {
       doc.setDrawColor(200, 200, 200);
@@ -377,14 +377,14 @@ serve(async (req: Request): Promise<Response> => {
       doc.text("En attente de signature", 60, yPos + 25, { align: "center" });
     }
 
-    yPos += 50;
+    yPos += 56;
     doc.setFontSize(8);
     doc.setTextColor(...textMuted);
     doc.setFont("helvetica", "normal");
     doc.text("Ce devis est valable pour la durée de l'intervention.", 20, yPos);
     doc.text("Bon pour accord et signature du client.", 20, yPos + 5);
 
-    const footerY = doc.internal.pageSize.getHeight() - 30;
+    const footerY = doc.internal.pageSize.getHeight() - 26.03;
     doc.setFontSize(8);
     doc.setTextColor(...textMuted);
     doc.setFont("helvetica", "normal");

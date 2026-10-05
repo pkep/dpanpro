@@ -55,30 +55,6 @@ const INTERVENTION_SELECT_FIELDS = {
 } as const;
 
 class SupabaseInterventionsService implements IInterventionsService {
-  getInterventions(filters: {
-    status?: InterventionStatus | InterventionStatus[];
-    category?: InterventionCategory;
-    clientId?: string;
-    technicianId?: string;
-    isActive?: boolean;
-    unassignedOnly?: boolean;
-    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
-    orderDirection?: ('asc' | 'desc')[];
-    page: number;
-    size?: number;
-  }): Promise<PaginatedResponse<Intervention>>;
-  getInterventions(filters?: {
-    status?: InterventionStatus | InterventionStatus[];
-    category?: InterventionCategory;
-    clientId?: string;
-    technicianId?: string;
-    isActive?: boolean;
-    unassignedOnly?: boolean;
-    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
-    orderDirection?: ('asc' | 'desc')[];
-    page?: undefined;
-    size?: number;
-  }): Promise<Intervention[]>;
   async getInterventions(filters?: {
     status?: InterventionStatus | InterventionStatus[];
     category?: InterventionCategory;
@@ -90,7 +66,7 @@ class SupabaseInterventionsService implements IInterventionsService {
     orderDirection?: ('asc' | 'desc')[];
     page?: number;
     size?: number;
-  }): Promise<Intervention[] | PaginatedResponse<Intervention>> {
+  }): Promise<Intervention[]> {
     let query = supabase
       .from('interventions')
       .select('*', { count: 'exact' });
@@ -137,37 +113,17 @@ class SupabaseInterventionsService implements IInterventionsService {
       query = query.eq('is_active', filters.isActive);
     }
 
-    // Apply pagination if provided
-    const page = filters?.page ?? 0;
-    const size = filters?.size ?? 10;
-    const from = page * size;
-    const to = from + size - 1;
-
-    if (filters?.page !== undefined && filters?.size !== undefined) {
-      query = query.range(from, to);
+    // Apply limit if a page size was provided
+    const size = filters?.size ?? 0;
+    if (size > 0) {
+      query = query.limit(size);
     }
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) throw error;
 
-    const mappedData = ((data || []) as unknown as DbIntervention[]).map(this.mapToIntervention);
-
-    // If pagination was requested, return paginated response
-    if (filters?.page !== undefined && filters?.size !== undefined) {
-      const totalElements = count || 0;
-      const totalPages = Math.ceil(totalElements / size);
-      return {
-        content: mappedData,
-        page,
-        size,
-        totalElements,
-        totalPages,
-      };
-    }
-
-    // Otherwise return array for backward compatibility
-    return mappedData;
+    return ((data || []) as unknown as DbIntervention[]).map(this.mapToIntervention);
   }
 
   async getIntervention(id: string): Promise<Intervention | null> {
@@ -1113,12 +1069,13 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
         .maybeSingle();
 
       if (error) throw error;
-      if (!data) throw new Error('Intervention not found');
+      const row = data as unknown as { id: string; invoice_signature_data: string | null; invoice_signed_at: string | null } | null;
+      if (!row) throw new Error('Intervention not found');
 
       return {
-        id: data.id,
-        invoiceSignatureData: data.invoice_signature_data || '',
-        invoiceSignedAt: data.invoice_signed_at || '',
+        id: row.id,
+        invoiceSignatureData: row.invoice_signature_data || '',
+        invoiceSignedAt: row.invoice_signed_at || '',
       };
     }
 
