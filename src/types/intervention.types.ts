@@ -268,6 +268,8 @@ export interface InterventionAdminView {
   address: string;
   city: string;
   postalCode: string;
+  latitude?: number | null;
+  longitude?: number | null;
   clientId: string;
   trackingCode: string;
   technicianId: string | null;
