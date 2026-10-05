@@ -307,6 +307,9 @@ class InterventionsService {
       quoteSignedAt: (data as any).quote_signed_at,
       quoteSignatureData: (data as any).quote_signature_data,
       quotePdfUrl: (data as any).quote_pdf_url,
+      questionnaireAnswers: (data as any).questionnaire_answers ?? null,
+      prixMin: (data as any).prix_min ?? null,
+      prixMax: (data as any).prix_max ?? null,
     };
   }
 }
