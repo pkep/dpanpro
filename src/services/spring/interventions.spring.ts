@@ -1,24 +1,26 @@
-import type { IInterventionsService } from '@/services/interfaces/interventions.interface';
+import type { PaginatedResponse } from '@/types/pagination.types';
+import type { IInterventionsService, InterventionListFilters } from '@/services/interfaces/interventions.interface';
 import type { Intervention, InterventionFormData, InterventionStatus, InterventionCategory } from '@/types/intervention.types';
 import { springHttp } from './http-client';
 
 export class SpringInterventionsService implements IInterventionsService {
   // GET /interventions?status=&category=&clientId=&technicianId=&isActive=&page=&size=
-  async getInterventions(filters?: {
-    status?: InterventionStatus;
-    category?: InterventionCategory;
-    clientId?: string;
-    technicianId?: string;
-    isActive?: boolean;
-  }): Promise<Intervention[]> {
+  async getInterventions(filters?: InterventionListFilters & { page?: undefined; size?: undefined }): Promise<Intervention[]>;
+  async getInterventions(filters: InterventionListFilters & { page: number; size: number }): Promise<PaginatedResponse<Intervention>>;
+  async getInterventions(filters?: InterventionListFilters): Promise<Intervention[] | PaginatedResponse<Intervention>>;
+  async getInterventions(filters?: InterventionListFilters): Promise<Intervention[] | PaginatedResponse<Intervention>> {
     const params: Record<string, string> = {};
-    if (filters?.status) params.status = filters.status;
+    if (filters?.status) params.status = Array.isArray(filters.status) ? filters.status.join(',') : filters.status;
+    if (filters?.unassignedOnly) params.unassignedOnly = 'true';
+    if (filters?.page !== undefined) params.page = String(filters.page);
+    if (filters?.size !== undefined) params.size = String(filters.size);
     if (filters?.category) params.category = filters.category;
     if (filters?.clientId) params.clientId = filters.clientId;
     if (filters?.technicianId) params.technicianId = filters.technicianId;
     if (filters?.isActive !== undefined) params.isActive = String(filters.isActive);
-    const page = await springHttp.get<{ content: Intervention[] }>('/interventions', params);
-    return page.content;
+    const result = await springHttp.get<PaginatedResponse<Intervention>>('/interventions', params);
+    if (filters?.page !== undefined && filters?.size !== undefined) return result;
+    return result.content;
   }
 
   // GET /interventions/{id}

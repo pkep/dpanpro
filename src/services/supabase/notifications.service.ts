@@ -15,6 +15,13 @@ class SupabaseNotificationsService implements INotificationsService {
     });
     if (error) throw error;
   }
+
+  async notifyNewIntervention(interventionId: string): Promise<void> {
+    const { error } = await supabase.functions.invoke('notify-new-intervention', {
+      body: { interventionId },
+    });
+    if (error) throw error;
+  }
 }
 
 export const notificationsService = new SupabaseNotificationsService();

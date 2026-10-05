@@ -17,4 +17,5 @@ export interface TechnicianApplicationNotificationInput {
 export interface INotificationsService {
   sendWelcomeAdmin(input: WelcomeNotificationInput): Promise<void>;
   notifyTechnicianApplication(input: TechnicianApplicationNotificationInput): Promise<void>;
+  notifyNewIntervention(interventionId: string): Promise<void>;
 }
