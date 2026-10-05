@@ -15,7 +15,6 @@ export type InterventionStatus =
   | 'on_route'                    // En route
   | 'arrived'                     // Arrivé sur place
   | 'in_progress'                 // En cours
-  | 'suspended'                   // Suspendue
   | 'completed'                   // Terminé
   | 'cancelled'                   // Annulé
   | 'complete_climbed'            // Transférée (interne)
@@ -43,6 +42,8 @@ export interface Intervention {
   completedAt?: string | null;
   photos?: string[];
   isActive: boolean;
+  /** Suspension booléenne (V43) : le statut métier est conservé, le technicien est libéré. */
+  suspended?: boolean;
   suspendedAt?: string | null;
   suspendedBy?: string | null;
   suspensionReason?: string | null;
@@ -171,7 +172,6 @@ export const STATUS_LABELS: Record<InterventionStatus, string> = {
   on_route: 'En route',
   arrived: 'Arrivé',
   in_progress: 'En cours',
-  suspended: 'Suspendue',
   completed: 'Terminé',
   cancelled: 'Annulé',
   complete_climbed: 'Transférée (interne)',
@@ -274,6 +274,8 @@ export interface InterventionAdminView {
   trackingCode: string;
   technicianId: string | null;
   status: InterventionStatus;
+  /** Suspension booléenne (V43) — le statut métier reste inchangé. */
+  suspended?: boolean;
   priority?: InterventionPriority;
   scheduledAt?: string | null;
   description?: string | null;
