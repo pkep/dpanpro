@@ -9,7 +9,9 @@ interface AuthContextType extends AuthState {
   refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+// Conserve le même contexte lors des rechargements à chaud (évite « useAuth must be used within an AuthProvider »)
+const __g = globalThis as unknown as { __depanAuthContext?: React.Context<AuthContextType | null> };
+const AuthContext = (__g.__depanAuthContext ??= createContext<AuthContextType | null>(null));
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
