@@ -1,14 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import type {
   IB2bService, B2bPartner, B2bPartnerInput,
-  B2bInvoice, B2bInvoiceLine, B2bInvoiceGenerateInput,
+  B2bInvoice, B2bInvoiceLine,
 } from '@/services/interfaces/b2b.interface';
 
 // Tables absentes des types Supabase générés tant que la migration V39 n'est pas régénérée.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
-
-const VAT_RATE = 0.20;
 
 const mapPartner = (r: Record<string, unknown>): B2bPartner => ({
   id: String(r.id),
@@ -104,9 +102,10 @@ class SupabaseB2bService implements IB2bService {
     if (error) throw error;
   }
 
-  async getInvoices(partnerId?: string): Promise<B2bInvoice[]> {
+  async getInvoices(partnerId?: string, month?: string): Promise<B2bInvoice[]> {
     let query = db.from('b2b_invoices').select('*, b2b_partners(company_name)').order('created_at', { ascending: false });
     if (partnerId) query = query.eq('partner_id', partnerId);
+    if (month) query = query.eq('period_start', `${month}-01`);
     const { data, error } = await query;
     if (error) throw error;
     const rows = (data || []) as Record<string, unknown>[];
@@ -133,64 +132,43 @@ class SupabaseB2bService implements IB2bService {
     return mapInvoice({ ...data, partner_name: partner?.company_name ?? null }, ((lines || []) as Record<string, unknown>[]).map(mapLine));
   }
 
-  async generateInvoice(input: B2bInvoiceGenerateInput): Promise<B2bInvoice> {
-    const from = `${input.periodStart}T00:00:00.000Z`;
-    const to = `${input.periodEnd}T23:59:59.999Z`;
-    const { data: interventions, error } = await db
-      .from('interventions')
-      .select('id, category, final_price, estimated_price, completed_at')
-      .eq('billing_type', 'b2b')
-      .eq('status', 'completed')
-      .is('b2b_invoice_id', null)
-      .eq('b2b_partner_id', input.partnerId)
-      .gte('completed_at', from)
-      .lte('completed_at', to)
-      .order('completed_at');
+  async previewInvoicePdf(partnerId: string, month: string): Promise<{ pdfBase64: string; filename: string }> {
+    const { data, error } = await supabase.functions.invoke('generate-b2b-invoice-pdf', {
+      body: { partnerId, month },
+    });
     if (error) throw error;
-    const rows = (interventions || []) as Record<string, unknown>[];
-    if (!rows.length) throw new Error("Aucune intervention B2B terminée à facturer sur cette période");
+    if (data && data.error) throw new Error(data.error);
+    return { pdfBase64: data.pdfBase64, filename: data.filename };
+  }
 
-    const yyyymm = input.periodEnd.slice(0, 7).replace('-', '');
-    const number = `B2B-${yyyymm}-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
-    const totalHt = rows.reduce((sum, r) => sum + Number(r.final_price ?? r.estimated_price ?? 0), 0);
-    const vatAmount = Math.round(totalHt * VAT_RATE * 100) / 100;
-    const totalTtc = Math.round((totalHt + vatAmount) * 100) / 100;
+  async sendInvoice(id: string): Promise<B2bInvoice> {
+    const { data, error } = await supabase.functions.invoke('send-b2b-invoice-email', {
+      body: { invoiceId: id },
+    });
+    if (error) throw error;
+    if (data && data.error) throw new Error(data.error);
+    return this.getInvoice(id);
+  }
 
-    const { data: invoice, error: invError } = await db.from('b2b_invoices').insert({
-      partner_id: input.partnerId,
-      number,
-      period_start: input.periodStart,
-      period_end: input.periodEnd,
-      status: 'draft',
-      total_ht: totalHt,
-      vat_amount: vatAmount,
-      total_ttc: totalTtc,
-    }).select('id').single();
-    if (invError) throw invError;
-    const invoiceId = String(invoice.id);
-
-    const lines = rows.map((r) => ({
-      invoice_id: invoiceId,
-      intervention_id: r.id,
-      label: `Intervention ${r.category ?? ''} ${(r.completed_at as string)?.slice(0, 10) ?? ''}`.trim(),
-      amount: Number(r.final_price ?? r.estimated_price ?? 0),
-    }));
-    const { error: lineError } = await db.from('b2b_invoices_lines').insert(lines);
-    if (lineError) throw lineError;
-
-    await db.from('interventions').update({ b2b_invoice_id: invoiceId }).in('id', rows.map((r) => r.id));
-
-    return this.getInvoice(invoiceId);
+  async sendInvoices(month: string): Promise<{ sent: number }> {
+    const invoices = await this.getInvoices(undefined, month);
+    const drafts = invoices.filter((i) => i.status === 'draft');
+    let sent = 0;
+    for (const inv of drafts) {
+      try {
+        await this.sendInvoice(inv.id);
+        sent++;
+      } catch (e) {
+        console.error('sendInvoice failed', inv.id, e);
+      }
+    }
+    return { sent };
   }
 
   private async setStatus(id: string, status: B2bInvoice['status'], extra: Record<string, unknown> = {}): Promise<B2bInvoice> {
     const { error } = await db.from('b2b_invoices').update({ status, ...extra }).eq('id', id);
     if (error) throw error;
     return this.getInvoice(id);
-  }
-
-  markInvoiceSent(id: string): Promise<B2bInvoice> {
-    return this.setStatus(id, 'sent', { sent_at: new Date().toISOString() });
   }
 
   markInvoicePaid(id: string): Promise<B2bInvoice> {
