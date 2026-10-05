@@ -8,7 +8,7 @@ export interface WelcomeNotificationInput {
 
 export interface TechnicianApplicationNotificationInput {
   technicianId: string;
-  action: 'accepted' | 'rejected';
+  action: 'accepted' | 'approved' | 'rejected' | 'qualification' | 'activated';
   email: string;
   firstName: string;
   reason?: string;

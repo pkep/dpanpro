@@ -6,18 +6,48 @@ import { wrapInBaseLayout } from "./base-layout.ts";
 
 interface TechnicianApplicationTemplateData {
   firstName: string;
-  action: "approved" | "rejected";
+  action: "approved" | "rejected" | "qualification" | "activated";
   reason?: string;
   activationUrl?: string;
+  loginUrl?: string;
 }
 
 export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationTemplateData): {
   subject: string;
   html: string;
 } {
-  const { firstName, action, reason, activationUrl } = data;
+  const { firstName, action, reason, activationUrl, loginUrl } = data;
 
-  if (action === "approved") {
+  if (action === "approved" || action === "activated") {
+    const bodyContent = `
+      <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+        Votre profil technicien partenaire <strong>Depan.Pro</strong> est validé. Votre espace est maintenant pleinement actif !
+      </p>
+      ${
+        loginUrl
+          ? `<div style="text-align: center; margin: 24px 0;">
+        <a href="${loginUrl}" style="display: inline-block; background: #16a34a; color: #ffffff; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+          Accéder à mon espace
+        </a>
+      </div>`
+          : ""
+      }
+      <ul style="color: #4b5563; padding-left: 20px; margin: 0;">
+        <li style="margin-bottom: 10px;">Activez vos disponibilités pour recevoir des missions</li>
+        <li>Vous recevrez une notification dès qu'une mission sera disponible dans votre zone</li>
+      </ul>
+    `;
+    return {
+      subject: "Depan.Pro : Votre profil est validé 🎉",
+      html: wrapInBaseLayout({
+        headerTitle: `🎉 Bienvenue ${firstName} !`,
+        headerBgGradient: "linear-gradient(135deg, #22c55e, #16a34a)",
+        bodyContent,
+      }),
+    };
+  }
+
+  if (action === "qualification") {
     const bodyContent = `
       <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
         Nous avons le plaisir de vous informer que votre candidature pour devenir technicien partenaire chez <strong>Depan.Pro</strong> a été acceptée !
@@ -40,7 +70,7 @@ export function buildTechnicianApplicationEmailHtml(data: TechnicianApplicationT
       
       <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 0 8px 8px 0; margin: 20px 0;">
         <p style="margin: 0; color: #92400e; font-size: 14px;">
-          <strong>Important :</strong> Ce lien est valable <strong>15 minutes</strong>. Passé ce délai, vous devrez contacter le support pour obtenir un nouveau lien.
+          <strong>Important :</strong> Ce lien a une durée de validité limitée. Passé ce délai, utilisez « mot de passe oublié » ou contactez le support.
         </p>
       </div>
 
