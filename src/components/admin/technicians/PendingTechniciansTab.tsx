@@ -132,7 +132,7 @@ export function PendingTechniciansTab() {
         await supabase.functions.invoke('notify-technician-application', {
           body: {
             technicianId: selectedApp.user_id,
-            action: 'accepted',
+            action: 'qualification',
             email: selectedApp.user.email,
             firstName: selectedApp.user.first_name,
           },
