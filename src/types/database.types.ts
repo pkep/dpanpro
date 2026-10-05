@@ -32,6 +32,7 @@ export interface DbIntervention {
   category: DbInterventionCategory;
   priority: DbInterventionPriority;
   status: DbInterventionStatus;
+  suspended?: boolean;
   title: string;
   description: string | null;
   address: string;
