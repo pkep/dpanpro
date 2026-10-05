@@ -116,10 +116,30 @@ serve(async (req) => {
     }
     console.log(`[NotifyTechnicianDispatch] Questionnaire answers:`, questionnaireAnswers);
 
+    // Focus : ne pas envoyer le message de dispatch à un technicien déjà occupé.
+    const { data: busyRows } = await supabase
+      .from("interventions")
+      .select("technician_id")
+      .in("technician_id", technicianIds)
+      .in("status", ["assigned", "on_route", "arrived", "in_progress"]);
+    const busyIds = new Set(
+      (busyRows ?? [])
+        .map((r: { technician_id: string | null }) => r.technician_id)
+        .filter((id: string | null): id is string => !!id),
+    );
+    const recipients: string[] = technicianIds.filter((id: string) => !busyIds.has(id));
+    if (recipients.length === 0) {
+      console.log("[NotifyTechnicianDispatch] All target technicians are busy — dispatch message skipped");
+      return new Response(JSON.stringify({ skipped: "all_technicians_busy" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: technicians, error: techError } = await supabase
       .from("users")
       .select("id, phone, first_name, last_name")
-      .in("id", technicianIds);
+      .in("id", recipients);
 
     if (techError) {
       console.error("[NotifyTechnicianDispatch] Failed to fetch technicians:", techError);
