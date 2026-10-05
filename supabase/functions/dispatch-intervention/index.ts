@@ -597,7 +597,7 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
     .from('interventions')
     .select('id, title, status')
     .eq('technician_id', technicianId)
-    .in('status', ['assigned', 'on_route', 'in_progress']);
+    .in('status', ['assigned', 'on_route', 'arrived', 'in_progress']);
 
   if (activeError) throw activeError;
 
@@ -675,9 +675,9 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
     .neq('technician_id', technicianId)
     .eq('status', 'pending');
 
-  // For scheduled interventions, keep status='new' (T-2h batch will set it to 'assigned').
-  // For immediate interventions, technician goes on_route right away (legacy behavior).
-  const newStatus = isScheduled ? 'new' : 'on_route';
+  // Planifiée acceptée : statut intermédiaire `scheduled_assigned` (non bloquant), promu à T-2h.
+  // Immédiate : le technicien passe `on_route` tout de suite (legacy).
+  const newStatus = isScheduled ? 'scheduled_assigned' : 'on_route';
 
   const { error: intError } = await supabase
     .from('interventions')
