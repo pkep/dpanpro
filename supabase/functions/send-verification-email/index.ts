@@ -44,8 +44,18 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .is("used_at", null);
 
-    // Create new token with 15min expiry
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    // Durée : activation technicien 24h (paramétrable) ; autres utilisateurs 15 min.
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+    const isTechnician = (userRow as { role?: string } | null)?.role === "technician";
+    const activationHours = Number(Deno.env.get("TECHNICIAN_ACTIVATION_TOKEN_HOURS") ?? 24);
+    const ttlMs = isTechnician ? activationHours * 60 * 60 * 1000 : 15 * 60 * 1000;
+
+    // Create new token with the role-aware expiry
+    const expiresAt = new Date(Date.now() + ttlMs).toISOString();
 
     const { error: tokenError } = await supabase.from("email_verification_tokens").insert({
       user_id: userId,
