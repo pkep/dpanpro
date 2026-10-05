@@ -16,7 +16,7 @@ import {
   InterventionPriority,
   UpdateInterventionPayload,
 } from '@/types/intervention.types';
-import type { IInterventionsService } from '@/services/interfaces/interventions.interface';
+import type { IInterventionsService, InterventionListFilters } from '@/services/interfaces/interventions.interface';
 import type { DbIntervention, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import type { PaginatedResponse } from '@/types/pagination.types';
@@ -55,18 +55,10 @@ const INTERVENTION_SELECT_FIELDS = {
 } as const;
 
 class SupabaseInterventionsService implements IInterventionsService {
-  async getInterventions(filters?: {
-    status?: InterventionStatus | InterventionStatus[];
-    category?: InterventionCategory;
-    clientId?: string;
-    technicianId?: string;
-    isActive?: boolean;
-    unassignedOnly?: boolean;
-    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
-    orderDirection?: ('asc' | 'desc')[];
-    page?: number;
-    size?: number;
-  }): Promise<Intervention[] | PaginatedResponse<Intervention>> {
+  async getInterventions(filters?: InterventionListFilters & { page?: undefined; size?: undefined }): Promise<Intervention[]>;
+  async getInterventions(filters: InterventionListFilters & { page: number; size: number }): Promise<PaginatedResponse<Intervention>>;
+  async getInterventions(filters?: InterventionListFilters): Promise<Intervention[] | PaginatedResponse<Intervention>>;
+  async getInterventions(filters?: InterventionListFilters): Promise<Intervention[] | PaginatedResponse<Intervention>> {
     let query = supabase
       .from('interventions')
       .select('*', { count: 'exact' });
