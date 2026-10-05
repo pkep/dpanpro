@@ -58,8 +58,8 @@ export interface DbIntervention {
   invoice_signature_data?: string | null;
   invoice_signed_at?: string | null;
   parent_id_intervention?: string | null;
-  escalation_type?: string | null;
-  billing_mode?: string | null;
+  escalation_type?: 'internal' | 'external' | null;
+  billing_mode?: 'call_out_fee' | 'full_service' | null;
   service_started?: boolean | null;
   customer_consent?: boolean | null;
   escalation_reason?: string | null;
@@ -68,7 +68,7 @@ export interface DbIntervention {
   escalation_completed_at?: string | null;
   escalation_consent_signature_data?: string | null;
   escalation_consent_signed_at?: string | null;
-  billing_type?: string | null;
+  billing_type?: 'client' | 'b2b' | null;
   b2b_partner_id?: string | null;
   b2b_invoice_id?: string | null;
   client_first_name?: string | null;
