@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { recordInterventionStatusChange } from '../_shared/intervention-history.ts';
+import { checkTechnicianEligibility } from '../_shared/eligibility.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,7 +23,7 @@ interface TechnicianScore {
 
 interface DispatchRequest {
   interventionId: string;
-  action?: 'dispatch' | 'accept' | 'reject' | 'check_timeout' | 'decline' | 'cancel' | 'go' | 'notify';
+  action?: 'dispatch' | 'assign' | 'accept' | 'reject' | 'check_timeout' | 'decline' | 'cancel' | 'go' | 'notify';
   technicianId?: string;
   reason?: string; // For decline and cancel actions
 }
@@ -163,6 +164,8 @@ Deno.serve(async (req) => {
 
     // Handle different actions
     switch (action) {
+      case 'assign':
+        return await handleAssign(supabase, interventionId, technicianId!);
       case 'accept':
         return await handleAccept(supabase, interventionId, technicianId!);
       case 'reject':
@@ -586,7 +589,65 @@ async function handleNotify(supabase: any, interventionId: string) {
   );
 }
 
-// Handle technician accepting assignment
+// Manual assignment of a specific technician (admin/manager), with eligibility enforcement
+async function handleAssign(supabase: any, interventionId: string, technicianId: string) {
+  console.log(`[Dispatch] Assigning technician ${technicianId} to intervention ${interventionId}`);
+
+  const { data: intervention, error } = await supabase
+    .from('interventions')
+    .select('id, status, technician_id')
+    .eq('id', interventionId)
+    .single();
+
+  if (error || !intervention) {
+    throw new Error(`Intervention not found: ${interventionId}`);
+  }
+
+  if (intervention.technician_id && intervention.technician_id !== technicianId) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        message: 'Intervention déjà assignée',
+        technicianId: intervention.technician_id,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const eligibility = await checkTechnicianEligibility(supabase, interventionId, technicianId);
+  if (!eligibility.eligible) {
+    return new Response(
+      JSON.stringify({ success: false, message: eligibility.reason || 'Technicien non éligible' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const oldStatus = intervention.status;
+  const now = new Date().toISOString();
+
+  const { error: updateError } = await supabase
+    .from('interventions')
+    .update({
+      technician_id: technicianId,
+      status: 'assigned',
+      accepted_at: now,
+    })
+    .eq('id', interventionId);
+
+  if (updateError) throw updateError;
+
+  await recordInterventionStatusChange(supabase, interventionId, 'assigned');
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  await notifyStatusChange(supabaseUrl, serviceRoleKey, interventionId, 'assigned', oldStatus);
+
+  return new Response(
+    JSON.stringify({ success: true, technicianId, distanceKm: eligibility.distanceKm }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
 async function handleAccept(supabase: any, interventionId: string, technicianId: string) {
   console.log(`[Dispatch] Technician ${technicianId} accepting intervention ${interventionId}`);
 
