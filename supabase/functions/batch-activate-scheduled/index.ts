@@ -44,6 +44,7 @@ serve(async (req) => {
         .from("interventions")
         .select("id")
         .eq("technician_id", row.technician_id)
+        .eq("suspended", false)
         .in("status", ["assigned", "on_route", "arrived", "in_progress"])
         .limit(1);
       if (busy && busy.length > 0) continue;
