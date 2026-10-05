@@ -1268,6 +1268,7 @@ export type Database = {
           service_started: boolean | null
           started_at: string | null
           status: string
+          suspended: boolean
           suspended_at: string | null
           suspended_by: string | null
           suspension_reason: string | null
@@ -1338,6 +1339,7 @@ export type Database = {
           service_started?: boolean | null
           started_at?: string | null
           status?: string
+          suspended?: boolean
           suspended_at?: string | null
           suspended_by?: string | null
           suspension_reason?: string | null
@@ -1408,6 +1410,7 @@ export type Database = {
           service_started?: boolean | null
           started_at?: string | null
           status?: string
+          suspended?: boolean
           suspended_at?: string | null
           suspended_by?: string | null
           suspension_reason?: string | null
