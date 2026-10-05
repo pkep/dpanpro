@@ -325,6 +325,7 @@ async function handleDispatch(supabase: any, interventionId: string) {
     .from('interventions')
     .select('technician_id')
     .in('technician_id', userIds)
+    .eq('suspended', false)
     .in('status', ['assigned', 'on_route', 'in_progress']);
 
   // Count workload per technician
@@ -658,6 +659,7 @@ async function handleAccept(supabase: any, interventionId: string, technicianId:
     .from('interventions')
     .select('id, title, status')
     .eq('technician_id', technicianId)
+    .eq('suspended', false)
     .in('status', ['assigned', 'on_route', 'arrived', 'in_progress']);
 
   if (activeError) throw activeError;
