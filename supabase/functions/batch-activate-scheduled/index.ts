@@ -29,6 +29,38 @@ serve(async (req) => {
 
     console.log("[BatchActivate] Starting scheduled interventions activation");
 
+    // ── Promotion `scheduled_assigned` → `assigned` à T-2h (si technicien libre) ──
+    const horizonIso = new Date(Date.now() + 2 * 3600 * 1000).toISOString();
+    const { data: dueScheduled } = await supabase
+      .from("interventions")
+      .select("id, technician_id")
+      .eq("status", "scheduled_assigned")
+      .lte("scheduled_at", horizonIso)
+      .not("technician_id", "is", null);
+
+    let promoted = 0;
+    for (const row of (dueScheduled || []) as { id: string; technician_id: string }[]) {
+      const { data: busy } = await supabase
+        .from("interventions")
+        .select("id")
+        .eq("technician_id", row.technician_id)
+        .in("status", ["assigned", "on_route", "arrived", "in_progress"])
+        .limit(1);
+      if (busy && busy.length > 0) continue;
+
+      const { error: promoError } = await supabase
+        .from("interventions")
+        .update({ status: "assigned" })
+        .eq("id", row.id);
+      if (promoError) {
+        console.error(`[BatchActivate] Promotion failed for ${row.id}:`, promoError);
+        continue;
+      }
+      await recordInterventionStatusChange(supabase, row.id, "assigned");
+      promoted++;
+    }
+    if (promoted > 0) console.log(`[BatchActivate] Promoted ${promoted} scheduled_assigned → assigned`);
+
     // Atomic CTE lock
     const { data: toActivate, error } = await supabase
       .rpc("lock_and_get_scheduled_interventions");
