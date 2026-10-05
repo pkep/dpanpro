@@ -70,7 +70,7 @@ async function registerFont(
   }
 }
 
-async function formatDateFr(d: Date): string {
+async function formatDateFr(d: Date): Promise<string> {
   const months = [
     "janvier",
     "février",
@@ -328,8 +328,8 @@ class InvoiceService {
         `${Number(line.calculatedPrice).toFixed(2)} €`,
       ]);
     });
-    data.approvedModifications.forEach((mod: any) => {
-      const items = modItems.filter((it) => it.modificationId === mod.id);
+    data.approvedModifications.forEach((mod: QuoteModification) => {
+      const items = mod.items;
       items.forEach((item: any) => {
         tableData.push([
           item.label,

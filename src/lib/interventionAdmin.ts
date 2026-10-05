@@ -106,6 +106,7 @@ export interface AdminInterventionRow {
   tracking_code: string;
   technician_id: string | null;
   status: string;
+  suspended?: boolean;
   priority?: string | null;
   scheduled_at?: string | null;
   description?: string | null;
@@ -144,6 +145,7 @@ export function mapAdminInterventionRow(row: AdminInterventionRow): Intervention
     trackingCode: row.tracking_code,
     technicianId: row.technician_id,
     status: row.status as InterventionStatus,
+    suspended: row.suspended ?? false,
     priority: (row.priority ?? undefined) as InterventionPriority | undefined,
     scheduledAt: row.scheduled_at ?? null,
     description: row.description ?? null,
