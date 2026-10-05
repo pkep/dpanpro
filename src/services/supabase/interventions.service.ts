@@ -16,7 +16,7 @@ import {
   InterventionPriority,
   UpdateInterventionPayload,
 } from '@/types/intervention.types';
-import type { IInterventionsService, InterventionListFilters } from '@/services/interfaces/interventions.interface';
+import type { IInterventionsService } from '@/services/interfaces/interventions.interface';
 import type { DbIntervention, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import type { PaginatedResponse } from '@/types/pagination.types';
@@ -55,10 +55,18 @@ const INTERVENTION_SELECT_FIELDS = {
 } as const;
 
 class SupabaseInterventionsService implements IInterventionsService {
-  async getInterventions(filters?: InterventionListFilters & { page?: undefined; size?: undefined }): Promise<Intervention[]>;
-  async getInterventions(filters: InterventionListFilters & { page: number; size: number }): Promise<PaginatedResponse<Intervention>>;
-  async getInterventions(filters?: InterventionListFilters): Promise<Intervention[] | PaginatedResponse<Intervention>>;
-  async getInterventions(filters?: InterventionListFilters): Promise<Intervention[] | PaginatedResponse<Intervention>> {
+  async getInterventions(filters?: {
+    status?: InterventionStatus | InterventionStatus[];
+    category?: InterventionCategory;
+    clientId?: string;
+    technicianId?: string;
+    isActive?: boolean;
+    unassignedOnly?: boolean;
+    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
+    orderDirection?: ('asc' | 'desc')[];
+    page?: number;
+    size?: number;
+  }): Promise<Intervention[] | PaginatedResponse<Intervention>> {
     let query = supabase
       .from('interventions')
       .select('*', { count: 'exact' });
@@ -217,6 +225,7 @@ class SupabaseInterventionsService implements IInterventionsService {
       insertData.client_first_name = formData.clientFirstName || null;
       insertData.client_last_name = formData.clientLastName || null;
       insertData.b2b_order_reference = formData.b2bOrderReference || null;
+      if (formData.b2bPriceCap != null) insertData.b2b_price_cap = formData.b2bPriceCap;
     }
 
     // Add questionnaire data if provided
@@ -399,6 +408,17 @@ class SupabaseInterventionsService implements IInterventionsService {
     if (data && data.success === false) {
       throw new Error(data.message || 'Technicien non éligible');
     }
+  }
+
+  async updateB2bPriceCap(id: string, b2bPriceCap: number | null): Promise<Intervention> {
+    const { data, error } = await supabase
+      .from('interventions')
+      .update({ b2b_price_cap: b2bPriceCap } as never)
+      .eq('id', id)
+      .select('*, b2b_partners(company_name, contact_firstname, contact_lastname, contact_phone)')
+      .single();
+    if (error) throw error;
+    return this.mapToIntervention(data as unknown as DbIntervention);
   }
 
   async toggleActive(id: string, isActive: boolean): Promise<void> {
@@ -1012,6 +1032,7 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
       clientFirstName: data.client_first_name,
       clientLastName: data.client_last_name,
       b2bOrderReference: data.b2b_order_reference,
+      b2bPriceCap: (data as unknown as { b2b_price_cap?: number | null }).b2b_price_cap ?? null,
       b2bContactFirstName: b2bPartner?.contact_firstname ?? null,
       b2bContactLastName: b2bPartner?.contact_lastname ?? null,
       b2bCompanyName: b2bPartner?.company_name ?? null,

@@ -1,22 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Service } from '@/services/interfaces/services.interface';
-import type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/quotes.interface';
-
-// Re-export types for backward compatibility
-export type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/quotes.interface';
-export type { Service } from '@/services/interfaces/services.interface';
-
-interface DbQuoteLine {
-  id: string;
-  intervention_id: string;
-  line_type: string;
-  label: string;
-  base_price: number;
-  multiplier: number;
-  calculated_price: number;
-  display_order: number;
-  created_at: string;
-}
+import type { IQuotesService, QuoteLine, QuoteInput, QuoteSummary, Service } from '@/services/interfaces/quotes.interface';
+import type { DbQuoteLine } from '@/services/interfaces/supabase-database.interface';
+import { isB2bCapExceeded, b2bEffectiveCap } from '@/lib/b2bPriceCap';
 
 const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label: string }> = {
   displacement: { label: 'Déplacement technicien' },
@@ -24,58 +9,7 @@ const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label
   repair: { label: 'Dépannage' },
 };
 
-class QuotesService {
-  /**
-   * Check if priority multiplier is enabled globally in site settings
-   */
-  async isMultiplierEnabled(): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('site_settings')
-      .select('setting_value')
-      .eq('setting_key', 'priority_multiplier_enabled')
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching multiplier setting:', error);
-      return true; // Default to enabled
-    }
-
-    return data?.setting_value !== 'false';
-  }
-
-  /**
-   * Check if a specific priority multiplier is enabled
-   */
-  async isPriorityMultiplierEnabled(priority: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('priority_multipliers')
-      .select('is_enabled')
-      .eq('priority', priority)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching priority multiplier:', error);
-      return true; // Default to enabled
-    }
-
-    return data?.is_enabled !== false;
-  }
-
-  /**
-   * Get the effective multiplier for a priority (returns 1 if disabled at any level)
-   */
-  async getEffectiveMultiplier(priority: string, multiplierValue: number): Promise<number> {
-    // Check global setting first
-    const globalEnabled = await this.isMultiplierEnabled();
-    if (!globalEnabled) return 1;
-
-    // Check individual priority setting
-    const priorityEnabled = await this.isPriorityMultiplierEnabled(priority);
-    if (!priorityEnabled) return 1;
-
-    return multiplierValue;
-  }
-
+export class SupabaseQuotesService implements IQuotesService {
   /**
    * Generate quote lines for an intervention based on service prices and multiplier
    * Only includes lines with a price > 0
@@ -146,6 +80,28 @@ class QuotesService {
    * Save quote lines to database
    */
   async saveQuoteLines(interventionId: string, lines: QuoteInput[]): Promise<QuoteLine[]> {
+    // Plafond de prix B2B : bloque la sauvegarde du devis si le total TTC dépasse le plafond effectif.
+    const { data: intervention } = await supabase
+      .from('interventions')
+      .select('billing_type, b2b_price_cap')
+      .eq('id', interventionId)
+      .maybeSingle();
+    const inv = intervention as { billing_type?: string; b2b_price_cap?: number | null } | null;
+    if (inv?.billing_type === 'b2b') {
+      if (inv.b2b_price_cap == null) {
+        throw new Error('Aucun plafond de prix B2B défini. Contactez un manager pour le définir avant de valider.');
+      }
+      const totalHt = lines.reduce((s, l) => s + Math.round(l.basePrice * l.multiplier * 100) / 100, 0);
+      const totalTtc = Math.round(totalHt * 1.2 * 100) / 100;
+      if (isB2bCapExceeded(totalTtc, inv.b2b_price_cap)) {
+        throw new Error(
+          `Le montant du devis (${totalTtc.toFixed(2)} € TTC) dépasse le plafond B2B autorisé ` +
+          `(${b2bEffectiveCap(inv.b2b_price_cap).toFixed(2)} € pour un plafond de ${Number(inv.b2b_price_cap).toFixed(2)} €). ` +
+          `Contactez un manager pour valider le nouveau prix avec le contact du partenaire et augmenter le plafond.`
+        );
+      }
+    }
+
     const insertData = lines.map((line, index) => ({
       intervention_id: interventionId,
       line_type: line.lineType,
@@ -158,9 +114,9 @@ class QuotesService {
 
     // Replace existing base quote lines to avoid duplicates on re-validation
     const { error: deleteError } = await supabase
-      .from('intervention_quotes')
-      .delete()
-      .eq('intervention_id', interventionId);
+        .from('intervention_quotes')
+        .delete()
+        .eq('intervention_id', interventionId);
     if (deleteError) throw deleteError;
 
     const { data, error } = await supabase
@@ -203,4 +159,4 @@ class QuotesService {
   }
 }
 
-export const quotesService = new QuotesService();
+export const quotesService = new SupabaseQuotesService();

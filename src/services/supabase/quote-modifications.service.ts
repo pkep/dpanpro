@@ -1,44 +1,77 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { QuoteModification, QuoteModificationItem, CreateQuoteModificationInput } from '@/services/interfaces/quote-modifications.interface';
+import type { TablesUpdate } from '@/integrations/supabase/types';
+import type { DbQuoteModification, DbQuoteModificationItem } from '@/services/interfaces/supabase-database.interface';
+import {IQuoteModificationsService} from "@/services/interfaces";
+import { isB2bCapExceeded, b2bEffectiveCap } from '@/lib/b2bPriceCap';
 
-// Re-export types for backward compatibility
-export type { QuoteModification, QuoteModificationItem, CreateQuoteModificationInput } from '@/services/interfaces/quote-modifications.interface';
-
-interface DbQuoteModification {
+export interface QuoteModification {
   id: string;
-  intervention_id: string;
-  created_by: string;
-  status: string;
-  total_additional_amount: number;
-  client_notified_at: string | null;
-  client_responded_at: string | null;
-  notification_token: string;
-  created_at: string;
-  updated_at: string;
+  interventionId: string;
+  createdBy: string;
+  status: 'pending' | 'approved' | 'declined';
+  totalAdditionalAmount: number;
+  clientNotifiedAt: string | null;
+  clientRespondedAt: string | null;
+  notificationToken: string;
+  createdAt: string;
+  updatedAt: string;
+  items: QuoteModificationItem[];
 }
 
-interface DbQuoteModificationItem {
+export interface QuoteModificationItem {
   id: string;
-  modification_id: string;
-  item_type: string;
+  modificationId: string;
+  itemType: 'service' | 'equipment' | 'other';
   label: string;
   description: string | null;
-  unit_price: number;
+  unitPrice: number;
   quantity: number;
-  total_price: number;
-  created_at: string;
+  totalPrice: number;
+  createdAt: string;
 }
 
-class QuoteModificationsService {
+export interface CreateQuoteModificationInput {
+  interventionId: string;
+  createdBy: string;
+  submitForApproval?: boolean;
+  items: {
+    itemType: 'service' | 'equipment' | 'other';
+    label: string;
+    description?: string;
+    unitPrice: number;
+    quantity: number;
+  }[];
+}
+
+
+class QuoteModificationsService implements IQuoteModificationsService{
   /**
    * Create a new quote modification with items
    */
   async createModification(input: CreateQuoteModificationInput): Promise<QuoteModification> {
+    // Garde domaine : une modification soumise au client exige une intervention en cours.
+    if (input.submitForApproval) {
+      const { data: intervention, error: intError } = await supabase
+        .from('interventions')
+        .select('status')
+        .eq('id', input.interventionId)
+        .single();
+      if (intError) throw intError;
+      if ((intervention as { status?: string } | null)?.status !== 'in_progress') {
+        throw new Error(
+          "INVALID_STATUS: Le devis ne peut être modifié que pour une intervention en cours.",
+        );
+      }
+    }
+
     // Calculate total
     const totalAmount = input.items.reduce(
       (sum, item) => sum + item.unitPrice * item.quantity,
       0
     );
+
+    // Plafond de prix B2B : bloque si le devis (base + compléments) dépasse le plafond effectif.
+    await this.assertB2bCap(input.interventionId, totalAmount);
 
     // Insert modification
     const { data: modification, error: modError } = await supabase
@@ -164,30 +197,35 @@ class QuoteModificationsService {
    * @param id - The modification ID
    * @param signatureData - Optional base64 signature data from client
    */
-  async approveModification(id: string, signatureData?: string): Promise<{ incrementResult?: unknown }> {
+  async approveModification(id: string, signatureData?: string, approvedChannel?: 'on_site' | 'client_link'): Promise<{ incrementResult?: unknown }> {
     // First get the modification to get intervention ID and amount
     const modification = await this.getModification(id);
     if (!modification) {
       throw new Error('Modification not found');
     }
 
+    const now = new Date().toISOString();
+
+    // Plafond de prix B2B : bloque l'approbation si le total dépasse le plafond effectif.
+    await this.assertB2bCap(modification.interventionId, modification.totalAdditionalAmount);
+
     // Build update data
     const updateData: Record<string, unknown> = {
       status: 'approved',
-      client_responded_at: new Date().toISOString(),
+      client_responded_at: now,
     };
-
-    // Store signature if provided (could be stored in metadata or a separate field)
-    // For now we just log it - in production you'd want to store this
     if (signatureData) {
-      console.log('Client signature received for modification:', id);
-      // Could add: updateData.client_signature = signatureData;
+      updateData.client_signature_data = signatureData;
+      updateData.client_signature_at = now;
+    }
+    if (approvedChannel) {
+      updateData.approved_channel = approvedChannel;
     }
 
     // Update the modification status
     const { error } = await supabase
       .from('quote_modifications')
-      .update(updateData)
+      .update(updateData as unknown as TablesUpdate<'quote_modifications'>)
       .eq('id', id);
 
     if (error) throw error;
@@ -279,6 +317,114 @@ class QuoteModificationsService {
       modification as unknown as DbQuoteModification,
       (items || []) as unknown as DbQuoteModificationItem[]
     );
+  }
+
+  /**
+   * Get PENDING modifications for multiple interventions
+   * Status 'pending' is implicit - always filtered
+   */
+  async getPendingModificationsByInterventions(
+    interventionIds: string[]
+  ): Promise<QuoteModification[]> {
+    if (interventionIds.length === 0) {
+      return [];
+    }
+
+    const { data: modifications, error } = await supabase
+      .from('quote_modifications')
+      .select('*')
+      .in('intervention_id', interventionIds)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const results: QuoteModification[] = [];
+    for (const mod of modifications || []) {
+      const { data: items } = await supabase
+        .from('quote_modification_items')
+        .select('*')
+        .eq('modification_id', mod.id)
+        .order('created_at', { ascending: true });
+
+      results.push(
+        this.mapToQuoteModification(
+          mod as unknown as DbQuoteModification,
+          (items || []) as unknown as DbQuoteModificationItem[]
+        )
+      );
+    }
+
+    return results;
+  }
+
+  /**
+   * Dernière modification (tous statuts) par intervention — badge admin (1 seule requête).
+   */
+  async getLatestModificationsByInterventions(
+    interventionIds: string[]
+  ): Promise<Record<string, QuoteModification>> {
+    if (interventionIds.length === 0) return {};
+
+    const { data: modifications, error } = await supabase
+      .from('quote_modifications')
+      .select('*')
+      .in('intervention_id', interventionIds)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const latest: Record<string, QuoteModification> = {};
+    for (const mod of modifications || []) {
+      const interventionId = (mod as { intervention_id: string }).intervention_id;
+      if (latest[interventionId]) continue; // tri desc : le 1er vu est le plus récent
+      latest[interventionId] = this.mapToQuoteModification(
+        mod as unknown as DbQuoteModification,
+        [],
+      );
+    }
+    return latest;
+  }
+
+  /**
+   * Plafond de prix B2B : vérifie que (lignes de base + compléments approuvés + montant additionnel)
+   * reste sous `b2b_price_cap × marge`. No-op si l'intervention n'est pas B2B.
+   */
+  private async assertB2bCap(interventionId: string, additionalHt: number): Promise<void> {
+    const { data: intervention } = await supabase
+      .from('interventions')
+      .select('billing_type, b2b_price_cap')
+      .eq('id', interventionId)
+      .maybeSingle();
+    const inv = intervention as { billing_type?: string; b2b_price_cap?: number | null } | null;
+    if (inv?.billing_type !== 'b2b') return;
+    if (inv.b2b_price_cap == null) {
+      throw new Error('Aucun plafond de prix B2B défini. Contactez un manager pour le définir avant de valider.');
+    }
+
+    const { data: lines } = await supabase
+      .from('intervention_quotes')
+      .select('calculated_price')
+      .eq('intervention_id', interventionId);
+    const baseHt = (lines || []).reduce(
+      (s: number, l: { calculated_price?: number }) => s + Number(l.calculated_price || 0), 0);
+
+    const { data: mods } = await supabase
+      .from('quote_modifications')
+      .select('total_additional_amount')
+      .eq('intervention_id', interventionId)
+      .eq('status', 'approved');
+    const modsHt = (mods || []).reduce(
+      (s: number, m: { total_additional_amount?: number }) => s + Number(m.total_additional_amount || 0), 0);
+
+    const totalTtc = Math.round((baseHt + modsHt + additionalHt) * 1.2 * 100) / 100;
+    if (isB2bCapExceeded(totalTtc, inv.b2b_price_cap)) {
+      throw new Error(
+        `Le montant du devis (${totalTtc.toFixed(2)} € TTC) dépasse le plafond B2B autorisé ` +
+        `(${b2bEffectiveCap(inv.b2b_price_cap).toFixed(2)} € pour un plafond de ${Number(inv.b2b_price_cap).toFixed(2)} €). ` +
+        `Contactez un manager pour valider le nouveau prix avec le contact du partenaire et augmenter le plafond.`
+      );
+    }
   }
 
   private mapToQuoteModification(
