@@ -117,9 +117,7 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Client
-    let clientName = [intervention.client_first_name, intervention.client_last_name]
-      .filter((value: unknown) => typeof value === "string" && value.trim().length > 0)
-      .join(" ") || "Client";
+    let clientName = "Client";
     let isCompany = false;
     let companyName: string | null = null;
     let clientAddress: string | null = null;
@@ -134,10 +132,7 @@ serve(async (req: Request): Promise<Response> => {
         .eq("id", intervention.client_id)
         .single();
       if (client) {
-        const accountName = [client.first_name, client.last_name]
-          .filter((value: unknown) => typeof value === "string" && value.trim().length > 0)
-          .join(" ");
-        if (accountName) clientName = accountName;
+        clientName = `${client.first_name} ${client.last_name}`;
         isCompany = client.is_company || false;
         companyName = client.company_name;
         clientAddress = client.company_address;

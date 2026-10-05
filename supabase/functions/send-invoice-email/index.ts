@@ -108,15 +108,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const clientEmail = intervention.client_email || clientUser?.email;
     const clientPhone = intervention.client_phone || clientUser?.phone;
-    const accountName = clientUser
-      ? [clientUser.first_name, clientUser.last_name]
-          .filter((value: unknown) => typeof value === "string" && value.trim().length > 0)
-          .join(" ")
-      : "";
-    const interventionName = [intervention.client_first_name, intervention.client_last_name]
-      .filter((value: unknown) => typeof value === "string" && value.trim().length > 0)
-      .join(" ");
-    const clientName = accountName || interventionName || "Client";
+    const clientName = clientUser ? `${clientUser.first_name} ${clientUser.last_name}` : "Client";
     const trackingCode = intervention.tracking_code || "N/A";
     const finalPrice = intervention.final_price || 0;
 
