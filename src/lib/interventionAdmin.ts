@@ -100,6 +100,8 @@ export interface AdminInterventionRow {
   address: string;
   city: string;
   postal_code: string;
+  latitude?: number | null;
+  longitude?: number | null;
   client_id: string;
   tracking_code: string;
   technician_id: string | null;
@@ -136,6 +138,8 @@ export function mapAdminInterventionRow(row: AdminInterventionRow): Intervention
     address: row.address,
     city: row.city,
     postalCode: row.postal_code,
+    latitude: row.latitude ?? null,
+    longitude: row.longitude ?? null,
     clientId: row.client_id,
     trackingCode: row.tracking_code,
     technicianId: row.technician_id,
