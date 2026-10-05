@@ -16,7 +16,7 @@ import {
   InterventionPriority,
   UpdateInterventionPayload,
 } from '@/types/intervention.types';
-import type { IInterventionsService, InterventionListFilters } from '@/services/interfaces/interventions.interface';
+import type { IInterventionsService } from '@/services/interfaces/interventions.interface';
 import type { DbIntervention, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import type { PaginatedResponse } from '@/types/pagination.types';
@@ -42,7 +42,7 @@ const INTERVENTION_SELECT_FIELDS = {
   TECH_DASHBOARD: 'id, status, created_at, latitude, longitude, title, category, city, postal_code, estimated_price, address, client_phone, tracking_code, description',
 
   // AdminInterventionsPage: Liste complète
-  ADMIN_LIST: 'id, title, category, address, city, postal_code, client_id, tracking_code, technician_id, status, priority, scheduled_at, description, created_at, final_price, estimated_price, prix_min, prix_max, questionnaire_answers, client_photos_count, b2b_partner_id, client_first_name, client_last_name, client_phone, b2b_partners(company_name, contact_firstname, contact_lastname, contact_phone)',
+  ADMIN_LIST: 'id, title, category, address, city, postal_code, latitude, longitude, client_id, tracking_code, technician_id, status, priority, scheduled_at, description, created_at, final_price, estimated_price, prix_min, prix_max, questionnaire_answers, client_photos_count, b2b_partner_id, client_first_name, client_last_name, client_phone, b2b_partners(company_name, contact_firstname, contact_lastname, contact_phone)',
 
   // ClientInterventionsPage: Historique
   CLIENT_HISTORY: 'id, title, category, status, priority, city, created_at',
@@ -55,10 +55,18 @@ const INTERVENTION_SELECT_FIELDS = {
 } as const;
 
 class SupabaseInterventionsService implements IInterventionsService {
-  async getInterventions(filters?: InterventionListFilters & { page?: undefined; size?: undefined }): Promise<Intervention[]>;
-  async getInterventions(filters: InterventionListFilters & { page: number; size: number }): Promise<PaginatedResponse<Intervention>>;
-  async getInterventions(filters?: InterventionListFilters): Promise<Intervention[] | PaginatedResponse<Intervention>>;
-  async getInterventions(filters?: InterventionListFilters): Promise<Intervention[] | PaginatedResponse<Intervention>> {
+  async getInterventions(filters?: {
+    status?: InterventionStatus | InterventionStatus[];
+    category?: InterventionCategory;
+    clientId?: string;
+    technicianId?: string;
+    isActive?: boolean;
+    unassignedOnly?: boolean;
+    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
+    orderDirection?: ('asc' | 'desc')[];
+    page?: number;
+    size?: number;
+  }): Promise<Intervention[] | PaginatedResponse<Intervention>> {
     let query = supabase
       .from('interventions')
       .select('*', { count: 'exact' });
@@ -390,17 +398,15 @@ class SupabaseInterventionsService implements IInterventionsService {
   }
 
   async assignTechnician(id: string, technicianId: string): Promise<void> {
-    const { error } = await supabase
-      .from('interventions')
-      .update({
-        technician_id: technicianId,
-        status: 'assigned',
-      } as TablesUpdate<'interventions'>)
-      .eq('id', id);
+    // Assignation avec imposition d'éligibilité côté serveur (edge function).
+    const { data, error } = await supabase.functions.invoke('dispatch-intervention', {
+      body: { interventionId: id, technicianId, action: 'assign' },
+    });
 
     if (error) throw error;
-
-    recordInterventionStatusChange(id, 'assigned');
+    if (data && data.success === false) {
+      throw new Error(data.message || 'Technicien non éligible');
+    }
   }
 
   async toggleActive(id: string, isActive: boolean): Promise<void> {
