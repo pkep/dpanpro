@@ -1,13 +1,20 @@
 import type { Intervention, InterventionFormData, InterventionStatus, InterventionCategory } from '@/types/intervention.types';
 
+import type { PaginatedResponse } from '@/types/pagination.types';
+
 export interface IInterventionsService {
   getInterventions(filters?: {
-    status?: InterventionStatus;
+    status?: InterventionStatus | InterventionStatus[];
     category?: InterventionCategory;
     clientId?: string;
     technicianId?: string;
     isActive?: boolean;
-  }): Promise<Intervention[]>;
+    unassignedOnly?: boolean;
+    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
+    orderDirection?: ('asc' | 'desc')[];
+    page?: number;
+    size?: number;
+  }): Promise<Intervention[] | PaginatedResponse<Intervention>>;
   getIntervention(id: string): Promise<Intervention | null>;
   createIntervention(
     clientId: string | null,

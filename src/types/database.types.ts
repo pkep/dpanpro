@@ -51,6 +51,29 @@ export interface DbIntervention {
   tracking_code: string | null;
   client_email: string | null;
   client_phone: string | null;
+  questionnaire_resultat_id?: string | null;
+  questionnaire_answers?: any;
+  prix_min?: number | null;
+  prix_max?: number | null;
+  invoice_signature_data?: string | null;
+  invoice_signed_at?: string | null;
+  parent_id_intervention?: string | null;
+  escalation_type?: string | null;
+  billing_mode?: string | null;
+  service_started?: boolean | null;
+  customer_consent?: boolean | null;
+  escalation_reason?: string | null;
+  escalation_notes?: string | null;
+  escalation_requested_at?: string | null;
+  escalation_completed_at?: string | null;
+  escalation_consent_signature_data?: string | null;
+  escalation_consent_signed_at?: string | null;
+  billing_type?: string | null;
+  b2b_partner_id?: string | null;
+  b2b_invoice_id?: string | null;
+  client_first_name?: string | null;
+  client_last_name?: string | null;
+  b2b_order_reference?: string | null;
 }
 
 export interface DbUserInsert {
