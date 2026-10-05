@@ -60,12 +60,17 @@ import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<InterventionStatus, string> = {
   new: 'bg-blue-500/10 text-blue-600 border-blue-200',
+  scheduled_assigned: 'bg-sky-500/10 text-sky-600 border-sky-200',
   assigned: 'bg-purple-500/10 text-purple-600 border-purple-200',
   on_route: 'bg-yellow-500/10 text-yellow-600 border-yellow-200',
   arrived: 'bg-amber-500/10 text-amber-600 border-amber-200',
   in_progress: 'bg-orange-500/10 text-orange-600 border-orange-200',
+  suspended: 'bg-zinc-500/10 text-zinc-600 border-zinc-200',
   completed: 'bg-green-500/10 text-green-600 border-green-200',
   cancelled: 'bg-destructive/10 text-destructive border-destructive/20',
+  complete_climbed: 'bg-teal-500/10 text-teal-600 border-teal-200',
+  complete_climbed_external: 'bg-teal-500/10 text-teal-600 border-teal-200',
+  cancelled_escalation_declined: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
 export default function InterventionDetails() {
