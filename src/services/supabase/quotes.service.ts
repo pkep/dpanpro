@@ -1,5 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { IQuotesService, QuoteLine, QuoteInput, QuoteSummary, Service } from '@/services/interfaces/quotes.interface';
+import type { IQuotesService, QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/quotes.interface';
+import type { Service } from '@/services/interfaces/services.interface';
+
+export type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/quotes.interface';
+export type { Service } from '@/services/interfaces/services.interface';
 import type { DbQuoteLine } from '@/services/interfaces/supabase-database.interface';
 import { isB2bCapExceeded, b2bEffectiveCap } from '@/lib/b2bPriceCap';
 
@@ -10,6 +14,57 @@ const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label
 };
 
 export class SupabaseQuotesService implements IQuotesService {
+  /**
+   * Check if priority multiplier is enabled globally in site settings
+   */
+  async isMultiplierEnabled(): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('setting_value')
+      .eq('setting_key', 'priority_multiplier_enabled')
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching multiplier setting:', error);
+      return true; // Default to enabled
+    }
+
+    return data?.setting_value !== 'false';
+  }
+
+  /**
+   * Check if a specific priority multiplier is enabled
+   */
+  async isPriorityMultiplierEnabled(priority: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('priority_multipliers')
+      .select('is_enabled')
+      .eq('priority', priority)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching priority multiplier:', error);
+      return true; // Default to enabled
+    }
+
+    return data?.is_enabled !== false;
+  }
+
+  /**
+   * Get the effective multiplier for a priority (returns 1 if disabled at any level)
+   */
+  async getEffectiveMultiplier(priority: string, multiplierValue: number): Promise<number> {
+    // Check global setting first
+    const globalEnabled = await this.isMultiplierEnabled();
+    if (!globalEnabled) return 1;
+
+    // Check individual priority setting
+    const priorityEnabled = await this.isPriorityMultiplierEnabled(priority);
+    if (!priorityEnabled) return 1;
+
+    return multiplierValue;
+  }
+
   /**
    * Generate quote lines for an intervention based on service prices and multiplier
    * Only includes lines with a price > 0
