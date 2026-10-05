@@ -55,6 +55,10 @@ function generateInvoiceNumber(interventionId: string, date: Date): string {
   return `${year}${month}-${shortId}`;
 }
 
+function roundMoney(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -132,7 +136,9 @@ serve(async (req: Request): Promise<Response> => {
         .eq("id", intervention.client_id)
         .single();
       if (client) {
-        clientName = `${client.first_name} ${client.last_name}`;
+        clientName = [client.first_name, client.last_name].filter(Boolean).join(" ").trim()
+          || [intervention.client_first_name, intervention.client_last_name].filter(Boolean).join(" ").trim()
+          || "Client";
         isCompany = client.is_company || false;
         companyName = client.company_name;
         clientAddress = client.company_address;
@@ -157,9 +163,9 @@ serve(async (req: Request): Promise<Response> => {
     // Totals
     const baseTotal = quoteLines.reduce((s: number, l: any) => s + Number(l.calculated_price), 0);
     const additionalTotal = mods.reduce((s: number, m: any) => s + Number(m.total_additional_amount), 0);
-    const totalHT = baseTotal + additionalTotal;
-    const tva = totalHT * (vatRate / 100);
-    const totalTTC = totalHT + tva;
+    const totalHT = roundMoney(baseTotal + additionalTotal);
+    const tva = roundMoney(totalHT * (vatRate / 100));
+    const totalTTC = roundMoney(totalHT + tva);
 
     const invoiceDate = intervention.invoice_signed_at ? new Date(intervention.invoice_signed_at) : new Date();
     console.log("invoiceDate", invoiceDate);
