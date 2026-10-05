@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildTechnicianApplicationEmailHtml } from "../_shared/email-templates/technician-application.ts";
-import { logError } from "../_shared/logger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +9,7 @@ const corsHeaders = {
 
 interface NotifyApplicationRequest {
   technicianId: string;
-  action: "approved" | "rejected";
+  action: "approved" | "rejected" | "qualification" | "activated";
   email: string;
   firstName: string;
   reason?: string;
@@ -39,10 +38,12 @@ serve(async (req) => {
 
     console.log(`[NotifyTechnicianApplication] Sending ${action} email to ${email}`);
 
+    const siteUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
     let activationUrl: string | undefined;
+    let loginUrl: string | undefined;
 
-    // For approved technicians, generate an activation token
-    if (action === "approved") {
+    // Qualification : générer un lien d'activation (token email de vérification)
+    if (action === "qualification") {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -61,8 +62,9 @@ serve(async (req) => {
         .eq("user_id", technicianId)
         .is("used_at", null);
 
-      // Create new token with 15min expiry
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      // Create activation token (TTL paramétrable, défaut 24h)
+      const activationHours = Number(Deno.env.get("TECHNICIAN_ACTIVATION_TOKEN_HOURS") ?? 24);
+      const expiresAt = new Date(Date.now() + activationHours * 60 * 60 * 1000).toISOString();
 
       const { error: tokenError } = await supabase.from("email_verification_tokens").insert({
         user_id: technicianId,
@@ -75,9 +77,11 @@ serve(async (req) => {
         throw new Error("Failed to create activation token");
       }
 
-      const siteUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
       activationUrl = `${siteUrl}/verify-email?token=${token}`;
       console.log(`[NotifyTechnicianApplication] Activation URL generated for ${email}`);
+    } else if (action === "approved" || action === "activated") {
+      // Le profil est validé : lien de connexion à l'espace technicien
+      loginUrl = `${siteUrl}/login`;
     }
 
     const { subject, html: htmlContent } = buildTechnicianApplicationEmailHtml({
@@ -85,6 +89,7 @@ serve(async (req) => {
       action,
       reason,
       activationUrl,
+      loginUrl,
     });
 
     const emailResponse = await resend.emails.send({
@@ -103,7 +108,6 @@ serve(async (req) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("[NotifyTechnicianApplication] Error:", error);
-    await logError("notify-technician-application", errorMessage, { error: String(error) });
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
