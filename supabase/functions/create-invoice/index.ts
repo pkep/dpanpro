@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import autoTable from "https://esm.sh/jspdf-autotable@3.8.2";
+import { resolveClientName } from "../_shared/client-name.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,10 +54,6 @@ function generateInvoiceNumber(interventionId: string, date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const shortId = interventionId.substring(0, 8).toUpperCase();
   return `${year}${month}-${shortId}`;
-}
-
-function roundMoney(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -121,7 +118,8 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // Client
-    let clientName = "Client";
+    let accountFirstName: string | null = null;
+    let accountLastName: string | null = null;
     let isCompany = false;
     let companyName: string | null = null;
     let clientAddress: string | null = null;
@@ -136,9 +134,8 @@ serve(async (req: Request): Promise<Response> => {
         .eq("id", intervention.client_id)
         .single();
       if (client) {
-        clientName = [client.first_name, client.last_name].filter(Boolean).join(" ").trim()
-          || [intervention.client_first_name, intervention.client_last_name].filter(Boolean).join(" ").trim()
-          || "Client";
+        accountFirstName = client.first_name;
+        accountLastName = client.last_name;
         isCompany = client.is_company || false;
         companyName = client.company_name;
         clientAddress = client.company_address;
@@ -147,6 +144,29 @@ serve(async (req: Request): Promise<Response> => {
         clientPhone = clientPhone || client.phone;
       }
     }
+
+    let b2bContactFirstName: string | null = null;
+    let b2bContactLastName: string | null = null;
+    if (intervention.b2b_partner_id) {
+      const { data: partner } = await supabase
+        .from("b2b_partners")
+        .select("contact_firstname, contact_lastname")
+        .eq("id", intervention.b2b_partner_id)
+        .single();
+      if (partner) {
+        b2bContactFirstName = partner.contact_firstname;
+        b2bContactLastName = partner.contact_lastname;
+      }
+    }
+
+    const clientName = resolveClientName({
+      accountFirstName,
+      accountLastName,
+      b2bContactFirstName,
+      b2bContactLastName,
+      clientFirstName: intervention.client_first_name,
+      clientLastName: intervention.client_last_name,
+    });
 
     // VAT rate from service
     let vatRate = isCompany ? 20 : 10;
@@ -163,9 +183,9 @@ serve(async (req: Request): Promise<Response> => {
     // Totals
     const baseTotal = quoteLines.reduce((s: number, l: any) => s + Number(l.calculated_price), 0);
     const additionalTotal = mods.reduce((s: number, m: any) => s + Number(m.total_additional_amount), 0);
-    const totalHT = roundMoney(baseTotal + additionalTotal);
-    const tva = roundMoney(totalHT * (vatRate / 100));
-    const totalTTC = roundMoney(totalHT + tva);
+    const totalHT = baseTotal + additionalTotal;
+    const tva = totalHT * (vatRate / 100);
+    const totalTTC = totalHT + tva;
 
     const invoiceDate = intervention.invoice_signed_at ? new Date(intervention.invoice_signed_at) : new Date();
     console.log("invoiceDate", invoiceDate);
