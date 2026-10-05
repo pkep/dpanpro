@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import autoTable from "https://esm.sh/jspdf-autotable@3.8.2";
+import { resolveClientName } from "../_shared/client-name.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -112,7 +113,8 @@ serve(async (req: Request): Promise<Response> => {
       if (tech) technicianName = `${tech.first_name} ${tech.last_name}`;
     }
 
-    let clientName = "Client";
+    let accountFirstName: string | null = null;
+    let accountLastName: string | null = null;
     let isCompany = false;
     let companyName: string | null = null;
     let siren: string | null = null;
@@ -126,7 +128,8 @@ serve(async (req: Request): Promise<Response> => {
         .eq("id", intervention.client_id)
         .single();
       if (client) {
-        clientName = `${client.first_name} ${client.last_name}`;
+        accountFirstName = client.first_name;
+        accountLastName = client.last_name;
         isCompany = client.is_company || false;
         companyName = client.company_name;
         siren = client.siren;
@@ -134,6 +137,29 @@ serve(async (req: Request): Promise<Response> => {
         clientPhone = clientPhone || client.phone;
       }
     }
+
+    let b2bContactFirstName: string | null = null;
+    let b2bContactLastName: string | null = null;
+    if (intervention.b2b_partner_id) {
+      const { data: partner } = await supabase
+        .from("b2b_partners")
+        .select("contact_firstname, contact_lastname")
+        .eq("id", intervention.b2b_partner_id)
+        .single();
+      if (partner) {
+        b2bContactFirstName = partner.contact_firstname;
+        b2bContactLastName = partner.contact_lastname;
+      }
+    }
+
+    const clientName = resolveClientName({
+      accountFirstName,
+      accountLastName,
+      b2bContactFirstName,
+      b2bContactLastName,
+      clientFirstName: intervention.client_first_name,
+      clientLastName: intervention.client_last_name,
+    });
 
     let vatRate = isCompany ? 20 : 10;
     const { data: service } = await supabase
