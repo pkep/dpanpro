@@ -64,12 +64,6 @@ export interface B2bInvoice {
   lines: B2bInvoiceLine[];
 }
 
-export interface B2bInvoiceGenerateInput {
-  partnerId: string;
-  periodStart: string; // yyyy-MM-dd
-  periodEnd: string;   // yyyy-MM-dd
-}
-
 export interface IB2bService {
   // Partenaires
   getPartners(search?: string): Promise<B2bPartner[]>;
@@ -79,10 +73,12 @@ export interface IB2bService {
   deletePartner(id: string): Promise<void>;
 
   // Factures mensuelles
-  getInvoices(partnerId?: string): Promise<B2bInvoice[]>;
+  getInvoices(partnerId?: string, month?: string): Promise<B2bInvoice[]>;
   getInvoice(id: string): Promise<B2bInvoice>;
-  generateInvoice(input: B2bInvoiceGenerateInput): Promise<B2bInvoice>;
-  markInvoiceSent(id: string): Promise<B2bInvoice>;
+  /** Aperçu transitoire (aucune persistance) du PDF de la facture du mois pour un partenaire. */
+  previewInvoicePdf(partnerId: string, month: string): Promise<{ pdfBase64: string; filename: string }>;
+  sendInvoice(id: string): Promise<B2bInvoice>;
+  sendInvoices(month: string): Promise<{ sent: number }>;
   markInvoicePaid(id: string): Promise<B2bInvoice>;
   cancelInvoice(id: string): Promise<B2bInvoice>;
 }

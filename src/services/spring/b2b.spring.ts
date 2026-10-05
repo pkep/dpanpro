@@ -1,6 +1,6 @@
 import { springHttp } from './http-client';
 import type {
-  IB2bService, B2bPartner, B2bPartnerInput, B2bInvoice, B2bInvoiceGenerateInput,
+  IB2bService, B2bPartner, B2bPartnerInput, B2bInvoice,
 } from '@/services/interfaces/b2b.interface';
 
 export class SpringB2bService implements IB2bService {
@@ -24,20 +24,27 @@ export class SpringB2bService implements IB2bService {
     await springHttp.delete(`/b2b-partners/${id}`);
   }
 
-  getInvoices(partnerId?: string): Promise<B2bInvoice[]> {
-    return springHttp.get<B2bInvoice[]>('/b2b-invoices', partnerId ? { partnerId } : undefined);
+  getInvoices(partnerId?: string, month?: string): Promise<B2bInvoice[]> {
+    const params: Record<string, string> = {};
+    if (partnerId) params.partnerId = partnerId;
+    if (month) params.month = month;
+    return springHttp.get<B2bInvoice[]>('/b2b-invoices', Object.keys(params).length ? params : undefined);
   }
 
   getInvoice(id: string): Promise<B2bInvoice> {
     return springHttp.get<B2bInvoice>(`/b2b-invoices/${id}`);
   }
 
-  generateInvoice(input: B2bInvoiceGenerateInput): Promise<B2bInvoice> {
-    return springHttp.post<B2bInvoice>('/b2b-invoices/generate', input);
+  previewInvoicePdf(partnerId: string, month: string): Promise<{ pdfBase64: string; filename: string }> {
+    return springHttp.get<{ pdfBase64: string; filename: string }>('/b2b-invoices/preview-pdf', { partnerId, month });
   }
 
-  markInvoiceSent(id: string): Promise<B2bInvoice> {
-    return springHttp.post<B2bInvoice>(`/b2b-invoices/${id}/sent`);
+  sendInvoice(id: string): Promise<B2bInvoice> {
+    return springHttp.post<B2bInvoice>(`/b2b-invoices/${id}/send`);
+  }
+
+  sendInvoices(month: string): Promise<{ sent: number }> {
+    return springHttp.post<{ sent: number }>(`/b2b-invoices/send-all?month=${encodeURIComponent(month)}`);
   }
 
   markInvoicePaid(id: string): Promise<B2bInvoice> {

@@ -46,5 +46,4 @@ export type {
   B2bInvoice,
   B2bInvoiceLine,
   B2bInvoiceStatus,
-  B2bInvoiceGenerateInput,
 } from './b2b.interface';
