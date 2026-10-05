@@ -23,7 +23,7 @@ export function isBusyStatus(status: InterventionStatus): boolean {
 export function isTechnicianFocused(interventions: Intervention[], now: Date = new Date()): boolean {
   const horizon = now.getTime() + FOCUS_HORIZON_HOURS * 3600 * 1000;
   return interventions.some((i) => {
-    if (i.status === 'suspended') return false;
+    if (i.suspended) return false;
     if (isBusyStatus(i.status)) return true;
     if (i.status === 'scheduled_assigned' && i.scheduledAt) {
       return new Date(i.scheduledAt).getTime() <= horizon;

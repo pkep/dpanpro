@@ -42,7 +42,7 @@ const INTERVENTION_SELECT_FIELDS = {
   TECH_DASHBOARD: 'id, status, created_at, latitude, longitude, title, category, city, postal_code, estimated_price, address, client_phone, tracking_code, description',
 
   // AdminInterventionsPage: Liste complète
-  ADMIN_LIST: 'id, title, category, address, city, postal_code, latitude, longitude, client_id, tracking_code, technician_id, status, priority, scheduled_at, description, created_at, final_price, estimated_price, prix_min, prix_max, questionnaire_answers, client_photos_count, b2b_partner_id, client_first_name, client_last_name, client_phone, b2b_partners(company_name, contact_firstname, contact_lastname, contact_phone)',
+  ADMIN_LIST: 'id, title, category, address, city, postal_code, latitude, longitude, client_id, tracking_code, technician_id, status, suspended, priority, scheduled_at, description, created_at, final_price, estimated_price, prix_min, prix_max, questionnaire_answers, client_photos_count, b2b_partner_id, client_first_name, client_last_name, client_phone, b2b_partners(company_name, contact_firstname, contact_lastname, contact_phone)',
 
   // ClientInterventionsPage: Historique
   CLIENT_HISTORY: 'id, title, category, status, priority, city, created_at',
@@ -141,7 +141,7 @@ class SupabaseInterventionsService implements IInterventionsService {
   async getIntervention(id: string): Promise<Intervention | null> {
     const { data, error } = await supabase
       .from('interventions')
-      .select('*')
+      .select('*, b2b_partners(company_name, contact_firstname, contact_lastname, contact_phone)')
       .eq('id', id)
       .maybeSingle();
 
@@ -520,6 +520,7 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
       .from('interventions')
       .select('*')
       .eq('technician_id', technicianId)
+      .eq('suspended', false)
       .in('status', ['assigned', 'on_route', 'arrived', 'in_progress'])
       .limit(1)
       .maybeSingle();
@@ -945,6 +946,13 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
   }
 
   private mapToIntervention(data: DbIntervention): Intervention {
+    const b2bPartner = (data as unknown as {
+      b2b_partners?: {
+        contact_firstname?: string | null;
+        contact_lastname?: string | null;
+        company_name?: string | null;
+      } | null;
+    }).b2b_partners ?? null;
     return {
       id: data.id,
       clientId: data.client_id,
@@ -966,6 +974,12 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
       completedAt: data.completed_at,
       photos: data.photos || undefined,
       isActive: data.is_active,
+      // Suspension (V43)
+      suspended: (data as any).suspended ?? false,
+      suspendedAt: (data as any).suspended_at,
+      suspendedBy: (data as any).suspended_by,
+      suspensionReason: (data as any).suspension_reason,
+      expectedCompletionDate: (data as any).expected_completion_date,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
       trackingCode: data.tracking_code,
@@ -998,6 +1012,9 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
       clientFirstName: data.client_first_name,
       clientLastName: data.client_last_name,
       b2bOrderReference: data.b2b_order_reference,
+      b2bContactFirstName: b2bPartner?.contact_firstname ?? null,
+      b2bContactLastName: b2bPartner?.contact_lastname ?? null,
+      b2bCompanyName: b2bPartner?.company_name ?? null,
     };
   }
 
@@ -1079,26 +1096,31 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
 
       const { data: current, error: getError } = await supabase
         .from('interventions')
-        .select('status')
+        .select('status, suspended')
         .eq('id', interventionId)
         .single();
       if (getError) throw getError;
-      if ((current as { status?: string } | null)?.status !== 'in_progress') {
-        throw new Error("Seules les interventions en cours peuvent être suspendues.");
+      const currentRow = current as { status?: string; suspended?: boolean } | null;
+      const SUSPENDABLE = ['assigned', 'on_route', 'arrived', 'in_progress'];
+      if (!currentRow?.status || !SUSPENDABLE.includes(currentRow.status)) {
+        throw new Error("Seule une intervention en cours d'exécution peut être suspendue.");
+      }
+      if (currentRow.suspended === true) {
+        throw new Error("L'intervention est déjà suspendue.");
       }
 
+      // Le statut métier est CONSERVÉ ; on positionne uniquement le booléen `suspended`.
       const { error } = await supabase
         .from('interventions')
         .update({
-          status: 'suspended',
+          suspended: true,
           suspension_reason: reason,
           expected_completion_date: data.expectedCompletionDate,
           suspended_at: new Date().toISOString(),
         } as never)
         .eq('id', interventionId);
       if (error) throw error;
-      await recordInterventionStatusChange(interventionId, 'suspended');
-      // Rappels de reprise J-3/J-2/J-1 (best-effort, mode Supabase direct)
+      // Rappels de reprise J-3/J-2/J-1 + échéance (best-effort, mode Supabase direct)
       supabase.functions
         .invoke('schedule-suspension-reminders', {
           body: { action: 'schedule', interventionId, expectedCompletionDate: data.expectedCompletionDate },
@@ -1109,33 +1131,35 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
     async resumeIntervention(interventionId: string): Promise<void> {
       const { data: current, error: getError } = await supabase
         .from('interventions')
-        .select('status, technician_id')
+        .select('suspended, technician_id')
         .eq('id', interventionId)
         .single();
       if (getError) throw getError;
-      const row = current as { status?: string; technician_id?: string | null } | null;
-      if (row?.status !== 'suspended') {
+      const row = current as { suspended?: boolean; technician_id?: string | null } | null;
+      if (row?.suspended !== true) {
         throw new Error('Seule une intervention suspendue peut être reprise.');
       }
-      // Garde : le technicien ne doit pas avoir une autre intervention bloquante.
+      // Garde : le technicien ne doit pas avoir une AUTRE intervention bloquante (non suspendue).
       if (row.technician_id) {
         const { data: busy } = await supabase
           .from('interventions')
           .select('id')
           .eq('technician_id', row.technician_id)
+          .eq('suspended', false)
           .in('status', ['assigned', 'on_route', 'arrived', 'in_progress'])
+          .neq('id', interventionId)
           .limit(1);
         if (busy && busy.length > 0) {
           throw new Error("Le technicien a déjà une autre intervention active.");
         }
       }
 
+      // Le statut métier est conservé ; on lève uniquement le booléen `suspended`.
       const { error } = await supabase
         .from('interventions')
-        .update({ status: 'in_progress', started_at: new Date().toISOString() } as never)
+        .update({ suspended: false } as never)
         .eq('id', interventionId);
       if (error) throw error;
-      await recordInterventionStatusChange(interventionId, 'in_progress');
       // Annule les rappels de suspension (best-effort)
       supabase.functions
         .invoke('schedule-suspension-reminders', { body: { action: 'cancel', interventionId } })
@@ -1147,7 +1171,7 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
         .from('interventions')
         .select('*')
         .eq('technician_id', technicianId)
-        .eq('status', 'suspended')
+        .eq('suspended', true)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return (data || []) as unknown as Intervention[];

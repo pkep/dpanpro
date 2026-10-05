@@ -2,10 +2,10 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Intervention } from '@/types/intervention.types';
 import { CATEGORY_LABELS } from '@/types/intervention.types';
-import { quotesService, QuoteLine } from '@/services/supabase/quotes.service';
-import { quoteModificationsService, QuoteModification } from '@/services/supabase/quote-modifications.service';
-import { supabase } from '@/integrations/supabase/client';
-import { servicesService } from '@/services/supabase/services.service';
+import type { QuoteLine } from '@/services/interfaces/quotes.interface';
+import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
+import { services } from '@/services/factory';
+import { resolveClientName } from '@/lib/clientName';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -29,6 +29,7 @@ export interface QuotePDFData {
   vatAmount: number;
   totalTTC: number;
   signatureData?: string | null;
+  signatureAt?: string | null;
 }
 
 const COMPANY_INFO = {
@@ -49,31 +50,28 @@ class QuotePDFService {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const shortId = interventionId.substring(0, 8).toUpperCase();
-    return `DEV-${year}${month}-${shortId}`;
+    return `${year}${month}-${shortId}`;
   }
 
   async prepareQuotePDFData(
-    intervention: Intervention,
-    signatureData?: string | null
+      interventionId: string
   ): Promise<QuotePDFData> {
-    const quoteLines = await quotesService.getQuoteLines(intervention.id);
+    const intervention = await services.interventions.getIntervention(interventionId);
+    const quoteLines = await services.quotes.getQuoteLines(intervention.id);
 
-    const modifications = await quoteModificationsService.getModificationsByIntervention(intervention.id);
+    const modifications = await services.quoteModifications.getModificationsByIntervention(intervention.id);
     const pendingModifications = modifications.filter(m => m.status === 'approved');
 
     let technicianName = 'Non assigné';
     if (intervention.technicianId) {
-      const { data: techData } = await supabase
-        .from('users')
-        .select('first_name, last_name')
-        .eq('id', intervention.technicianId)
-        .single();
+      const techData = await services.users.getUser(intervention.technicianId);
       if (techData) {
-        technicianName = `${techData.first_name} ${techData.last_name}`;
+        technicianName = `${techData.firstName} ${techData.lastName}`;
       }
     }
 
-    let clientName = 'Client';
+    let accountFirstName: string | null = null;
+    let accountLastName: string | null = null;
     let isCompany = false;
     let companyName: string | null = null;
     let clientAddress: string | null = null;
@@ -81,25 +79,32 @@ class QuotePDFService {
     let vatNumber: string | null = null;
 
     if (intervention.clientId) {
-      const { data: clientData } = await supabase
-        .from('users')
-        .select('first_name, last_name, is_company, company_name, company_address, siren, vat_number')
-        .eq('id', intervention.clientId)
-        .single();
+      const clientData = await services.users.getUser(intervention.clientId);
       if (clientData) {
-        clientName = `${clientData.first_name} ${clientData.last_name}`;
-        isCompany = clientData.is_company || false;
-        companyName = clientData.company_name;
-        clientAddress = clientData.company_address;
+        accountFirstName = clientData.firstName;
+        accountLastName = clientData.lastName;
+        isCompany = clientData.isCompany || false;
+        companyName = clientData.companyName;
+        clientAddress = clientData.companyAddress;
         siren = clientData.siren;
-        vatNumber = clientData.vat_number;
+        vatNumber = clientData.vatNumber;
       }
     }
 
+    // Nom : compte, sinon contact B2B, sinon contact saisi (invité), sinon "Client".
+    const clientName = resolveClientName({
+      accountFirstName,
+      accountLastName,
+      b2bContactFirstName: intervention.b2bContactFirstName,
+      b2bContactLastName: intervention.b2bContactLastName,
+      clientFirstName: intervention.clientFirstName,
+      clientLastName: intervention.clientLastName,
+    });
+
     let vatRate = isCompany ? 20 : 10;
     try {
-      const services = await servicesService.getActiveServices();
-      const service = services.find(s => s.code === intervention.category);
+      const servicesList = await services.services.getActiveServices();
+      const service = servicesList.find(s => s.code === intervention.category);
       if (service) {
         vatRate = isCompany ? service.vatRateProfessional : service.vatRateIndividual;
       }
@@ -137,7 +142,8 @@ class QuotePDFService {
       vatRate,
       vatAmount,
       totalTTC,
-      signatureData,
+      signatureData: intervention.quoteSignatureData,
+      signatureAt: intervention.quoteSignedAt
     };
   }
 
@@ -172,7 +178,7 @@ class QuotePDFService {
     yPos += 5;
     doc.text(`Email: ${COMPANY_INFO.email}`, 20, yPos);
     yPos += 5;
-    doc.text(`SIRET: ${COMPANY_INFO.siret}`, 20, yPos);
+    doc.text(`SIREN: ${COMPANY_INFO.siren}`, 20, yPos);
     yPos += 5;
     doc.text(`N° TVA: ${COMPANY_INFO.tva}`, 20, yPos);
 
@@ -338,11 +344,13 @@ class QuotePDFService {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(...textMuted);
-        doc.text(
-          `Signé le ${format(new Date(), 'dd/MM/yyyy à HH:mm', { locale: fr })}`,
-          20,
-          yPos + 40
-        );
+        if(data.signatureAt){
+            doc.text(
+              `Signé le ${format(data.signatureAt, 'dd/MM/yyyy à HH:mm', { locale: fr })}`,
+              20,
+              yPos + 40
+            );
+        }
       } catch (err) {
         console.error('Error adding signature to PDF:', err);
       }
@@ -367,7 +375,7 @@ class QuotePDFService {
     // Footer
     yPos = doc.internal.pageSize.getHeight() - 20;
     doc.text(
-      `${COMPANY_INFO.name} - SIRET ${COMPANY_INFO.siret} - N° TVA ${COMPANY_INFO.tva}`,
+      `${COMPANY_INFO.name} - SIREN ${COMPANY_INFO.siren} - N° TVA ${COMPANY_INFO.tva}`,
       pageWidth / 2,
       yPos,
       { align: 'center' }
@@ -377,13 +385,14 @@ class QuotePDFService {
   }
 
   async generateAndDownloadQuote(intervention: Intervention, signatureData?: string | null): Promise<void> {
-    const data = await this.prepareQuotePDFData(intervention, signatureData);
+    const data = await this.prepareQuotePDFData(intervention.id);
+    if (signatureData) data.signatureData = signatureData;
     const pdf = await this.generateQuotePDF(data);
     pdf.save(`devis-${data.quoteNumber}.pdf`);
   }
-
   async generateQuoteBase64(intervention: Intervention, signatureData?: string | null): Promise<{ base64: string; fileName: string }> {
-    const data = await this.prepareQuotePDFData(intervention, signatureData);
+    const data = await this.prepareQuotePDFData(intervention.id);
+    if (signatureData) data.signatureData = signatureData;
     const pdf = await this.generateQuotePDF(data);
 
     const base64 = pdf.output('datauristring').split(',')[1];
@@ -400,7 +409,8 @@ class QuotePDFService {
   async generateAndArchiveQuote(intervention: Intervention, signatureData?: string | null): Promise<string> {
     const { storageService, buildInterventionPath } = await import('@/services/components/utils/storage/storage.service');
 
-    const data = await this.prepareQuotePDFData(intervention, signatureData);
+    const data = await this.prepareQuotePDFData(intervention.id);
+    if (signatureData) data.signatureData = signatureData;
     const pdf = await this.generateQuotePDF(data);
     const blob = pdf.output('blob');
 
@@ -423,3 +433,4 @@ class QuotePDFService {
 }
 
 export const quotePDFService = new QuotePDFService();
+
