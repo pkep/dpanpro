@@ -6,3 +6,4 @@
 - Serve the default technician avatar from `public/avatars/technician-default.svg` through the shared avatar helper so missing photos have a working local fallback.
 - Treat intervention suspension as a boolean independent of operational status so suspension preserves the intervention's progress.
 - Preserve PDF download, attachment and archive methods when updating document renderers so existing callers remain compatible.
+- Keep Edge Function client-name resolution under `supabase/functions/_shared` aligned with the frontend helper, because deployment cannot import files from `src`.
