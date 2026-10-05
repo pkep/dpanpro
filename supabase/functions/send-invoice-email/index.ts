@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendClientEmail, sendClientSms } from "../_shared/notify/send.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { buildInvoiceEmailHtml } from "../_shared/email-templates/invoice-email.ts";
+import { resolveClientName } from "../_shared/client-name.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -108,7 +109,29 @@ serve(async (req: Request): Promise<Response> => {
 
     const clientEmail = intervention.client_email || clientUser?.email;
     const clientPhone = intervention.client_phone || clientUser?.phone;
-    const clientName = clientUser ? `${clientUser.first_name} ${clientUser.last_name}` : "Client";
+
+    let b2bContactFirstName: string | null = null;
+    let b2bContactLastName: string | null = null;
+    if (intervention.b2b_partner_id) {
+      const { data: partner } = await supabase
+        .from("b2b_partners")
+        .select("contact_firstname, contact_lastname")
+        .eq("id", intervention.b2b_partner_id)
+        .single();
+      if (partner) {
+        b2bContactFirstName = partner.contact_firstname;
+        b2bContactLastName = partner.contact_lastname;
+      }
+    }
+
+    const clientName = resolveClientName({
+      accountFirstName: clientUser?.first_name,
+      accountLastName: clientUser?.last_name,
+      b2bContactFirstName,
+      b2bContactLastName,
+      clientFirstName: intervention.client_first_name,
+      clientLastName: intervention.client_last_name,
+    });
     const trackingCode = intervention.tracking_code || "N/A";
     const finalPrice = intervention.final_price || 0;
 
