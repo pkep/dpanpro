@@ -121,6 +121,7 @@ serve(async (req) => {
       .from("interventions")
       .select("technician_id")
       .in("technician_id", technicianIds)
+      .eq("suspended", false)
       .in("status", ["assigned", "on_route", "arrived", "in_progress"]);
     const busyIds = new Set(
       (busyRows ?? [])
