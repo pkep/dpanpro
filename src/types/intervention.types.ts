@@ -84,6 +84,8 @@ export interface Intervention {
   clientLastName?: string | null;
   /** Référence de commande du système du partenaire B2B. */
   b2bOrderReference?: string | null;
+  /** Plafond de prix B2B (TTC) — contrôle avec marge (voir lib/b2bPriceCap). */
+  b2bPriceCap?: number | null;
   // Champs enrichis uniquement par la liste admin (outil du tableau)
   b2bCompanyName?: string | null;
   b2bContactFirstName?: string | null;
@@ -112,6 +114,8 @@ export interface InterventionFormData {
   clientFirstName?: string;
   clientLastName?: string;
   b2bOrderReference?: string;
+  /** Plafond de prix B2B (TTC) à la création. */
+  b2bPriceCap?: number;
 }
 
 export interface InterventionQuestionnaireData {
