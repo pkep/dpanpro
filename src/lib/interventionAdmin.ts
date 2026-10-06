@@ -49,6 +49,53 @@ export function getInterventionDetail(intervention: InterventionDetailSource): s
   return answersText.trim() || (intervention.description ?? '').trim() || '-';
 }
 
+export type AmountKind = 'range' | 'estimated' | 'final' | 'none';
+
+export interface AmountInfo {
+  kind: AmountKind;
+  /** Montant formaté (suffixe TTC) ou '—'. */
+  value: string;
+  /** Nature du montant affiché. */
+  label: string;
+}
+
+export const AMOUNT_KIND_META: Record<Exclude<AmountKind, 'none'>, { label: string; className: string }> = {
+  range:     { label: 'Fourchette', className: 'bg-slate-100 text-slate-700 border-slate-200' },
+  estimated: { label: 'Estimé',     className: 'bg-amber-100 text-amber-800 border-amber-200' },
+  final:     { label: 'Payé',       className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+};
+
+export interface AmountSource {
+  finalPrice?: number | null;
+  estimatedPrice?: number | null;
+  prixMin?: number | null;
+  prixMax?: number | null;
+}
+
+/**
+ * Colonne « Montant » : montant du **stade courant** du cycle de vie, avec sa
+ * nature — précédence Final (payé) > Estimé (devis) > Fourchette (créée).
+ * `finalPrice` / `estimatedPrice` valant 0 sont traités comme absents
+ * (aucune intervention n'est gratuite).
+ */
+export function getAmountInfo(i: AmountSource): AmountInfo {
+  const euro = (n: number) => `${n.toFixed(2)} € TTC`;
+  if (i.finalPrice) {
+    return { kind: 'final', value: euro(i.finalPrice), label: AMOUNT_KIND_META.final.label };
+  }
+  if (i.estimatedPrice) {
+    return { kind: 'estimated', value: euro(i.estimatedPrice), label: AMOUNT_KIND_META.estimated.label };
+  }
+  if (i.prixMin && i.prixMax) {
+    return {
+      kind: 'range',
+      value: `${i.prixMin.toFixed(2)} – ${i.prixMax.toFixed(2)} € TTC`,
+      label: AMOUNT_KIND_META.range.label,
+    };
+  }
+  return { kind: 'none', value: '—', label: '' };
+}
+
 export interface InterventionTypeSource {
   b2bPartnerId?: string | null;
 }
@@ -106,7 +153,7 @@ export interface AdminInterventionRow {
   tracking_code: string;
   technician_id: string | null;
   status: string;
-  suspended?: boolean;
+  suspended?: boolean | null;
   priority?: string | null;
   scheduled_at?: string | null;
   description?: string | null;
