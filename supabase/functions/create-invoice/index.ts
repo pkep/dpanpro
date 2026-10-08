@@ -148,15 +148,17 @@ serve(async (req: Request): Promise<Response> => {
 
     let b2bContactFirstName: string | null = null;
     let b2bContactLastName: string | null = null;
+    let constructionCompany = false;
     if (intervention.b2b_partner_id) {
       const { data: partner } = await supabase
         .from("b2b_partners")
-        .select("contact_firstname, contact_lastname")
+        .select("contact_firstname, contact_lastname, construction_company")
         .eq("id", intervention.b2b_partner_id)
         .single();
       if (partner) {
         b2bContactFirstName = partner.contact_firstname;
         b2bContactLastName = partner.contact_lastname;
+        constructionCompany = partner.construction_company === true;
       }
     }
 
@@ -185,7 +187,10 @@ serve(async (req: Request): Promise<Response> => {
     const baseTotal = quoteLines.reduce((s: number, l: any) => s + Number(l.calculated_price), 0);
     const additionalTotal = mods.reduce((s: number, m: any) => s + Number(m.total_additional_amount), 0);
     const totalHT = baseTotal + additionalTotal;
-    const tva = totalHT * (vatRate / 100);
+    // B2B « entreprise de construction » → autoliquidation de TVA (art. 283-2 nonies du CGI).
+    const vatExempt = constructionCompany;
+    if (vatExempt) vatRate = 0;
+    const tva = vatExempt ? 0 : totalHT * (vatRate / 100);
     const totalTTC = totalHT + tva;
 
     const invoiceDate = intervention.invoice_signed_at ? new Date(intervention.invoice_signed_at) : new Date();
@@ -337,24 +342,42 @@ serve(async (req: Request): Promise<Response> => {
     const totalsBoxX = pageWidth - 20 - totalsBoxWidth;
 
     doc.setFillColor(240, 253, 244);
-    doc.roundedRect(totalsBoxX, yPos, totalsBoxWidth, 45, 3, 3, "F");
+    doc.roundedRect(totalsBoxX, yPos, totalsBoxWidth, vatExempt ? 30 : 45, 3, 3, "F");
 
-    doc.setFontSize(9);
-    doc.setTextColor(...textMuted);
-    doc.text("Sous-total HT:", totalsBoxX + 5, yPos + 10);
-    doc.text(`${totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 10, { align: "right" });
-    doc.text(`TVA (${vatRate}%):`, totalsBoxX + 5, yPos + 20);
-    doc.text(`${tva.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 20, { align: "right" });
+    if (vatExempt) {
+      doc.setFontSize(12);
+      doc.setTextColor(...textDark);
+      doc.setFont("helvetica", "bold");
+      doc.text("Total HT:", totalsBoxX + 5, yPos + 18);
+      doc.setTextColor(...primaryColor);
+      doc.text(`${totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 18, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...textMuted);
+      doc.text(
+        "TVA non applicable — autoliquidation par le preneur (art. 283-2 nonies du CGI).",
+        totalsBoxX,
+        yPos + 37,
+        { maxWidth: totalsBoxWidth },
+      );
+    } else {
+      doc.setFontSize(9);
+      doc.setTextColor(...textMuted);
+      doc.text("Sous-total HT:", totalsBoxX + 5, yPos + 10);
+      doc.text(`${totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 10, { align: "right" });
+      doc.text(`TVA (${vatRate}%):`, totalsBoxX + 5, yPos + 20);
+      doc.text(`${tva.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 20, { align: "right" });
 
-    doc.setDrawColor(200, 200, 200);
-    doc.line(totalsBoxX + 5, yPos + 26, totalsBoxX + totalsBoxWidth - 5, yPos + 26);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(totalsBoxX + 5, yPos + 26, totalsBoxX + totalsBoxWidth - 5, yPos + 26);
 
-    doc.setFontSize(12);
-    doc.setTextColor(...textDark);
-    doc.setFont("helvetica", "bold");
-    doc.text("Total TTC:", totalsBoxX + 5, yPos + 38);
-    doc.setTextColor(...primaryColor);
-    doc.text(`${totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: "right" });
+      doc.setFontSize(12);
+      doc.setTextColor(...textDark);
+      doc.setFont("helvetica", "bold");
+      doc.text("Total TTC:", totalsBoxX + 5, yPos + 38);
+      doc.setTextColor(...primaryColor);
+      doc.text(`${totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: "right" });
+    }
 
     // Signature section
     // Signature « certifiée » (la signature manuscrite n'est plus affichée)

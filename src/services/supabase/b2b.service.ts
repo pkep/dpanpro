@@ -21,6 +21,7 @@ const mapPartner = (r: Record<string, unknown>): B2bPartner => ({
   contactPhone: (r.contact_phone as string) ?? null,
   contactEmail: (r.contact_email as string) ?? null,
   isActive: r.is_active !== false,
+  constructionCompany: r.construction_company === true,
   createdAt: (r.created_at as string) ?? undefined,
   updatedAt: (r.updated_at as string) ?? undefined,
 });
@@ -64,6 +65,7 @@ class SupabaseB2bService implements IB2bService {
     if (input.contactPhone !== undefined) row.contact_phone = input.contactPhone || null;
     if (input.contactEmail !== undefined) row.contact_email = input.contactEmail || null;
     if (input.isActive !== undefined) row.is_active = input.isActive;
+    if (input.constructionCompany !== undefined) row.construction_company = input.constructionCompany;
     return row;
   }
 

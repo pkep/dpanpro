@@ -19,6 +19,8 @@ export interface B2bPartner {
   contactPhone: string | null;
   contactEmail: string | null;
   isActive: boolean;
+  /** Entreprise de construction (BTP) : facturation en autoliquidation de TVA. */
+  constructionCompany: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -35,6 +37,8 @@ export interface B2bPartnerInput {
   contactPhone?: string;
   contactEmail?: string;
   isActive?: boolean;
+  /** Entreprise de construction (BTP) : facturation en autoliquidation de TVA. */
+  constructionCompany?: boolean;
 }
 
 export type B2bInvoiceStatus = 'draft' | 'sent' | 'paid' | 'cancelled';

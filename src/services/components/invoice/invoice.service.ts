@@ -5,8 +5,8 @@ import { CATEGORY_LABELS } from '@/types/intervention.types';
 import type { QuoteLine } from '@/services/interfaces/quotes.interface';
 import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
 import { services } from '@/services/factory';
-import { supabase } from '@/integrations/supabase/client';
 import { resolveClientName } from '@/lib/clientName';
+import { loadPdfAssets, PDF_LOGO_WIDTH, PDF_LOGO_HEIGHT, PDF_CERTIFIE_WIDTH, PDF_CERTIFIE_HEIGHT } from '@/lib/pdfAssets';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -28,6 +28,8 @@ export interface InvoiceData {
   finalAmount: number;
   vatRate: number;
   questionnaireAnswers: string[];
+  /** Partenaire B2B « entreprise de construction » → facture en autoliquidation de TVA. */
+  constructionCompany: boolean;
   signatureData?: string | null;
   signatureAt?: string | null;
 }
@@ -70,7 +72,7 @@ async function registerFont(
   }
 }
 
-async function formatDateFr(d: Date): Promise<string> {
+function formatDateFr(d: Date): string {
   const months = [
     "janvier",
     "février",
@@ -164,6 +166,17 @@ class InvoiceService {
       console.error('Error fetching service for VAT rate:', err);
     }
 
+    // B2B « entreprise de construction » → autoliquidation de TVA (art. 283-2 nonies du CGI).
+    let constructionCompany = false;
+    if (intervention.b2bPartnerId) {
+      try {
+        const partner = await services.b2b.getPartner(intervention.b2bPartnerId);
+        constructionCompany = partner.constructionCompany === true;
+      } catch (err) {
+        console.error('Error fetching B2B partner for VAT exemption:', err);
+      }
+    }
+
     // Get questionnaire answers for labor line detail
     let questionnaireAnswers: string[] = [];
     try {
@@ -199,6 +212,7 @@ class InvoiceService {
       finalAmount: baseTotal + additionalTotal,
       vatRate,
       questionnaireAnswers,
+      constructionCompany,
       signatureData: intervention.invoiceSignatureData,
       signatureAt: intervention.invoiceSignedAt,
     };
@@ -209,6 +223,7 @@ class InvoiceService {
   async generateInvoicePDF(data: InvoiceData): Promise<jsPDF> {
     const doc  = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const { logo, certifie } = await loadPdfAssets();
 
     // ── Palette ───────────────────────────────────────────────────────────
     const primaryColor = BRAND_GREEN;
@@ -216,11 +231,12 @@ class InvoiceService {
     const textMuted: [number, number, number] = [107, 114, 128];
 
     // Totals
-    let vatRate = data.isCompany ? 20 : 10;
+    const vatExempt = data.constructionCompany === true;
+    const vatRate = vatExempt ? 0 : (data.isCompany ? 20 : 10);
     const baseTotal = data.quoteLines.reduce((s: number, l: any) => s + Number(l.calculatedPrice), 0);
     const additionalTotal = data.approvedModifications.reduce((s: number, m: any) => s + Number(m.totalAdditionalAmount), 0);
     const totalHT = baseTotal + additionalTotal;
-    const tva = totalHT * (vatRate / 100);
+    const tva = vatExempt ? 0 : totalHT * (vatRate / 100);
     const totalTTC = totalHT + tva;
 
     const fmt = (n: number) => n.toFixed(2) + ' \u20ac';
@@ -230,15 +246,13 @@ class InvoiceService {
     doc.setFillColor(...primaryColor);
     doc.rect(0, 0, pageWidth, 8, "F");
 
-    doc.setFontSize(22);
-    doc.setTextColor(...primaryColor);
-    doc.setFont("helvetica", "bold");
-    doc.text(COMPANY_INFO.name, 20, yPos + 5);
+    // Logo (remplace le titre texte « Depan.Pro »)
+    doc.addImage(logo, 'PNG', 20, 13.33, PDF_LOGO_WIDTH, PDF_LOGO_HEIGHT);
 
     doc.setFontSize(10);
     doc.setTextColor(...textMuted);
     doc.setFont("helvetica", "normal");
-    yPos += 13;
+    yPos = 36;
     doc.text(COMPANY_INFO.address, 20, yPos);
     yPos += 5;
     doc.text(COMPANY_INFO.city, 20, yPos);
@@ -264,12 +278,12 @@ class InvoiceService {
     const date = await formatDateFr(data.invoiceDate);
     doc.text(`Date: ${date}`, pageWidth - 20, 45, { align: "right" });
 
-    yPos = 70;
+    yPos = 72;
     doc.setDrawColor(...primaryColor);
     doc.setLineWidth(0.5);
     doc.line(20, yPos, pageWidth - 20, yPos);
 
-    yPos = 75;
+    yPos = 77;
     const clientBoxHeight = data.isCompany ? 50 : 40;
     doc.setFillColor(240, 253, 244);
     doc.roundedRect(pageWidth - 95, yPos, 75, clientBoxHeight, 3, 3, "F");
@@ -316,7 +330,7 @@ class InvoiceService {
     doc.text(`Technicien: ${data.technicianName}`, 20, yPos + 40);
     if (data.intervention.trackingCode) doc.text(`Réf: ${data.intervention.trackingCode}`, 20, yPos + 46);
 
-    yPos = 140;
+    yPos = 128;
 
     const tableData: (string | number)[][] = [];
     data.quoteLines.forEach((line: any) => {
@@ -328,8 +342,8 @@ class InvoiceService {
         `${Number(line.calculatedPrice).toFixed(2)} €`,
       ]);
     });
-    data.approvedModifications.forEach((mod: QuoteModification) => {
-      const items = mod.items;
+    data.approvedModifications.forEach((mod: any) => {
+      const items = (mod.items || []).filter((it: any) => it.modificationId === mod.id);
       items.forEach((item: any) => {
         tableData.push([
           item.label,
@@ -365,46 +379,65 @@ class InvoiceService {
     const totalsBoxX = pageWidth - 20 - totalsBoxWidth;
 
     doc.setFillColor(240, 253, 244);
-    doc.roundedRect(totalsBoxX, yPos, totalsBoxWidth, 45, 3, 3, "F");
+    doc.roundedRect(totalsBoxX, yPos, totalsBoxWidth, vatExempt ? 30 : 45, 3, 3, "F");
 
-    doc.setFontSize(9);
-    doc.setTextColor(...textMuted);
-    doc.text("Sous-total HT:", totalsBoxX + 5, yPos + 10);
-    doc.text(`${totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 10, { align: "right" });
-    doc.text(`TVA (${vatRate}%):`, totalsBoxX + 5, yPos + 20);
-    doc.text(`${tva.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 20, { align: "right" });
+    if (vatExempt) {
+      // Autoliquidation de TVA (sous-traitance BTP) : pas de TVA, pas de « Total TTC ».
+      doc.setFontSize(12);
+      doc.setTextColor(...textDark);
+      doc.setFont("helvetica", "bold");
+      doc.text("Total HT:", totalsBoxX + 5, yPos + 18);
+      doc.setTextColor(...primaryColor);
+      doc.text(`${totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 18, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...textMuted);
+      doc.text(
+        "TVA non applicable — autoliquidation par le preneur (art. 283-2 nonies du CGI).",
+        totalsBoxX,
+        yPos + 37,
+        { maxWidth: totalsBoxWidth },
+      );
+    } else {
+      doc.setFontSize(9);
+      doc.setTextColor(...textMuted);
+      doc.text("Sous-total HT:", totalsBoxX + 5, yPos + 10);
+      doc.text(`${totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 10, { align: "right" });
+      doc.text(`TVA (${vatRate}%):`, totalsBoxX + 5, yPos + 20);
+      doc.text(`${tva.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 20, { align: "right" });
 
-    doc.setDrawColor(200, 200, 200);
-    doc.line(totalsBoxX + 5, yPos + 26, totalsBoxX + totalsBoxWidth - 5, yPos + 26);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(totalsBoxX + 5, yPos + 26, totalsBoxX + totalsBoxWidth - 5, yPos + 26);
 
-    doc.setFontSize(12);
-    doc.setTextColor(...textDark);
-    doc.setFont("helvetica", "bold");
-    doc.text("Total TTC:", totalsBoxX + 5, yPos + 38);
-    doc.setTextColor(...primaryColor);
-    doc.text(`${totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: "right" });
+      doc.setFontSize(12);
+      doc.setTextColor(...textDark);
+      doc.setFont("helvetica", "bold");
+      doc.text("Total TTC:", totalsBoxX + 5, yPos + 38);
+      doc.setTextColor(...primaryColor);
+      doc.text(`${totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: "right" });
+    }
 
-    // Signature section
-    doc.setFontSize(10);
-    doc.setTextColor(...textDark);
-    doc.setFont("helvetica", "bold");
-    doc.text("Signature du client:", 20, yPos);
-
+    // Signature « certifiée » (la signature manuscrite n'est plus affichée)
     const signatureData: string | null = data.intervention.invoiceSignatureData || null;
     if (signatureData) {
       try {
-        doc.addImage(signatureData, "PNG", 20, yPos + 5, 60, 30);
         doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(...textMuted);
-        const signedAt = data.intervention.invoiceSignedAt ? new Date(data.intervention.invoiceSignedAt) : new Date();
-        doc.text(
-          `Signé le ${String(signedAt.getDate()).padStart(2, "0")}/${String(signedAt.getMonth() + 1).padStart(2, "0")}/${signedAt.getFullYear()}`,
-          20,
-          yPos + 40,
+        doc.setFontSize(10);
+        doc.setTextColor(...textDark);
+        const at = data.intervention.invoiceSignedAt ? new Date(data.intervention.invoiceSignedAt) : null;
+        const label = at ? ` le ${format(at, 'dd/MM/yyyy HH:mm', { locale: fr })}` : '';
+        const signText = `Signé électroniquement${label}`;
+        doc.text(signText, 20, yPos);
+        doc.addImage(
+          certifie,
+          'JPEG',
+          20 + doc.getTextWidth(signText) / 2 - PDF_CERTIFIE_WIDTH / 2,
+          yPos + 6,
+          PDF_CERTIFIE_WIDTH,
+          PDF_CERTIFIE_HEIGHT,
         );
       } catch (err) {
-        console.error("Error adding signature to PDF:", err);
+        console.error("Error adding certified badge to PDF:", err);
       }
     } else {
       doc.setDrawColor(200, 200, 200);
@@ -416,7 +449,8 @@ class InvoiceService {
       doc.text("En attente de signature", 60, yPos + 25, { align: "center" });
     }
 
-    yPos += 50;
+    yPos += 58;
+    const footerY = doc.internal.pageSize.getHeight() - 26.03;
     doc.setFillColor(220, 252, 231);
     doc.roundedRect(20, yPos, pageWidth - 40, 20, 3, 3, "F");
     doc.setFontSize(11);
@@ -424,7 +458,6 @@ class InvoiceService {
     doc.setFont("helvetica", "bold");
     doc.text("PAYÉE", pageWidth / 2, yPos + 13, { align: "center" });
 
-    const footerY = doc.internal.pageSize.getHeight() - 30;
     doc.setFontSize(8);
     doc.setTextColor(...textMuted);
     doc.setFont("helvetica", "normal");
@@ -476,60 +509,6 @@ class InvoiceService {
     const fileName = `facture-${data.invoiceNumber}.pdf`;
     
     return { base64, fileName };
-  }
-  /**
-   * Send invoice by email
-   */
-  async sendInvoiceByEmail(intervention: Intervention): Promise<boolean> {
-    try {
-      const { base64, fileName } = await this.generateInvoiceBase64(intervention);
-      
-      const { data, error } = await supabase.functions.invoke('send-invoice-email', {
-        body: {
-          interventionId: intervention.id,
-          invoiceBase64: base64,
-          invoiceFileName: fileName,
-        },
-      });
-
-      if (error) {
-        console.error('Error sending invoice email:', error);
-        return false;
-      }
-
-      return data?.success === true;
-    } catch (err) {
-      console.error('Error sending invoice email:', err);
-      return false;
-    }
-  }
-
-  /**
-   * Generate invoice PDF and archive it to storage.
-   * Path: {interventionId}/invoices/facture-{invoiceNumber}.pdf
-   * Updates interventions.invoice_pdf_url in DB.
-   */
-  async generateAndArchiveInvoice(intervention: Intervention): Promise<string> {
-    const { storageService, buildInterventionPath } = await import('@/services/components/utils/storage/storage.service');
-
-    const data = await this.prepareInvoiceData(intervention.id);
-    const pdf = await this.generateInvoicePDF(data);
-    const blob = pdf.output('blob');
-
-    const fileName = `facture-${data.invoiceNumber}.pdf`;
-    const storagePath = buildInterventionPath(intervention.id, 'invoices', fileName);
-
-    const file = new File([blob], fileName, { type: 'application/pdf' });
-    const publicUrl = await storageService.uploadFileToPath('interventions', storagePath, file);
-
-    // Update DB with URL
-    await supabase
-      .from('interventions')
-      .update({ invoice_pdf_url: publicUrl } as any)
-      .eq('id', intervention.id);
-
-    console.log('[Invoice] Archived invoice to:', publicUrl);
-    return publicUrl;
   }
 }
 

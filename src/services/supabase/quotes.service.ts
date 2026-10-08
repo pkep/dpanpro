@@ -112,19 +112,46 @@ export class SupabaseQuotesService implements IQuotesService {
       display_order: index,
     }));
 
-    // Replace existing base quote lines to avoid duplicates on re-validation
-    const { error: deleteError } = await supabase
+    // Remplacement ATOMIQUE via RPC SECURITY DEFINER — corrige les doublons :
+    // le DELETE côté client était bloqué par la RLS (0 ligne supprimée, sans
+    // erreur) et l'INSERT s'ajoutait aux anciennes lignes à chaque save.
+    // NB : appel via `supabase.rpc(...)` (récepteur conservé) — ne PAS extraire
+    // la méthode dans une variable, sinon `this` est perdu ("reading 'rest'").
+    const { data, error } = await (supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: unknown; error: { code?: string; message?: string } | null }>)(
+      'replace_intervention_quotes',
+      { p_intervention_id: interventionId, p_lines: insertData },
+    );
+
+    if (error) {
+      // Repli transitoire tant que la migration V45 n'est pas appliquée.
+      const missingFunction =
+        error.code === 'PGRST202'
+        || error.code === '42883'
+        || /could not find the function|does not exist/i.test(error.message ?? '');
+      if (!missingFunction) throw error;
+
+      console.warn(
+        '[quotes] replace_intervention_quotes indisponible (migration V45 non appliquée) — repli delete+insert.',
+        error.message,
+      );
+
+      const { error: deleteError } = await supabase
         .from('intervention_quotes')
         .delete()
         .eq('intervention_id', interventionId);
-    if (deleteError) throw deleteError;
+      if (deleteError) throw deleteError;
 
-    const { data, error } = await supabase
-      .from('intervention_quotes')
-      .insert(insertData)
-      .select();
+      const { data: fallbackData, error: insertError } = await supabase
+        .from('intervention_quotes')
+        .insert(insertData)
+        .select();
+      if (insertError) throw insertError;
 
-    if (error) throw error;
+      return ((fallbackData || []) as unknown as DbQuoteLine[]).map((d) => this.mapToQuoteLine(d));
+    }
 
     return ((data || []) as unknown as DbQuoteLine[]).map((d) => this.mapToQuoteLine(d));
   }
@@ -142,6 +169,23 @@ export class SupabaseQuotesService implements IQuotesService {
     if (error) throw error;
 
     return ((data || []) as unknown as DbQuoteLine[]).map((d) => this.mapToQuoteLine(d));
+  }
+
+  /**
+   * Ids des interventions ayant au moins une ligne de devis (batch).
+   */
+  async getInterventionIdsWithQuoteLines(interventionIds: string[]): Promise<Set<string>> {
+    if (interventionIds.length === 0) return new Set();
+    const { data, error } = await supabase
+      .from('intervention_quotes')
+      .select('intervention_id')
+      .in('intervention_id', interventionIds);
+
+    if (error) throw error;
+
+    return new Set(
+      ((data || []) as { intervention_id: string }[]).map((r) => r.intervention_id),
+    );
   }
 
   private mapToQuoteLine(data: DbQuoteLine): QuoteLine {
