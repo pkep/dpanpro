@@ -232,6 +232,7 @@ class InvoiceService {
 
     // Totals
     const vatExempt = data.constructionCompany === true;
+    const isB2b = data.intervention.b2bPartnerId != null || data.intervention.billingType === 'b2b';
     const vatRate = vatExempt ? 0 : (data.isCompany ? 20 : 10);
     const baseTotal = data.quoteLines.reduce((s: number, l: any) => s + Number(l.calculatedPrice), 0);
     const additionalTotal = data.approvedModifications.reduce((s: number, m: any) => s + Number(m.totalAdditionalAmount), 0);
@@ -451,12 +452,15 @@ class InvoiceService {
 
     yPos += 58;
     const footerY = doc.internal.pageSize.getHeight() - 26.03;
-    doc.setFillColor(220, 252, 231);
-    doc.roundedRect(20, yPos, pageWidth - 40, 20, 3, 3, "F");
-    doc.setFontSize(11);
-    doc.setTextColor(22, 163, 74);
-    doc.setFont("helvetica", "bold");
-    doc.text("PAYÉE", pageWidth / 2, yPos + 13, { align: "center" });
+    // Pas de badge « PAYÉE » pour le B2B : la facture est payée plus tard (facturation mensuelle).
+    if (!isB2b) {
+      doc.setFillColor(220, 252, 231);
+      doc.roundedRect(20, yPos, pageWidth - 40, 20, 3, 3, "F");
+      doc.setFontSize(11);
+      doc.setTextColor(22, 163, 74);
+      doc.setFont("helvetica", "bold");
+      doc.text("PAYÉE", pageWidth / 2, yPos + 13, { align: "center" });
+    }
 
     doc.setFontSize(8);
     doc.setTextColor(...textMuted);

@@ -413,12 +413,16 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     yPos += 58;
-    doc.setFillColor(220, 252, 231);
-    doc.roundedRect(20, yPos, pageWidth - 40, 20, 3, 3, "F");
-    doc.setFontSize(11);
-    doc.setTextColor(22, 163, 74);
-    doc.setFont("helvetica", "bold");
-    doc.text("PAYÉE", pageWidth / 2, yPos + 13, { align: "center" });
+    // Pas de badge « PAYÉE » pour le B2B : facturation mensuelle, payée plus tard.
+    const isB2b = intervention.b2b_partner_id != null || intervention.billing_type === "b2b";
+    if (!isB2b) {
+      doc.setFillColor(220, 252, 231);
+      doc.roundedRect(20, yPos, pageWidth - 40, 20, 3, 3, "F");
+      doc.setFontSize(11);
+      doc.setTextColor(22, 163, 74);
+      doc.setFont("helvetica", "bold");
+      doc.text("PAYÉE", pageWidth / 2, yPos + 13, { align: "center" });
+    }
 
     const footerY = doc.internal.pageSize.getHeight() - 26.03;
     doc.setFontSize(8);

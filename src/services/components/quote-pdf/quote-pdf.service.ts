@@ -6,6 +6,7 @@ import type { QuoteLine } from '@/services/interfaces/quotes.interface';
 import type { QuoteModification } from '@/services/interfaces/quote-modifications.interface';
 import { services } from '@/services/factory';
 import { resolveClientName } from '@/lib/clientName';
+import { loadPdfAssets, PDF_LOGO_WIDTH, PDF_LOGO_HEIGHT, PDF_CERTIFIE_WIDTH, PDF_CERTIFIE_HEIGHT } from '@/lib/pdfAssets';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -28,6 +29,8 @@ export interface QuotePDFData {
   vatRate: number;
   vatAmount: number;
   totalTTC: number;
+  /** Partenaire B2B « entreprise de construction » → devis en autoliquidation de TVA. */
+  constructionCompany: boolean;
   signatureData?: string | null;
   signatureAt?: string | null;
 }
@@ -112,13 +115,24 @@ class QuotePDFService {
       console.error('Error fetching service for VAT rate:', err);
     }
 
+    // B2B « entreprise de construction » → autoliquidation de TVA (art. 283-2 nonies du CGI).
+    let constructionCompany = false;
+    if (intervention.b2bPartnerId) {
+      try {
+        const partner = await services.b2b.getPartner(intervention.b2bPartnerId);
+        constructionCompany = partner.constructionCompany === true;
+      } catch (err) {
+        console.error('Error fetching B2B partner for VAT exemption:', err);
+      }
+    }
+
     const baseTotal = quoteLines.reduce((sum, line) => sum + line.calculatedPrice, 0);
     const additionalTotal = pendingModifications.reduce(
       (sum, mod) => sum + mod.totalAdditionalAmount,
       0
     );
     const totalHT = baseTotal + additionalTotal;
-    const vatAmount = Math.round(totalHT * (vatRate / 100) * 100) / 100;
+    const vatAmount = constructionCompany ? 0 : Math.round(totalHT * (vatRate / 100) * 100) / 100;
     const totalTTC = Math.round((totalHT + vatAmount) * 100) / 100;
 
     const quoteDate = new Date();
@@ -142,6 +156,7 @@ class QuotePDFService {
       vatRate,
       vatAmount,
       totalTTC,
+      constructionCompany,
       signatureData: intervention.quoteSignatureData,
       signatureAt: intervention.quoteSignedAt
     };
@@ -150,6 +165,7 @@ class QuotePDFService {
   async generateQuotePDF(data: QuotePDFData): Promise<jsPDF> {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const { logo, certifie } = await loadPdfAssets();
 
     const primaryColor: [number, number, number] = BRAND_GREEN;
     const textDark: [number, number, number] = [31, 41, 55];
@@ -161,15 +177,13 @@ class QuotePDFService {
     doc.setFillColor(...primaryColor);
     doc.rect(0, 0, pageWidth, 8, 'F');
 
-    doc.setFontSize(22);
-    doc.setTextColor(...primaryColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text(COMPANY_INFO.name, 20, yPos + 5);
+    // Logo (remplace le titre texte « Depan.Pro »)
+    doc.addImage(logo, 'PNG', 20, 13.33, PDF_LOGO_WIDTH, PDF_LOGO_HEIGHT);
 
     doc.setFontSize(10);
     doc.setTextColor(...textMuted);
     doc.setFont('helvetica', 'normal');
-    yPos += 13;
+    yPos = 36;
     doc.text(COMPANY_INFO.address, 20, yPos);
     yPos += 5;
     doc.text(COMPANY_INFO.city, 20, yPos);
@@ -199,13 +213,13 @@ class QuotePDFService {
     );
 
     // Separator
-    yPos = 70;
+    yPos = 72;
     doc.setDrawColor(...primaryColor);
     doc.setLineWidth(0.5);
     doc.line(20, yPos, pageWidth - 20, yPos);
 
     // Client Info Box
-    yPos = 75;
+    yPos = 77;
     const clientBoxHeight = data.isCompany ? 50 : 40;
     doc.setFillColor(240, 253, 244);
     doc.roundedRect(pageWidth - 95, yPos, 75, clientBoxHeight, 3, 3, 'F');
@@ -252,7 +266,7 @@ class QuotePDFService {
     doc.text(`Technicien: ${data.technicianName}`, 20, yPos + 40);
 
     // Quote Lines Table
-    yPos = 140;
+    yPos = 128;
 
     const tableData: (string | number)[][] = [];
 
@@ -311,48 +325,67 @@ class QuotePDFService {
     const totalsBoxX = pageWidth - 20 - totalsBoxWidth;
 
     doc.setFillColor(240, 253, 244);
-    doc.roundedRect(totalsBoxX, yPos, totalsBoxWidth, 45, 3, 3, 'F');
+    doc.roundedRect(totalsBoxX, yPos, totalsBoxWidth, data.constructionCompany ? 30 : 45, 3, 3, 'F');
 
-    doc.setFontSize(9);
-    doc.setTextColor(...textMuted);
-    doc.text('Total HT:', totalsBoxX + 5, yPos + 10);
-    doc.text(`${data.totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 10, { align: 'right' });
+    if (data.constructionCompany) {
+      // Autoliquidation de TVA (sous-traitance BTP) : pas de TVA, pas de « Total TTC ».
+      doc.setFontSize(12);
+      doc.setTextColor(...textDark);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total HT:', totalsBoxX + 5, yPos + 14);
+      doc.setTextColor(...primaryColor);
+      doc.text(`${data.totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 14, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...textMuted);
+      doc.text(
+        'TVA non applicable — autoliquidation par le preneur (art. 283-2 nonies du CGI).',
+        totalsBoxX,
+        yPos + 24,
+        { maxWidth: totalsBoxWidth },
+      );
+    } else {
+      doc.setFontSize(9);
+      doc.setTextColor(...textMuted);
+      doc.text('Total HT:', totalsBoxX + 5, yPos + 10);
+      doc.text(`${data.totalHT.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 10, { align: 'right' });
 
-    doc.text(`TVA (${data.vatRate}%):`, totalsBoxX + 5, yPos + 20);
-    doc.text(`${data.vatAmount.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 20, { align: 'right' });
+      doc.text(`TVA (${data.vatRate}%):`, totalsBoxX + 5, yPos + 20);
+      doc.text(`${data.vatAmount.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 20, { align: 'right' });
 
-    doc.setDrawColor(200, 200, 200);
-    doc.line(totalsBoxX + 5, yPos + 26, totalsBoxX + totalsBoxWidth - 5, yPos + 26);
+      doc.setDrawColor(200, 200, 200);
+      doc.line(totalsBoxX + 5, yPos + 26, totalsBoxX + totalsBoxWidth - 5, yPos + 26);
 
-    doc.setFontSize(12);
-    doc.setTextColor(...textDark);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total TTC:', totalsBoxX + 5, yPos + 38);
-    doc.setTextColor(...primaryColor);
-    doc.text(`${data.totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: 'right' });
+      doc.setFontSize(12);
+      doc.setTextColor(...textDark);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total TTC:', totalsBoxX + 5, yPos + 38);
+      doc.setTextColor(...primaryColor);
+      doc.text(`${data.totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: 'right' });
+    }
 
-    // Signature section
-    yPos += 55;
-    doc.setFontSize(10);
-    doc.setTextColor(...textDark);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Signature du client:', 20, yPos);
-
+    // Signature « certifiée » (la signature manuscrite n'est plus affichée)
+    yPos += 48;
     if (data.signatureData) {
       try {
-        doc.addImage(data.signatureData, 'PNG', 20, yPos + 5, 60, 30);
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.setTextColor(...textMuted);
-        if(data.signatureAt){
-            doc.text(
-              `Signé le ${format(data.signatureAt, 'dd/MM/yyyy à HH:mm', { locale: fr })}`,
-              20,
-              yPos + 40
-            );
-        }
+        doc.setFontSize(10);
+        doc.setTextColor(...textDark);
+        const signedAt = data.signatureAt
+          ? ` le ${format(new Date(data.signatureAt), 'dd/MM/yyyy HH:mm', { locale: fr })}`
+          : '';
+        const signText = `Signé électroniquement${signedAt}`;
+        doc.text(signText, 20, yPos);
+        doc.addImage(
+          certifie,
+          'JPEG',
+          20 + doc.getTextWidth(signText) / 2 - PDF_CERTIFIE_WIDTH / 2,
+          yPos + 6,
+          PDF_CERTIFIE_WIDTH,
+          PDF_CERTIFIE_HEIGHT,
+        );
       } catch (err) {
-        console.error('Error adding signature to PDF:', err);
+        console.error('Error adding certified badge to PDF:', err);
       }
     } else {
       doc.setDrawColor(200, 200, 200);
@@ -365,7 +398,7 @@ class QuotePDFService {
     }
 
     // Validity notice
-    yPos += 50;
+    yPos += 56;
     doc.setFontSize(8);
     doc.setTextColor(...textMuted);
     doc.setFont('helvetica', 'normal');
@@ -373,7 +406,7 @@ class QuotePDFService {
     doc.text('Bon pour accord et signature du client.', 20, yPos + 5);
 
     // Footer
-    yPos = doc.internal.pageSize.getHeight() - 20;
+    yPos = doc.internal.pageSize.getHeight() - 16.03;
     doc.text(
       `${COMPANY_INFO.name} - SIREN ${COMPANY_INFO.siren} - N° TVA ${COMPANY_INFO.tva}`,
       pageWidth / 2,
@@ -384,51 +417,10 @@ class QuotePDFService {
     return doc;
   }
 
-  async generateAndDownloadQuote(intervention: Intervention, signatureData?: string | null): Promise<void> {
+  async generateAndDownloadQuote(intervention: Intervention): Promise<void> {
     const data = await this.prepareQuotePDFData(intervention.id);
-    if (signatureData) data.signatureData = signatureData;
     const pdf = await this.generateQuotePDF(data);
     pdf.save(`devis-${data.quoteNumber}.pdf`);
-  }
-  async generateQuoteBase64(intervention: Intervention, signatureData?: string | null): Promise<{ base64: string; fileName: string }> {
-    const data = await this.prepareQuotePDFData(intervention.id);
-    if (signatureData) data.signatureData = signatureData;
-    const pdf = await this.generateQuotePDF(data);
-
-    const base64 = pdf.output('datauristring').split(',')[1];
-    const fileName = `devis-${data.quoteNumber}.pdf`;
-
-    return { base64, fileName };
-  }
-
-  /**
-   * Generate quote PDF and archive it to storage.
-   * Path: {interventionId}/quotes/devis-{quoteNumber}.pdf
-   * Updates interventions.quote_pdf_url in DB.
-   */
-  async generateAndArchiveQuote(intervention: Intervention, signatureData?: string | null): Promise<string> {
-    const { storageService, buildInterventionPath } = await import('@/services/components/utils/storage/storage.service');
-
-    const data = await this.prepareQuotePDFData(intervention.id);
-    if (signatureData) data.signatureData = signatureData;
-    const pdf = await this.generateQuotePDF(data);
-    const blob = pdf.output('blob');
-
-    const fileName = `devis-${data.quoteNumber}.pdf`;
-    const storagePath = buildInterventionPath(intervention.id, 'quotes', fileName);
-
-    const file = new File([blob], fileName, { type: 'application/pdf' });
-    const publicUrl = await storageService.uploadFileToPath('interventions', storagePath, file);
-
-    // Update DB with URL
-    const { supabase } = await import('@/integrations/supabase/client');
-    await supabase
-      .from('interventions')
-      .update({ quote_pdf_url: publicUrl })
-      .eq('id', intervention.id);
-
-    console.log('[QuotePDF] Archived quote to:', publicUrl);
-    return publicUrl;
   }
 }
 
