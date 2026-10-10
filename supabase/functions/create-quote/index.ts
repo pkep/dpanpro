@@ -367,8 +367,8 @@ serve(async (req: Request): Promise<Response> => {
       doc.text(`${totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: "right" });
     }
 
-    // Signature « certifiée » (la signature manuscrite n'est plus affichée)
-    yPos += 48;
+    // Signature « certifiée » — au même niveau que le bloc totaux (colonne de gauche)
+    const sigTop = yPos;
     const signatureData: string | null = intervention.quote_signature_data || null;
     if (signatureData) {
       try {
@@ -378,20 +378,14 @@ serve(async (req: Request): Promise<Response> => {
         const at = intervention.quote_signed_at ? new Date(intervention.quote_signed_at) : null;
         const label = at ? ` le ${String(at.getDate()).padStart(2, "0")}/${String(at.getMonth() + 1).padStart(2, "0")}/${at.getFullYear()} ${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}` : "";
         const signText = `Signé électroniquement${label}`;
-        doc.text(signText, 20, yPos);
+        doc.text(signText, 20, sigTop + 10);
         const signCenterX = 20 + doc.getTextWidth(signText) / 2;
-        doc.addImage(
-          CERTIFIE_DATA_URI,
-          "JPEG",
-          signCenterX - CERTIFIE_WIDTH / 2,
-          yPos + 6,
-          CERTIFIE_WIDTH,
-          CERTIFIE_HEIGHT,
-        );
+        const badgeX = Math.min(Math.max(signCenterX - CERTIFIE_WIDTH / 2, 20), totalsBoxX - CERTIFIE_WIDTH - 2);
+        doc.addImage(CERTIFIE_DATA_URI, "JPEG", badgeX, sigTop + 16, CERTIFIE_WIDTH, CERTIFIE_HEIGHT);
         if (intervention.quote_signature_id) {
           doc.setFontSize(8);
           doc.setTextColor(...textMuted);
-          doc.text(`Réf. signature : ${intervention.quote_signature_id}`, signCenterX, yPos + 6 + CERTIFIE_HEIGHT + 4, { align: "center" });
+          doc.text(`Réf. signature : ${intervention.quote_signature_id}`, badgeX + CERTIFIE_WIDTH / 2, sigTop + 16 + CERTIFIE_HEIGHT + 4, { align: "center" });
         }
       } catch (err) {
         console.error("Error adding certified badge to PDF:", err);
@@ -399,14 +393,15 @@ serve(async (req: Request): Promise<Response> => {
     } else {
       doc.setDrawColor(200, 200, 200);
       doc.setFillColor(250, 250, 250);
-      doc.roundedRect(20, yPos + 5, 80, 35, 2, 2, "FD");
+      doc.roundedRect(20, sigTop, 80, 35, 2, 2, "FD");
       doc.setFont("helvetica", "italic");
       doc.setFontSize(9);
       doc.setTextColor(...textMuted);
-      doc.text("En attente de signature", 60, yPos + 25, { align: "center" });
+      doc.text("En attente de signature", 60, sigTop + 20, { align: "center" });
     }
 
-    yPos += 56;
+    // Sous le bloc le plus bas (signature vs totaux)
+    yPos = sigTop + 16 + CERTIFIE_HEIGHT + 14;
     doc.setFontSize(8);
     doc.setTextColor(...textMuted);
     doc.setFont("helvetica", "normal");

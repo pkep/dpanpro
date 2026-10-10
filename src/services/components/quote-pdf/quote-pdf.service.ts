@@ -367,8 +367,8 @@ class QuotePDFService {
       doc.text(`${data.totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: 'right' });
     }
 
-    // Signature « certifiée » (la signature manuscrite n'est plus affichée)
-    yPos += 48;
+    // Signature « certifiée » — au même niveau que le bloc totaux (colonne de gauche)
+    const sigTop = yPos;
     if (data.signatureData) {
       try {
         doc.setFont('helvetica', 'normal');
@@ -378,23 +378,21 @@ class QuotePDFService {
           ? ` le ${format(new Date(data.signatureAt), 'dd/MM/yyyy HH:mm', { locale: fr })}`
           : '';
         const signText = `Signé électroniquement${signedAt}`;
-        doc.text(signText, 20, yPos);
+        doc.text(signText, 20, sigTop + 10);
         const signCenterX = 20 + doc.getTextWidth(signText) / 2;
-        doc.addImage(
-          certifie,
-          'JPEG',
-          signCenterX - PDF_CERTIFIE_WIDTH / 2,
-          yPos + 6,
-          PDF_CERTIFIE_WIDTH,
-          PDF_CERTIFIE_HEIGHT,
+        // Le badge reste dans la colonne de gauche (ne pas empiéter sur les totaux).
+        const badgeX = Math.min(
+          Math.max(signCenterX - PDF_CERTIFIE_WIDTH / 2, 20),
+          totalsBoxX - PDF_CERTIFIE_WIDTH - 2,
         );
+        doc.addImage(certifie, 'JPEG', badgeX, sigTop + 16, PDF_CERTIFIE_WIDTH, PDF_CERTIFIE_HEIGHT);
         if (data.signatureId) {
           doc.setFontSize(8);
           doc.setTextColor(...textMuted);
           doc.text(
             `Réf. signature : ${data.signatureId}`,
-            signCenterX,
-            yPos + 6 + PDF_CERTIFIE_HEIGHT + 4,
+            badgeX + PDF_CERTIFIE_WIDTH / 2,
+            sigTop + 16 + PDF_CERTIFIE_HEIGHT + 4,
             { align: 'center' },
           );
         }
@@ -404,15 +402,15 @@ class QuotePDFService {
     } else {
       doc.setDrawColor(200, 200, 200);
       doc.setFillColor(250, 250, 250);
-      doc.roundedRect(20, yPos + 5, 80, 35, 2, 2, 'FD');
+      doc.roundedRect(20, sigTop, 80, 35, 2, 2, 'FD');
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(9);
       doc.setTextColor(...textMuted);
-      doc.text('En attente de signature', 60, yPos + 25, { align: 'center' });
+      doc.text('En attente de signature', 60, sigTop + 20, { align: 'center' });
     }
 
-    // Validity notice
-    yPos += 56;
+    // Validity notice — sous le bloc le plus bas (signature vs totaux)
+    yPos = sigTop + 16 + PDF_CERTIFIE_HEIGHT + 14;
     doc.setFontSize(8);
     doc.setTextColor(...textMuted);
     doc.setFont('helvetica', 'normal');

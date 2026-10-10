@@ -418,8 +418,9 @@ class InvoiceService {
       doc.text(`${totalTTC.toFixed(2)} €`, totalsBoxX + totalsBoxWidth - 5, yPos + 38, { align: "right" });
     }
 
-    // Signature « certifiée » (la signature manuscrite n'est plus affichée)
+    // Signature « certifiée » — au même niveau que le bloc totaux (colonne de gauche)
     const signatureData: string | null = data.intervention.invoiceSignatureData || null;
+    const sigTop = yPos;
     if (signatureData) {
       try {
         doc.setFont("helvetica", "normal");
@@ -428,23 +429,20 @@ class InvoiceService {
         const at = data.intervention.invoiceSignedAt ? new Date(data.intervention.invoiceSignedAt) : null;
         const label = at ? ` le ${format(at, 'dd/MM/yyyy HH:mm', { locale: fr })}` : '';
         const signText = `Signé électroniquement${label}`;
-        doc.text(signText, 20, yPos);
+        doc.text(signText, 20, sigTop + 10);
         const signCenterX = 20 + doc.getTextWidth(signText) / 2;
-        doc.addImage(
-          certifie,
-          'JPEG',
-          signCenterX - PDF_CERTIFIE_WIDTH / 2,
-          yPos + 6,
-          PDF_CERTIFIE_WIDTH,
-          PDF_CERTIFIE_HEIGHT,
+        const badgeX = Math.min(
+          Math.max(signCenterX - PDF_CERTIFIE_WIDTH / 2, 20),
+          totalsBoxX - PDF_CERTIFIE_WIDTH - 2,
         );
+        doc.addImage(certifie, 'JPEG', badgeX, sigTop + 16, PDF_CERTIFIE_WIDTH, PDF_CERTIFIE_HEIGHT);
         if (data.intervention.invoiceSignatureId) {
           doc.setFontSize(8);
           doc.setTextColor(...textMuted);
           doc.text(
             `Réf. signature : ${data.intervention.invoiceSignatureId}`,
-            signCenterX,
-            yPos + 6 + PDF_CERTIFIE_HEIGHT + 4,
+            badgeX + PDF_CERTIFIE_WIDTH / 2,
+            sigTop + 16 + PDF_CERTIFIE_HEIGHT + 4,
             { align: 'center' },
           );
         }
@@ -454,14 +452,15 @@ class InvoiceService {
     } else {
       doc.setDrawColor(200, 200, 200);
       doc.setFillColor(250, 250, 250);
-      doc.roundedRect(20, yPos + 5, 80, 35, 2, 2, "FD");
+      doc.roundedRect(20, sigTop, 80, 35, 2, 2, "FD");
       doc.setFont("helvetica", "italic");
       doc.setFontSize(9);
       doc.setTextColor(...textMuted);
-      doc.text("En attente de signature", 60, yPos + 25, { align: "center" });
+      doc.text("En attente de signature", 60, sigTop + 20, { align: "center" });
     }
 
-    yPos += 58;
+    // Sous le bloc le plus bas (signature vs totaux)
+    yPos = sigTop + 16 + PDF_CERTIFIE_HEIGHT + 14;
     const footerY = doc.internal.pageSize.getHeight() - 26.03;
     // Pas de badge « PAYÉE » pour le B2B : la facture est payée plus tard (facturation mensuelle).
     if (!isB2b) {
