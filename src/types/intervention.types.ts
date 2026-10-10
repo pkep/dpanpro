@@ -55,6 +55,7 @@ export interface Intervention {
   clientPhone?: string | null;
   quoteSignedAt?: string | null;
   quoteSignatureData?: string | null;
+  quoteSignatureId?: string | null;
   quotePdfUrl?: string | null;
   questionnaireResultatId?: string | null;
   questionnaireAnswers : string | null;
@@ -62,6 +63,7 @@ export interface Intervention {
   prixMax : number | null;
   invoiceSignedAt?: string | null;
   invoiceSignatureData?: string | null;
+  invoiceSignatureId?: string | null;
 
   // ── Escalade (« climb ») ────────────────────────────────────────────────
   parentInterventionId?: string | null;
@@ -75,6 +77,7 @@ export interface Intervention {
   escalationCompletedAt?: string | null;
   escalationConsentSignatureData?: string | null;
   escalationConsentSignedAt?: string | null;
+  escalationConsentSignatureId?: string | null;
 
   // ── B2B ─────────────────────────────────────────────────────────────────
   billingType?: 'client' | 'b2b';
@@ -123,6 +126,7 @@ export interface InterventionQuestionnaireData {
   questionnaireResultName?: string;
   prixMin?: number | null;
   prixMax?: number | null;
+  affiliateCode?: string;
 }
 
 /**
@@ -250,6 +254,7 @@ export interface InterventionTechDashboardView {
 export interface InterventionTechnicianView {
   id: string;
   title: string;
+  description?: string | null;
   category: InterventionCategory;
   status: InterventionStatus;
   city: string | null;

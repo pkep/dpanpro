@@ -97,6 +97,18 @@ export interface IInterventionsService {
   getInterventionsForAdmin(filters: {
     status?: InterventionStatus;
     category?: InterventionCategory;
+    /** Type de facturation : client (particulier/société) ou b2b. */
+    type?: 'client' | 'b2b';
+    /** Niveau d'urgence (dérivé de la priorité + planification). */
+    urgency?: 'standard' | 'high' | 'urgent' | 'scheduled';
+    /** Technicien assigné (UUID) ou `'unassigned'`. */
+    technicianId?: string;
+    /** Plage de montant (estimé, € HT). */
+    amountMin?: number;
+    amountMax?: number;
+    /** Plage de date de création (ISO). */
+    createdFrom?: string;
+    createdTo?: string;
     search?: string;
     page?: number;
     size?: number;
@@ -135,30 +147,6 @@ export interface IInterventionsService {
   // ✅ AUTRES MÉTHODES EXISTANTES
   // ============================================================
 
-  getInterventions(filters: {
-    status?: InterventionStatus | InterventionStatus[];
-    category?: InterventionCategory;
-    clientId?: string;
-    technicianId?: string;
-    isActive?: boolean;
-    unassignedOnly?: boolean;
-    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
-    orderDirection?: ('asc' | 'desc')[];
-    page: number;
-    size?: number;
-  }): Promise<PaginatedResponse<Intervention>>;
-  getInterventions(filters?: {
-    status?: InterventionStatus | InterventionStatus[];
-    category?: InterventionCategory;
-    clientId?: string;
-    technicianId?: string;
-    isActive?: boolean;
-    unassignedOnly?: boolean;
-    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
-    orderDirection?: ('asc' | 'desc')[];
-    page?: undefined;
-    size?: number;
-  }): Promise<Intervention[]>;
   getInterventions(filters?: {
     status?: InterventionStatus | InterventionStatus[];
     category?: InterventionCategory;
@@ -170,7 +158,7 @@ export interface IInterventionsService {
     orderDirection?: ('asc' | 'desc')[];
     page?: number;
     size?: number;
-  }): Promise<Intervention[] | PaginatedResponse<Intervention>>;
+  }): Promise<Intervention[]>;
   getIntervention(id: string): Promise<Intervention | null>;
   createIntervention(
     clientId: string | null,
@@ -207,8 +195,9 @@ export interface IInterventionsService {
    * Update the signature for an intervention (quote signed)
    * @param interventionId - The intervention ID
    * @param signatureData - Base64 signature data
+   * @param signatureId - Réf. de signature (SIG-<uuid>)
    */
-  updateQuoteInterventionSignature(interventionId: string, signatureData: string): Promise<void>;
+  updateQuoteInterventionSignature(interventionId: string, signatureData: string, signatureId: string): Promise<void>;
 
   /**
      * Update the final price for an intervention (after finalization)
@@ -222,8 +211,9 @@ export interface IInterventionsService {
    * @param interventionId - The intervention ID
    * @param finalPrice - The final amount charged (TTC)
    * @param signatureData - Base64 signature data
+   * @param signatureId - Réf. de signature (SIG-<uuid>)
    */
-  finalized(interventionId: string, finalPrice: number, signatureData: string): Promise<void>;
+  finalized(interventionId: string, finalPrice: number, signatureData: string, signatureId: string): Promise<void>;
 
   /**
    * Schedule an intervention with a date, time and optionally assign a technician

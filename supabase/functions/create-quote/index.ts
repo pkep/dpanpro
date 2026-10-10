@@ -379,14 +379,20 @@ serve(async (req: Request): Promise<Response> => {
         const label = at ? ` le ${String(at.getDate()).padStart(2, "0")}/${String(at.getMonth() + 1).padStart(2, "0")}/${at.getFullYear()} ${String(at.getHours()).padStart(2, "0")}:${String(at.getMinutes()).padStart(2, "0")}` : "";
         const signText = `Signé électroniquement${label}`;
         doc.text(signText, 20, yPos);
+        const signCenterX = 20 + doc.getTextWidth(signText) / 2;
         doc.addImage(
           CERTIFIE_DATA_URI,
           "JPEG",
-          20 + doc.getTextWidth(signText) / 2 - CERTIFIE_WIDTH / 2,
+          signCenterX - CERTIFIE_WIDTH / 2,
           yPos + 6,
           CERTIFIE_WIDTH,
           CERTIFIE_HEIGHT,
         );
+        if (intervention.quote_signature_id) {
+          doc.setFontSize(8);
+          doc.setTextColor(...textMuted);
+          doc.text(`Réf. signature : ${intervention.quote_signature_id}`, signCenterX, yPos + 6 + CERTIFIE_HEIGHT + 4, { align: "center" });
+        }
       } catch (err) {
         console.error("Error adding certified badge to PDF:", err);
       }

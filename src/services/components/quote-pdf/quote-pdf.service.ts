@@ -33,6 +33,8 @@ export interface QuotePDFData {
   constructionCompany: boolean;
   signatureData?: string | null;
   signatureAt?: string | null;
+  /** Réf. de signature (SIG-<uuid>). */
+  signatureId?: string | null;
 }
 
 const COMPANY_INFO = {
@@ -158,7 +160,8 @@ class QuotePDFService {
       totalTTC,
       constructionCompany,
       signatureData: intervention.quoteSignatureData,
-      signatureAt: intervention.quoteSignedAt
+      signatureAt: intervention.quoteSignedAt,
+      signatureId: intervention.quoteSignatureId,
     };
   }
 
@@ -376,14 +379,25 @@ class QuotePDFService {
           : '';
         const signText = `Signé électroniquement${signedAt}`;
         doc.text(signText, 20, yPos);
+        const signCenterX = 20 + doc.getTextWidth(signText) / 2;
         doc.addImage(
           certifie,
           'JPEG',
-          20 + doc.getTextWidth(signText) / 2 - PDF_CERTIFIE_WIDTH / 2,
+          signCenterX - PDF_CERTIFIE_WIDTH / 2,
           yPos + 6,
           PDF_CERTIFIE_WIDTH,
           PDF_CERTIFIE_HEIGHT,
         );
+        if (data.signatureId) {
+          doc.setFontSize(8);
+          doc.setTextColor(...textMuted);
+          doc.text(
+            `Réf. signature : ${data.signatureId}`,
+            signCenterX,
+            yPos + 6 + PDF_CERTIFIE_HEIGHT + 4,
+            { align: 'center' },
+          );
+        }
       } catch (err) {
         console.error('Error adding certified badge to PDF:', err);
       }

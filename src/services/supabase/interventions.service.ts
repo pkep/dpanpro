@@ -987,12 +987,14 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
       clientPhone: data.client_phone,
       quoteSignedAt: (data as any).quote_signed_at,
       quoteSignatureData: (data as any).quote_signature_data,
+      quoteSignatureId: data.quote_signature_id,
       questionnaireResultatId: data.questionnaire_resultat_id,
       questionnaireAnswers: data.questionnaire_answers,
       prixMin: data.prix_min,
       prixMax: data.prix_max,
       invoiceSignatureData: data.invoice_signature_data,
       invoiceSignedAt: data.invoice_signed_at,
+      invoiceSignatureId: data.invoice_signature_id,
       // Escalade (V38)
       parentInterventionId: data.parent_id_intervention,
       escalationType: data.escalation_type,
@@ -1005,6 +1007,7 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
       escalationCompletedAt: data.escalation_completed_at,
       escalationConsentSignatureData: data.escalation_consent_signature_data,
       escalationConsentSignedAt: data.escalation_consent_signed_at,
+      escalationConsentSignatureId: data.escalation_consent_signature_id,
       // B2B (V39)
       billingType: data.billing_type,
       b2bPartnerId: data.b2b_partner_id,

@@ -429,14 +429,25 @@ class InvoiceService {
         const label = at ? ` le ${format(at, 'dd/MM/yyyy HH:mm', { locale: fr })}` : '';
         const signText = `Signé électroniquement${label}`;
         doc.text(signText, 20, yPos);
+        const signCenterX = 20 + doc.getTextWidth(signText) / 2;
         doc.addImage(
           certifie,
           'JPEG',
-          20 + doc.getTextWidth(signText) / 2 - PDF_CERTIFIE_WIDTH / 2,
+          signCenterX - PDF_CERTIFIE_WIDTH / 2,
           yPos + 6,
           PDF_CERTIFIE_WIDTH,
           PDF_CERTIFIE_HEIGHT,
         );
+        if (data.intervention.invoiceSignatureId) {
+          doc.setFontSize(8);
+          doc.setTextColor(...textMuted);
+          doc.text(
+            `Réf. signature : ${data.intervention.invoiceSignatureId}`,
+            signCenterX,
+            yPos + 6 + PDF_CERTIFIE_HEIGHT + 4,
+            { align: 'center' },
+          );
+        }
       } catch (err) {
         console.error("Error adding certified badge to PDF:", err);
       }
