@@ -418,6 +418,7 @@ export type Database = {
           address: string | null
           city: string | null
           company_name: string
+          construction_company: boolean
           contact_email: string | null
           contact_firstname: string | null
           contact_lastname: string | null
@@ -435,6 +436,7 @@ export type Database = {
           address?: string | null
           city?: string | null
           company_name: string
+          construction_company?: boolean
           contact_email?: string | null
           contact_firstname?: string | null
           contact_lastname?: string | null
@@ -452,6 +454,7 @@ export type Database = {
           address?: string | null
           city?: string | null
           company_name?: string
+          construction_company?: boolean
           contact_email?: string | null
           contact_firstname?: string | null
           contact_lastname?: string | null
@@ -1216,6 +1219,7 @@ export type Database = {
           b2b_invoice_id: string | null
           b2b_order_reference: string | null
           b2b_partner_id: string | null
+          b2b_price_cap: number | null
           billing_mode: string | null
           billing_type: string
           category: string
@@ -1232,6 +1236,7 @@ export type Database = {
           description: string | null
           escalation_completed_at: string | null
           escalation_consent_signature_data: string | null
+          escalation_consent_signature_id: string | null
           escalation_consent_signed_at: string | null
           escalation_notes: string | null
           escalation_photos: Json | null
@@ -1245,6 +1250,7 @@ export type Database = {
           intervention_duration_seconds: number | null
           invoice_pdf_url: string | null
           invoice_signature_data: string | null
+          invoice_signature_id: string | null
           invoice_signed_at: string | null
           is_active: boolean
           is_processing: boolean
@@ -1262,6 +1268,7 @@ export type Database = {
           questionnaire_resultat_id: string | null
           quote_pdf_url: string | null
           quote_signature_data: string | null
+          quote_signature_id: string | null
           quote_signed_at: string | null
           response_time_seconds: number | null
           scheduled_at: string | null
@@ -1287,6 +1294,7 @@ export type Database = {
           b2b_invoice_id?: string | null
           b2b_order_reference?: string | null
           b2b_partner_id?: string | null
+          b2b_price_cap?: number | null
           billing_mode?: string | null
           billing_type?: string
           category: string
@@ -1303,6 +1311,7 @@ export type Database = {
           description?: string | null
           escalation_completed_at?: string | null
           escalation_consent_signature_data?: string | null
+          escalation_consent_signature_id?: string | null
           escalation_consent_signed_at?: string | null
           escalation_notes?: string | null
           escalation_photos?: Json | null
@@ -1316,6 +1325,7 @@ export type Database = {
           intervention_duration_seconds?: number | null
           invoice_pdf_url?: string | null
           invoice_signature_data?: string | null
+          invoice_signature_id?: string | null
           invoice_signed_at?: string | null
           is_active?: boolean
           is_processing?: boolean
@@ -1333,6 +1343,7 @@ export type Database = {
           questionnaire_resultat_id?: string | null
           quote_pdf_url?: string | null
           quote_signature_data?: string | null
+          quote_signature_id?: string | null
           quote_signed_at?: string | null
           response_time_seconds?: number | null
           scheduled_at?: string | null
@@ -1358,6 +1369,7 @@ export type Database = {
           b2b_invoice_id?: string | null
           b2b_order_reference?: string | null
           b2b_partner_id?: string | null
+          b2b_price_cap?: number | null
           billing_mode?: string | null
           billing_type?: string
           category?: string
@@ -1374,6 +1386,7 @@ export type Database = {
           description?: string | null
           escalation_completed_at?: string | null
           escalation_consent_signature_data?: string | null
+          escalation_consent_signature_id?: string | null
           escalation_consent_signed_at?: string | null
           escalation_notes?: string | null
           escalation_photos?: Json | null
@@ -1387,6 +1400,7 @@ export type Database = {
           intervention_duration_seconds?: number | null
           invoice_pdf_url?: string | null
           invoice_signature_data?: string | null
+          invoice_signature_id?: string | null
           invoice_signed_at?: string | null
           is_active?: boolean
           is_processing?: boolean
@@ -1404,6 +1418,7 @@ export type Database = {
           questionnaire_resultat_id?: string | null
           quote_pdf_url?: string | null
           quote_signature_data?: string | null
+          quote_signature_id?: string | null
           quote_signed_at?: string | null
           response_time_seconds?: number | null
           scheduled_at?: string | null
@@ -2305,6 +2320,7 @@ export type Database = {
           client_responded_at: string | null
           client_signature_at: string | null
           client_signature_data: string | null
+          client_signature_id: string | null
           created_at: string
           created_by: string
           decline_reason: string | null
@@ -2321,6 +2337,7 @@ export type Database = {
           client_responded_at?: string | null
           client_signature_at?: string | null
           client_signature_data?: string | null
+          client_signature_id?: string | null
           created_at?: string
           created_by: string
           decline_reason?: string | null
@@ -2337,6 +2354,7 @@ export type Database = {
           client_responded_at?: string | null
           client_signature_at?: string | null
           client_signature_data?: string | null
+          client_signature_id?: string | null
           created_at?: string
           created_by?: string
           decline_reason?: string | null
@@ -3079,6 +3097,26 @@ export type Database = {
           to: "partner_applications"
           isOneToOne: true
           isSetofReturn: false
+        }
+      }
+      replace_intervention_quotes: {
+        Args: { p_intervention_id: string; p_lines: Json }
+        Returns: {
+          base_price: number
+          calculated_price: number
+          created_at: string
+          display_order: number
+          id: string
+          intervention_id: string
+          label: string
+          line_type: string
+          multiplier: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "intervention_quotes"
+          isOneToOne: false
+          isSetofReturn: true
         }
       }
       technician_status_counts: { Args: never; Returns: Json }
