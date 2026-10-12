@@ -1,3 +1,4 @@
+import { supabase } from '@/integrations/supabase/client';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Intervention } from '@/types/intervention.types';
@@ -523,6 +524,60 @@ class InvoiceService {
     const fileName = `facture-${data.invoiceNumber}.pdf`;
     
     return { base64, fileName };
+  }
+  /**
+   * Send invoice by email
+   */
+  async sendInvoiceByEmail(intervention: Intervention): Promise<boolean> {
+    try {
+      const { base64, fileName } = await this.generateInvoiceBase64(intervention);
+      
+      const { data, error } = await supabase.functions.invoke('send-invoice-email', {
+        body: {
+          interventionId: intervention.id,
+          invoiceBase64: base64,
+          invoiceFileName: fileName,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending invoice email:', error);
+        return false;
+      }
+
+      return data?.success === true;
+    } catch (err) {
+      console.error('Error sending invoice email:', err);
+      return false;
+    }
+  }
+
+  /**
+   * Generate invoice PDF and archive it to storage.
+   * Path: {interventionId}/invoices/facture-{invoiceNumber}.pdf
+   * Updates interventions.invoice_pdf_url in DB.
+   */
+  async generateAndArchiveInvoice(intervention: Intervention): Promise<string> {
+    const { storageService, buildInterventionPath } = await import('@/services/components/utils/storage/storage.service');
+
+    const data = await this.prepareInvoiceData(intervention.id);
+    const pdf = await this.generateInvoicePDF(data);
+    const blob = pdf.output('blob');
+
+    const fileName = `facture-${data.invoiceNumber}.pdf`;
+    const storagePath = buildInterventionPath(intervention.id, 'invoices', fileName);
+
+    const file = new File([blob], fileName, { type: 'application/pdf' });
+    const publicUrl = await storageService.uploadFileToPath('interventions', storagePath, file);
+
+    // Update DB with URL
+    await supabase
+      .from('interventions')
+      .update({ invoice_pdf_url: publicUrl } as any)
+      .eq('id', intervention.id);
+
+    console.log('[Invoice] Archived invoice to:', publicUrl);
+    return publicUrl;
   }
 }
 
