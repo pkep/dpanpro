@@ -15,7 +15,7 @@ interface WelcomeEmailRequest {
   email: string;
   firstName: string;
   lastName: string;
-  role: "admin" | "manager";
+  role: "admin" | "manager" | "b2b";
   tempPassword: string;
   loginUrl: string;
 }
@@ -35,7 +35,11 @@ serve(async (req) => {
       });
     }
 
-    const roleLabel = role === "admin" ? "Administrateur" : "Manager";
+    const roleLabel = role === "admin"
+      ? "Administrateur"
+      : role === "b2b"
+        ? "Partenaire B2B"
+        : "Manager";
 
     const emailResponse = await resend.emails.send({
       from: `Depan.Pro <${fromEmail}>`,

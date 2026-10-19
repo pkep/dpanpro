@@ -1,8 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
 import type {
   IB2bService, B2bPartner, B2bPartnerInput,
-  B2bInvoice, B2bInvoiceLine,
+  B2bInvoice, B2bInvoiceLine, B2bPortalIntervention, B2bPortalFilters,
+  B2bInterventionInput, B2bAccessCredentials,
 } from '@/services/interfaces/b2b.interface';
+import { geocodingService } from '@/services/components/geocoding/geocoding.service';
+import { recordInterventionStatusChange } from '@/services/supabase/intervention-history-status.service';
 
 // Tables absentes des types Supabase générés tant que la migration V39 n'est pas régénérée.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,6 +23,7 @@ const mapPartner = (r: Record<string, unknown>): B2bPartner => ({
   contactFirstname: (r.contact_firstname as string) ?? null,
   contactPhone: (r.contact_phone as string) ?? null,
   contactEmail: (r.contact_email as string) ?? null,
+  userId: (r.user_id as string) ?? null,
   isActive: r.is_active !== false,
   constructionCompany: r.construction_company === true,
   createdAt: (r.created_at as string) ?? undefined,
@@ -183,6 +187,174 @@ class SupabaseB2bService implements IB2bService {
     const ids = ((lines || []) as Record<string, unknown>[]).map((l) => l.intervention_id).filter(Boolean);
     if (ids.length) await db.from('interventions').update({ b2b_invoice_id: null }).in('id', ids);
     return this.setStatus(id, 'cancelled');
+  }
+
+  // ── Portail partenaire ─────────────────────────────────────────────────────
+
+  async getMyPartner(userId: string): Promise<B2bPartner | null> {
+    const { data, error } = await db
+      .from('b2b_partners')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapPartner(data) : null;
+  }
+
+  async getMyInterventions(userId: string, filters?: B2bPortalFilters): Promise<B2bPortalIntervention[]> {
+    const partner = await this.getMyPartner(userId);
+    if (!partner) return [];
+
+    let query = db
+      .from('interventions')
+      .select('*')
+      .eq('b2b_partner_id', partner.id)
+      .order('created_at', { ascending: false });
+    if (filters?.status) query = query.eq('status', filters.status);
+    if (filters?.from) query = query.gte('created_at', filters.from);
+    if (filters?.to) query = query.lte('created_at', filters.to);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const invoices = await this.getMyInvoices(userId);
+    const invoicesById = new Map(invoices.map((i) => [i.id, i]));
+    const q = (filters?.search || '').trim().toLowerCase();
+
+    return ((data || []) as Record<string, unknown>[])
+      .map((row) => {
+        const invoice = row.b2b_invoice_id ? invoicesById.get(String(row.b2b_invoice_id)) : null;
+        return {
+          id: String(row.id),
+          createdAt: String(row.created_at),
+          completedAt: (row.completed_at as string) ?? null,
+          trackingCode: (row.tracking_code as string) ?? null,
+          category: String(row.category ?? ''),
+          status: String(row.status ?? ''),
+          title: String(row.title ?? ''),
+          description: (row.description as string) ?? null,
+          address: String(row.address ?? ''),
+          city: String(row.city ?? ''),
+          postalCode: String(row.postal_code ?? ''),
+          estimatedPrice: (row.estimated_price as number) ?? null,
+          finalPrice: (row.final_price as number) ?? null,
+          quotePdfUrl: (row.quote_pdf_url as string) ?? null,
+          invoicePdfUrl: (row.invoice_pdf_url as string) ?? null,
+          b2bInvoiceId: (row.b2b_invoice_id as string) ?? null,
+          b2bInvoiceNumber: invoice?.number ?? null,
+          b2bInvoicePdfUrl: invoice?.pdfUrl ?? null,
+          clientFirstName: (row.client_first_name as string) ?? null,
+          clientLastName: (row.client_last_name as string) ?? null,
+          b2bOrderReference: (row.b2b_order_reference as string) ?? null,
+        } satisfies B2bPortalIntervention;
+      })
+      .filter((i) => !q
+        || i.title.toLowerCase().includes(q)
+        || (i.trackingCode || '').toLowerCase().includes(q)
+        || i.address.toLowerCase().includes(q)
+        || i.city.toLowerCase().includes(q));
+  }
+
+  async getMyInvoices(userId: string): Promise<B2bInvoice[]> {
+    const partner = await this.getMyPartner(userId);
+    if (!partner) return [];
+    return this.getInvoices(partner.id);
+  }
+
+  async createMyIntervention(userId: string, input: B2bInterventionInput): Promise<B2bPortalIntervention> {
+    const partner = await this.getMyPartner(userId);
+    if (!partner) throw new Error('Aucun partenaire B2B lié à ce compte');
+
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+    try {
+      const geo = await geocodingService.geocodeAddress(input.address, input.city, input.postalCode);
+      latitude = geo?.latitude ?? null;
+      longitude = geo?.longitude ?? null;
+    } catch (e) {
+      console.warn('Geocoding failed for B2B intervention:', e);
+    }
+
+    const title = `${input.category} - ${input.address} - ${input.postalCode}`;
+    const { data, error } = await db.from('interventions').insert({
+      client_id: null,
+      category: input.category,
+      title,
+      description: input.description || null,
+      address: input.address,
+      city: input.city,
+      postal_code: input.postalCode,
+      latitude,
+      longitude,
+      priority: input.priority || 'normal',
+      status: 'new',
+      is_active: true,
+      client_email: input.clientEmail || null,
+      client_phone: input.clientPhone,
+      client_first_name: input.clientFirstName,
+      client_last_name: input.clientLastName,
+      billing_type: 'b2b',
+      b2b_partner_id: partner.id,
+      b2b_order_reference: input.b2bOrderReference || null,
+      photos: input.photos && input.photos.length > 0 ? input.photos : null,
+      scheduled_at: input.scheduledAt || null,
+      questionnaire_answers: input.questionnaireAnswers && input.questionnaireAnswers.length > 0
+        ? input.questionnaireAnswers : null,
+      prix_min: input.prixMin ?? null,
+      prix_max: input.prixMax ?? null,
+    }).select('*').single();
+    if (error) throw error;
+
+    const row = data as Record<string, unknown>;
+    recordInterventionStatusChange(String(row.id), 'new');
+    supabase.functions
+      .invoke('dispatch-intervention', { body: { interventionId: row.id } })
+      .catch((e) => console.error('B2B auto-dispatch failed:', e));
+
+    return {
+      id: String(row.id),
+      createdAt: String(row.created_at),
+      completedAt: (row.completed_at as string) ?? null,
+      trackingCode: (row.tracking_code as string) ?? null,
+      category: String(row.category ?? ''),
+      status: String(row.status ?? 'new'),
+      title: String(row.title ?? ''),
+      description: (row.description as string) ?? null,
+      address: String(row.address ?? ''),
+      city: String(row.city ?? ''),
+      postalCode: String(row.postal_code ?? ''),
+      estimatedPrice: (row.estimated_price as number) ?? null,
+      finalPrice: (row.final_price as number) ?? null,
+      quotePdfUrl: (row.quote_pdf_url as string) ?? null,
+      invoicePdfUrl: (row.invoice_pdf_url as string) ?? null,
+      b2bInvoiceId: null,
+      b2bInvoiceNumber: null,
+      b2bInvoicePdfUrl: null,
+      clientFirstName: input.clientFirstName,
+      clientLastName: input.clientLastName,
+      b2bOrderReference: input.b2bOrderReference ?? null,
+    };
+  }
+
+  async createAccess(partner: B2bPartner, createdBy?: string): Promise<B2bAccessCredentials> {
+    const { data, error } = await supabase.functions.invoke('create-b2b-user', {
+      body: {
+        b2bPartnerId: partner.id,
+        email: partner.contactEmail,
+        firstName: partner.contactFirstname,
+        lastName: partner.contactLastname,
+        phone: partner.contactPhone,
+        createdBy,
+        loginUrl: `${window.location.origin}/auth`,
+      },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return {
+      userId: data.userId,
+      email: data.email,
+      tempPassword: data.tempPassword,
+    };
   }
 }
 

@@ -58,7 +58,7 @@ export interface DbUser {
   first_name: string;
   last_name: string;
   phone: string | null;
-  role: 'client' | 'technician' | 'admin';
+  role: 'client' | 'technician' | 'admin' | 'manager' | 'guest' | 'payment' | 'b2b';
   is_active: boolean;
   is_company: boolean;
   company_name: string | null;
@@ -108,6 +108,7 @@ export interface DbIntervention {
   invoice_signature_data: string | null;
   invoice_signed_at: string | null;
   invoice_signature_id: string | null;
+  invoice_pdf_url: string | null;
 
   // ── Escalade (V38) ──────────────────────────────────────────────────────
   parent_id_intervention: string | null;

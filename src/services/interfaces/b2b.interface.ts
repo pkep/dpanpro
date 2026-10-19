@@ -6,6 +6,8 @@
  * pas par une table de sites.
  */
 
+import type { InterventionCategory, InterventionPriority } from '@/types/intervention.types';
+
 export interface B2bPartner {
   id: string;
   companyName: string;
@@ -18,6 +20,8 @@ export interface B2bPartner {
   contactFirstname: string | null;
   contactPhone: string | null;
   contactEmail: string | null;
+  /** Compte de connexion B2B rattaché (null tant que l'accès n'est pas créé). */
+  userId?: string | null;
   isActive: boolean;
   /** Entreprise de construction (BTP) : facturation en autoliquidation de TVA. */
   constructionCompany: boolean;
@@ -68,6 +72,64 @@ export interface B2bInvoice {
   lines: B2bInvoiceLine[];
 }
 
+/** Intervention telle que vue par le portail partenaire (uniquement les siennes). */
+export interface B2bPortalIntervention {
+  id: string;
+  createdAt: string;
+  completedAt: string | null;
+  trackingCode: string | null;
+  category: string;
+  status: string;
+  title: string;
+  description: string | null;
+  address: string;
+  city: string;
+  postalCode: string;
+  estimatedPrice: number | null;
+  finalPrice: number | null;
+  quotePdfUrl: string | null;
+  /** Facture par intervention (générée à la finalisation). */
+  invoicePdfUrl: string | null;
+  b2bInvoiceId: string | null;
+  b2bInvoiceNumber: string | null;
+  b2bInvoicePdfUrl: string | null;
+  clientFirstName: string | null;
+  clientLastName: string | null;
+  b2bOrderReference: string | null;
+}
+
+export interface B2bPortalFilters {
+  status?: string;
+  search?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface B2bInterventionInput {
+  category: InterventionCategory;
+  description?: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  priority?: InterventionPriority;
+  clientFirstName: string;
+  clientLastName: string;
+  clientPhone: string;
+  clientEmail?: string;
+  b2bOrderReference?: string;
+  photos?: string[];
+  scheduledAt?: string | null;
+  questionnaireAnswers?: string[];
+  prixMin?: number | null;
+  prixMax?: number | null;
+}
+
+export interface B2bAccessCredentials {
+  userId: string;
+  email: string;
+  tempPassword: string;
+}
+
 export interface IB2bService {
   // Partenaires
   getPartners(search?: string): Promise<B2bPartner[]>;
@@ -85,4 +147,12 @@ export interface IB2bService {
   sendInvoices(month: string): Promise<{ sent: number }>;
   markInvoicePaid(id: string): Promise<B2bInvoice>;
   cancelInvoice(id: string): Promise<B2bInvoice>;
+
+  // Portail partenaire (compte connecté)
+  getMyPartner(userId: string): Promise<B2bPartner | null>;
+  getMyInterventions(userId: string, filters?: B2bPortalFilters): Promise<B2bPortalIntervention[]>;
+  getMyInvoices(userId: string): Promise<B2bInvoice[]>;
+  createMyIntervention(userId: string, input: B2bInterventionInput): Promise<B2bPortalIntervention>;
+  /** Admin : crée le compte de connexion du partenaire (email = contact_email). */
+  createAccess(partner: B2bPartner, createdBy?: string): Promise<B2bAccessCredentials>;
 }

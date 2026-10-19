@@ -55,6 +55,15 @@ serve(async (req: Request): Promise<Response> => {
 
     const { data: publicUrlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
 
+    // Persiste l'URL de la facture par intervention (consultable depuis le portail B2B).
+    const { error: updateErr } = await supabase
+      .from("interventions")
+      .update({ invoice_pdf_url: publicUrlData.publicUrl })
+      .eq("id", interventionId);
+    if (updateErr) {
+      console.error("invoice_pdf_url update failed:", updateErr);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

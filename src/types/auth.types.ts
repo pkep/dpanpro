@@ -1,4 +1,7 @@
-export type UserRole = 'admin' | 'manager' | 'technician' | 'client' | 'guest' | 'payment';
+export type UserRole = 'admin' | 'manager' | 'technician' | 'client' | 'guest' | 'payment' | 'b2b';
+
+/** OAuth providers supported for CUSTOMER accounts. */
+export type OAuthProvider = 'google' | 'facebook';
 
 export interface User {
   id: string;
@@ -16,6 +19,17 @@ export interface User {
   avatarUrl?: string | null;
   companyLogoUrl?: string | null;
   mustChangePassword?: boolean;
+  photoQualityOk?: boolean | null;
+  photoQualityCheckedAt?: string | null;
+  photoQualityIssues?: string[] | null;
+  /** Techniciens : statut de la candidature (pending | qualification | approved | …). */
+  applicationStatus?: 'pending' | 'qualification' | 'approved' | 'suspended' | 'rejected' | 'inactive' | null;
+  /** Techniciens : champs de profil manquants (voir lib/technicianProfileCompleteness). */
+  missingProfileFields?: string[] | null;
+  /** OAuth (clients uniquement) : provider lié au compte. */
+  oauthProvider?: OAuthProvider | null;
+  /** false pour un compte OAuth sans mot de passe. */
+  hasPassword?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +50,20 @@ export interface RegisterCredentials {
   companyAddress?: string;
   siren?: string;
   vatNumber?: string;
+}
+
+export interface RegisterCredentialsTechnician {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role: 'client' | 'technician' | 'admin' | 'guest';
+  isCompany?: boolean;
+  companyName?: string;
+  companyAddress?: string;
+  siren?: string;
+  vat_number?: string;
 }
 
 export interface AuthResponse {

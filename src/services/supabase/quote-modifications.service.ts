@@ -34,6 +34,7 @@ export interface CreateQuoteModificationInput {
   interventionId: string;
   createdBy: string;
   submitForApproval?: boolean;
+  applyDirectly?: boolean;
   items: {
     itemType: 'service' | 'equipment' | 'other';
     label: string;
@@ -49,8 +50,11 @@ class QuoteModificationsService implements IQuoteModificationsService{
    * Create a new quote modification with items
    */
   async createModification(input: CreateQuoteModificationInput): Promise<QuoteModification> {
+    const applyDirectly = input.applyDirectly === true;
+
     // Garde domaine : une modification soumise au client exige une intervention en cours.
-    if (input.submitForApproval) {
+    // (Sauf application directe — ex. B2B — qui ne passe pas par l'approbation client.)
+    if (input.submitForApproval && !applyDirectly) {
       const { data: intervention, error: intError } = await supabase
         .from('interventions')
         .select('status')
@@ -73,15 +77,21 @@ class QuoteModificationsService implements IQuoteModificationsService{
     // Plafond de prix B2B : bloque si le devis (base + compléments) dépasse le plafond effectif.
     await this.assertB2bCap(input.interventionId, totalAmount);
 
-    // Insert modification
+    const now = new Date().toISOString();
+
+    // Insert modification — application directe = auto-approuvée (jamais de `pending`
+    // ni de notification pour le B2B).
     const { data: modification, error: modError } = await supabase
       .from('quote_modifications')
       .insert({
         intervention_id: input.interventionId,
         created_by: input.createdBy,
-        status: 'pending',
+        status: applyDirectly ? 'approved' : 'pending',
         total_additional_amount: totalAmount,
-      })
+        ...(applyDirectly
+          ? { client_responded_at: now, approved_channel: 'admin_direct' }
+          : {}),
+      } as never)
       .select()
       .single();
 
@@ -197,7 +207,7 @@ class QuoteModificationsService implements IQuoteModificationsService{
    * @param id - The modification ID
    * @param signatureData - Optional base64 signature data from client
    */
-  async approveModification(id: string, signatureData?: string, approvedChannel?: 'on_site' | 'client_link'): Promise<{ incrementResult?: unknown }> {
+  async approveModification(id: string, signatureData?: string, approvedChannel?: 'on_site' | 'client_link', signatureId?: string): Promise<{ incrementResult?: unknown }> {
     // First get the modification to get intervention ID and amount
     const modification = await this.getModification(id);
     if (!modification) {
@@ -217,6 +227,9 @@ class QuoteModificationsService implements IQuoteModificationsService{
     if (signatureData) {
       updateData.client_signature_data = signatureData;
       updateData.client_signature_at = now;
+    }
+    if (signatureId) {
+      updateData.client_signature_id = signatureId;
     }
     if (approvedChannel) {
       updateData.approved_channel = approvedChannel;
@@ -271,7 +284,7 @@ class QuoteModificationsService implements IQuoteModificationsService{
 
     const { error } = await supabase
       .from('quote_modifications')
-      .update(updateData)
+      .update(updateData as never)
       .eq('id', id);
 
     if (error) throw error;
@@ -285,7 +298,7 @@ class QuoteModificationsService implements IQuoteModificationsService{
       .from('quote_modifications')
       .update({
         client_notified_at: new Date().toISOString(),
-      } as Record<string, unknown>)
+      } as never)
       .eq('id', id);
 
     if (error) throw error;

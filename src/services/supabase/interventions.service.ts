@@ -196,6 +196,11 @@ class SupabaseInterventionsService implements IInterventionsService {
       scheduled_at: formData.scheduledAt || null,
     };
 
+    const campaignCode = formData.campaignCode || questionnaireData?.campaignCode;
+    if (campaignCode) {
+      insertData.campaign_code = campaignCode.trim().toUpperCase();
+    }
+
     // B2B : intervention pour un partenaire — pas de client User, bénéficiaire sur site
     const isB2b = formData.billingType === 'b2b' || !!formData.b2bPartnerId;
     if (isB2b) {
@@ -995,6 +1000,7 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
       invoiceSignatureData: data.invoice_signature_data,
       invoiceSignedAt: data.invoice_signed_at,
       invoiceSignatureId: data.invoice_signature_id,
+      invoicePdfUrl: (data as unknown as { invoice_pdf_url?: string | null }).invoice_pdf_url ?? null,
       // Escalade (V38)
       parentInterventionId: data.parent_id_intervention,
       escalationType: data.escalation_type,
