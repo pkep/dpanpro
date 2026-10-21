@@ -9,7 +9,7 @@ serve(async (req) => {
   const frontend = Deno.env.get("FRONTEND_URL");
   if (!url || !key || !frontend) return Response.json({ error: "Missing configuration" }, { status: 500 });
   const db = createClient(url, key);
-  if (req.headers.get("Authorization") !== "Bearer PtgJkM9SGufpFQfPZLPsZPxv87XFkYieLzH3u0JLnJg") return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (req.headers.get("apikey") !== Deno.env.get("SUPABASE_ANON_KEY")) return Response.json({ error: "Unauthorized" }, { status: 401 });
   if (req.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
   const { data: intervention, error } = await db.from("interventions")
     .select("id, category, city, address, postal_code, priority, description, questionnaire_answers, scheduled_at, b2b_partner_id")
