@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -37,54 +37,6 @@ export type Database = {
           email?: string[] | null
           id?: string
           roles?: Database["public"]["Enums"]["app_role"][] | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      affiliate_campaign: {
-        Row: {
-          can_combine: boolean
-          code: string | null
-          commission_type: string
-          commission_value: number
-          created_at: string
-          end_date: string | null
-          id: string
-          is_permanent: boolean
-          is_suspended: boolean
-          name: string
-          requires_code: boolean
-          start_date: string | null
-          updated_at: string
-        }
-        Insert: {
-          can_combine?: boolean
-          code?: string | null
-          commission_type: string
-          commission_value: number
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          is_permanent?: boolean
-          is_suspended?: boolean
-          name: string
-          requires_code?: boolean
-          start_date?: string | null
-          updated_at?: string
-        }
-        Update: {
-          can_combine?: boolean
-          code?: string | null
-          commission_type?: string
-          commission_value?: number
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          is_permanent?: boolean
-          is_suspended?: boolean
-          name?: string
-          requires_code?: boolean
-          start_date?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -478,7 +430,6 @@ export type Database = {
           postal_code: string | null
           siret: string | null
           updated_at: string
-          user_id: string | null
           vat_number: string | null
         }
         Insert: {
@@ -497,7 +448,6 @@ export type Database = {
           postal_code?: string | null
           siret?: string | null
           updated_at?: string
-          user_id?: string | null
           vat_number?: string | null
         }
         Update: {
@@ -516,20 +466,12 @@ export type Database = {
           postal_code?: string | null
           siret?: string | null
           updated_at?: string
-          user_id?: string | null
           vat_number?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "b2b_partners_created_by_fkey"
             columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "b2b_partners_user_id_fkey"
-            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -979,60 +921,6 @@ export type Database = {
           },
         ]
       }
-      intervention_campaigns: {
-        Row: {
-          base_amount: number
-          campaign_id: string | null
-          code: string | null
-          commission_type: string
-          commission_value: number
-          created_at: string
-          discount_amount: number
-          id: string
-          intervention_id: string
-          name: string
-        }
-        Insert: {
-          base_amount: number
-          campaign_id?: string | null
-          code?: string | null
-          commission_type: string
-          commission_value: number
-          created_at?: string
-          discount_amount: number
-          id?: string
-          intervention_id: string
-          name: string
-        }
-        Update: {
-          base_amount?: number
-          campaign_id?: string | null
-          code?: string | null
-          commission_type?: string
-          commission_value?: number
-          created_at?: string
-          discount_amount?: number
-          id?: string
-          intervention_id?: string
-          name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "intervention_campaigns_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "affiliate_campaign"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "intervention_campaigns_intervention_id_fkey"
-            columns: ["intervention_id"]
-            isOneToOne: false
-            referencedRelation: "interventions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       intervention_history: {
         Row: {
           action: string
@@ -1334,9 +1222,6 @@ export type Database = {
           b2b_price_cap: number | null
           billing_mode: string | null
           billing_type: string
-          campaign_code: string | null
-          campaign_discount_amount: number | null
-          campaign_id: string | null
           category: string
           city: string
           client_email: string | null
@@ -1412,9 +1297,6 @@ export type Database = {
           b2b_price_cap?: number | null
           billing_mode?: string | null
           billing_type?: string
-          campaign_code?: string | null
-          campaign_discount_amount?: number | null
-          campaign_id?: string | null
           category: string
           city: string
           client_email?: string | null
@@ -1490,9 +1372,6 @@ export type Database = {
           b2b_price_cap?: number | null
           billing_mode?: string | null
           billing_type?: string
-          campaign_code?: string | null
-          campaign_discount_amount?: number | null
-          campaign_id?: string | null
           category?: string
           city?: string
           client_email?: string | null
@@ -1583,13 +1462,6 @@ export type Database = {
             columns: ["b2b_partner_id"]
             isOneToOne: false
             referencedRelation: "b2b_partners"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "interventions_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "affiliate_campaign"
             referencedColumns: ["id"]
           },
           {
@@ -3308,7 +3180,6 @@ export type Database = {
         | "client"
         | "guest"
         | "payment"
-        | "b2b"
       article_status: "draft" | "published" | "archived"
       partner_availability:
         | "week_day"
@@ -3453,7 +3324,6 @@ export const Constants = {
         "client",
         "guest",
         "payment",
-        "b2b",
       ],
       article_status: ["draft", "published", "archived"],
       partner_availability: [
