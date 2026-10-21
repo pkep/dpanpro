@@ -57,6 +57,7 @@ export interface Intervention {
   quoteSignatureData?: string | null;
   quoteSignatureId?: string | null;
   quotePdfUrl?: string | null;
+  invoicePdfUrl?: string | null;
   questionnaireResultatId?: string | null;
   questionnaireAnswers : string | null;
   prixMin : number | null;
@@ -111,6 +112,7 @@ export interface InterventionFormData {
   role ?: 'client' | 'guest';
   scheduledAt?: string | null;
   affiliateCode?: string;
+  campaignCode?: string;
   // ── B2B ──
   billingType?: 'client' | 'b2b';
   b2bPartnerId?: string;
@@ -127,6 +129,7 @@ export interface InterventionQuestionnaireData {
   prixMin?: number | null;
   prixMax?: number | null;
   affiliateCode?: string;
+  campaignCode?: string;
 }
 
 /**

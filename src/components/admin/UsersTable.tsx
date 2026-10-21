@@ -41,6 +41,7 @@ const ROLE_CONFIG: Record<UserRole, { label: string; variant: 'default' | 'secon
   client: { label: 'Client', variant: 'outline', icon: <UserIcon className="h-3 w-3" /> },
   guest: { label: 'Invité', variant: 'outline', icon: <UserIcon className="h-3 w-3" /> },
   payment: { label: 'Paiement', variant: 'secondary', icon: <Shield className="h-3 w-3" /> },
+  b2b: { label: 'Partenaire B2B', variant: 'outline', icon: <UserIcon className="h-3 w-3" /> },
 };
 
 interface UsersTableProps {
