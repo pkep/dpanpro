@@ -55,6 +55,64 @@ tags:
 
 paths:
 
+  /b2b/me/partner:
+    get:
+      tags: [Partners]
+      summary: Partenaire B2B du compte authentifié
+      description: Le serveur déduit le partenaire du compte connecté, sans identifiant utilisateur fourni par le client.
+      responses:
+        '200':
+          description: ApiResponse contenant le partenaire, ou data null si aucun partenaire lié.
+  /b2b/me/interventions:
+    get:
+      tags: [Interventions]
+      summary: Interventions du partenaire connecté
+      parameters:
+        - {name: status, in: query, schema: {type: string}}
+        - {name: search, in: query, schema: {type: string}}
+        - {name: from, in: query, schema: {type: string, format: date-time}}
+        - {name: to, in: query, schema: {type: string, format: date-time}}
+      responses:
+        '200':
+          description: ApiResponse contenant un tableau de B2bPortalIntervention.
+    post:
+      tags: [Interventions]
+      summary: Créer une intervention pour le partenaire connecté
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [category, address, city, postalCode, clientFirstName, clientLastName, clientPhone]
+              description: B2bInterventionInput ; partenaire déterminé par le compte authentifié.
+      responses:
+        '200':
+          description: ApiResponse contenant la B2bPortalIntervention créée.
+  /b2b/me/invoices:
+    get:
+      tags: [Invoice]
+      summary: Factures du partenaire connecté
+      responses:
+        '200':
+          description: ApiResponse contenant un tableau de B2bInvoice.
+  /b2b-partners/{id}/access:
+    post:
+      tags: [Partners]
+      summary: Créer le compte de connexion B2B (administrateur)
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                createdBy: {type: string, format: uuid}
+      responses:
+        '200':
+          description: ApiResponse contenant B2bAccessCredentials (userId, email, tempPassword).
+
   # ==================== AUTH ====================
   /auth/login:
     post:

@@ -7,3 +7,4 @@
 - Treat intervention suspension as a boolean independent of operational status so suspension preserves the intervention's progress.
 - Preserve PDF download, attachment and archive methods when updating document renderers so existing callers remain compatible.
 - Keep Edge Function client-name resolution under `supabase/functions/_shared` aligned with the frontend helper, because deployment cannot import files from `src`.
+- Keep profile completeness and referral PDF generation as pure/local helpers in `src/lib` so service consumers share checks and referral links are not sent to external QR providers.

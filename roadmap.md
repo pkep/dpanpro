@@ -1,3 +1,4 @@
-- [ ] Restore missing helper modules and shared intervention types.
-- [ ] Restore B2B Spring contract compatibility and user role display.
-- [ ] Verify the preview and focused tests.
+- [x] Restore missing helper modules and shared intervention types.
+- [x] Restore B2B Spring contract compatibility and user role display.
+- [x] Verify the preview and focused tests.
+- [x] Send DP-S6C24N dispatch SMS only to the three requested technicians.
