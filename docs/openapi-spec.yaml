@@ -55,6 +55,65 @@ tags:
 
 paths:
 
+  /b2b/portal/partner:
+    get:
+      tags: [Partners]
+      summary: Get the authenticated user's linked B2B partner
+      description: The server must verify userId matches the authenticated user.
+      parameters:
+        - { name: userId, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: 'ApiResponse containing the linked partner or null' }
+
+  /b2b/portal/interventions:
+    get:
+      tags: [Partners]
+      summary: List interventions belonging to the authenticated partner
+      description: The server must verify userId matches the authenticated user and restrict results to their partner.
+      parameters:
+        - { name: userId, in: query, required: true, schema: { type: string, format: uuid } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string } }
+        - { name: to, in: query, schema: { type: string } }
+      responses:
+        '200': { description: 'ApiResponse containing partner interventions' }
+    post:
+      tags: [Partners]
+      summary: Create an intervention for the authenticated partner
+      description: Accepts B2bInterventionInput and userId; the server must resolve and authorize the linked partner.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [userId, category, address, city, postalCode, clientFirstName, clientLastName, clientPhone] }
+      responses:
+        '200': { description: 'ApiResponse containing the created partner intervention' }
+
+  /b2b/portal/invoices:
+    get:
+      tags: [Partners]
+      summary: List invoices belonging to the authenticated partner
+      description: The server must verify userId matches the authenticated user and restrict results to their partner.
+      parameters:
+        - { name: userId, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: 'ApiResponse containing partner invoices' }
+
+  /b2b-partners/{id}/access:
+    post:
+      tags: [Partners]
+      summary: Create a B2B partner login account
+      description: Admin-only action; accepts createdBy and loginUrl, returns B2bAccessCredentials.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { createdBy: { type: string }, loginUrl: { type: string, format: uri } } }
+      responses:
+        '200': { description: 'ApiResponse containing userId, email and tempPassword' }
+
   # ==================== AUTH ====================
   /auth/login:
     post:
