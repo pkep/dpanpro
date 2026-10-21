@@ -1,0 +1,3 @@
+- [ ] Restore missing helper modules and shared intervention types.
+- [ ] Restore B2B Spring contract compatibility and user role display.
+- [ ] Verify the preview and focused tests.
