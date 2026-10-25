@@ -17,6 +17,9 @@ export interface DispatchAttempt {
   id: string;
   interventionId: string;
   technicianId: string;
+  technicianFirstName?: string | null;
+  technicianLastName?: string | null;
+  technicianPhone?: string | null;
   score: number;
   scoreBreakdown: {
     proximity: number;
@@ -34,6 +37,8 @@ export interface DispatchAttempt {
 
 export interface IDispatchService {
   dispatchIntervention(interventionId: string): Promise<DispatchResult>;
+  /** Dispatch SMS vers une sélection manuelle de techniciens. */
+  dispatchSelected(interventionId: string, technicianIds: string[]): Promise<DispatchResult>;
   acceptAssignment(interventionId: string, technicianId: string): Promise<DispatchResult>;
   rejectAssignment(interventionId: string, technicianId: string): Promise<DispatchResult>;
   declineIntervention(interventionId: string, technicianId: string, reason: string): Promise<DispatchResult>;
@@ -41,6 +46,8 @@ export interface IDispatchService {
   goToIntervention(interventionId: string, technicianId: string): Promise<DispatchResult>;
   notifyTechnicians(interventionId: string): Promise<DispatchResult>;
   getDispatchAttempts(interventionId: string): Promise<DispatchAttempt[]>;
+  getDispatchAttemptsBatch(interventionIds: string[]): Promise<Record<string, DispatchAttempt[]>>;
   getCurrentAttempt(interventionId: string): Promise<DispatchAttempt | null>;
   getTechnicianPendingAssignments(technicianId: string): Promise<DispatchAttempt[]>;
+  getDeclinedInterventionIds(technicianId: string, interventionIds: string[]): Promise<string[]>;
 }

@@ -258,6 +258,130 @@ class UsersService implements IUsersService {
   getTechnicianAvatar(technicianId: string): Promise<string | null> {
       throw new Error("Method not implemented.");
   }
+  async getStaffUsers(filters?: StaffUserFilters): Promise<StaffUser[]> {
+    // Tables b2b_partners / manager_permissions absentes des types générés.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any;
+    const staffRoles = ['admin', 'manager', 'b2b'];
+
+    // b2b_partners a deux FK vers users (created_by et user_id) : l'embed doit
+    // cibler explicitement la relation du compte de connexion.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const applyFilters = (query: any) => {
+      let q = query.in('role', filters?.role ? [filters.role] : staffRoles);
+      if (filters?.from) q = q.gte('created_at', filters.from);
+      if (filters?.to) q = q.lte('created_at', filters.to);
+      if (filters?.search?.trim()) {
+        const search = filters.search.trim().replace(/[,%_()]/g, ' ');
+        q = q.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
+      }
+      return q.order('created_at', { ascending: false });
+    };
+
+    const primary = await applyFilters(
+      db
+        .from('users')
+        .select('id, first_name, last_name, email, phone, role, is_active, must_change_password, created_at, b2b_partners!b2b_partners_user_id_fkey(id, company_name)'),
+    );
+
+    let rows: Record<string, unknown>[] = [];
+    if (primary.error) {
+      // Fallback : requête users seule + jointure partenaire séparée.
+      console.warn('getStaffUsers embed failed, falling back to separate partner query:', primary.error);
+      const fallback = await applyFilters(
+        db.from('users').select('id, first_name, last_name, email, phone, role, is_active, must_change_password, created_at'),
+      );
+      if (fallback.error) throw fallback.error;
+      rows = (fallback.data || []) as Record<string, unknown>[];
+
+      const b2bUserIds = rows.filter((r) => r.role === 'b2b').map((r) => String(r.id));
+      if (b2bUserIds.length) {
+        const { data: partnerRows, error: partnerError } = await db
+          .from('b2b_partners')
+          .select('id, user_id, company_name')
+          .in('user_id', b2bUserIds);
+        if (partnerError) {
+          console.warn('getStaffUsers partner query failed:', partnerError);
+        } else {
+          const byUserId = new Map<string, Record<string, unknown>>(
+            ((partnerRows || []) as Record<string, unknown>[]).map((p) => [String(p.user_id), p]),
+          );
+          rows = rows.map((r) => ({ ...r, b2b_partners: byUserId.get(String(r.id)) ?? null }));
+        }
+      }
+    } else {
+      rows = (primary.data || []) as Record<string, unknown>[];
+    }
+    const ids = rows.map((r) => String(r.id));
+    const managerIds = rows.filter((r) => r.role === 'manager').map((r) => String(r.id));
+
+    const managersPermissions = new Map<string, boolean>();
+    if (managerIds.length) {
+      const { data: perms } = await db
+        .from('manager_permissions')
+        .select('user_id, can_create_managers')
+        .in('user_id', managerIds);
+      for (const p of (perms || []) as Record<string, unknown>[]) {
+        managersPermissions.set(String(p.user_id), p.can_create_managers === true);
+      }
+    }
+
+    const paymentUsers = new Set<string>();
+    if (ids.length) {
+      const { data: roles } = await db
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', ids)
+        .eq('role', 'payment');
+      for (const r of (roles || []) as Record<string, unknown>[]) {
+        paymentUsers.add(String(r.user_id));
+      }
+    }
+
+    return rows.map((r) => {
+      const partnerRaw = r.b2b_partners as
+        | { id?: string; company_name?: string }
+        | { id?: string; company_name?: string }[]
+        | null;
+      const partner = Array.isArray(partnerRaw) ? partnerRaw[0] : partnerRaw;
+      const id = String(r.id);
+      return {
+        id,
+        firstName: String(r.first_name ?? ''),
+        lastName: String(r.last_name ?? ''),
+        email: String(r.email ?? ''),
+        phone: (r.phone as string) ?? null,
+        role: r.role as StaffUser['role'],
+        isActive: r.is_active !== false,
+        mustChangePassword: r.must_change_password === true,
+        createdAt: String(r.created_at),
+        b2bPartnerId: partner?.id ? String(partner.id) : null,
+        b2bCompanyName: partner?.company_name ?? null,
+        canCreateManagers: managersPermissions.get(id) ?? false,
+        hasPaymentRole: paymentUsers.has(id),
+      } satisfies StaffUser;
+    });
+  }
+
+  async sendFirstConnectionEmail(id: string): Promise<{ email: string }> {
+    const { data, error } = await supabase.functions.invoke('reset-first-connection', {
+      body: { userId: id },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return { email: data.email };
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    const { error } = await supabase.from('users').delete().eq('id', id);
+    if (error) {
+      if ((error as { code?: string }).code === '23503') {
+        throw new Error('Ce compte est référencé par des données métier : désactivez-le au lieu de le supprimer.');
+      }
+      throw error;
+    }
+  }
+
   async getUsers(filters?: {
     role?: UserRole;
     isActive?: boolean;

@@ -1,8 +1,39 @@
 import type { User, UserRole } from '@/types/auth.types';
 import type { IncompleteTechnicianProfile } from '@/lib/technicianProfileCompleteness';
 
+export interface StaffUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  role: 'admin' | 'manager' | 'b2b';
+  isActive: boolean;
+  /** true tant que la première connexion (changement de mot de passe) n'est pas faite. */
+  mustChangePassword: boolean;
+  createdAt: string;
+  b2bPartnerId: string | null;
+  b2bCompanyName: string | null;
+  canCreateManagers?: boolean;
+  hasPaymentRole?: boolean;
+}
+
+export interface StaffUserFilters {
+  search?: string;
+  role?: 'admin' | 'manager' | 'b2b';
+  /** ISO datetime inclus. */
+  from?: string;
+  /** ISO datetime inclus. */
+  to?: string;
+}
+
 export interface IUsersService {
   getUsers(filters?: { role?: UserRole; isActive?: boolean }): Promise<User[]>;
+  /** Comptes admin / manager / B2B pour « Gestion des utilisateurs ». */
+  getStaffUsers(filters?: StaffUserFilters): Promise<StaffUser[]>;
+  deleteUser(id: string): Promise<void>;
+  /** Régénère un mot de passe temporaire et renvoie l'email de première connexion. */
+  sendFirstConnectionEmail(id: string): Promise<{ email: string }>;
   getUser(id: string): Promise<User | null>;
   /** Batch fetch: single query instead of N×getUser */
   getUsersByIds(ids: string[]): Promise<User[]>;

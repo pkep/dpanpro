@@ -11,6 +11,8 @@ const corsHeaders = {
 interface NotifyTechnicianRequest {
   interventionId: string;
   technicianIds: string[];
+  /** false = ne pas renvoyer le SMS aux agents récepteurs (actions manuelles). */
+  notifyAgentReceivers?: boolean;
   interventionDetails?: {
     title: string;
     address: string;
@@ -53,7 +55,7 @@ serve(async (req) => {
     const frontendUrl = Deno.env.get("FRONTEND_URL")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { interventionId, technicianIds, interventionDetails }: NotifyTechnicianRequest = await req.json();
+    const { interventionId, technicianIds, interventionDetails, notifyAgentReceivers = true }: NotifyTechnicianRequest = await req.json();
 
     console.log(`[NotifyTechnicianDispatch] Starting notification for intervention ${interventionId}`);
     console.log(`[NotifyTechnicianDispatch] Technicians to notify:`, technicianIds);
@@ -162,7 +164,7 @@ serve(async (req) => {
     const results = {
       sms: { sent: 0, failed: 0, errors: [] as string[] },
       push: { sent: 0, failed: 0, errors: [] as string[] },
-      agentsSms: { sent: 0, failed: 0, errors: [] as string[] },
+      agentsSms: { sent: 0, failed: 0, skipped: false, errors: [] as string[] },
     };
 
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
@@ -287,7 +289,10 @@ serve(async (req) => {
     console.log("[NotifyTechnicianDispatch] Notification results:", results);
 
     // 3. Send SMS to agent receivers (dispatch SMS recipients, admin-managed)
-    try {
+    if (!notifyAgentReceivers) {
+      results.agentsSms.skipped = true;
+      console.log("[NotifyTechnicianDispatch] Agent SMS skipped (manual dispatch)");
+    } else try {
       const { data: agents, error: agentsError } = await supabase
         .from("agent_receiver")
         .select("phone");

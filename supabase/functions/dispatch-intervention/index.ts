@@ -23,8 +23,9 @@ interface TechnicianScore {
 
 interface DispatchRequest {
   interventionId: string;
-  action?: 'dispatch' | 'assign' | 'accept' | 'reject' | 'check_timeout' | 'decline' | 'cancel' | 'go' | 'notify';
+  action?: 'dispatch' | 'dispatch_selected' | 'assign' | 'accept' | 'reject' | 'check_timeout' | 'decline' | 'cancel' | 'go' | 'notify';
   technicianId?: string;
+  technicianIds?: string[];
   reason?: string; // For decline and cancel actions
 }
 
@@ -64,6 +65,7 @@ const WEIGHTS = {
 
 // Timeout duration in minutes
 const TIMEOUT_MINUTES = 5;
+const MAX_DISPATCH_TECHNICIANS = 5;
 
 // Helper to trigger status change notifications
 async function notifyStatusChange(
@@ -115,7 +117,8 @@ async function notifyTechniciansDispatch(
     category: string;
     priority: string;
     scheduledAt?: string | null;
-  }
+  },
+  notifyAgentReceivers = true,
 ): Promise<void> {
   try {
     console.log(`[Dispatch] Sending multi-channel notifications to ${technicianIds.length} technicians`);
@@ -130,6 +133,7 @@ async function notifyTechniciansDispatch(
         interventionId,
         technicianIds,
         interventionDetails,
+        notifyAgentReceivers,
       }),
     });
 
@@ -158,7 +162,7 @@ Deno.serve(async (req) => {
     );
 
     const body: DispatchRequest = await req.json();
-    const { interventionId, action = 'dispatch', technicianId, reason } = body;
+    const { interventionId, action = 'dispatch', technicianId, technicianIds, reason } = body;
 
     console.log(`[Dispatch] Action: ${action}, Intervention: ${interventionId}, Technician: ${technicianId || 'N/A'}`);
 
@@ -176,6 +180,8 @@ Deno.serve(async (req) => {
         return await handleCancel(supabase, interventionId, technicianId!, reason || 'Aucun motif fourni');
       case 'go':
         return await handleGo(supabase, interventionId, technicianId!);
+      case 'dispatch_selected':
+        return await handleDispatchSelected(supabase, interventionId, technicianIds || []);
       case 'check_timeout':
         return await handleCheckTimeout(supabase, interventionId);
       case 'notify':
@@ -442,27 +448,26 @@ async function handleDispatch(supabase: any, interventionId: string) {
   }
 
   console.log(`[Dispatch] Found ${scoredTechnicians.length} eligible technicians`);
-  console.log(`[Dispatch] Top 3:`, scoredTechnicians.slice(0, 3).map(t => ({
+  console.log(`[Dispatch] Top ${MAX_DISPATCH_TECHNICIANS}:`, scoredTechnicians.slice(0, MAX_DISPATCH_TECHNICIANS).map(t => ({
     userId: t.userId,
     score: t.score,
     distance: t.distanceKm
   })));
 
-  // 10. Create dispatch attempts for TOP 3 technicians
+  // 10. Create dispatch attempts for top technicians
   const now = new Date();
   const timeoutAt = new Date(now.getTime() + TIMEOUT_MINUTES * 60 * 1000);
   
-  // Only take top 3 technicians
-  const top3Technicians = scoredTechnicians.slice(0, 3);
+  const topTechnicians = scoredTechnicians.slice(0, MAX_DISPATCH_TECHNICIANS);
 
-  const attempts = top3Technicians.map((tech, index) => ({
+  const attempts = topTechnicians.map((tech, index) => ({
     intervention_id: interventionId,
     technician_id: tech.userId,
     score: tech.score,
     score_breakdown: tech.breakdown,
-    status: 'pending', // All 3 are pending - first to accept wins
+    status: 'pending', // All pending - first to accept wins
     attempt_order: index + 1,
-    notified_at: now.toISOString(), // All 3 are notified immediately
+    notified_at: now.toISOString(),
     timeout_at: timeoutAt.toISOString(), // Same timeout for all
   }));
 
@@ -485,7 +490,7 @@ async function handleDispatch(supabase: any, interventionId: string) {
 
   await recordInterventionStatusChange(supabase, interventionId, 'new');
 
-  console.log(`[Dispatch] Notified top 3 technicians (attempts created):`, top3Technicians.map(t => t.userId));
+  console.log(`[Dispatch] Notified ${topTechnicians.length} technicians (attempts created):`, topTechnicians.map(t => t.userId));
 
   // Send SMS, Email, and Push notifications immediately
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -495,7 +500,7 @@ async function handleDispatch(supabase: any, interventionId: string) {
     supabaseUrl,
     serviceRoleKey,
     interventionId,
-    top3Technicians.map(t => t.userId),
+    topTechnicians.map(t => t.userId),
     {
       title: intervention.title || `${intervention.category}`,
       address: intervention.address || '',
@@ -510,8 +515,8 @@ async function handleDispatch(supabase: any, interventionId: string) {
   return new Response(
     JSON.stringify({
       success: true,
-      message: 'Intervention dispatched to top 3 technicians',
-      notifiedTechnicians: top3Technicians.map(t => ({
+      message: `Intervention dispatched to top ${topTechnicians.length} technicians`,
+      notifiedTechnicians: topTechnicians.map(t => ({
         userId: t.userId,
         score: t.score,
         distanceKm: t.distanceKm,
@@ -522,6 +527,111 @@ async function handleDispatch(supabase: any, interventionId: string) {
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
+}
+
+// Manual multi-selection dispatch: create attempts for selected technicians and send notifications.
+async function handleDispatchSelected(supabase: any, interventionId: string, technicianIds: string[]) {
+  const uniqueIds = Array.from(new Set(technicianIds.filter(Boolean)));
+  if (uniqueIds.length === 0) {
+    return new Response(JSON.stringify({ success: false, message: 'Aucun technicien sélectionné' }), {
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { data: intervention, error: intError } = await supabase
+    .from('interventions').select('*').eq('id', interventionId).single();
+  if (intError || !intervention) throw new Error(`Intervention not found: ${interventionId}`);
+  if (intervention.status !== 'new' || intervention.technician_id) {
+    return new Response(JSON.stringify({ success: false, message: 'Intervention non dispatchable' }), {
+      status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { data: applications, error: appError } = await supabase
+    .from('partner_applications')
+    .select('*')
+    .eq('status', 'approved')
+    .in('user_id', uniqueIds);
+  if (appError) throw appError;
+  const appsByUser = new Map<string, any>((applications || []).map((a: any) => [a.user_id, a]));
+  if (appsByUser.size !== uniqueIds.length) {
+    return new Response(JSON.stringify({ success: false, message: 'Technicien non éligible' }), {
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const { data: users } = await supabase
+    .from('users').select('id, first_name, last_name').in('id', uniqueIds)
+    .eq('is_active', true).eq('role', 'technician');
+  const activeUsers = new Map<string, any>((users || []).map((u: any) => [u.id, u]));
+  if (activeUsers.size !== uniqueIds.length) {
+    return new Response(JSON.stringify({ success: false, message: 'Technicien inactif' }), {
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const now = new Date();
+  const timeoutAt = new Date(now.getTime() + TIMEOUT_MINUTES * 60 * 1000);
+
+  const scored = uniqueIds.map((userId, index) => {
+    const app = appsByUser.get(userId);
+    const distanceMeters = calculateDistance(
+      intervention.latitude, intervention.longitude, app.latitude, app.longitude,
+    );
+    const distanceKm = (distanceMeters / 1000) * 1.4;
+    const proximity = Math.max(0, 100 - distanceKm * 2);
+    const skills = (app.skills || []).some((s: string) =>
+      s === intervention.category || s === mapCategoryToSkill(intervention.category)) ? 100 : 30;
+    const workload = 100;
+    const rating = 60;
+    const score = Math.round(((proximity * WEIGHTS.proximity) + (skills * WEIGHTS.skills)
+      + (workload * WEIGHTS.workload) + (rating * WEIGHTS.rating)) * 100) / 100;
+    return {
+      userId,
+      order: index + 1,
+      score,
+      breakdown: { proximity: Math.round(proximity * 100) / 100, skills, workload, rating, manual: true },
+      app,
+    };
+  }).sort((a, b) => b.score - a.score);
+
+  await supabase.from('dispatch_attempts')
+    .delete().eq('intervention_id', interventionId).eq('status', 'pending');
+
+  const attempts = scored.map((item) => ({
+    intervention_id: interventionId,
+    technician_id: item.userId,
+    score: item.score,
+    score_breakdown: item.breakdown,
+    status: 'pending',
+    attempt_order: item.order,
+    notified_at: now.toISOString(),
+    timeout_at: timeoutAt.toISOString(),
+  }));
+  const { error: insertError } = await supabase.from('dispatch_attempts').insert(attempts);
+  if (insertError) throw insertError;
+
+  await recordInterventionStatusChange(supabase, interventionId, 'new');
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  await notifyTechniciansDispatch(supabaseUrl, serviceRoleKey, interventionId, scored.map((s) => s.userId), {
+    title: intervention.title || `${intervention.category}`,
+    address: intervention.address || '',
+    city: intervention.city || '',
+    postalCode: intervention.postal_code || '',
+    category: intervention.category,
+    priority: intervention.priority,
+    scheduledAt: intervention.scheduled_at ?? null,
+  }, false);
+
+  return new Response(JSON.stringify({
+    success: true,
+    message: `Dispatch envoyé à ${scored.length} technicien(s)`,
+    notifiedCount: scored.length,
+    technicianIds: scored.map((s) => s.userId),
+    timeoutAt: timeoutAt.toISOString(),
+  }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
 
 // Handle sending notifications to pending technicians (called after payment confirmation)
@@ -575,7 +685,8 @@ async function handleNotify(supabase: any, interventionId: string) {
       category: intervention.category,
       priority: intervention.priority,
       scheduledAt: intervention.scheduled_at ?? null,
-    }
+    },
+    false,
   );
 
   console.log(`[Dispatch] Notifications sent to ${technicianIds.length} technicians`);

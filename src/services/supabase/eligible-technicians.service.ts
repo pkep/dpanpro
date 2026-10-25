@@ -1,20 +1,9 @@
-// Service de récupération des techniciens éligibles pour le dispatch manuel
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/utils/geolocation';
-import type { EligibleTechnician } from '@/services/interfaces/technicians.interface';
+import type { IEligibleTechniciansService, EligibleTechnician, GetEligibleParams } from '@/services/interfaces/eligible-technicians.interface';
 
-// Re-export types for backward compatibility
-export type { EligibleTechnician } from '@/services/interfaces/technicians.interface';
-
-interface GetEligibleParams {
-  interventionId: string;
-  interventionLatitude: number | null;
-  interventionLongitude: number | null;
-  requiredSkill: string;
-  limit?: number;
-}
-
-export async function getEligibleTechnicians(params: GetEligibleParams): Promise<EligibleTechnician[]> {
+class SupabaseEligibleTechniciansService implements IEligibleTechniciansService {
+  async getEligibleTechnicians(params: GetEligibleParams): Promise<EligibleTechnician[]> {
   const { interventionId, interventionLatitude, interventionLongitude, requiredSkill, limit = 10 } = params;
 
   if (!interventionLatitude || !interventionLongitude) return [];
@@ -53,10 +42,30 @@ export async function getEligibleTechnicians(params: GetEligibleParams): Promise
 
   if (usersResult.error) throw usersResult.error;
 
-  const excludedIds = new Set([
-    ...(declinedResult.data || []).map(d => d.technician_id),
-    ...(cancelledResult.data || []).map(c => c.technician_id),
-  ]);
+   const excludedIds = new Set([
+     ...(declinedResult.data || []).map(d => d.technician_id),
+     ...(cancelledResult.data || []).map(c => c.technician_id),
+   ]);
+
+   // 2.5 Get technicians in active interventions (busy)
+   // A suspended intervention keeps its business status → must be excluded.
+   const { data: activeInterventions, error: activeError } = await supabase
+     .from('interventions')
+     .select('technician_id')
+     .eq('suspended', false)
+     .in('status', ['in_progress', 'assigned', 'on_route', 'arrived'])
+     .not('technician_id', 'is', null);
+
+   if (activeError) throw activeError;
+
+   const busyTechnicianIds = new Set(
+     (activeInterventions || [])
+       .map(i => i.technician_id)
+       .filter(Boolean)
+   );
+
+   // Add busy technicians to excluded list
+   busyTechnicianIds.forEach(id => excludedIds.add(id));
 
   // 3. Get ratings
   const { data: interventions } = await supabase
@@ -97,6 +106,10 @@ export async function getEligibleTechnicians(params: GetEligibleParams): Promise
       const distanceKm = Math.round((distMeters / 1000) * ROAD_DETOUR_FACTOR * 10) / 10;
       const estimatedArrivalMinutes = BASE_DEPARTURE_MINUTES + Math.round((distanceKm / AVG_SPEED_KMH) * 60);
       const ratingData = techRatings[app.user_id!];
+      const averageRating = ratingData ? Math.round((ratingData.total / ratingData.count) * 10) / 10 : null;
+      const proximity = Math.max(0, 100 - distanceKm * 2);
+      const ratingScore = averageRating != null ? (averageRating / 5) * 100 : 60;
+      const score = Math.round((proximity * 0.4 + 100 * 0.3 + 100 * 0.2 + ratingScore * 0.1) * 100) / 100;
 
       return {
         id: app.user_id!,
@@ -114,10 +127,20 @@ export async function getEligibleTechnicians(params: GetEligibleParams): Promise
         averageRating: ratingData ? Math.round((ratingData.total / ratingData.count) * 10) / 10 : null,
         distanceKm,
         estimatedArrivalMinutes,
+        score,
+        scoreBreakdown: {
+          proximity: Math.round(proximity * 100) / 100,
+          skills: 100,
+          workload: 100,
+          rating: Math.round(ratingScore * 100) / 100,
+        },
       };
     })
-    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, limit);
 
   return eligible;
+  }
 }
+
+export const supabaseEligibleTechniciansService = new SupabaseEligibleTechniciansService();
