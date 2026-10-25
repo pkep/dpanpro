@@ -121,5 +121,8 @@ class SupabaseNotificationsService implements INotificationsService {
   }
 }
 
-export const supabaseNotificationsService = new SupabaseNotificationsService();
+export const notificationsService = new SupabaseNotificationsService();
+
+/** Alias conservé pour les imports existants. */
+export const supabaseNotificationsService = notificationsService;
 

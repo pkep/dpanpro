@@ -1,4 +1,4 @@
-import type { IUsersService } from '@/services/interfaces/users.interface';
+import type { IUsersService, StaffUser, StaffUserFilters } from '@/services/interfaces/users.interface';
 import type { User, UserRole } from '@/types/auth.types';
 import type { IncompleteTechnicianProfile } from '@/lib/technicianProfileCompleteness';
 import { springHttp } from './http-client';
@@ -278,5 +278,28 @@ export class SpringUsersService implements IUsersService {
   /** Le contrôle qualité de photo s'appuie sur des colonnes non exposées par le contrat. */
   async updatePhotoQuality(_userId: string, _ok: boolean, _issues: string[]): Promise<void> {
     throw new Error('updatePhotoQuality: non supporté en mode Spring');
+  }
+
+  /**
+   * GET /users ne renvoie ni le partenaire B2B, ni le drapeau « doit changer de
+   * mot de passe », ni les permissions manager/payment : la liste « Gestion des
+   * utilisateurs » ne peut pas être reconstituée fidèlement.
+   */
+  async getStaffUsers(_filters?: StaffUserFilters): Promise<StaffUser[]> {
+    throw new Error(
+      'getStaffUsers: non supporté en mode Spring (partenaire B2B, permissions et mot de passe temporaire non exposés)',
+    );
+  }
+
+  /** Aucune route DELETE /users/{id} dans le contrat. */
+  async deleteUser(_id: string): Promise<void> {
+    throw new Error('deleteUser: non supporté en mode Spring (suppression de compte non exposée)');
+  }
+
+  /** Aucune route de régénération du mot de passe temporaire dans le contrat. */
+  async sendFirstConnectionEmail(_id: string): Promise<{ email: string }> {
+    throw new Error(
+      'sendFirstConnectionEmail: non supporté en mode Spring (régénération du mot de passe temporaire non exposée)',
+    );
   }
 }

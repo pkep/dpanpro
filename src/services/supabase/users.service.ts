@@ -3,6 +3,7 @@ import type { User, UserRole } from '@/types/auth.types';
 import type { DbUser } from '@/types/database.types';
 import type { TablesUpdate } from '@/integrations/supabase/types';
 import { IUsersService } from "@/services/interfaces";
+import type { StaffUser, StaffUserFilters } from '@/services/interfaces/users.interface';
 import {
   computeMissingProfileFields,
   isProfileComplete,
