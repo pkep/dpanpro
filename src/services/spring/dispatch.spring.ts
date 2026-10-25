@@ -57,4 +57,46 @@ export class SpringDispatchService implements IDispatchService {
   async getTechnicianPendingAssignments(technicianId: string): Promise<DispatchAttempt[]> {
     return springHttp.get<DispatchAttempt[]>(`/dispatch/technicians/${technicianId}/pending`);
   }
+
+  /**
+   * POST /dispatch/interventions/{id}/manual × N : le contrat n'accepte qu'un
+   * seul technicien par appel, la sélection multiple est donc envoyée technicien
+   * par technicien et le dernier résultat est renvoyé.
+   */
+  async dispatchSelected(interventionId: string, technicianIds: string[]): Promise<DispatchResult> {
+    if (technicianIds.length === 0) {
+      return { success: false, message: 'Aucun technicien sélectionné' };
+    }
+    let result: DispatchResult = { success: false, message: 'Dispatch manuel non effectué' };
+    for (const technicianId of technicianIds) {
+      result = await this.manualDispatch(interventionId, technicianId);
+    }
+    return result;
+  }
+
+  /** GET /dispatch/attempts × N : le contrat n'a pas de route « batch ». */
+  async getDispatchAttemptsBatch(interventionIds: string[]): Promise<Record<string, DispatchAttempt[]>> {
+    const grouped: Record<string, DispatchAttempt[]> = {};
+    for (const interventionId of interventionIds) {
+      grouped[interventionId] = await this.getDispatchAttempts(interventionId);
+    }
+    return grouped;
+  }
+
+  /**
+   * Pas de route « interventions refusées par un technicien » : la liste est
+   * dérivée des tentatives de dispatch (refus ou annulation), comme en mode
+   * Lovable Cloud.
+   */
+  async getDeclinedInterventionIds(technicianId: string, interventionIds: string[]): Promise<string[]> {
+    if (interventionIds.length === 0) return [];
+    const attempts = await this.getDispatchAttemptsBatch(interventionIds);
+    return interventionIds.filter((interventionId) =>
+      (attempts[interventionId] ?? []).some(
+        (attempt) =>
+          attempt.technicianId === technicianId &&
+          (attempt.status === 'rejected' || attempt.status === 'cancelled'),
+      ),
+    );
+  }
 }

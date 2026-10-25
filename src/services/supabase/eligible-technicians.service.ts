@@ -144,3 +144,10 @@ class SupabaseEligibleTechniciansService implements IEligibleTechniciansService 
 }
 
 export const supabaseEligibleTechniciansService = new SupabaseEligibleTechniciansService();
+
+/** Accès direct utilisé par l'onglet « Dispatch » de l'admin. */
+export function getEligibleTechnicians(params: GetEligibleParams): Promise<EligibleTechnician[]> {
+  return supabaseEligibleTechniciansService.getEligibleTechnicians(params);
+}
+
+export type { EligibleTechnician, GetEligibleParams } from '@/services/interfaces/eligible-technicians.interface';
