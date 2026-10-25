@@ -439,7 +439,7 @@ class UsersService implements IUsersService {
     phone?: string;
     role: 'admin' | 'manager';
     createdBy: string;
-    loginUrl: string;
+    loginUrl?: string;
   }): Promise<{ userId: string; tempPassword: string; email: string }> {
     // Call edge function to create admin/manager with secure password generation
     const { data: result, error } = await supabase.functions.invoke('create-admin-user', {
@@ -450,7 +450,6 @@ class UsersService implements IUsersService {
         phone: data.phone || null,
         role: data.role,
         createdBy: data.createdBy,
-        loginUrl: data.loginUrl,
       },
     });
 

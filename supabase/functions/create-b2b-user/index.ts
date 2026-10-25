@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { encode } from "https://deno.land/std@0.168.0/encoding/hex.ts";
+import { buildLoginUrl } from "../_shared/app-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,7 +34,6 @@ serve(async (req) => {
       email,
       phone,
       createdBy,
-      loginUrl,
     } = await req.json();
 
     if (!b2bPartnerId || !email) {
@@ -140,7 +140,7 @@ serve(async (req) => {
           lastName: resolvedLastName,
           role: "b2b",
           tempPassword,
-          loginUrl: loginUrl || `${Deno.env.get("FRONTEND_URL") || Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app"}/auth`,
+          loginUrl: buildLoginUrl(),
         }),
       });
     } catch (emailError) {

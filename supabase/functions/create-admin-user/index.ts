@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { encode } from "https://deno.land/std@0.168.0/encoding/hex.ts";
+import { buildLoginUrl } from "../_shared/app-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,7 +31,7 @@ serve(async (req) => {
   }
 
   try {
-    const { firstName, lastName, email, phone, role, createdBy, loginUrl } = await req.json();
+    const { firstName, lastName, email, phone, role, createdBy } = await req.json();
 
     // Validate required fields
     if (!firstName || !lastName || !email || !role) {
@@ -175,7 +176,7 @@ serve(async (req) => {
             lastName,
             role,
             tempPassword,
-            loginUrl: loginUrl || `${Deno.env.get("FRONTEND_URL") || Deno.env.get("SITE_URL") || "https://dpanpro.lovable.app"}/auth`,
+            loginUrl: buildLoginUrl(),
           }),
         }
       );

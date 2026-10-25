@@ -345,7 +345,6 @@ class SupabaseB2bService implements IB2bService {
         lastName: partner.contactLastname,
         phone: partner.contactPhone,
         createdBy,
-        loginUrl: `${window.location.origin}/auth`,
       },
     });
     if (error) throw error;

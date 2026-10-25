@@ -4,6 +4,14 @@
  */
 import { wrapInBaseLayout } from "./base-layout.ts";
 
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 interface WelcomeAdminTemplateData {
   firstName: string;
   email: string;
@@ -47,7 +55,7 @@ export function buildWelcomeAdminEmailHtml(data: WelcomeAdminTemplateData): stri
     
     <!-- CTA Button -->
     <div style="text-align: center; margin-bottom: 24px;">
-      <a href="${loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #0FB87F, #0a9e6a); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
+      <a href="${escapeHtmlAttribute(loginUrl)}" rel="noopener noreferrer" style="display: inline-block; background: linear-gradient(135deg, #0FB87F, #0a9e6a); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600;">
         Se connecter
       </a>
     </div>
