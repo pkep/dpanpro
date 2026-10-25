@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { buildTechnicianApplicationEmailHtml } from "../_shared/email-templates/technician-application.ts";
+import { buildLoginUrl } from "../_shared/app-url.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -81,7 +82,7 @@ serve(async (req) => {
       console.log(`[NotifyTechnicianApplication] Activation URL generated for ${email}`);
     } else if (action === "approved" || action === "activated") {
       // Le profil est validé : lien de connexion à l'espace technicien
-      loginUrl = `${siteUrl}/login`;
+      loginUrl = buildLoginUrl();
     }
 
     const { subject, html: htmlContent } = buildTechnicianApplicationEmailHtml({
