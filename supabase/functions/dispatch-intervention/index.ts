@@ -707,7 +707,7 @@ async function handleAssign(supabase: any, interventionId: string, technicianId:
 
   const { data: intervention, error } = await supabase
     .from('interventions')
-    .select('id, status, technician_id')
+    .select('id, status, technician_id, created_at')
     .eq('id', interventionId)
     .single();
 
@@ -735,7 +735,11 @@ async function handleAssign(supabase: any, interventionId: string, technicianId:
   }
 
   const oldStatus = intervention.status;
-  const now = new Date().toISOString();
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
+  const responseTimeSeconds = Math.round(
+    (nowDate.getTime() - new Date(intervention.created_at).getTime()) / 1000,
+  );
 
   const { error: updateError } = await supabase
     .from('interventions')
@@ -743,10 +747,40 @@ async function handleAssign(supabase: any, interventionId: string, technicianId:
       technician_id: technicianId,
       status: 'assigned',
       accepted_at: now,
+      response_time_seconds: responseTimeSeconds,
     })
     .eq('id', interventionId);
 
   if (updateError) throw updateError;
+
+  // Base officielle des acceptations : tentative accepted, même pour une assignation manuelle.
+  await supabase
+    .from('dispatch_attempts')
+    .update({ status: 'cancelled' })
+    .eq('intervention_id', interventionId)
+    .eq('status', 'pending');
+
+  const { data: lastAttempt } = await supabase
+    .from('dispatch_attempts')
+    .select('attempt_order')
+    .eq('intervention_id', interventionId)
+    .order('attempt_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error: attemptError } = await supabase
+    .from('dispatch_attempts')
+    .insert({
+      intervention_id: interventionId,
+      technician_id: technicianId,
+      score: 0,
+      score_breakdown: { manual: true },
+      status: 'accepted',
+      attempt_order: (lastAttempt?.attempt_order || 0) + 1,
+      notified_at: now,
+      responded_at: now,
+    });
+  if (attemptError) throw attemptError;
 
   await recordInterventionStatusChange(supabase, interventionId, 'assigned');
 

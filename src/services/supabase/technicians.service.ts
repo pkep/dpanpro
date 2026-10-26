@@ -1,11 +1,31 @@
 import { supabase } from '@/integrations/supabase/client';
 import { calculateDistance } from '@/utils/geolocation';
-import type { TechnicianWithLocation, NearbyTechnician } from '@/services/interfaces/technicians.interface';
+import type { TechnicianPosition, TechnicianProfile, EnrichedTechnicianLocation, ITechniciansService, TechnicianWithoutPosition } from '@/services/interfaces/technicians.interface';
 
-// Re-export types for backward compatibility
-export type { TechnicianWithLocation, NearbyTechnician } from '@/services/interfaces/technicians.interface';
+export interface TechnicianWithLocation {
+  id: string;
+  userId: string;
+  companyName: string;
+  currentCity: string | null;
+  department: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  skills: string[];
+  averageRating: number | null;
+  totalRatings: number;
+  user: {
+    firstName: string;
+    lastName: string;
+  };
+}
 
-class TechniciansService {
+export interface NearbyTechnician extends TechnicianWithLocation {
+  distanceKm: number;
+  estimatedTravelTimeMinutes: number;
+  estimatedArrivalTime: Date;
+}
+
+class SupabaseTechniciansService implements ITechniciansService {
   async updateTechnicianLocation(
     userId: string,
     latitude: number,
@@ -20,8 +40,8 @@ class TechniciansService {
         longitude,
         current_city: city,
         department,
-      } as Record<string, unknown>)
-      .eq('user_id', userId);
+      } as never)
+      .eq("user_id", userId);
 
     if (error) {
       console.error('Error updating technician location:', error);
@@ -110,6 +130,130 @@ class TechniciansService {
     return technicians;
   }
 
+  async getActiveTechniciansWithLocationEnriched(): Promise<EnrichedTechnicianLocation[]> {
+    try {
+      // Get partner applications with location (approved status)
+      const { data: applications, error: appError } = await supabase
+        .from('partner_applications')
+        .select('id, user_id, company_name, latitude, longitude, current_city, department, skills, updated_at')
+        .eq('status', 'approved')
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
+
+      if (appError) throw appError;
+      if (!applications || applications.length === 0) return [];
+
+      // Get user details (firstName, lastName, email, phone, avatar)
+      const userIds = applications.map((a) => a.user_id).filter(Boolean);
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email, phone, avatar_url')
+        .in('id', userIds)
+        .eq('is_active', true)
+        .eq('role', 'technician');
+
+      if (usersError) throw usersError;
+
+      // Get partner statistics (average_rating, completed_interventions)
+      const { data: stats } = await supabase
+        .from('partner_statistics')
+        .select('partner_id, average_rating, completed_interventions')
+        .in('partner_id', userIds);
+
+      // Get active interventions to determine who's busy
+      // A suspended intervention keeps its business status → must be excluded (and 'arrived' counts).
+      const { data: activeInterventions } = await supabase
+        .from('interventions')
+        .select('technician_id')
+        .eq('suspended', false)
+        .in('status', ['assigned', 'on_route', 'arrived', 'in_progress'])
+        .in('technician_id', userIds);
+
+      const busyTechnicianIds = new Set(
+        (activeInterventions || []).map((i) => i.technician_id)
+      );
+
+      // Build enriched technician locations
+      const techLocations: EnrichedTechnicianLocation[] = [];
+      for (const app of applications) {
+        const user = (users as any[])?.find((u) => u.id === app.user_id);
+        if (!user) continue;
+
+        const stat = (stats as any[])?.find((s) => s.partner_id === app.user_id);
+
+        techLocations.push({
+          id: app.id,
+          userId: app.user_id!,
+          companyName: app.company_name,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          email: user.email,
+          phone: user.phone,
+          avatarUrl: user.avatar_url,
+          latitude: app.latitude!,
+          longitude: app.longitude!,
+          currentCity: app.current_city,
+          department: app.department,
+          skills: app.skills || [],
+          averageRating: stat?.average_rating ? Number(stat.average_rating) : null,
+          completedInterventions: stat?.completed_interventions || 0,
+          updatedAt: new Date(app.updated_at),
+          hasActiveIntervention: busyTechnicianIds.has(app.user_id!),
+        });
+      }
+
+      return techLocations;
+    } catch (error) {
+      console.error('Error fetching enriched technicians with location:', error);
+      throw error;
+    }
+  }
+
+  async getTechniciansWithoutPosition(): Promise<TechnicianWithoutPosition[]> {
+    const { data: applications, error } = await supabase
+      .from('partner_applications')
+      .select('id, user_id, company_name, latitude, longitude')
+      .eq('status', 'approved');
+    if (error) throw error;
+
+    const missing = (applications || []).filter((a) => a.latitude == null || a.longitude == null);
+    const userIds = missing.map((a) => a.user_id).filter(Boolean) as string[];
+    if (userIds.length === 0) return [];
+
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, first_name, last_name, email, phone, is_active, role')
+      .in('id', userIds)
+      .eq('is_active', true)
+      .eq('role', 'technician');
+    if (usersError) throw usersError;
+
+    return missing
+      .map((app) => {
+        const user = (users || []).find((u) => u.id === app.user_id);
+        if (!user) return null;
+        return {
+          id: app.id,
+          userId: app.user_id as string,
+          companyName: app.company_name ?? '',
+          firstName: user.first_name ?? '',
+          lastName: user.last_name ?? '',
+          email: user.email,
+          phone: user.phone ?? null,
+        } satisfies TechnicianWithoutPosition;
+      })
+      .filter((x): x is TechnicianWithoutPosition => x !== null);
+  }
+
+  async remindTechniciansLocation(technicianIds: string[]): Promise<{ sent: number; failed: number; skipped: number }> {
+    const { data, error } = await supabase.functions.invoke('send-technician-location-reminder', {
+      body: { technicianIds },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+
   async getNearestTechnicians(
     targetLatitude: number,
     targetLongitude: number,
@@ -157,6 +301,48 @@ class TechniciansService {
 
     return techniciansWithDistance;
   }
+
+
+  // ── Profil enrichi ──
+  async getTechnicianPosition(technicianId: string): Promise<TechnicianPosition | null> {
+    const { data: app, error } = await supabase
+      .from('partner_applications')
+      .select('latitude, longitude, address, current_city')
+      .eq('user_id', technicianId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!app) return null;
+
+    return {
+      latitude: app.latitude,
+      longitude: app.longitude,
+      address: app.address || '',
+      city: app.current_city || '',
+    };
+  }
+
+  async getTechnicianAvatar(technicianId: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('avatar_url')
+      .eq('id', technicianId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data?.avatar_url || null;
+  }
+
+  async getTechnicianProfile(technicianId: string): Promise<TechnicianProfile | null> {
+    const { data, error } = await supabase
+      .from('partner_applications')
+      .select('iban, bic, bank_account_holder, siren, company_name, legal_status, vat_number')
+      .eq('user_id', technicianId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data || null;
+  }
 }
 
-export const techniciansService = new TechniciansService();
+export const techniciansService = new SupabaseTechniciansService();

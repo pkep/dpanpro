@@ -454,7 +454,17 @@ class SupabaseInterventionsService implements IInterventionsService {
   }
 
   async finalized(interventionId: string, finalPrice: number, signatureData: string): Promise<void> {
-    var current = new Date().toISOString()
+    const current = new Date().toISOString()
+    const { data: timing } = await supabase
+      .from('interventions')
+      .select('started_at, arrived_at')
+      .eq('id', interventionId)
+      .single();
+    const startedAt = timing?.started_at ?? timing?.arrived_at ?? null;
+    const durationSeconds = startedAt
+      ? Math.max(0, Math.round((new Date(current).getTime() - new Date(startedAt).getTime()) / 1000))
+      : null;
+
     const { error } = await supabase
       .from('interventions')
       .update({
@@ -462,7 +472,8 @@ class SupabaseInterventionsService implements IInterventionsService {
         final_price: finalPrice,
         invoice_signed_at: current,
         invoice_signature_data: signatureData,
-        completed_at: current
+        completed_at: current,
+        intervention_duration_seconds: durationSeconds,
       } as TablesUpdate<'interventions'>)
       .eq('id', interventionId);
 
