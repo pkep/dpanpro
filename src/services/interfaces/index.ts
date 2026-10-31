@@ -8,7 +8,8 @@ export type { IQuotesService, QuoteLine, QuoteInput, QuoteSummary } from './quot
 export type { IRatingsService, Rating } from './ratings.interface';
 export type { IMessagesService, InterventionMessage } from './messages.interface';
 export type { IScheduleService, TechnicianSchedule, ScheduleOverride } from './schedule.interface';
-export type { ITechniciansService, TechnicianWithLocation, NearbyTechnician, EligibleTechnician } from './technicians.interface';
+export type { ITechniciansService, TechnicianWithLocation, NearbyTechnician } from './technicians.interface';
+export type { IEligibleTechniciansService, EligibleTechnician, EligibleTechnicianScoreBreakdown, GetEligibleParams } from './eligible-technicians.interface';
 export type { IServicesService, Service } from './services.interface';
 export type { IHistoryService } from './history.interface';
 export type { IPhotosService } from './photos.interface';

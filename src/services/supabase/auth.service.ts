@@ -375,7 +375,7 @@ class AuthService implements IAuthService {
    * in-memory + localStorage session. Fixes stale cached data (avatar, name…)
    * after an admin/manager edited the account on another device.
    */
-  async refreshCurrentUser(): Promise<User | null> {
+  async refreshUser(): Promise<User | null> {
     const current = this.getCurrentUser();
     if (!current?.id) return current;
 
@@ -399,7 +399,7 @@ class AuthService implements IAuthService {
       this.notifyListeners();
       return user;
     } catch (error) {
-      console.warn('[auth] refreshCurrentUser failed:', error);
+      console.warn('[auth] refreshUser failed:', error);
       return current;
     }
   }
