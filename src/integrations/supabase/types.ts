@@ -423,6 +423,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          details: Json
           id: string
           intervention_id: string | null
           invoice_id: string
@@ -431,6 +432,7 @@ export type Database = {
         Insert: {
           amount?: number
           created_at?: string
+          details?: Json
           id?: string
           intervention_id?: string | null
           invoice_id: string
@@ -439,6 +441,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          details?: Json
           id?: string
           intervention_id?: string | null
           invoice_id?: string
@@ -1199,6 +1202,7 @@ export type Database = {
           base_price: number
           calculated_price: number
           created_at: string
+          description: string | null
           display_order: number
           id: string
           intervention_id: string
@@ -1210,6 +1214,7 @@ export type Database = {
           base_price?: number
           calculated_price?: number
           created_at?: string
+          description?: string | null
           display_order?: number
           id?: string
           intervention_id: string
@@ -1221,6 +1226,7 @@ export type Database = {
           base_price?: number
           calculated_price?: number
           created_at?: string
+          description?: string | null
           display_order?: number
           id?: string
           intervention_id?: string
@@ -1363,6 +1369,7 @@ export type Database = {
           final_price: number | null
           id: string
           intervention_duration_seconds: number | null
+          invoice_number: string | null
           invoice_pdf_url: string | null
           invoice_signature_data: string | null
           invoice_signature_id: string | null
@@ -1381,6 +1388,7 @@ export type Database = {
           prix_min: number | null
           questionnaire_answers: Json | null
           questionnaire_resultat_id: string | null
+          quote_number: string | null
           quote_pdf_url: string | null
           quote_signature_data: string | null
           quote_signature_id: string | null
@@ -1441,6 +1449,7 @@ export type Database = {
           final_price?: number | null
           id?: string
           intervention_duration_seconds?: number | null
+          invoice_number?: string | null
           invoice_pdf_url?: string | null
           invoice_signature_data?: string | null
           invoice_signature_id?: string | null
@@ -1459,6 +1468,7 @@ export type Database = {
           prix_min?: number | null
           questionnaire_answers?: Json | null
           questionnaire_resultat_id?: string | null
+          quote_number?: string | null
           quote_pdf_url?: string | null
           quote_signature_data?: string | null
           quote_signature_id?: string | null
@@ -1519,6 +1529,7 @@ export type Database = {
           final_price?: number | null
           id?: string
           intervention_duration_seconds?: number | null
+          invoice_number?: string | null
           invoice_pdf_url?: string | null
           invoice_signature_data?: string | null
           invoice_signature_id?: string | null
@@ -1537,6 +1548,7 @@ export type Database = {
           prix_min?: number | null
           questionnaire_answers?: Json | null
           questionnaire_resultat_id?: string | null
+          quote_number?: string | null
           quote_pdf_url?: string | null
           quote_signature_data?: string | null
           quote_signature_id?: string | null
@@ -1621,6 +1633,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_runs: {
+        Row: {
+          error_message: string | null
+          failed_count: number
+          finished_at: string | null
+          id: string
+          job_name: string
+          metadata: Json
+          processed_count: number
+          started_at: string
+          status: string
+        }
+        Insert: {
+          error_message?: string | null
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          job_name: string
+          metadata?: Json
+          processed_count?: number
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          error_message?: string | null
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          job_name?: string
+          metadata?: Json
+          processed_count?: number
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
       }
       manager_permissions: {
         Row: {
@@ -2510,6 +2558,35 @@ export type Database = {
           },
         ]
       }
+      rating_reminders_sent: {
+        Row: {
+          id: string
+          intervention_id: string
+          sent_at: string
+          stage: string
+        }
+        Insert: {
+          id?: string
+          intervention_id: string
+          sent_at?: string
+          stage: string
+        }
+        Update: {
+          id?: string
+          intervention_id?: string
+          sent_at?: string
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rating_reminders_sent_intervention_id_fkey"
+            columns: ["intervention_id"]
+            isOneToOne: false
+            referencedRelation: "interventions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_reminders: {
         Row: {
           created_at: string
@@ -2833,6 +2910,35 @@ export type Database = {
           },
         ]
       }
+      technician_reconnect_reminders: {
+        Row: {
+          id: string
+          sent_at: string
+          sent_date: string
+          technician_id: string
+        }
+        Insert: {
+          id?: string
+          sent_at?: string
+          sent_date?: string
+          technician_id: string
+        }
+        Update: {
+          id?: string
+          sent_at?: string
+          sent_date?: string
+          technician_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_reconnect_reminders_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technician_schedule_overrides: {
         Row: {
           created_at: string
@@ -3028,6 +3134,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_company: boolean
+          last_login_at: string | null
           last_name: string
           must_change_password: boolean | null
           oauth_email_verified: boolean
@@ -3054,6 +3161,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_company?: boolean
+          last_login_at?: string | null
           last_name: string
           must_change_password?: boolean | null
           oauth_email_verified?: boolean
@@ -3080,6 +3188,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_company?: boolean
+          last_login_at?: string | null
           last_name?: string
           must_change_password?: boolean | null
           oauth_email_verified?: boolean
@@ -3176,6 +3285,7 @@ export type Database = {
           title: string
         }[]
       }
+      next_document_number: { Args: { p_type: string }; Returns: string }
       reject_technician_application: {
         Args: { p_application_id: string; p_reason?: string }
         Returns: {
@@ -3233,6 +3343,7 @@ export type Database = {
           base_price: number
           calculated_price: number
           created_at: string
+          description: string | null
           display_order: number
           id: string
           intervention_id: string
