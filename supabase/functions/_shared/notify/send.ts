@@ -1,4 +1,5 @@
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+// deno-lint-ignore no-explicit-any
+type SupabaseClient = any;
 import { isB2bIntervention } from "./guard.ts";
 import { sendSMS } from "../sms/twilio.ts";
 
