@@ -35,6 +35,7 @@ const mapLine = (r: Record<string, unknown>): B2bInvoiceLine => ({
   interventionId: (r.intervention_id as string) ?? null,
   label: (r.label as string) ?? null,
   amount: Number(r.amount ?? 0),
+  details: (r.details as B2bInvoiceLine['details']) ?? undefined,
 });
 
 const mapInvoice = (r: Record<string, unknown>, lines: B2bInvoiceLine[]): B2bInvoice => ({

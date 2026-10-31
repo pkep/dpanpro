@@ -1,11 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { IQuotesService, QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/quotes.interface';
-import type { Service } from '@/services/interfaces/services.interface';
-
-export type { QuoteLine, QuoteInput, QuoteSummary } from '@/services/interfaces/quotes.interface';
-export type { Service } from '@/services/interfaces/services.interface';
+import type { IQuotesService, QuoteLine, QuoteInput, QuoteSummary, Service } from '@/services/interfaces/quotes.interface';
 import type { DbQuoteLine } from '@/services/interfaces/supabase-database.interface';
 import { isB2bCapExceeded, b2bEffectiveCap } from '@/lib/b2bPriceCap';
+import { affiliateCampaignService } from '@/services/supabase/affiliate-campaign.service';
+import { applyCampaignDiscounts, resolveActiveCampaigns } from '@/lib/campaignDiscount';
 
 const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label: string }> = {
   displacement: { label: 'Déplacement technicien' },
@@ -14,57 +12,6 @@ const QUOTE_LINES_CONFIG: Record<'displacement' | 'security' | 'repair', { label
 };
 
 export class SupabaseQuotesService implements IQuotesService {
-  /**
-   * Check if priority multiplier is enabled globally in site settings
-   */
-  async isMultiplierEnabled(): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('site_settings')
-      .select('setting_value')
-      .eq('setting_key', 'priority_multiplier_enabled')
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching multiplier setting:', error);
-      return true; // Default to enabled
-    }
-
-    return data?.setting_value !== 'false';
-  }
-
-  /**
-   * Check if a specific priority multiplier is enabled
-   */
-  async isPriorityMultiplierEnabled(priority: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('priority_multipliers')
-      .select('is_enabled')
-      .eq('priority', priority)
-      .maybeSingle();
-
-    if (error) {
-      console.error('Error fetching priority multiplier:', error);
-      return true; // Default to enabled
-    }
-
-    return data?.is_enabled !== false;
-  }
-
-  /**
-   * Get the effective multiplier for a priority (returns 1 if disabled at any level)
-   */
-  async getEffectiveMultiplier(priority: string, multiplierValue: number): Promise<number> {
-    // Check global setting first
-    const globalEnabled = await this.isMultiplierEnabled();
-    if (!globalEnabled) return 1;
-
-    // Check individual priority setting
-    const priorityEnabled = await this.isPriorityMultiplierEnabled(priority);
-    if (!priorityEnabled) return 1;
-
-    return multiplierValue;
-  }
-
   /**
    * Generate quote lines for an intervention based on service prices and multiplier
    * Only includes lines with a price > 0
@@ -135,18 +82,59 @@ export class SupabaseQuotesService implements IQuotesService {
    * Save quote lines to database
    */
   async saveQuoteLines(interventionId: string, lines: QuoteInput[]): Promise<QuoteLine[]> {
-    // Plafond de prix B2B : bloque la sauvegarde du devis si le total TTC dépasse le plafond effectif.
+    // Lignes "métier" uniquement : on retire une éventuelle ligne de remise déjà injectée.
+    const baseLines = lines.filter((l) => l.lineType !== 'campaign_discount');
+
     const { data: intervention } = await supabase
       .from('interventions')
-      .select('billing_type, b2b_price_cap')
+      .select('billing_type, b2b_price_cap, campaign_code')
       .eq('id', interventionId)
       .maybeSingle();
-    const inv = intervention as { billing_type?: string; b2b_price_cap?: number | null } | null;
-    if (inv?.billing_type === 'b2b') {
-      if (inv.b2b_price_cap == null) {
+    const inv = intervention as { billing_type?: string; b2b_price_cap?: number | null; campaign_code?: string | null } | null;
+    const isB2b = inv?.billing_type === 'b2b';
+
+    // ── Remise campagne (B2C uniquement), appliquée sur le total HT du devis ──
+    let applied: {
+      campaign: { id: string; name: string; code: string | null; commissionType: 'percentage' | 'fixed'; commissionValue: number };
+      baseAmount: number;
+      discountAmount: number;
+    }[] = [];
+    let campaignDiscount = 0;
+    let campaignLines: QuoteInput[] = [];
+
+    if (!isB2b) {
+      const baseHt = baseLines.reduce(
+        (s, l) => s + Math.round(l.basePrice * l.multiplier * 100) / 100,
+        0,
+      );
+      const campaigns = await affiliateCampaignService.getActiveCampaigns();
+      const result = applyCampaignDiscounts(
+        baseHt,
+        resolveActiveCampaigns(campaigns, new Date(), inv?.campaign_code),
+      );
+      applied = result.applied;
+      campaignDiscount = result.discountAmount;
+      campaignLines = result.applied.map((a) => ({
+        lineType: 'campaign_discount' as const,
+        label:
+          `Remise campagne ${a.campaign.name}` +
+          (a.campaign.code ? ` [${a.campaign.code}]` : '') +
+          (a.campaign.commissionType === 'percentage'
+            ? ` (-${a.campaign.commissionValue}%)`
+            : ` (-${a.campaign.commissionValue.toFixed(2)} €)`),
+        basePrice: -a.discountAmount,
+        multiplier: 1,
+      }));
+    }
+
+    const allLines = [...baseLines, ...campaignLines];
+
+    // Plafond de prix B2B : bloque la sauvegarde du devis si le total TTC dépasse le plafond effectif.
+    if (isB2b) {
+      if (inv?.b2b_price_cap == null) {
         throw new Error('Aucun plafond de prix B2B défini. Contactez un manager pour le définir avant de valider.');
       }
-      const totalHt = lines.reduce((s, l) => s + Math.round(l.basePrice * l.multiplier * 100) / 100, 0);
+      const totalHt = allLines.reduce((s, l) => s + Math.round(l.basePrice * l.multiplier * 100) / 100, 0);
       const totalTtc = Math.round(totalHt * 1.2 * 100) / 100;
       if (isB2bCapExceeded(totalTtc, inv.b2b_price_cap)) {
         throw new Error(
@@ -157,10 +145,11 @@ export class SupabaseQuotesService implements IQuotesService {
       }
     }
 
-    const insertData = lines.map((line, index) => ({
+    const insertData = allLines.map((line, index) => ({
       intervention_id: interventionId,
       line_type: line.lineType,
       label: line.label,
+      description: line.description || null,
       base_price: line.basePrice,
       multiplier: line.multiplier,
       calculated_price: Math.round(line.basePrice * line.multiplier * 100) / 100,
@@ -205,10 +194,61 @@ export class SupabaseQuotesService implements IQuotesService {
         .select();
       if (insertError) throw insertError;
 
-      return ((fallbackData || []) as unknown as DbQuoteLine[]).map((d) => this.mapToQuoteLine(d));
+      const fallbackLines = ((fallbackData || []) as unknown as DbQuoteLine[]).map((d) => this.mapToQuoteLine(d));
+      await this.syncCampaignSnapshot(interventionId, isB2b, applied, campaignDiscount);
+      return fallbackLines;
     }
 
-    return ((data || []) as unknown as DbQuoteLine[]).map((d) => this.mapToQuoteLine(d));
+    const savedLines = ((data || []) as unknown as DbQuoteLine[]).map((d) => this.mapToQuoteLine(d));
+    await this.syncCampaignSnapshot(interventionId, isB2b, applied, campaignDiscount);
+    return savedLines;
+  }
+
+  /**
+   * Persiste le snapshot des campagnes appliquées (historique) et le total remisé HT
+   * sur l'intervention. Best-effort : ne bloque pas l'enregistrement du devis.
+   */
+  private async syncCampaignSnapshot(
+    interventionId: string,
+    isB2b: boolean,
+    applied: {
+      campaign: { id: string; name: string; code: string | null; commissionType: 'percentage' | 'fixed'; commissionValue: number };
+      baseAmount: number;
+      discountAmount: number;
+    }[],
+    discountAmount: number,
+  ): Promise<void> {
+    try {
+      const db = supabase as unknown as { from: (table: string) => any };
+      await db.from('intervention_campaigns').delete().eq('intervention_id', interventionId);
+
+      if (!isB2b && applied.length > 0) {
+        const rows = applied.map((a) => ({
+          intervention_id: interventionId,
+          campaign_id: a.campaign.id,
+          code: a.campaign.code,
+          name: a.campaign.name,
+          commission_type: a.campaign.commissionType,
+          commission_value: a.campaign.commissionValue,
+          base_amount: a.baseAmount,
+          discount_amount: a.discountAmount,
+        }));
+        const { error } = await db.from('intervention_campaigns').insert(rows);
+        if (error) throw error;
+
+        await db.from('interventions').update({
+          campaign_id: applied[0].campaign.id,
+          campaign_discount_amount: discountAmount,
+        }).eq('id', interventionId);
+      } else {
+        await db.from('interventions').update({
+          campaign_id: null,
+          campaign_discount_amount: null,
+        }).eq('id', interventionId);
+      }
+    } catch (error) {
+      console.warn('[quotes] campaign snapshot sync failed:', error);
+    }
   }
 
   /**
@@ -249,6 +289,7 @@ export class SupabaseQuotesService implements IQuotesService {
       interventionId: data.intervention_id,
       lineType: data.line_type as 'displacement' | 'security' | 'repair',
       label: data.label,
+      description: data.description,
       basePrice: data.base_price,
       multiplier: data.multiplier,
       calculatedPrice: data.calculated_price,

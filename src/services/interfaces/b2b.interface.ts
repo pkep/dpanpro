@@ -47,11 +47,22 @@ export interface B2bPartnerInput {
 
 export type B2bInvoiceStatus = 'draft' | 'sent' | 'paid' | 'cancelled';
 
+export interface B2bInvoiceLineDetails {
+  interventionDate?: string | null;
+  externalRef?: string | null;
+  address?: string | null;
+  details?: string[];
+  technicianName?: string | null;
+  trackingCode?: string | null;
+  perServiceInvoiceNumber?: string | null;
+}
+
 export interface B2bInvoiceLine {
   id: string;
   interventionId: string | null;
   label: string | null;
   amount: number;
+  details?: B2bInvoiceLineDetails;
 }
 
 export interface B2bInvoice {

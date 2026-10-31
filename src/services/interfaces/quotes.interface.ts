@@ -3,6 +3,7 @@ export interface QuoteLine {
   interventionId: string;
   lineType: 'displacement' | 'security' | 'repair' | 'campaign_discount';
   label: string;
+  description?: string | null;
   basePrice: number;
   multiplier: number;
   calculatedPrice: number;
@@ -13,6 +14,7 @@ export interface QuoteLine {
 export interface QuoteInput {
   lineType: 'displacement' | 'security' | 'repair' | 'campaign_discount';
   label: string;
+  description?: string | null;
   basePrice: number;
   multiplier: number;
 }

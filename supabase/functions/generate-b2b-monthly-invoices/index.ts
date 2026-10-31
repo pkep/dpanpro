@@ -12,7 +12,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { firstDayOfMonth, lastDayOfMonth, monthLabel, isLastDayOfMonthParis, b2bInvoicePath } from "../_shared/b2b-period.ts";
-import { buildB2bInvoicePdfBase64, type B2bInvoiceLine } from "../_shared/b2b-invoice-pdf.ts";
+import { buildB2bInvoicePdfBase64 } from "../_shared/b2b-invoice-pdf.ts";
+import { buildB2bMonthlyLines } from "../_shared/b2b-lines.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,7 +68,7 @@ serve(async (req) => {
 
       const { data: interventions, error: iErr } = await supabase
         .from("interventions")
-        .select("id, category, final_price, estimated_price, completed_at")
+        .select("id, category, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number")
         .eq("b2b_partner_id", partner.id)
         .is("b2b_invoice_id", null)
         .eq("status", "completed")
@@ -77,11 +78,7 @@ serve(async (req) => {
       if (iErr) throw iErr;
       if (!interventions || interventions.length === 0) { skipped++; continue; }
 
-      const lines: B2bInvoiceLine[] = interventions.map((i: any) => ({
-        interventionId: i.id,
-        label: `Intervention ${i.category} ${String(i.completed_at).slice(0, 10)} (${i.id})`,
-        amount: Number(i.final_price ?? i.estimated_price ?? 0),
-      }));
+      const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
       const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
       // Autoliquidation TVA (sous-traitance BTP) : pas de TVA, TTC = HT.
       const vatExempt = (partner as { construction_company?: boolean | null }).construction_company === true;
@@ -107,7 +104,21 @@ serve(async (req) => {
       if (invErr) throw invErr;
 
       await supabase.from("b2b_invoices_lines").insert(
-        lines.map((l) => ({ invoice_id: invoice.id, intervention_id: l.interventionId, label: l.label, amount: l.amount })),
+        lines.map((l) => ({
+          invoice_id: invoice.id,
+          intervention_id: l.interventionId,
+          label: l.label,
+          amount: l.amount,
+          details: {
+            interventionDate: l.interventionDate,
+            externalRef: l.externalRef,
+            address: l.address,
+            details: l.details,
+            technicianName: l.technicianName,
+            trackingCode: l.trackingCode,
+            perServiceInvoiceNumber: l.perServiceInvoiceNumber,
+          },
+        })),
       );
       await supabase.from("interventions")
         .update({ b2b_invoice_id: invoice.id })

@@ -9,6 +9,7 @@ export interface DbQuoteLine {
   intervention_id: string;
   line_type: string;
   label: string;
+  description: string | null;
   base_price: number;
   multiplier: number;
   calculated_price: number;
