@@ -187,13 +187,6 @@ export async function renderQuotePdf(interventionId: string) {
 
     const quoteDate = intervention.quote_signed_at ? new Date(intervention.quote_signed_at) : new Date();
     const quoteNumber = await ensureDocumentNumber(supabase, interventionId, "quote");
-    const { data: authorization } = await supabase
-      .from("payment_authorizations")
-      .select("provider_payment_id")
-      .eq("intervention_id", interventionId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
 
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -236,8 +229,6 @@ export async function renderQuotePdf(interventionId: string) {
     doc.setFont("helvetica", "normal");
     doc.text(`N° ${quoteNumber}`, pageWidth - 20, 38, { align: "right" });
     doc.text(`Date: ${formatDateFr(quoteDate)}`, pageWidth - 20, 45, { align: "right" });
-    if (intervention.quote_signature_id) doc.text(`N° auth: ${intervention.quote_signature_id}`, pageWidth - 20, 52, { align: "right" });
-    if (authorization?.provider_payment_id) doc.text(`Réf. Stripe: ${authorization.provider_payment_id}`, pageWidth - 20, 59, { align: "right" });
 
     yPos = 72;
     doc.setDrawColor(...primaryColor);

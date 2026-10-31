@@ -240,7 +240,6 @@ export async function renderInvoicePdf(interventionId: string) {
     doc.text(`N° ${invoiceNumber}`, pageWidth - 20, 38, { align: "right" });
     doc.text(`Date: ${formatDateFr(invoiceDate)}`, pageWidth - 20, 45, { align: "right" });
     doc.text(`N° devis affilié: ${quoteNumber}`, pageWidth - 20, 52, { align: "right" });
-    if (intervention.invoice_signature_id) doc.text(`N° auth: ${intervention.invoice_signature_id}`, pageWidth - 20, 59, { align: "right" });
 
     yPos = 72;
     doc.setDrawColor(...primaryColor);
