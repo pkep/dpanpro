@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 import { sendSMS } from "../_shared/sms/twilio.ts";
-import { buildScheduledReminderTechnicianSms } from "../_shared/sms/templates.ts";
+import { buildScheduledReminderSms } from "../_shared/sms/templates.ts";
 import { buildScheduledReminderEmail } from "../_shared/email-templates/scheduled-reminder.ts";
 import { logError } from "../_shared/logger.ts";
 
@@ -63,7 +63,7 @@ serve(async (req) => {
     }
 
     if (body.technicianPhone) {
-      const sms = buildScheduledReminderTechnicianSms({
+      const sms = buildScheduledReminderSms({
         technicianFirstName: body.technicianFirstName,
         interventionTitle: body.interventionTitle,
         scheduledAt: body.scheduled_at,
