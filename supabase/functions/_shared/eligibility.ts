@@ -117,6 +117,7 @@ export async function checkTechnicianEligibility(
     .from('interventions')
     .select('id')
     .eq('technician_id', technicianUserId)
+    .eq('suspended', false)
     .in('status', BUSY_STATUSES)
     .neq('id', interventionId)
     .limit(1);
@@ -161,6 +162,7 @@ export async function checkTechnicianEligibility(
       .from('interventions')
       .select('id', { count: 'exact', head: true })
       .eq('technician_id', technicianUserId)
+      .eq('suspended', false)
       .in('status', BUSY_STATUSES);
     if ((count ?? 0) >= max) {
       return { eligible: false, reason: 'Charge maximale atteinte' };

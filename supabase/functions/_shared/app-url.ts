@@ -1,24 +1,21 @@
+const DEFAULT_APP_URL = "https://depan.pro";
+
 /**
- * Liens partagés des Edge Functions.
- *
- * Les liens envoyés aux utilisateurs (emails, SMS) doivent pointer vers le
- * front-end publié, jamais vers l'hôte des fonctions : FRONTEND_URL est
- * l'origine publique configurée et `/auth` est la route de connexion de l'appli.
+ * Base URL of the frontend for the current environment.
+ * Server-side only: never derived from a browser-provided origin.
  */
-
-const DEFAULT_SITE_URL = "https://dpanpro.lovable.app";
-
-/** Origine publique du site (sans slash final). */
-export function getSiteUrl(): string {
-  return Deno.env.get("FRONTEND_URL") || DEFAULT_SITE_URL;
+export function getAppBaseUrl(): string {
+  const raw = Deno.env.get("FRONTEND_URL")?.trim() || DEFAULT_APP_URL;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return DEFAULT_APP_URL;
+    return parsed.origin;
+  } catch {
+    return DEFAULT_APP_URL;
+  }
 }
 
-/** URL absolue d'un chemin de l'appli, ex. buildAppUrl("/verify-email?token=…"). */
-export function buildAppUrl(path: string): string {
-  return `${getSiteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
-}
-
-/** URL de la page de connexion (route `/auth`). */
+/** Canonical login URL for welcome/login emails. */
 export function buildLoginUrl(): string {
-  return buildAppUrl("/auth");
+  return `${getAppBaseUrl()}/auth`;
 }
