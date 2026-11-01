@@ -1,0 +1,325 @@
+import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
+import autoTable from "https://esm.sh/jspdf-autotable@3.8.2";
+import { LOGO_DATA_URI, LOGO_WIDTH, LOGO_HEIGHT } from "../assets.ts";
+
+const COMPANY_INFO = {
+  name: "Depan.Pro",
+  address: "7, place du 11 Novembre 1918",
+  city: "93000 Bobigny",
+  phone: "01 84 60 86 30",
+  email: "contact@depan.pro",
+  siret: "992 525 576 00011",
+  tva: "FR41 992 525 576",
+};
+
+const TEXT_DARK: [number, number, number] = [17, 24, 39];
+const TEXT_MUTED: [number, number, number] = [107, 114, 128];
+const TEXT_BODY: [number, number, number] = [55, 65, 81];
+const LINE: [number, number, number] = [209, 213, 219];
+
+export interface PdfDocumentLine {
+  label: string;
+  description?: string | null;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface PdfDocumentData {
+  title: "DEVIS" | "FACTURE";
+  numberLabel: string;
+  number: string;
+  date: Date;
+  clientLabel: string;
+  metaLines: string[];
+  service: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  phone: string;
+  tracking: string;
+  technician: string;
+  isB2b: boolean;
+  client: {
+    name: string;
+    company?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    vatNumber?: string | null;
+  };
+  lines: PdfDocumentLine[];
+  totalHT: number;
+  vatRate: number;
+  vat: number;
+  totalTTC: number;
+  vatExempt: boolean;
+  conditionsTitle: string | null;
+  conditionsLines: string[];
+  signature: {
+    data?: string | null;
+    id?: string | null;
+    place?: string | null;
+    date?: Date | null;
+  };
+}
+
+function money(n: number): string {
+  return `${n.toFixed(2).replace(".", ",")} €`;
+}
+
+function qty(n: number): string {
+  return Number.isInteger(n) ? String(n) : String(n).replace(".", ",");
+}
+
+function shortDate(d: Date): string {
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+function wrapped(doc: jsPDF, text: string, x: number, y: number, maxWidth: number, lineHeight = 4.5): number {
+  const lines = doc.splitTextToSize(text, maxWidth) as string[];
+  doc.text(lines, x, y);
+  return y + lines.length * lineHeight;
+}
+
+function wrappedRight(doc: jsPDF, text: string, x: number, y: number, maxWidth: number, lineHeight = 4.5): number {
+  const lines = doc.splitTextToSize(text, maxWidth) as string[];
+  for (const line of lines) {
+    doc.text(line, x, y, { align: "right" });
+    y += lineHeight;
+  }
+  return y;
+}
+
+function drawFooter(doc: jsPDF, isB2b: boolean) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const left = 19;
+  const right = pageWidth - 19;
+  const y = pageHeight - 18;
+
+  doc.setTextColor(...TEXT_DARK);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.5);
+  doc.text(COMPANY_INFO.name, left, y);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...TEXT_BODY);
+  let ly = y + 4.5;
+  if (isB2b) {
+    doc.text("SAS au capital de 1 000 €", left, ly);
+    ly += 4;
+  }
+  doc.text(COMPANY_INFO.phone, left, ly);
+  ly += 4;
+  doc.text(COMPANY_INFO.email, left, ly);
+  ly += 4;
+  doc.text(`${COMPANY_INFO.address}, ${COMPANY_INFO.city}`, left, ly);
+
+  doc.text(`SIRET ${COMPANY_INFO.siret}`, right, y, { align: "right" });
+  let ry = y + 4.5;
+  if (isB2b) {
+    doc.text("RCS", right, ry, { align: "right" });
+    ry += 4;
+  } else {
+    doc.text("Code APE 4332B", right, ry, { align: "right" });
+    ry += 4;
+  }
+  doc.text(`N° TVA ${COMPANY_INFO.tva}`, right, ry, { align: "right" });
+}
+
+export function renderDocumentPdf(data: PdfDocumentData): string {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const left = 19;
+  const right = pageWidth - 19;
+
+  // En-tête : date + numéro à gauche, logo à droite.
+  doc.setTextColor(...TEXT_DARK);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Date : ${shortDate(data.date)}`, left, 18);
+
+  doc.setFont("helvetica", "bold");
+  doc.text(data.numberLabel, left, 24);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...TEXT_MUTED);
+  doc.text(data.number, left, 29);
+
+  doc.addImage(LOGO_DATA_URI, "PNG", right - LOGO_WIDTH, 14, LOGO_WIDTH, LOGO_HEIGHT);
+
+  doc.setTextColor(...TEXT_DARK);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(36);
+  doc.text(data.title, right, 52, { align: "right" });
+
+  // Parties.
+  let y = 72;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...TEXT_BODY);
+  doc.text("Intervention :", left, y);
+  y += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(data.service, left, y);
+  y += 5;
+  y = wrapped(doc, `${data.address}, ${data.city} ${data.postalCode}`.trim(), left, y, 95, 4.5);
+  doc.text(data.phone || "", left, y);
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.text(`Réf. : ${data.tracking}`, left, y);
+  y += 5;
+  doc.text(`Technicien : ${data.technician}`, left, y);
+
+  let cy = 72;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...TEXT_BODY);
+  doc.text(data.clientLabel, right, cy, { align: "right" });
+  cy += 6;
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...TEXT_DARK);
+  if (data.client.company) {
+    doc.text(data.client.company, right, cy, { align: "right" });
+    cy += 5;
+  }
+  doc.text(data.client.name, right, cy, { align: "right" });
+  cy += 5;
+  doc.setFont("helvetica", "normal");
+  if (data.client.email) {
+    doc.text(data.client.email, right, cy, { align: "right" });
+    cy += 5;
+  }
+  if (data.client.phone) {
+    doc.text(data.client.phone, right, cy, { align: "right" });
+    cy += 5;
+  }
+  if (data.isB2b && data.client.address) {
+    cy = wrappedRight(doc, data.client.address, right, cy, 70, 4.5);
+  }
+  if (data.isB2b && data.client.vatNumber) {
+    doc.text(`TVA intracommunautaire : ${data.client.vatNumber}`, right, cy, { align: "right" });
+    cy += 5;
+  }
+
+  let metaY = Math.max(y, cy) + 10;
+  for (const line of data.metaLines) {
+    doc.setTextColor(...TEXT_DARK);
+    doc.text(line, left, metaY);
+    metaY += 6;
+  }
+
+  const tableStartY = Math.max(metaY + 2, 112);
+  const body = data.lines.map((line) => [
+    line.description ? `${line.label}\n${line.description}` : line.label,
+    qty(line.quantity),
+    money(line.unitPrice),
+    money(line.total),
+  ]);
+
+  autoTable(doc, {
+    startY: tableStartY,
+    head: [["DESCRIPTION", "QTÉ", "PRIX UNIT.", "TOTAL"]],
+    body,
+    theme: "plain",
+    styles: {
+      font: "helvetica",
+      fontSize: 9,
+      textColor: TEXT_DARK,
+      cellPadding: { top: 2.2, right: 0, bottom: 2.2, left: 0 },
+      lineWidth: 0,
+    },
+    headStyles: {
+      fontStyle: "bold",
+      fontSize: 8,
+      textColor: TEXT_DARK,
+    },
+    columnStyles: {
+      0: { cellWidth: "auto" },
+      1: { cellWidth: 20, halign: "center" },
+      2: { cellWidth: 30, halign: "right" },
+      3: { cellWidth: 30, halign: "right" },
+    },
+    margin: { left, right: 19 },
+    didDrawCell: (hookData: any) => {
+      if (hookData.section !== "head" && hookData.section !== "body") return;
+      const cell = hookData.cell;
+      doc.setDrawColor(...(hookData.section === "head" ? TEXT_DARK : LINE));
+      doc.setLineWidth(hookData.section === "head" ? 0.5 : 0.1);
+      doc.line(cell.x, cell.y + cell.height, cell.x + cell.width, cell.y + cell.height);
+    },
+  });
+
+  let bottomY = (doc as any).lastAutoTable?.finalY ?? tableStartY + 20;
+  bottomY += 12;
+  if (bottomY > pageHeight - 70) {
+    doc.addPage();
+    bottomY = 30;
+  }
+
+  // Conditions et signature à gauche.
+  let leftY = bottomY;
+  if (data.conditionsTitle) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...TEXT_DARK);
+    doc.text(data.conditionsTitle, left, leftY);
+    leftY += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...TEXT_BODY);
+    for (const line of data.conditionsLines) {
+      leftY = wrapped(doc, line, left, leftY, 95, 4.5);
+    }
+    leftY += 4;
+  }
+
+  const hasSignature = Boolean(data.signature.data || data.signature.id);
+  const signatureLabel = data.signature.id
+    ? `Signé : ${data.signature.id}`
+    : (hasSignature ? "Signé :" : "En attente de signature");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(signatureLabel, left, leftY);
+  leftY += 8;
+  doc.setDrawColor(...TEXT_DARK);
+  doc.setLineWidth(0.3);
+  doc.line(left, leftY, left + 62, leftY);
+  leftY += 4;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...TEXT_MUTED);
+  const sigDate = data.signature.date || data.date;
+  doc.text(`Le ${shortDate(sigDate)} à ${data.signature.place || data.city}`, left, leftY);
+
+  // Totaux à droite.
+  const totalsLabelX = right - 55;
+  let ty = bottomY;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...TEXT_DARK);
+  doc.text("TOTAL HT", totalsLabelX, ty);
+  doc.text(money(data.totalHT), right, ty, { align: "right" });
+  ty += 7;
+  doc.text(`TVA (${data.vatRate} %)`, totalsLabelX, ty);
+  doc.text(money(data.vat), right, ty, { align: "right" });
+  ty += 7;
+  doc.setDrawColor(...TEXT_DARK);
+  doc.setLineWidth(0.3);
+  doc.line(totalsLabelX, ty - 3, right, ty - 3);
+  doc.text("TOTAL TTC", totalsLabelX, ty + 2);
+  doc.text(money(data.totalTTC), right, ty + 2, { align: "right" });
+
+  // Footer sur toutes les pages.
+  const pageCount = doc.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+    drawFooter(doc, data.isB2b);
+  }
+
+  return doc.output("datauristring").split(",")[1];
+}
