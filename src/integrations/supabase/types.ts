@@ -1315,6 +1315,36 @@ export type Database = {
           },
         ]
       }
+      intervention_technician_backfill_20261101: {
+        Row: {
+          applied_at: string
+          id: number
+          intervention_id: string
+          note: string
+          technician_id_after: string
+          technician_id_before: string | null
+          tracking_code: string
+        }
+        Insert: {
+          applied_at?: string
+          id?: never
+          intervention_id: string
+          note: string
+          technician_id_after: string
+          technician_id_before?: string | null
+          tracking_code: string
+        }
+        Update: {
+          applied_at?: string
+          id?: never
+          intervention_id?: string
+          note?: string
+          technician_id_after?: string
+          technician_id_before?: string | null
+          tracking_code?: string
+        }
+        Relationships: []
+      }
       intervention_work_photos: {
         Row: {
           created_at: string
@@ -2712,6 +2742,45 @@ export type Database = {
           updated_at?: string
           vat_rate_individual?: number
           vat_rate_professional?: number
+        }
+        Relationships: []
+      }
+      signature_id_backfill_20261101: {
+        Row: {
+          applied_at: string
+          id: number
+          intervention_id: string | null
+          record_id: string
+          signature_data_length: number
+          signature_id_after: string
+          signature_id_before: string | null
+          signature_kind: string
+          source_table: string
+          tracking_code: string | null
+        }
+        Insert: {
+          applied_at?: string
+          id?: never
+          intervention_id?: string | null
+          record_id: string
+          signature_data_length: number
+          signature_id_after: string
+          signature_id_before?: string | null
+          signature_kind: string
+          source_table: string
+          tracking_code?: string | null
+        }
+        Update: {
+          applied_at?: string
+          id?: never
+          intervention_id?: string | null
+          record_id?: string
+          signature_data_length?: number
+          signature_id_after?: string
+          signature_id_before?: string | null
+          signature_kind?: string
+          source_table?: string
+          tracking_code?: string | null
         }
         Relationships: []
       }
