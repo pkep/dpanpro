@@ -14,9 +14,11 @@ interface LogEntry {
   userId?: string;
 }
 
-let client: ReturnType<typeof createClient> | null = null;
+// deno-lint-ignore no-explicit-any
+let client: any = null;
 
-function getClient() {
+// deno-lint-ignore no-explicit-any
+function getClient(): any {
   if (client) return client;
   const url = Deno.env.get("SUPABASE_URL")!;
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
