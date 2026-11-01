@@ -875,6 +875,39 @@ export type Database = {
           },
         ]
       }
+      document_number_backfill_20261031: {
+        Row: {
+          applied_at: string
+          id: number
+          intervention_id: string
+          invoice_number_after: string | null
+          invoice_number_before: string | null
+          quote_number_after: string | null
+          quote_number_before: string | null
+          tracking_code: string
+        }
+        Insert: {
+          applied_at?: string
+          id?: never
+          intervention_id: string
+          invoice_number_after?: string | null
+          invoice_number_before?: string | null
+          quote_number_after?: string | null
+          quote_number_before?: string | null
+          tracking_code: string
+        }
+        Update: {
+          applied_at?: string
+          id?: never
+          intervention_id?: string
+          invoice_number_after?: string | null
+          invoice_number_before?: string | null
+          quote_number_after?: string | null
+          quote_number_before?: string | null
+          tracking_code?: string
+        }
+        Relationships: []
+      }
       email_verification_tokens: {
         Row: {
           created_at: string
