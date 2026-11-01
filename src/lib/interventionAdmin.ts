@@ -62,7 +62,7 @@ export interface AmountInfo {
 export const AMOUNT_KIND_META: Record<Exclude<AmountKind, 'none'>, { label: string; className: string }> = {
   range:     { label: 'Fourchette', className: 'bg-slate-100 text-slate-700 border-slate-200' },
   estimated: { label: 'Estimé',     className: 'bg-amber-100 text-amber-800 border-amber-200' },
-  final:     { label: 'Payé',       className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+  final:     { label: 'Final',      className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
 };
 
 export interface AmountSource {
@@ -74,7 +74,7 @@ export interface AmountSource {
 
 /**
  * Colonne « Montant » : montant du **stade courant** du cycle de vie, avec sa
- * nature — précédence Final (payé) > Estimé (devis) > Fourchette (créée).
+ * nature — précédence Final > Estimé > Fourchette.
  * `finalPrice` / `estimatedPrice` valant 0 sont traités comme absents
  * (aucune intervention n'est gratuite).
  */
@@ -94,6 +94,100 @@ export function getAmountInfo(i: AmountSource): AmountInfo {
     };
   }
   return { kind: 'none', value: '—', label: '' };
+}
+
+// ── Colonne « Paiement » ────────────────────────────────────────────────────
+
+export type PaymentDisplayStatus =
+  | 'paid'
+  | 'authorized'
+  | 'pending'
+  | 'failed'
+  | 'cancelled'
+  | 'refunded'
+  | 'partially_refunded'
+  | 'unpaid'
+  | 'to_pay'
+  | 'draft'
+  | 'unbilled';
+
+export interface PaymentStatusMeta {
+  label: string;
+  className: string;
+  /** Détail affiché dans le tooltip. */
+  description: string;
+}
+
+export const PAYMENT_STATUS_META: Record<PaymentDisplayStatus, PaymentStatusMeta> = {
+  paid:               { label: 'Payé',              className: 'bg-emerald-100 text-emerald-800 border-emerald-200', description: 'Paiement encaissé' },
+  authorized:         { label: 'Autorisé',          className: 'bg-blue-100 text-blue-800 border-blue-200',          description: 'Paiement autorisé, non capturé' },
+  pending:            { label: 'En attente',        className: 'bg-amber-100 text-amber-800 border-amber-200',        description: 'Paiement en attente' },
+  failed:             { label: 'Échec',             className: 'bg-rose-100 text-rose-800 border-rose-200',           description: 'Paiement échoué' },
+  cancelled:          { label: 'Annulé',            className: 'bg-slate-100 text-slate-700 border-slate-200',         description: 'Paiement annulé' },
+  refunded:           { label: 'Remboursé',         className: 'bg-violet-100 text-violet-800 border-violet-200',     description: 'Paiement remboursé' },
+  partially_refunded: { label: 'Remboursé partiel', className: 'bg-violet-100 text-violet-800 border-violet-200',     description: 'Paiement partiellement remboursé' },
+  unpaid:             { label: 'Non payé',          className: 'bg-slate-100 text-slate-700 border-slate-200',        description: 'Aucun paiement enregistré' },
+  to_pay:             { label: 'À payer',           className: 'bg-amber-100 text-amber-800 border-amber-200',        description: 'Facture envoyée, en attente de paiement' },
+  draft:              { label: 'Brouillon',         className: 'bg-slate-100 text-slate-700 border-slate-200',        description: 'Facture en brouillon' },
+  unbilled:           { label: 'Non facturé',       className: 'bg-slate-100 text-slate-700 border-slate-200',        description: 'Aucune facture mensuelle rattachée' },
+};
+
+/** Statuts `payment_authorizations` (B2C) → statut d'affichage. */
+const B2C_PAYMENT_STATUS: Record<string, PaymentDisplayStatus> = {
+  captured: 'paid',
+  authorized: 'authorized',
+  pending: 'pending',
+  failed: 'failed',
+  cancelled: 'cancelled',
+  refunded: 'refunded',
+  partially_refunded: 'partially_refunded',
+};
+
+/** Statuts `b2b_invoices` (B2B) → statut d'affichage. */
+const B2B_PAYMENT_STATUS: Record<string, PaymentDisplayStatus> = {
+  paid: 'paid',
+  sent: 'to_pay',
+  draft: 'draft',
+  cancelled: 'cancelled',
+};
+
+export interface PaymentStatusSource {
+  /** Intervention B2B → le paiement dépend de la facture mensuelle. */
+  b2b: boolean;
+  /** Dernière autorisation de paiement B2C (la plus récente par `createdAt`). */
+  authorizationStatus?: string | null;
+  /** Statut de la facture mensuelle liée (`interventions.b2b_invoice_id`). */
+  invoiceStatus?: string | null;
+}
+
+/**
+ * Statut de paiement **réel** d'une intervention :
+ * - B2C : dernière `payment_authorizations` ;
+ * - B2B : facture mensuelle liée (`b2b_invoices.status`).
+ */
+export function getPaymentStatus(source: PaymentStatusSource): PaymentDisplayStatus {
+  if (source.b2b) {
+    if (!source.invoiceStatus) return 'unbilled';
+    return B2B_PAYMENT_STATUS[source.invoiceStatus] ?? 'draft';
+  }
+  if (!source.authorizationStatus) return 'unpaid';
+  return B2C_PAYMENT_STATUS[source.authorizationStatus] ?? 'unpaid';
+}
+
+export interface PaymentStatusInfo extends PaymentStatusMeta {
+  status: PaymentDisplayStatus;
+}
+
+const DEFAULT_PAYMENT_INFO: PaymentStatusMeta = {
+  label: '',
+  className: 'bg-slate-100 text-slate-700 border-slate-200',
+  description: '',
+};
+
+export function getPaymentStatusInfo(source: PaymentStatusSource): PaymentStatusInfo {
+  const status = getPaymentStatus(source);
+  const meta = PAYMENT_STATUS_META[status] ?? DEFAULT_PAYMENT_INFO;
+  return { status, ...meta };
 }
 
 export interface InterventionTypeSource {
@@ -165,6 +259,7 @@ export interface AdminInterventionRow {
   questionnaire_answers: string | string[] | null;
   client_photos_count?: number | null;
   b2b_partner_id?: string | null;
+  b2b_invoice_id?: string | null;
   client_first_name?: string | null;
   client_last_name?: string | null;
   client_phone?: string | null;
@@ -205,6 +300,7 @@ export function mapAdminInterventionRow(row: AdminInterventionRow): Intervention
     photos: null,
     clientPhotosCount: row.client_photos_count ?? 0,
     b2bPartnerId: row.b2b_partner_id ?? null,
+    b2bInvoiceId: row.b2b_invoice_id ?? null,
     b2bCompanyName: b2b?.company_name ?? null,
     b2bContactFirstName: b2b?.contact_firstname ?? null,
     b2bContactLastName: b2b?.contact_lastname ?? null,

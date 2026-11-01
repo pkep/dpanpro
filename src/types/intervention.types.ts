@@ -57,7 +57,6 @@ export interface Intervention {
   quoteSignatureData?: string | null;
   quoteSignatureId?: string | null;
   quotePdfUrl?: string | null;
-  invoicePdfUrl?: string | null;
   questionnaireResultatId?: string | null;
   questionnaireAnswers : string | null;
   prixMin : number | null;
@@ -65,6 +64,8 @@ export interface Intervention {
   invoiceSignedAt?: string | null;
   invoiceSignatureData?: string | null;
   invoiceSignatureId?: string | null;
+  /** PDF de la facture par intervention (généré à la finalisation). */
+  invoicePdfUrl?: string | null;
 
   // ── Escalade (« climb ») ────────────────────────────────────────────────
   parentInterventionId?: string | null;
@@ -112,7 +113,8 @@ export interface InterventionFormData {
   role ?: 'client' | 'guest';
   scheduledAt?: string | null;
   affiliateCode?: string;
-  campaignCode?: string;
+  /** Code promo campagne (facultatif). */
+  campaignCode?: string | null;
   // ── B2B ──
   billingType?: 'client' | 'b2b';
   b2bPartnerId?: string;
@@ -129,7 +131,8 @@ export interface InterventionQuestionnaireData {
   prixMin?: number | null;
   prixMax?: number | null;
   affiliateCode?: string;
-  campaignCode?: string;
+  /** Code promo campagne saisi (URL ?promo=CODE ou champ). */
+  campaignCode?: string | null;
 }
 
 /**
@@ -301,6 +304,7 @@ export interface InterventionAdminView {
   /** Nombre de photos client (la liste admin ne transporte plus `photos`). */
   clientPhotosCount?: number;
   b2bPartnerId?: string | null;
+  b2bInvoiceId?: string | null;
   b2bCompanyName?: string | null;
   b2bContactFirstName?: string | null;
   b2bContactLastName?: string | null;

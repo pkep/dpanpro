@@ -42,7 +42,7 @@ const INTERVENTION_SELECT_FIELDS = {
   TECH_DASHBOARD: 'id, status, created_at, latitude, longitude, title, category, city, postal_code, estimated_price, address, client_phone, tracking_code, description',
 
   // AdminInterventionsPage: Liste complète
-  ADMIN_LIST: 'id, title, category, address, city, postal_code, latitude, longitude, client_id, tracking_code, technician_id, status, suspended, priority, scheduled_at, description, created_at, final_price, estimated_price, prix_min, prix_max, questionnaire_answers, client_photos_count, b2b_partner_id, client_first_name, client_last_name, client_phone, b2b_partners(company_name, contact_firstname, contact_lastname, contact_phone)',
+  ADMIN_LIST: 'id, title, category, address, city, postal_code, latitude, longitude, client_id, tracking_code, technician_id, status, suspended, priority, scheduled_at, description, created_at, final_price, estimated_price, prix_min, prix_max, questionnaire_answers, client_photos_count, b2b_partner_id, b2b_invoice_id, client_first_name, client_last_name, client_phone, b2b_partners(company_name, contact_firstname, contact_lastname, contact_phone)',
 
   // ClientInterventionsPage: Historique
   CLIENT_HISTORY: 'id, title, category, status, priority, city, created_at',
