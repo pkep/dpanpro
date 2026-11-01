@@ -439,12 +439,13 @@ class SupabaseInterventionsService implements IInterventionsService {
     console.log(`Intervention ${id} cancelled by client. Reason: ${reason}`);
   }
 
-  async updateQuoteInterventionSignature(interventionId: string, signatureData: string): Promise<void> {
+  async updateQuoteInterventionSignature(interventionId: string, signatureData: string, signatureId: string): Promise<void> {
     const { error } = await supabase
       .from('interventions')
       .update({
         quote_signed_at: new Date().toISOString(),
         quote_signature_data: signatureData,
+        quote_signature_id: signatureId,
       } as TablesUpdate<'interventions'>)
       .eq('id', interventionId);
 
@@ -453,7 +454,7 @@ class SupabaseInterventionsService implements IInterventionsService {
     console.log(`Intervention ${interventionId} quote signature updated`);
   }
 
-  async finalized(interventionId: string, finalPrice: number, signatureData: string): Promise<void> {
+  async finalized(interventionId: string, finalPrice: number, signatureData: string, signatureId: string): Promise<void> {
     const current = new Date().toISOString()
     const { data: timing } = await supabase
       .from('interventions')
@@ -472,6 +473,7 @@ class SupabaseInterventionsService implements IInterventionsService {
         final_price: finalPrice,
         invoice_signed_at: current,
         invoice_signature_data: signatureData,
+        invoice_signature_id: signatureId,
         completed_at: current,
         intervention_duration_seconds: durationSeconds,
       } as TablesUpdate<'interventions'>)
