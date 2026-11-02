@@ -20,18 +20,72 @@ const corsHeaders = {
 
 const VAT_RATE = 0.20;
 
+function mapStoredLine(line: Record<string, unknown>) {
+  const details = (line.details && typeof line.details === "object" ? line.details : {}) as Record<string, unknown>;
+  return {
+    interventionId: String(line.intervention_id ?? ""),
+    label: String(line.label ?? "Prestation"),
+    amount: Number(line.amount ?? 0),
+    interventionDate: typeof details.interventionDate === "string" ? details.interventionDate : null,
+    externalRef: typeof details.externalRef === "string" ? details.externalRef : null,
+    address: typeof details.address === "string" ? details.address : null,
+    details: Array.isArray(details.details) ? details.details.map(String) : undefined,
+    technicianName: typeof details.technicianName === "string" ? details.technicianName : null,
+    trackingCode: typeof details.trackingCode === "string" ? details.trackingCode : null,
+    perServiceInvoiceNumber: typeof details.perServiceInvoiceNumber === "string" ? details.perServiceInvoiceNumber : null,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { partnerId, month } = await req.json();
-    if (!partnerId || !month) {
-      return new Response(JSON.stringify({ error: "partnerId and month required" }), {
+    const { partnerId, month, invoiceId } = await req.json();
+    if (!invoiceId && (!partnerId || !month)) {
+      return new Response(JSON.stringify({ error: "partnerId and month required, or invoiceId" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+    // Facture déjà générée : régénérer son PDF depuis la facture et ses lignes.
+    if (invoiceId) {
+      const { data: invoice, error: invErr } = await supabase
+        .from("b2b_invoices")
+        .select("*, b2b_partners(*)")
+        .eq("id", invoiceId)
+        .single();
+      if (invErr || !invoice) throw new Error("Facture B2B introuvable");
+
+      const { data: lineRows, error: lErr } = await supabase
+        .from("b2b_invoices_lines")
+        .select("*")
+        .eq("invoice_id", invoiceId)
+        .order("id", { ascending: true });
+      if (lErr) throw lErr;
+
+      const partner = (invoice as { b2b_partners?: Record<string, unknown> | null }).b2b_partners ?? null;
+      if (!partner) throw new Error("Partenaire B2B introuvable pour cette facture");
+
+      const pdfBase64 = buildInvoiceB2bMonthlyPdfBase64({
+        number: String(invoice.number ?? "B2B"),
+        generatedAt: invoice.created_at ?? null,
+        periodStart: invoice.period_start,
+        periodEnd: invoice.period_end,
+        partner,
+        lines: (lineRows ?? []).map((line) => mapStoredLine(line as Record<string, unknown>)),
+        totalHt: Number(invoice.total_ht ?? 0),
+        vat: Number(invoice.vat_amount ?? 0),
+        totalTtc: Number(invoice.total_ttc ?? 0),
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        pdfBase64,
+        filename: `facture-${invoice.number ?? invoiceId}.pdf`,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const { data: partner, error: pErr } = await supabase
       .from("b2b_partners")
