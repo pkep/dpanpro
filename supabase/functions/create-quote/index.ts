@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { renderQuotePdf } from "../_shared/pdf/quote.ts";
+import { renderQuotePdf } from "../_shared/pdf/quote-common.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

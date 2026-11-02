@@ -1,4 +1,4 @@
-import type { B2bInvoiceLine } from "./b2b-invoice-pdf.ts";
+import type { B2bInvoiceLine } from "./pdf/invoice-b2b-monthly.ts";
 
 type InterventionRow = {
   id: string;

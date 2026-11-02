@@ -39,7 +39,8 @@ export interface PdfDocumentData {
   phone: string;
   tracking: string;
   technician: string;
-  isB2b: boolean;
+  /** Affiche l'adresse et le n° de TVA du client (documents B2B). */
+  showCompanyDetails: boolean;
   client: {
     name: string;
     company?: string | null;
@@ -94,11 +95,11 @@ function wrappedRight(doc: jsPDF, text: string, x: number, y: number, maxWidth: 
 }
 
 /** Pied de page légal commun à tous les documents (devis, factures, factures mensuelles). */
-export function drawCompanyFooter(doc: jsPDF) {
+export function drawCompanyFooter(doc: jsPDF, margin = 19) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const left = 19;
-  const right = pageWidth - 19;
+  const left = margin;
+  const right = pageWidth - margin;
   const y = pageHeight - 18;
 
   doc.setTextColor(...TEXT_DARK);
@@ -194,11 +195,11 @@ export function renderDocumentPdf(data: PdfDocumentData): string {
     doc.text(data.client.phone, right, cy, { align: "right" });
     cy += 5;
   }
-  if (data.isB2b && data.client.address) {
+  if (data.showCompanyDetails && data.client.address) {
     cy = wrappedRight(doc, data.client.address, right, cy, 70, 4.5);
   }
-  if (data.isB2b && data.client.vatNumber) {
-    doc.text(`TVA intracommunautaire : ${data.client.vatNumber}`, right, cy, { align: "right" });
+  if (data.showCompanyDetails && data.client.vatNumber) {
+    doc.text(`TVA intra. : ${data.client.vatNumber}`, right, cy, { align: "right" });
     cy += 5;
   }
 

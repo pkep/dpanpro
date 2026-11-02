@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { renderInvoicePdf } from "../_shared/pdf/invoice.ts";
+import { renderInvoicePdf } from "../_shared/pdf/invoice-common.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
