@@ -100,30 +100,37 @@ export function drawCompanyFooter(doc: jsPDF, margin = 19) {
   const pageHeight = doc.internal.pageSize.getHeight();
   const left = margin;
   const right = pageWidth - margin;
-  const y = pageHeight - 18;
+  const lineHeight = 4.5; // mm
+  // 30 px ≈ 7.94 mm : dernière ligne à 8 mm du bas de page.
+  const lastBaseline = pageHeight - 8;
 
-  doc.setTextColor(...TEXT_DARK);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9.5);
-  doc.text("Dépan.Pro", left, y);
+  const leftLines = [
+    { text: "Dépan.Pro", bold: true, size: 9.5 },
+    { text: "SAS au capital de 1 000 €", bold: false, size: 8.5 },
+    { text: COMPANY_INFO.phone, bold: false, size: 8.5 },
+    { text: COMPANY_INFO.email, bold: false, size: 8.5 },
+    { text: `${COMPANY_INFO.address}, ${COMPANY_INFO.city}`, bold: false, size: 8.5 },
+  ];
+  const topBaseline = lastBaseline - (leftLines.length - 1) * lineHeight;
 
+  leftLines.forEach((line, index) => {
+    doc.setFont("helvetica", line.bold ? "bold" : "normal");
+    doc.setFontSize(line.size);
+    doc.setTextColor(...(line.bold ? TEXT_DARK : TEXT_BODY));
+    doc.text(line.text, left, topBaseline + index * lineHeight);
+  });
+
+  const rightLines = [
+    `SIRET ${COMPANY_INFO.siret}`,
+    "RCS",
+    `N° TVA ${COMPANY_INFO.tva}`,
+  ];
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(...TEXT_BODY);
-  let ly = y + 4.5;
-  doc.text("SAS au capital de 1 000 €", left, ly);
-  ly += 4;
-  doc.text(COMPANY_INFO.phone, left, ly);
-  ly += 4;
-  doc.text(COMPANY_INFO.email, left, ly);
-  ly += 4;
-  doc.text(`${COMPANY_INFO.address}, ${COMPANY_INFO.city}`, left, ly);
-
-  doc.text(`SIRET ${COMPANY_INFO.siret}`, right, y, { align: "right" });
-  let ry = y + 4.5;
-  doc.text("RCS", right, ry, { align: "right" });
-  ry += 4;
-  doc.text(`N° TVA ${COMPANY_INFO.tva}`, right, ry, { align: "right" });
+  rightLines.forEach((line, index) => {
+    doc.text(line, right, topBaseline + index * lineHeight, { align: "right" });
+  });
 }
 
 export function renderDocumentPdf(data: PdfDocumentData): string {

@@ -10,7 +10,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { firstDayOfMonth, lastDayOfMonth, fileDate } from "../_shared/b2b-period.ts";
-import { buildB2bInvoicePdfBase64 } from "../_shared/b2b-invoice-pdf.ts";
+import { buildInvoiceB2bMonthlyPdfBase64 } from "../_shared/pdf/invoice-b2b-monthly.ts";
 import { buildB2bMonthlyLines } from "../_shared/b2b-lines.ts";
 
 const corsHeaders = {
@@ -35,7 +35,7 @@ serve(async (req) => {
 
     const { data: partner, error: pErr } = await supabase
       .from("b2b_partners")
-      .select("id, company_name, siret, vat_number, address, postal_code, city, construction_company")
+      .select("id, company_name, siret, vat_number, address, postal_code, city, contact_firstname, contact_lastname, contact_email, contact_phone, construction_company")
       .eq("id", partnerId)
       .single();
     if (pErr || !partner) throw new Error("Partenaire B2B introuvable");
@@ -67,7 +67,7 @@ serve(async (req) => {
     const totalTtc = vatExempt ? totalHt : Math.round((totalHt + vat) * 100) / 100;
     const number = `B2B-${month.replace("-", "")}-APERCU`;
 
-    const pdfBase64 = buildB2bInvoicePdfBase64({
+    const pdfBase64 = buildInvoiceB2bMonthlyPdfBase64({
       number, periodStart, periodEnd, partner, lines, totalHt, vat, totalTtc,
     });
 

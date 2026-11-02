@@ -12,7 +12,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { firstDayOfMonth, lastDayOfMonth, monthLabel, isLastDayOfMonthParis, b2bInvoicePath } from "../_shared/b2b-period.ts";
-import { buildB2bInvoicePdfBase64 } from "../_shared/b2b-invoice-pdf.ts";
+import { buildInvoiceB2bMonthlyPdfBase64 } from "../_shared/pdf/invoice-b2b-monthly.ts";
 import { buildB2bMonthlyLines } from "../_shared/b2b-lines.ts";
 
 const corsHeaders = {
@@ -49,7 +49,7 @@ serve(async (req) => {
 
     const { data: partners, error: pErr } = await supabase
       .from("b2b_partners")
-      .select("id, company_name, siret, vat_number, address, postal_code, city, contact_firstname, contact_lastname, contact_email, construction_company")
+      .select("id, company_name, siret, vat_number, address, postal_code, city, contact_firstname, contact_lastname, contact_email, contact_phone, construction_company")
       .eq("is_active", true);
     if (pErr) throw pErr;
 
@@ -126,7 +126,7 @@ serve(async (req) => {
 
       // PDF + stockage
       try {
-        const base64 = buildB2bInvoicePdfBase64({ number, periodStart, periodEnd, partner, lines, totalHt, vat, totalTtc });
+        const base64 = buildInvoiceB2bMonthlyPdfBase64({ number, periodStart, periodEnd, partner, lines, totalHt, vat, totalTtc });
         const path = b2bInvoicePath(partner.company_name, partner.id, periodEnd);
         const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, base64ToUint8Array(base64), {
           contentType: "application/pdf",
