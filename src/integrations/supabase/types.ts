@@ -1849,7 +1849,7 @@ export type Database = {
           vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
           vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
-          zone: string | null
+          zone: string[] | null
         }
         Insert: {
           address?: string | null
@@ -1891,7 +1891,7 @@ export type Database = {
           vehicle_types?: Database["public"]["Enums"]["vehicle_type"][] | null
           vehicule_types?: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
-          zone?: string | null
+          zone?: string[] | null
         }
         Update: {
           address?: string | null
@@ -1933,7 +1933,7 @@ export type Database = {
           vehicle_types?: Database["public"]["Enums"]["vehicle_type"][] | null
           vehicule_types?: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience?: number
-          zone?: string | null
+          zone?: string[] | null
         }
         Relationships: [
           {
@@ -3355,7 +3355,7 @@ export type Database = {
           vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
           vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
-          zone: string | null
+          zone: string[] | null
         }
         SetofOptions: {
           from: "*"
@@ -3430,7 +3430,7 @@ export type Database = {
           vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
           vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
-          zone: string | null
+          zone: string[] | null
         }
         SetofOptions: {
           from: "*"
@@ -3503,7 +3503,7 @@ export type Database = {
           vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
           vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
-          zone: string | null
+          zone: string[] | null
         }
         SetofOptions: {
           from: "*"
