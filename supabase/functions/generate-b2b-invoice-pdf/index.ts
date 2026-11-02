@@ -7,8 +7,10 @@
  * body:
  *   - { partnerId: string, month: "YYYY-MM", actorId?: string } → aperçu non persisté
  *   - { invoiceId: string } → PDF depuis la facture + lignes (non persisté)
- *   - { invoiceId: string, regenerate: true } → TVA 0 / TTC = HT, PDF stocké et facture mise à jour
- * → { success: true, pdfBase64, filename, pdfUrl?, regenerated? }
+ *   - { invoiceId: string, regenerate: true } → reprend toutes les interventions de la
+ *     période (liées ou non), recalcule les lignes/montants, force TVA 0 / TTC = HT,
+ *     remplace le PDF stocké et met à jour la facture
+ * → { success: true, pdfBase64, filename, pdfUrl?, regenerated?, lines?, totalHt? }
  */
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -59,7 +61,7 @@ serve(async (req) => {
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    // Facture déjà générée : régénérer son PDF depuis la facture et ses lignes.
+    // Facture déjà générée : téléchargement depuis les lignes stockées, ou régénération complète.
     if (invoiceId) {
       const { data: invoice, error: invErr } = await supabase
         .from("b2b_invoices")
@@ -68,35 +70,114 @@ serve(async (req) => {
         .single();
       if (invErr || !invoice) throw new Error("Facture B2B introuvable");
 
-      const { data: lineRows, error: lErr } = await supabase
-        .from("b2b_invoices_lines")
-        .select("*")
-        .eq("invoice_id", invoiceId)
-        .order("id", { ascending: true });
-      if (lErr) throw lErr;
-
       const partner = (invoice as { b2b_partners?: Record<string, unknown> | null }).b2b_partners ?? null;
       if (!partner) throw new Error("Partenaire B2B introuvable pour cette facture");
 
-      const totalHt = Math.round(Number(invoice.total_ht ?? 0) * 100) / 100;
-      const pdfBase64 = buildInvoiceB2bMonthlyPdfBase64({
-        number: String(invoice.number ?? "B2B"),
-        generatedAt: invoice.created_at ?? null,
-        periodStart: invoice.period_start,
-        periodEnd: invoice.period_end,
-        partner,
-        lines: (lineRows ?? []).map((line) => mapStoredLine(line as Record<string, unknown>)),
-        totalHt,
-        vat: 0,
-        totalTtc: totalHt,
-      });
+      const partnerIdValue = String(invoice.partner_id);
+      const periodStart = String(invoice.period_start ?? "");
+      const periodEnd = String(invoice.period_end ?? "");
+      const number = String(invoice.number ?? "B2B");
 
-      let pdfUrl = (invoice.pdf_url as string | null) ?? null;
       if (regenerate) {
+        if (String(invoice.status ?? "") === "cancelled") {
+          throw new Error("Impossible de régénérer une facture annulée");
+        }
+        if (!periodStart || !periodEnd) {
+          throw new Error("Période de facturation absente pour cette facture");
+        }
+
+        const from = `${periodStart}T00:00:00.000Z`;
+        const to = `${periodEnd}T23:59:59.999Z`;
+
+        // Toutes les interventions terminées de la période, déjà liées à cette
+        // facture ou encore non facturées (on exclut celles d'une autre facture).
+        const { data: interventionRows, error: iErr } = await supabase
+          .from("interventions")
+          .select("id, category, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number, b2b_invoice_id")
+          .eq("b2b_partner_id", partnerIdValue)
+          .eq("status", "completed")
+          .gte("completed_at", from)
+          .lte("completed_at", to)
+          .order("completed_at", { ascending: true });
+        if (iErr) throw iErr;
+
+        const interventions = ((interventionRows ?? []) as Record<string, unknown>[])
+          .filter((i) => i.b2b_invoice_id == null || String(i.b2b_invoice_id) === String(invoiceId));
+        if (interventions.length === 0) {
+          throw new Error("Aucune intervention B2B terminée à facturer sur cette période");
+        }
+
+        const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
+        const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
+
+        // Délie les anciennes interventions qui ne font plus partie du périmètre.
+        const { data: oldLineRows, error: oldErr } = await supabase
+          .from("b2b_invoices_lines")
+          .select("intervention_id")
+          .eq("invoice_id", invoiceId);
+        if (oldErr) throw oldErr;
+
+        const newIds = new Set(lines.map((l) => l.interventionId));
+        const oldIds = ((oldLineRows ?? []) as Array<{ intervention_id?: string | null }>)
+          .map((l) => l.intervention_id)
+          .filter((v): v is string => !!v);
+        const toUnlink = oldIds.filter((id) => !newIds.has(id));
+        if (toUnlink.length > 0) {
+          const { error: unlinkErr } = await supabase
+            .from("interventions")
+            .update({ b2b_invoice_id: null })
+            .in("id", toUnlink)
+            .eq("b2b_invoice_id", invoiceId);
+          if (unlinkErr) throw unlinkErr;
+        }
+
+        const { error: delErr } = await supabase
+          .from("b2b_invoices_lines")
+          .delete()
+          .eq("invoice_id", invoiceId);
+        if (delErr) throw delErr;
+
+        const { error: insErr } = await supabase.from("b2b_invoices_lines").insert(
+          lines.map((l) => ({
+            invoice_id: invoiceId,
+            intervention_id: l.interventionId,
+            label: l.label,
+            amount: l.amount,
+            details: {
+              interventionDate: l.interventionDate,
+              externalRef: l.externalRef,
+              address: l.address,
+              details: l.details,
+              technicianName: l.technicianName,
+              trackingCode: l.trackingCode,
+              perServiceInvoiceNumber: l.perServiceInvoiceNumber,
+            },
+          })),
+        );
+        if (insErr) throw insErr;
+
+        const { error: linkErr } = await supabase
+          .from("interventions")
+          .update({ b2b_invoice_id: invoiceId })
+          .in("id", lines.map((l) => l.interventionId));
+        if (linkErr) throw linkErr;
+
+        const pdfBase64 = buildInvoiceB2bMonthlyPdfBase64({
+          number,
+          generatedAt: invoice.created_at ?? null,
+          periodStart,
+          periodEnd,
+          partner,
+          lines,
+          totalHt,
+          vat: 0,
+          totalTtc: totalHt,
+        });
+
         const path = b2bInvoicePath(
           (partner.company_name as string | null) ?? null,
-          String(invoice.partner_id),
-          String(invoice.period_end),
+          partnerIdValue,
+          periodEnd,
         );
         const { error: upErr } = await supabase.storage.from(BUCKET).upload(
           path,
@@ -105,20 +186,52 @@ serve(async (req) => {
         );
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
-        pdfUrl = pub.publicUrl;
+        const pdfUrl = pub.publicUrl;
+
         const { error: updErr } = await supabase
           .from("b2b_invoices")
-          .update({ vat_amount: 0, total_ttc: totalHt, pdf_url: pdfUrl })
+          .update({ total_ht: totalHt, vat_amount: 0, total_ttc: totalHt, pdf_url: pdfUrl })
           .eq("id", invoiceId);
         if (updErr) throw updErr;
+
+        return new Response(JSON.stringify({
+          success: true,
+          pdfBase64,
+          filename: `facture-${number}.pdf`,
+          pdfUrl,
+          regenerated: true,
+          lines: lines.length,
+          totalHt,
+        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
+
+      // Téléchargement seul : construit le PDF depuis les lignes stockées, sans mutation.
+      const { data: lineRows, error: lErr } = await supabase
+        .from("b2b_invoices_lines")
+        .select("*")
+        .eq("invoice_id", invoiceId)
+        .order("id", { ascending: true });
+      if (lErr) throw lErr;
+
+      const totalHt = Math.round(Number(invoice.total_ht ?? 0) * 100) / 100;
+      const pdfBase64 = buildInvoiceB2bMonthlyPdfBase64({
+        number,
+        generatedAt: invoice.created_at ?? null,
+        periodStart,
+        periodEnd,
+        partner,
+        lines: (lineRows ?? []).map((line) => mapStoredLine(line as Record<string, unknown>)),
+        totalHt,
+        vat: 0,
+        totalTtc: totalHt,
+      });
 
       return new Response(JSON.stringify({
         success: true,
         pdfBase64,
-        filename: `facture-${invoice.number ?? invoiceId}.pdf`,
-        pdfUrl,
-        regenerated: regenerate === true,
+        filename: `facture-${number}.pdf`,
+        pdfUrl: (invoice.pdf_url as string | null) ?? null,
+        regenerated: false,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
