@@ -5,6 +5,7 @@
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import autoTable from "https://esm.sh/jspdf-autotable@3.8.2";
 import { LOGO_DATA_URI, LOGO_WIDTH, LOGO_HEIGHT } from "./assets.ts";
+import { drawCompanyFooter } from "./pdf/document-layout.ts";
 
 export interface B2bInvoiceLine {
   interventionId: string;
@@ -95,28 +96,44 @@ export function buildB2bInvoicePdfBase64(data: B2bInvoicePdfInput): string {
     styles: { fontSize: 8, valign: "top", cellPadding: 3 },
     headStyles: { fillColor: [15, 184, 127] },
     columnStyles: { 1: { halign: "right", cellWidth: 30 } },
+    margin: { bottom: 42 },
   });
 
   // @ts-ignore autotable adds lastAutoTable
   y = (doc as any).lastAutoTable?.finalY ?? y + 20;
   y += 10;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  if (y + 35 > pageHeight - 42) {
+    doc.addPage();
+    y = 30;
+  }
   doc.setFontSize(10);
   doc.setTextColor(31, 41, 55);
   const vatExempt = data.partner.construction_company === true;
   doc.text(`Total HT: ${data.totalHt.toFixed(2)} €`, pageWidth - 14, y, { align: "right" });
-  if (!vatExempt) {
-    doc.text(`TVA (20%): ${data.vat.toFixed(2)} €`, pageWidth - 14, y + 6, { align: "right" });
-    doc.setFontSize(12);
-    doc.setTextColor(15, 184, 127);
-    doc.text(`Total TTC: ${data.totalTtc.toFixed(2)} €`, pageWidth - 14, y + 13, { align: "right" });
-  } else {
+  doc.text(
+    `TVA (${vatExempt ? 0 : 20} %): ${(vatExempt ? 0 : data.vat).toFixed(2)} €`,
+    pageWidth - 14,
+    y + 6,
+    { align: "right" },
+  );
+  doc.setFontSize(12);
+  doc.setTextColor(15, 184, 127);
+  doc.text(`Total TTC: ${data.totalTtc.toFixed(2)} €`, pageWidth - 14, y + 13, { align: "right" });
+  if (vatExempt) {
     doc.setFontSize(8);
     doc.setTextColor(107, 114, 128);
     doc.text(
       "TVA non applicable — autoliquidation par le preneur (art. 283-2 nonies du CGI).",
       14,
-      y + 6,
+      y + 20,
     );
+  }
+
+  const pageCount = doc.getNumberOfPages();
+  for (let p = 1; p <= pageCount; p++) {
+    doc.setPage(p);
+    drawCompanyFooter(doc);
   }
 
   return doc.output("datauristring").split(",")[1];

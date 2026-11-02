@@ -208,25 +208,7 @@ export async function renderInvoicePdf(interventionId: string) {
       vat: tva,
       totalTTC,
       vatExempt,
-      conditionsTitle: isB2b ? "Conditions de règlement :" : "Conditions générales :",
-      conditionsLines: isB2b
-        ? [
-            "Échéance : à réception de la facture",
-            "Escompte pour paiement anticipé : néant.",
-            "Pénalités de retard : taux de refinancement de la Banque centrale européenne majoré de 10 points.",
-            "Indemnité forfaitaire pour frais de recouvrement : 40 €.",
-            ...(vatExempt ? ["TVA non applicable — autoliquidation par le preneur (art. 283-2 nonies du CGI)."] : []),
-          ]
-        : [
-            "Ce devis est valable pour la durée de l'intervention.",
-            "Bon pour accord et signature du client.",
-          ],
-      signature: {
-        data: intervention.invoice_signature_data,
-        id: intervention.invoice_signature_id,
-        place: intervention.city,
-        date: intervention.invoice_signed_at ? new Date(intervention.invoice_signed_at) : null,
-      },
+      // Facture : pas de conditions générales ni de bloc signature.
     });
     const invoiceFileName = `facture-${invoiceNumber}.pdf`;
     return { invoiceBase64, invoiceFileName, invoiceNumber };

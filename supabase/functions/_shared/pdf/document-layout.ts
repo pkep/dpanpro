@@ -54,14 +54,16 @@ export interface PdfDocumentData {
   vat: number;
   totalTTC: number;
   vatExempt: boolean;
-  conditionsTitle: string | null;
-  conditionsLines: string[];
-  signature: {
+  /** Optionnel : absent pour les factures (pas de conditions générales). */
+  conditionsTitle?: string | null;
+  conditionsLines?: string[];
+  /** Optionnel : absent pour les factures (signature non requise). */
+  signature?: {
     data?: string | null;
     id?: string | null;
     place?: string | null;
     date?: Date | null;
-  };
+  } | null;
 }
 
 function money(n: number): string {
@@ -91,7 +93,8 @@ function wrappedRight(doc: jsPDF, text: string, x: number, y: number, maxWidth: 
   return y;
 }
 
-function drawFooter(doc: jsPDF, isB2b: boolean) {
+/** Pied de page légal commun à tous les documents (devis, factures, factures mensuelles). */
+export function drawCompanyFooter(doc: jsPDF) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const left = 19;
@@ -101,16 +104,14 @@ function drawFooter(doc: jsPDF, isB2b: boolean) {
   doc.setTextColor(...TEXT_DARK);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.5);
-  doc.text(COMPANY_INFO.name, left, y);
+  doc.text("Dépan.Pro", left, y);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(...TEXT_BODY);
   let ly = y + 4.5;
-  if (isB2b) {
-    doc.text("SAS au capital de 1 000 €", left, ly);
-    ly += 4;
-  }
+  doc.text("SAS au capital de 1 000 €", left, ly);
+  ly += 4;
   doc.text(COMPANY_INFO.phone, left, ly);
   ly += 4;
   doc.text(COMPANY_INFO.email, left, ly);
@@ -119,13 +120,8 @@ function drawFooter(doc: jsPDF, isB2b: boolean) {
 
   doc.text(`SIRET ${COMPANY_INFO.siret}`, right, y, { align: "right" });
   let ry = y + 4.5;
-  if (isB2b) {
-    doc.text("RCS", right, ry, { align: "right" });
-    ry += 4;
-  } else {
-    doc.text("Code APE 4332B", right, ry, { align: "right" });
-    ry += 4;
-  }
+  doc.text("RCS", right, ry, { align: "right" });
+  ry += 4;
   doc.text(`N° TVA ${COMPANY_INFO.tva}`, right, ry, { align: "right" });
 }
 
@@ -260,7 +256,7 @@ export function renderDocumentPdf(data: PdfDocumentData): string {
     bottomY = 30;
   }
 
-  // Conditions et signature à gauche.
+  // Conditions et signature à gauche (devis uniquement ; absents pour les factures).
   let leftY = bottomY;
   if (data.conditionsTitle) {
     doc.setFont("helvetica", "bold");
@@ -271,30 +267,32 @@ export function renderDocumentPdf(data: PdfDocumentData): string {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...TEXT_BODY);
-    for (const line of data.conditionsLines) {
+    for (const line of data.conditionsLines ?? []) {
       leftY = wrapped(doc, line, left, leftY, 95, 4.5);
     }
     leftY += 4;
   }
 
-  const hasSignature = Boolean(data.signature.data || data.signature.id);
-  const signatureLabel = data.signature.id
-    ? `Signé : ${data.signature.id}`
-    : (hasSignature ? "Signé :" : "En attente de signature");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...TEXT_DARK);
-  doc.text(signatureLabel, left, leftY);
-  leftY += 8;
-  doc.setDrawColor(...TEXT_DARK);
-  doc.setLineWidth(0.3);
-  doc.line(left, leftY, left + 62, leftY);
-  leftY += 4;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...TEXT_MUTED);
-  const sigDate = data.signature.date || data.date;
-  doc.text(`Le ${shortDate(sigDate)} à ${data.signature.place || data.city}`, left, leftY);
+  if (data.signature) {
+    const hasSignature = Boolean(data.signature.data || data.signature.id);
+    const signatureLabel = data.signature.id
+      ? `Signé : ${data.signature.id}`
+      : (hasSignature ? "Signé :" : "En attente de signature");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...TEXT_DARK);
+    doc.text(signatureLabel, left, leftY);
+    leftY += 8;
+    doc.setDrawColor(...TEXT_DARK);
+    doc.setLineWidth(0.3);
+    doc.line(left, leftY, left + 62, leftY);
+    leftY += 4;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...TEXT_MUTED);
+    const sigDate = data.signature.date || data.date;
+    doc.text(`Le ${shortDate(sigDate)} à ${data.signature.place || data.city}`, left, leftY);
+  }
 
   // Totaux à droite.
   const totalsLabelX = right - 55;
@@ -318,7 +316,7 @@ export function renderDocumentPdf(data: PdfDocumentData): string {
   const pageCount = doc.getNumberOfPages();
   for (let p = 1; p <= pageCount; p++) {
     doc.setPage(p);
-    drawFooter(doc, data.isB2b);
+    drawCompanyFooter(doc);
   }
 
   return doc.output("datauristring").split(",")[1];
