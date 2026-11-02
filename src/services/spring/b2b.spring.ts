@@ -1,7 +1,8 @@
 import { springHttp } from './http-client';
 import type {
   IB2bService, B2bPartner, B2bPartnerInput, B2bInvoice,
-  B2bPortalFilters, B2bPortalIntervention, B2bInterventionInput, B2bAccessCredentials,
+  B2bPortalIntervention, B2bPortalFilters, B2bInterventionInput, B2bAccessCredentials,
+  B2bMonthlyGenerationResult,
 } from '@/services/interfaces/b2b.interface';
 
 export class SpringB2bService implements IB2bService {
@@ -36,6 +37,12 @@ export class SpringB2bService implements IB2bService {
     return springHttp.get<B2bInvoice>(`/b2b-invoices/${id}`);
   }
 
+  generateMonthlyInvoices(month: string): Promise<B2bMonthlyGenerationResult> {
+    return springHttp.post<B2bMonthlyGenerationResult>(
+      `/b2b-invoices/generate?month=${encodeURIComponent(month)}`,
+    );
+  }
+
   previewInvoicePdf(partnerId: string, month: string): Promise<{ pdfBase64: string; filename: string }> {
     return springHttp.get<{ pdfBase64: string; filename: string }>('/b2b-invoices/preview-pdf', { partnerId, month });
   }
@@ -56,16 +63,26 @@ export class SpringB2bService implements IB2bService {
     return springHttp.post<B2bInvoice>(`/b2b-invoices/${id}/cancel`);
   }
 
-  getMyPartner(_userId: string): Promise<B2bPartner | null> {
-    return springHttp.get<B2bPartner | null>('/b2b/me/partner');
+  // ── Portail partenaire (le backend résout le partenaire depuis le JWT) ────
+
+  async getMyPartner(): Promise<B2bPartner | null> {
+    try {
+      return await springHttp.get<B2bPartner>('/b2b/me/partner');
+    } catch {
+      return null;
+    }
   }
 
   getMyInterventions(_userId: string, filters?: B2bPortalFilters): Promise<B2bPortalIntervention[]> {
     const params: Record<string, string> = {};
-    for (const [key, value] of Object.entries(filters ?? {})) {
-      if (value) params[key] = value;
-    }
-    return springHttp.get<B2bPortalIntervention[]>('/b2b/me/interventions', params);
+    if (filters?.status) params.status = filters.status;
+    if (filters?.search) params.search = filters.search;
+    if (filters?.from) params.from = filters.from;
+    if (filters?.to) params.to = filters.to;
+    return springHttp.get<B2bPortalIntervention[]>(
+      '/b2b/me/interventions',
+      Object.keys(params).length ? params : undefined,
+    );
   }
 
   getMyInvoices(_userId: string): Promise<B2bInvoice[]> {
@@ -77,7 +94,7 @@ export class SpringB2bService implements IB2bService {
   }
 
   createAccess(partner: B2bPartner, createdBy?: string): Promise<B2bAccessCredentials> {
-    return springHttp.post<B2bAccessCredentials>(`/b2b-partners/${encodeURIComponent(partner.id)}/access`, { createdBy });
+    return springHttp.post<B2bAccessCredentials>(`/b2b-partners/${partner.id}/access`, { createdBy });
   }
 }
 

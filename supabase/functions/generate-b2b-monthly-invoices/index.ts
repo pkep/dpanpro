@@ -55,94 +55,118 @@ serve(async (req) => {
 
     let generated = 0;
     let skipped = 0;
+    const errors: Array<{ partner: string; reason: string }> = [];
+    const details: Array<{
+      partner: string;
+      status: "generated" | "skipped" | "error";
+      reason?: string;
+    }> = [];
 
     for (const partner of partners ?? []) {
-      // Idempotence : facture déjà existante pour ce mois ?
-      const { data: existing } = await supabase
-        .from("b2b_invoices")
-        .select("id")
-        .eq("partner_id", partner.id)
-        .eq("period_start", periodStart)
-        .maybeSingle();
-      if (existing) { skipped++; continue; }
-
-      const { data: interventions, error: iErr } = await supabase
-        .from("interventions")
-        .select("id, category, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number")
-        .eq("b2b_partner_id", partner.id)
-        .is("b2b_invoice_id", null)
-        .eq("status", "completed")
-        .gte("completed_at", from)
-        .lte("completed_at", to)
-        .order("completed_at", { ascending: true });
-      if (iErr) throw iErr;
-      if (!interventions || interventions.length === 0) { skipped++; continue; }
-
-      const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
-      const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
-      // Autoliquidation TVA (sous-traitance BTP) : pas de TVA, TTC = HT.
-      const vatExempt = (partner as { construction_company?: boolean | null }).construction_company === true;
-      const vat = vatExempt ? 0 : Math.round(totalHt * VAT_RATE * 100) / 100;
-      const totalTtc = vatExempt ? totalHt : Math.round((totalHt + vat) * 100) / 100;
-      const number = `B2B-${month.replace("-", "")}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
-
-      const { data: invoice, error: invErr } = await supabase
-        .from("b2b_invoices")
-        .insert({
-          partner_id: partner.id,
-          number,
-          period_start: periodStart,
-          period_end: periodEnd,
-          status: "draft",
-          total_ht: totalHt,
-          vat_amount: vat,
-          total_ttc: totalTtc,
-          created_by: body?.actorId ?? null,
-        })
-        .select()
-        .single();
-      if (invErr) throw invErr;
-
-      await supabase.from("b2b_invoices_lines").insert(
-        lines.map((l) => ({
-          invoice_id: invoice.id,
-          intervention_id: l.interventionId,
-          label: l.label,
-          amount: l.amount,
-          details: {
-            interventionDate: l.interventionDate,
-            externalRef: l.externalRef,
-            address: l.address,
-            details: l.details,
-            technicianName: l.technicianName,
-            trackingCode: l.trackingCode,
-            perServiceInvoiceNumber: l.perServiceInvoiceNumber,
-          },
-        })),
-      );
-      await supabase.from("interventions")
-        .update({ b2b_invoice_id: invoice.id })
-        .in("id", lines.map((l) => l.interventionId));
-
-      // PDF + stockage
+      const partnerName = partner.company_name ?? partner.id;
       try {
-        const base64 = buildInvoiceB2bMonthlyPdfBase64({ number, periodStart, periodEnd, partner, lines, totalHt, vat, totalTtc });
-        const path = b2bInvoicePath(partner.company_name, partner.id, periodEnd);
-        const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, base64ToUint8Array(base64), {
-          contentType: "application/pdf",
-          upsert: true,
-        });
-        if (upErr) throw upErr;
-        const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
-        await supabase.from("b2b_invoices").update({ pdf_url: pub.publicUrl }).eq("id", invoice.id);
-      } catch (e) {
-        console.error(`[B2B monthly] PDF/stockage échoué pour ${partner.company_name}:`, e);
-      }
+        // Idempotence : une facture non annulée bloque la régénération.
+        const { data: existing, error: existingErr } = await supabase
+          .from("b2b_invoices")
+          .select("id, status")
+          .eq("partner_id", partner.id)
+          .eq("period_start", periodStart);
+        if (existingErr) throw existingErr;
+        const activeExisting = (existing ?? []).find((inv) => inv.status !== "cancelled");
+        if (activeExisting) {
+          skipped++;
+          details.push({ partner: partnerName, status: "skipped", reason: "invoice_exists" });
+          continue;
+        }
 
-      generated++;
+        const { data: interventions, error: iErr } = await supabase
+          .from("interventions")
+          .select("id, category, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number")
+          .eq("b2b_partner_id", partner.id)
+          .is("b2b_invoice_id", null)
+          .eq("status", "completed")
+          .gte("completed_at", from)
+          .lte("completed_at", to)
+          .order("completed_at", { ascending: true });
+        if (iErr) throw iErr;
+        if (!interventions || interventions.length === 0) {
+          skipped++;
+          details.push({ partner: partnerName, status: "skipped", reason: "no_invoiceable_interventions" });
+          continue;
+        }
+
+        const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
+        const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
+        // Autoliquidation TVA (sous-traitance BTP) : pas de TVA, TTC = HT.
+        const vatExempt = (partner as { construction_company?: boolean | null }).construction_company === true;
+        const vat = vatExempt ? 0 : Math.round(totalHt * VAT_RATE * 100) / 100;
+        const totalTtc = vatExempt ? totalHt : Math.round((totalHt + vat) * 100) / 100;
+        const number = `B2B-${month.replace("-", "")}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+
+        const { data: invoice, error: invErr } = await supabase
+          .from("b2b_invoices")
+          .insert({
+            partner_id: partner.id,
+            number,
+            period_start: periodStart,
+            period_end: periodEnd,
+            status: "draft",
+            total_ht: totalHt,
+            vat_amount: vat,
+            total_ttc: totalTtc,
+            created_by: body?.actorId ?? null,
+          })
+          .select()
+          .single();
+        if (invErr) throw invErr;
+
+        await supabase.from("b2b_invoices_lines").insert(
+          lines.map((l) => ({
+            invoice_id: invoice.id,
+            intervention_id: l.interventionId,
+            label: l.label,
+            amount: l.amount,
+            details: {
+              interventionDate: l.interventionDate,
+              externalRef: l.externalRef,
+              address: l.address,
+              details: l.details,
+              technicianName: l.technicianName,
+              trackingCode: l.trackingCode,
+              perServiceInvoiceNumber: l.perServiceInvoiceNumber,
+            },
+          })),
+        );
+        await supabase.from("interventions")
+          .update({ b2b_invoice_id: invoice.id })
+          .in("id", lines.map((l) => l.interventionId));
+
+        // PDF + stockage (best-effort : la facture existe déjà)
+        try {
+          const base64 = buildInvoiceB2bMonthlyPdfBase64({ number, periodStart, periodEnd, partner, lines, totalHt, vat, totalTtc });
+          const path = b2bInvoicePath(partner.company_name, partner.id, periodEnd);
+          const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, base64ToUint8Array(base64), {
+            contentType: "application/pdf",
+            upsert: true,
+          });
+          if (upErr) throw upErr;
+          const { data: pub } = await supabase.storage.from(BUCKET).getPublicUrl(path);
+          await supabase.from("b2b_invoices").update({ pdf_url: pub.publicUrl }).eq("id", invoice.id);
+        } catch (e) {
+          console.error(`[B2B monthly] PDF/stockage échoué pour ${partnerName}:`, e);
+        }
+
+        generated++;
+        details.push({ partner: partnerName, status: "generated" });
+      } catch (e) {
+        const reason = e instanceof Error ? e.message : String(e);
+        errors.push({ partner: partnerName, reason });
+        details.push({ partner: partnerName, status: "error", reason });
+        console.error(`[B2B monthly] échec pour ${partnerName}:`, e);
+      }
     }
 
-    return new Response(JSON.stringify({ success: true, month, generated, skipped }), {
+    return new Response(JSON.stringify({ success: true, month, generated, skipped, errors, details }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {

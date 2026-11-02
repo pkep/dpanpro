@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type {
   IB2bService, B2bPartner, B2bPartnerInput,
   B2bInvoice, B2bInvoiceLine, B2bPortalIntervention, B2bPortalFilters,
-  B2bInterventionInput, B2bAccessCredentials,
+  B2bInterventionInput, B2bAccessCredentials, B2bMonthlyGenerationResult,
 } from '@/services/interfaces/b2b.interface';
 import { geocodingService } from '@/services/components/geocoding/geocoding.service';
 import { recordInterventionStatusChange } from '@/services/supabase/intervention-history-status.service';
@@ -137,6 +137,20 @@ class SupabaseB2bService implements IB2bService {
     const { data: lines } = await db.from('b2b_invoices_lines').select('*').eq('invoice_id', id);
     const partner = data.b2b_partners as { company_name?: string } | null;
     return mapInvoice({ ...data, partner_name: partner?.company_name ?? null }, ((lines || []) as Record<string, unknown>[]).map(mapLine));
+  }
+
+  async generateMonthlyInvoices(month: string): Promise<B2bMonthlyGenerationResult> {
+    const { data, error } = await supabase.functions.invoke('generate-b2b-monthly-invoices', {
+      body: { month },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return {
+      generated: Number(data?.generated ?? 0),
+      skipped: Number(data?.skipped ?? 0),
+      errors: Array.isArray(data?.errors) ? data.errors : [],
+      details: Array.isArray(data?.details) ? data.details : [],
+    };
   }
 
   async previewInvoicePdf(partnerId: string, month: string): Promise<{ pdfBase64: string; filename: string }> {

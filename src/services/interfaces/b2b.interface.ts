@@ -141,6 +141,18 @@ export interface B2bAccessCredentials {
   tempPassword: string;
 }
 
+/** Résultat de la génération batch des factures mensuelles B2B. */
+export interface B2bMonthlyGenerationResult {
+  generated: number;
+  skipped: number;
+  errors: Array<{ partner: string; reason: string }>;
+  details?: Array<{
+    partner: string;
+    status: 'generated' | 'skipped' | 'error';
+    reason?: string;
+  }>;
+}
+
 export interface IB2bService {
   // Partenaires
   getPartners(search?: string): Promise<B2bPartner[]>;
@@ -152,6 +164,8 @@ export interface IB2bService {
   // Factures mensuelles
   getInvoices(partnerId?: string, month?: string): Promise<B2bInvoice[]>;
   getInvoice(id: string): Promise<B2bInvoice>;
+  /** Génère les factures mensuelles de tous les partenaires actifs pour un mois (AAAA-MM). */
+  generateMonthlyInvoices(month: string): Promise<B2bMonthlyGenerationResult>;
   /** Aperçu transitoire (aucune persistance) du PDF de la facture du mois pour un partenaire. */
   previewInvoicePdf(partnerId: string, month: string): Promise<{ pdfBase64: string; filename: string }>;
   sendInvoice(id: string): Promise<B2bInvoice>;
