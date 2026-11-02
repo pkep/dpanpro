@@ -1,15 +1,18 @@
 /**
  * generate-b2b-invoice-pdf
  *
- * Aperçu **transitoire** (aucune persistance, aucun stockage) du PDF de la facture mensuelle
- * d'un partenaire B2B pour un mois donné, à partir des interventions terminées non facturées.
+ * Aperçu **transitoire** du PDF de la facture mensuelle d'un partenaire B2B pour un mois
+ * donné, ou régénération d'une facture existante.
  *
- * body: { partnerId: string, month: "YYYY-MM", actorId?: string }
- * → { success: true, pdfBase64, filename }
+ * body:
+ *   - { partnerId: string, month: "YYYY-MM", actorId?: string } → aperçu non persisté
+ *   - { invoiceId: string } → PDF depuis la facture + lignes (non persisté)
+ *   - { invoiceId: string, regenerate: true } → TVA 0 / TTC = HT, PDF stocké et facture mise à jour
+ * → { success: true, pdfBase64, filename, pdfUrl?, regenerated? }
  */
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { firstDayOfMonth, lastDayOfMonth, fileDate } from "../_shared/b2b-period.ts";
+import { firstDayOfMonth, lastDayOfMonth, fileDate, b2bInvoicePath } from "../_shared/b2b-period.ts";
 import { buildInvoiceB2bMonthlyPdfBase64 } from "../_shared/pdf/invoice-b2b-monthly.ts";
 import { buildB2bMonthlyLines } from "../_shared/b2b-lines.ts";
 
@@ -17,6 +20,15 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const BUCKET = "interventions";
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
 
 function mapStoredLine(line: Record<string, unknown>) {
   const details = (line.details && typeof line.details === "object" ? line.details : {}) as Record<string, unknown>;
@@ -38,7 +50,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { partnerId, month, invoiceId } = await req.json();
+    const { partnerId, month, invoiceId, regenerate } = await req.json();
     if (!invoiceId && (!partnerId || !month)) {
       return new Response(JSON.stringify({ error: "partnerId and month required, or invoiceId" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -66,6 +78,7 @@ serve(async (req) => {
       const partner = (invoice as { b2b_partners?: Record<string, unknown> | null }).b2b_partners ?? null;
       if (!partner) throw new Error("Partenaire B2B introuvable pour cette facture");
 
+      const totalHt = Math.round(Number(invoice.total_ht ?? 0) * 100) / 100;
       const pdfBase64 = buildInvoiceB2bMonthlyPdfBase64({
         number: String(invoice.number ?? "B2B"),
         generatedAt: invoice.created_at ?? null,
@@ -73,15 +86,39 @@ serve(async (req) => {
         periodEnd: invoice.period_end,
         partner,
         lines: (lineRows ?? []).map((line) => mapStoredLine(line as Record<string, unknown>)),
-        totalHt: Number(invoice.total_ht ?? 0),
-        vat: Number(invoice.vat_amount ?? 0),
-        totalTtc: Number(invoice.total_ttc ?? 0),
+        totalHt,
+        vat: 0,
+        totalTtc: totalHt,
       });
+
+      let pdfUrl = (invoice.pdf_url as string | null) ?? null;
+      if (regenerate) {
+        const path = b2bInvoicePath(
+          (partner.company_name as string | null) ?? null,
+          String(invoice.partner_id),
+          String(invoice.period_end),
+        );
+        const { error: upErr } = await supabase.storage.from(BUCKET).upload(
+          path,
+          base64ToUint8Array(pdfBase64),
+          { contentType: "application/pdf", upsert: true },
+        );
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
+        pdfUrl = pub.publicUrl;
+        const { error: updErr } = await supabase
+          .from("b2b_invoices")
+          .update({ vat_amount: 0, total_ttc: totalHt, pdf_url: pdfUrl })
+          .eq("id", invoiceId);
+        if (updErr) throw updErr;
+      }
 
       return new Response(JSON.stringify({
         success: true,
         pdfBase64,
         filename: `facture-${invoice.number ?? invoiceId}.pdf`,
+        pdfUrl,
+        regenerated: regenerate === true,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
