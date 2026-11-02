@@ -20,7 +20,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const VAT_RATE = 0.20;
 const BUCKET = "interventions";
 
 function base64ToUint8Array(base64: string): Uint8Array {
@@ -97,10 +96,9 @@ serve(async (req) => {
 
         const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
         const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
-        // Autoliquidation TVA (sous-traitance BTP) : pas de TVA, TTC = HT.
-        const vatExempt = (partner as { construction_company?: boolean | null }).construction_company === true;
-        const vat = vatExempt ? 0 : Math.round(totalHt * VAT_RATE * 100) / 100;
-        const totalTtc = vatExempt ? totalHt : Math.round((totalHt + vat) * 100) / 100;
+        // Facture mensuelle B2B : TVA toujours à 0, TTC = HT.
+        const vat = 0;
+        const totalTtc = totalHt;
         const number = `B2B-${month.replace("-", "")}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
 
         const { data: invoice, error: invErr } = await supabase
