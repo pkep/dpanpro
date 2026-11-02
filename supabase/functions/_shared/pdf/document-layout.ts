@@ -140,9 +140,10 @@ export function renderDocumentPdf(data: PdfDocumentData): string {
 
   doc.setFont("helvetica", "bold");
   doc.text(data.numberLabel, left, 24);
+  const numberLabelWidth = doc.getTextWidth(`${data.numberLabel} `);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...TEXT_MUTED);
-  doc.text(data.number, left, 29);
+  doc.text(data.number, left + numberLabelWidth, 24);
 
   doc.addImage(LOGO_DATA_URI, "PNG", right - LOGO_WIDTH, 14, LOGO_WIDTH, LOGO_HEIGHT);
 
@@ -256,9 +257,11 @@ export function renderDocumentPdf(data: PdfDocumentData): string {
     bottomY = 30;
   }
 
-  // Conditions et signature à gauche (devis uniquement ; absents pour les factures).
+  // Conditions et signature à gauche : uniquement pour les devis.
+  // Une facture ne doit jamais afficher de bloc signature (« En attente de signature » inclus).
+  const isQuote = data.title === "DEVIS";
   let leftY = bottomY;
-  if (data.conditionsTitle) {
+  if (isQuote && data.conditionsTitle) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
     doc.setTextColor(...TEXT_DARK);
@@ -273,7 +276,7 @@ export function renderDocumentPdf(data: PdfDocumentData): string {
     leftY += 4;
   }
 
-  if (data.signature) {
+  if (isQuote && data.signature) {
     const hasSignature = Boolean(data.signature.data || data.signature.id);
     const signatureLabel = data.signature.id
       ? `Signé : ${data.signature.id}`
