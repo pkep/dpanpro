@@ -14,6 +14,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { firstDayOfMonth, lastDayOfMonth, monthLabel, isLastDayOfMonthParis, b2bInvoicePath } from "../_shared/b2b-period.ts";
 import { buildInvoiceB2bMonthlyPdfBase64 } from "../_shared/pdf/invoice-b2b-monthly.ts";
 import { buildB2bMonthlyLines } from "../_shared/b2b-lines.ts";
+import { computeB2bVat } from "../_shared/b2b-vat.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,9 +97,7 @@ serve(async (req) => {
 
         const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
         const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
-        // Facture mensuelle B2B : TVA toujours à 0, TTC = HT.
-        const vat = 0;
-        const totalTtc = totalHt;
+        const vat = computeB2bVat(totalHt, partner.construction_company === true);
         const number = `B2B-${month.replace("-", "")}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
 
         const { data: invoice, error: invErr } = await supabase
@@ -110,8 +109,8 @@ serve(async (req) => {
             period_end: periodEnd,
             status: "draft",
             total_ht: totalHt,
-            vat_amount: vat,
-            total_ttc: totalTtc,
+            vat_amount: vat.vatAmount,
+            total_ttc: vat.totalTtc,
             created_by: body?.actorId ?? null,
           })
           .select()
@@ -141,7 +140,16 @@ serve(async (req) => {
 
         // PDF + stockage (best-effort : la facture existe déjà)
         try {
-          const base64 = buildInvoiceB2bMonthlyPdfBase64({ number, periodStart, periodEnd, partner, lines, totalHt, vat, totalTtc });
+          const base64 = buildInvoiceB2bMonthlyPdfBase64({
+            number,
+            periodStart,
+            periodEnd,
+            partner,
+            lines,
+            totalHt,
+            vat: vat.vatAmount,
+            totalTtc: vat.totalTtc,
+          });
           const path = b2bInvoicePath(partner.company_name, partner.id, periodEnd);
           const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, base64ToUint8Array(base64), {
             contentType: "application/pdf",

@@ -17,6 +17,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { firstDayOfMonth, lastDayOfMonth, fileDate, b2bInvoicePath } from "../_shared/b2b-period.ts";
 import { buildInvoiceB2bMonthlyPdfBase64 } from "../_shared/pdf/invoice-b2b-monthly.ts";
 import { buildB2bMonthlyLines } from "../_shared/b2b-lines.ts";
+import { computeB2bVat } from "../_shared/b2b-vat.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,6 +110,7 @@ serve(async (req) => {
 
         const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
         const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
+        const vat = computeB2bVat(totalHt, partner.construction_company === true);
 
         // Délie les anciennes interventions qui ne font plus partie du périmètre.
         const { data: oldLineRows, error: oldErr } = await supabase
@@ -170,8 +172,8 @@ serve(async (req) => {
           partner,
           lines,
           totalHt,
-          vat: 0,
-          totalTtc: totalHt,
+          vat: vat.vatAmount,
+          totalTtc: vat.totalTtc,
         });
 
         const path = b2bInvoicePath(
@@ -186,11 +188,12 @@ serve(async (req) => {
         );
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
-        const pdfUrl = pub.publicUrl;
+        // Versionne l'URL pour éviter que Cloudflare/CDN serve l'ancien PDF.
+        const pdfUrl = `${pub.publicUrl}?v=${Date.now()}`;
 
         const { error: updErr } = await supabase
           .from("b2b_invoices")
-          .update({ total_ht: totalHt, vat_amount: 0, total_ttc: totalHt, pdf_url: pdfUrl })
+          .update({ total_ht: totalHt, vat_amount: vat.vatAmount, total_ttc: vat.totalTtc, pdf_url: pdfUrl })
           .eq("id", invoiceId);
         if (updErr) throw updErr;
 
@@ -214,6 +217,7 @@ serve(async (req) => {
       if (lErr) throw lErr;
 
       const totalHt = Math.round(Number(invoice.total_ht ?? 0) * 100) / 100;
+      const vat = computeB2bVat(totalHt, partner.construction_company === true);
       const pdfBase64 = buildInvoiceB2bMonthlyPdfBase64({
         number,
         generatedAt: invoice.created_at ?? null,
@@ -222,8 +226,8 @@ serve(async (req) => {
         partner,
         lines: (lineRows ?? []).map((line) => mapStoredLine(line as Record<string, unknown>)),
         totalHt,
-        vat: 0,
-        totalTtc: totalHt,
+        vat: vat.vatAmount,
+        totalTtc: vat.totalTtc,
       });
 
       return new Response(JSON.stringify({
@@ -263,13 +267,18 @@ serve(async (req) => {
 
     const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
     const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
-    // Facture mensuelle B2B : TVA toujours à 0, TTC = HT.
-    const vat = 0;
-    const totalTtc = totalHt;
+    const vat = computeB2bVat(totalHt, partner.construction_company === true);
     const number = `B2B-${month.replace("-", "")}-APERCU`;
 
     const pdfBase64 = buildInvoiceB2bMonthlyPdfBase64({
-      number, periodStart, periodEnd, partner, lines, totalHt, vat, totalTtc,
+      number,
+      periodStart,
+      periodEnd,
+      partner,
+      lines,
+      totalHt,
+      vat: vat.vatAmount,
+      totalTtc: vat.totalTtc,
     });
 
     return new Response(JSON.stringify({
