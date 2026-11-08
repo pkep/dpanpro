@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildTechnicianLocationReminderEmail } from "../_shared/email-templates/technician-location-reminder.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,19 +44,15 @@ serve(async (req) => {
     for (const user of users || []) {
       if (!user.email) { failed++; continue; }
       try {
+        const { subject, html } = buildTechnicianLocationReminderEmail({
+          firstName: user.first_name || "",
+          loginUrl: `${frontendUrl}/technician`,
+        });
         const response = await resend.emails.send({
           from: `Depan.Pro <${fromEmail}>`,
           to: [override ? testRecipient : user.email],
-          subject: `${override ? "[TEST " + appEnv + "] " : ""}Depan.Pro — Activez votre position pour recevoir des interventions`,
-          html: `
-            <div style="font-family:Arial,sans-serif;color:#1f2937">
-              <h2>Bonjour ${user.first_name || ""},</h2>
-              <p>Votre compte technicien n’a pas de position GPS enregistrée. Sans position,
-              vous ne pouvez pas recevoir les interventions proches de vous.</p>
-              <p><strong>Connectez-vous et autorisez la localisation dans votre navigateur.</strong></p>
-              <p><a href="${frontendUrl}/technician" style="background:#0FB87F;color:#fff;padding:12px 20px;
-              text-decoration:none;border-radius:8px">Me connecter</a></p>
-            </div>`,
+          subject: `${override ? "[TEST " + appEnv + "] " : ""}${subject}`,
+          html,
         });
         if (response.error) failed++; else sent++;
       } catch (e) {

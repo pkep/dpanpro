@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { buildTechnicianReconnectReminderEmail } from "../_shared/email-templates/technician-reconnect-reminder.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") || "noreply@depan-pro.com";
@@ -60,16 +61,15 @@ serve(async (req) => {
       if (reference && new Date(reference) > threshold) continue;
 
       try {
+        const { subject, html } = buildTechnicianReconnectReminderEmail({
+          firstName: user.first_name || "",
+          loginUrl: `${frontendUrl}/technician`,
+        });
         const response = await resend.emails.send({
           from: `Depan.Pro <${fromEmail}>`,
           to: [override ? testRecipient : user.email],
-          subject: `${override ? "[TEST " + appEnv + "] " : ""}Depan.Pro — Reconnectez-vous et activez votre position`,
-          html: `<div style="font-family:Arial,sans-serif;color:#1f2937">
-            <h2>Bonjour ${user.first_name || ""},</h2>
-            <p>Vous ne vous êtes pas connecté depuis plusieurs jours.</p>
-            <p>Reconnectez-vous et autorisez la localisation pour recevoir les interventions proches de vous.</p>
-            <p><a href="${frontendUrl}/technician" style="background:#0FB87F;color:#fff;padding:12px 20px;text-decoration:none;border-radius:8px">Me reconnecter</a></p>
-          </div>`,
+          subject: `${override ? "[TEST " + appEnv + "] " : ""}${subject}`,
+          html,
         });
         if (response.error) continue;
         await supabase.from("technician_reconnect_reminders").insert({ technician_id: user.id });
