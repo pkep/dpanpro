@@ -34,6 +34,9 @@ export async function logSystem(entry: LogEntry): Promise<void> {
     else if (entry.level === "warn") console.warn(line, entry.context ?? "");
     else console.log(line, entry.context ?? "");
 
+    // Persisting to system_logs is disabled to reduce database disk I/O.
+    if (Deno.env.get("SYSTEM_LOGS_ENABLED") !== "true") return;
+
     await getClient().from("system_logs").insert({
       level: entry.level,
       source: entry.source,
