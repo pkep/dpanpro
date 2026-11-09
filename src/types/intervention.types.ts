@@ -91,6 +91,8 @@ export interface Intervention {
   b2bOrderReference?: string | null;
   /** Plafond de prix B2B (TTC) — contrôle avec marge (voir lib/b2bPriceCap). */
   b2bPriceCap?: number | null;
+  /** Entreprise de construction (BTP) : TVA B2B en autoliquidation (0 %). */
+  b2bConstructionCompany?: boolean | null;
   // Champs enrichis uniquement par la liste admin (outil du tableau)
   b2bCompanyName?: string | null;
   b2bContactFirstName?: string | null;
