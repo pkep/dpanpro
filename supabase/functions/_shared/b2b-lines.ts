@@ -1,4 +1,5 @@
 import type { B2bInvoiceLine } from "./pdf/invoice-b2b-monthly.ts";
+import { toB2bHtFromTtc } from "./b2b-vat.ts";
 
 type InterventionRow = {
   id: string;
@@ -19,6 +20,7 @@ type InterventionRow = {
 export async function buildB2bMonthlyLines(
   supabase: any,
   interventions: InterventionRow[],
+  constructionCompany = false,
 ): Promise<B2bInvoiceLine[]> {
   if (interventions.length === 0) return [];
   const ids = interventions.map((i) => i.id);
@@ -59,7 +61,7 @@ export async function buildB2bMonthlyLines(
     return {
       interventionId: i.id,
       label: `Prestation de services en sous-traitance - Référence ${reference}`,
-      amount: Number(i.final_price ?? i.estimated_price ?? 0),
+      amount: toB2bHtFromTtc(Number(i.final_price ?? i.estimated_price ?? 0), constructionCompany),
       interventionDate: i.completed_at ? String(i.completed_at).slice(0, 10) : null,
       externalRef: i.b2b_order_reference ?? null,
       address,
