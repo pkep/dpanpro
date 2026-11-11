@@ -5,6 +5,7 @@ import { renderDocumentPdf } from "./document-layout.ts";
 import { invoiceB2bSingleConfig } from "./invoice-b2b-single.ts";
 import { invoiceB2cConfig } from "./invoice-b2c.ts";
 import { computeB2bVat } from "../b2b-vat.ts";
+import { resolveInterventionDetail } from "../intervention-detail.ts";
 
 const CATEGORY_LABELS: Record<string, string> = {
   locksmith: "Serrurerie",
@@ -179,6 +180,7 @@ export async function renderInvoicePdf(interventionId: string) {
       clientLabel: "Facture pour :",
       metaLines: quoteNumber ? [`N°devis affilié : ${quoteNumber}`] : [],
       service: serviceLabel,
+      interventionDetail: resolveInterventionDetail(intervention),
       address: intervention.address || "",
       city: intervention.city || "",
       postalCode: intervention.postal_code || "",

@@ -81,7 +81,7 @@ serve(async (req) => {
 
         const { data: interventions, error: iErr } = await supabase
           .from("interventions")
-          .select("id, category, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number")
+          .select("id, category, description, questionnaire_answers, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number")
           .eq("b2b_partner_id", partner.id)
           .is("b2b_invoice_id", null)
           .eq("status", "completed")
@@ -95,7 +95,7 @@ serve(async (req) => {
           continue;
         }
 
-        const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
+        const lines = await buildB2bMonthlyLines(supabase, interventions as any[], partner.construction_company === true);
         const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
         const vat = computeB2bVat(totalHt, partner.construction_company === true);
         const number = `B2B-${month.replace("-", "")}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
@@ -127,6 +127,7 @@ serve(async (req) => {
               interventionDate: l.interventionDate,
               externalRef: l.externalRef,
               address: l.address,
+              interventionDetail: l.interventionDetail,
               details: l.details,
               technicianName: l.technicianName,
               trackingCode: l.trackingCode,

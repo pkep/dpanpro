@@ -1,9 +1,12 @@
 import type { B2bInvoiceLine } from "./pdf/invoice-b2b-monthly.ts";
 import { toB2bHtFromTtc } from "./b2b-vat.ts";
+import { resolveInterventionDetail } from "./intervention-detail.ts";
 
 type InterventionRow = {
   id: string;
   category?: string | null;
+  description?: string | null;
+  questionnaire_answers?: unknown;
   final_price?: number | null;
   estimated_price?: number | null;
   completed_at?: string | null;
@@ -65,6 +68,7 @@ export async function buildB2bMonthlyLines(
       interventionDate: i.completed_at ? String(i.completed_at).slice(0, 10) : null,
       externalRef: i.b2b_order_reference ?? null,
       address,
+      interventionDetail: resolveInterventionDetail(i),
       details: quotesByIntervention.get(i.id) || [],
       technicianName,
       trackingCode: i.tracking_code ?? null,

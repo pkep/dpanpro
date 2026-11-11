@@ -42,6 +42,7 @@ function mapStoredLine(line: Record<string, unknown>) {
     interventionDate: typeof details.interventionDate === "string" ? details.interventionDate : null,
     externalRef: typeof details.externalRef === "string" ? details.externalRef : null,
     address: typeof details.address === "string" ? details.address : null,
+    interventionDetail: typeof details.interventionDetail === "string" ? details.interventionDetail : null,
     details: Array.isArray(details.details) ? details.details.map(String) : undefined,
     technicianName: typeof details.technicianName === "string" ? details.technicianName : null,
     trackingCode: typeof details.trackingCode === "string" ? details.trackingCode : null,
@@ -94,7 +95,7 @@ serve(async (req) => {
         // facture ou encore non facturées (on exclut celles d'une autre facture).
         const { data: interventionRows, error: iErr } = await supabase
           .from("interventions")
-          .select("id, category, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number, b2b_invoice_id")
+          .select("id, category, description, questionnaire_answers, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number, b2b_invoice_id")
           .eq("b2b_partner_id", partnerIdValue)
           .eq("status", "completed")
           .gte("completed_at", from)
@@ -108,7 +109,7 @@ serve(async (req) => {
           throw new Error("Aucune intervention B2B terminée à facturer sur cette période");
         }
 
-        const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
+        const lines = await buildB2bMonthlyLines(supabase, interventions as any[], partner.construction_company === true);
         const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
         const vat = computeB2bVat(totalHt, partner.construction_company === true);
 
@@ -149,6 +150,7 @@ serve(async (req) => {
               interventionDate: l.interventionDate,
               externalRef: l.externalRef,
               address: l.address,
+              interventionDetail: l.interventionDetail,
               details: l.details,
               technicianName: l.technicianName,
               trackingCode: l.trackingCode,
@@ -253,7 +255,7 @@ serve(async (req) => {
 
     const { data: interventions, error: iErr } = await supabase
       .from("interventions")
-      .select("id, category, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number")
+      .select("id, category, description, questionnaire_answers, final_price, estimated_price, completed_at, tracking_code, b2b_order_reference, address, postal_code, city, technician_id, invoice_number")
       .eq("b2b_partner_id", partnerId)
       .is("b2b_invoice_id", null)
       .eq("status", "completed")
@@ -265,7 +267,7 @@ serve(async (req) => {
       throw new Error("Aucune intervention B2B terminée à facturer sur cette période");
     }
 
-    const lines = await buildB2bMonthlyLines(supabase, interventions as any[]);
+    const lines = await buildB2bMonthlyLines(supabase, interventions as any[], partner.construction_company === true);
     const totalHt = Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
     const vat = computeB2bVat(totalHt, partner.construction_company === true);
     const number = `B2B-${month.replace("-", "")}-APERCU`;

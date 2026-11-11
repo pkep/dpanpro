@@ -33,6 +33,8 @@ export interface PdfDocumentData {
   clientLabel: string;
   metaLines: string[];
   service: string;
+  /** Détail de l'intervention affiché après la catégorie (non gras). */
+  interventionDetail?: string | null;
   address: string;
   city: string;
   postalCode: string;
@@ -83,6 +85,87 @@ function wrapped(doc: jsPDF, text: string, x: number, y: number, maxWidth: numbe
   const lines = doc.splitTextToSize(text, maxWidth) as string[];
   doc.text(lines, x, y);
   return y + lines.length * lineHeight;
+}
+
+export interface InlineTextSegment {
+  text: string;
+  bold?: boolean;
+  size?: number;
+  color?: [number, number, number];
+}
+
+/** Mesure la hauteur (nombre de lignes) d'une suite de segments inline. */
+export function measureInlineSegments(
+  doc: jsPDF,
+  segments: InlineTextSegment[],
+  maxWidth: number,
+  defaultSize = 10,
+): number {
+  let lines = 1;
+  let cursor = 0;
+  for (const segment of segments) {
+    doc.setFontSize(segment.size ?? defaultSize);
+    doc.setFont("helvetica", segment.bold ? "bold" : "normal");
+    const tokens = segment.text.split(/(\s+)/).filter(Boolean);
+    for (const token of tokens) {
+      const width = doc.getTextWidth(token);
+      if (cursor + width > maxWidth && token.trim() !== "") {
+        lines++;
+        cursor = 0;
+      }
+      cursor += width;
+    }
+  }
+  return lines;
+}
+
+/** Dessine des segments avec des styles différents, avec retour à la ligne. */
+export function drawInlineSegments(
+  doc: jsPDF,
+  segments: InlineTextSegment[],
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight = 4.5,
+  defaultSize = 10,
+): number {
+  let cursorX = x;
+  let cursorY = y;
+  for (const segment of segments) {
+    doc.setFontSize(segment.size ?? defaultSize);
+    doc.setFont("helvetica", segment.bold ? "bold" : "normal");
+    if (segment.color) doc.setTextColor(...segment.color);
+    const tokens = segment.text.split(/(\s+)/).filter(Boolean);
+    for (const token of tokens) {
+      const width = doc.getTextWidth(token);
+      if (cursorX + width > x + maxWidth && token.trim() !== "") {
+        cursorY += lineHeight;
+        cursorX = x;
+      }
+      doc.text(token, cursorX, cursorY);
+      cursorX += width;
+    }
+  }
+  return cursorY + lineHeight;
+}
+
+/** Écrit la catégorie en gras puis « : détail » en normal, avec retour à la ligne. */
+export function drawServiceWithDetail(
+  doc: jsPDF,
+  service: string,
+  detail: string | null | undefined,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight = 5,
+): number {
+  const segments: InlineTextSegment[] = [
+    { text: service, bold: true, size: 10, color: TEXT_DARK },
+  ];
+  if (detail) {
+    segments.push({ text: ` : ${detail}`, bold: false, size: 10, color: TEXT_DARK });
+  }
+  return drawInlineSegments(doc, segments, x, y, maxWidth, lineHeight, 10);
 }
 
 function wrappedRight(doc: jsPDF, text: string, x: number, y: number, maxWidth: number, lineHeight = 4.5): number {
@@ -167,10 +250,8 @@ export function renderDocumentPdf(data: PdfDocumentData): string {
   doc.setTextColor(...TEXT_BODY);
   doc.text("Intervention :", left, y);
   y += 6;
-  doc.setFont("helvetica", "bold");
   doc.setTextColor(...TEXT_DARK);
-  doc.text(data.service, left, y);
-  y += 5;
+  y = drawServiceWithDetail(doc, data.service, data.interventionDetail, left, y, 95, 5);
   y = wrapped(doc, `${data.address}, ${data.city} ${data.postalCode}`.trim(), left, y, 95, 4.5);
   doc.text(data.phone || "", left, y);
   y += 5;
@@ -303,6 +384,22 @@ export function renderDocumentPdf(data: PdfDocumentData): string {
     doc.setTextColor(...TEXT_MUTED);
     const sigDate = data.signature.date || data.date;
     doc.text(`Le ${shortDate(sigDate)} à ${data.signature.place || data.city}`, left, leftY);
+  }
+
+  // Mention légale d'autoliquidation (factures et devis B2B construction).
+  if (data.vatExempt) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...TEXT_BODY);
+    const noteY = leftY > bottomY ? leftY + 4 : leftY;
+    wrapped(
+      doc,
+      "TVA non applicable — autoliquidation par le preneur (art. 283-2 nonies du CGI).",
+      left,
+      noteY,
+      95,
+      4.5,
+    );
   }
 
   // Totaux à droite.

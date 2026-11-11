@@ -5,6 +5,11 @@
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import { LOGO_DATA_URI, LOGO_WIDTH, LOGO_HEIGHT } from "../assets.ts";
 import { drawCompanyFooter } from "./document-layout.ts";
+import {
+  drawInlineSegments,
+  measureInlineSegments,
+  type InlineTextSegment,
+} from "./document-layout.ts";
 import { computeB2bVat } from "../b2b-vat.ts";
 
 export interface B2bInvoiceLine {
@@ -15,6 +20,8 @@ export interface B2bInvoiceLine {
   interventionDate?: string | null;
   externalRef?: string | null;
   address?: string | null;
+  /** Détail de l'intervention, affiché en gras dans la ligne « Détail : … ». */
+  interventionDetail?: string | null;
   details?: string[];
   technicianName?: string | null;
   trackingCode?: string | null;
@@ -234,12 +241,35 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
   drawTableHeader();
 
   for (const line of data.lines) {
-    type Block = { text: string; bold?: boolean; size?: number; color?: [number, number, number]; gapBefore?: number };
+    type Block = {
+      text?: string;
+      segments?: InlineTextSegment[];
+      bold?: boolean;
+      size?: number;
+      color?: [number, number, number];
+      gapBefore?: number;
+    };
     const blocks: Block[] = [];
     if (line.interventionDate) blocks.push({ text: line.interventionDate, bold: true, size: 9.2 });
     if (line.externalRef) blocks.push({ text: `Réf. externe : ${line.externalRef}`, size: 9 });
     if (line.address) blocks.push({ text: `Adresse : ${line.address}`, size: 9 });
-    if (line.details?.length) blocks.push({ text: `Détail : ${line.details.join(" ; ")}`, size: 9 });
+    if (line.interventionDetail) {
+      const segments: InlineTextSegment[] = [
+        { text: "Détail : ", bold: false, size: 9, color: TEXT_BODY },
+        { text: line.interventionDetail, bold: true, size: 9, color: TEXT_BODY },
+      ];
+      if (line.details?.length) {
+        segments.push({
+          text: ` : ${line.details.join(" ; ")}`,
+          bold: false,
+          size: 9,
+          color: TEXT_BODY,
+        });
+      }
+      blocks.push({ segments, size: 9 });
+    } else if (line.details?.length) {
+      blocks.push({ text: `Détail : ${line.details.join(" ; ")}`, size: 9 });
+    }
     if (line.technicianName) blocks.push({ text: `Technicien : ${line.technicianName}`, size: 9 });
     if (line.trackingCode) {
       blocks.push({
@@ -253,9 +283,12 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
     }
 
     const lineHeights = blocks.map((b) => {
+      if (b.segments) {
+        return measureInlineSegments(doc, b.segments, textWidth, b.size ?? 9) * 4.2 + (b.gapBefore ?? 0);
+      }
       doc.setFontSize(b.size ?? 9);
       doc.setFont("helvetica", b.bold ? "bold" : "normal");
-      return (doc.splitTextToSize(b.text, textWidth) as string[]).length * 4.2 + (b.gapBefore ?? 0);
+      return (doc.splitTextToSize(b.text ?? "", textWidth) as string[]).length * 4.2 + (b.gapBefore ?? 0);
     });
     const rowHeight = lineHeights.reduce((sum, h) => sum + h, 0) + 4;
 
@@ -269,10 +302,14 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
       if (block.gapBefore) y += block.gapBefore;
+      if (block.segments) {
+        y = drawInlineSegments(doc, block.segments, left, y, textWidth, 4.2, block.size ?? 9);
+        continue;
+      }
       doc.setFontSize(block.size ?? 9);
       doc.setFont("helvetica", block.bold ? "bold" : "normal");
       doc.setTextColor(...(block.color ?? TEXT_BODY));
-      const wrapped = doc.splitTextToSize(block.text, textWidth) as string[];
+      const wrapped = doc.splitTextToSize(block.text ?? "", textWidth) as string[];
       for (const part of wrapped) {
         doc.text(part, left, y);
         y += 4.2;
