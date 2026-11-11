@@ -3,6 +3,7 @@
  * partenaires « entreprise de construction ».
  */
 export const B2B_VAT_RATE = 20;
+export const B2B_VAT_DIVISOR = 1.2;
 
 export interface B2bVat {
   vatAmount: number;
@@ -25,6 +26,7 @@ export function computeB2bVat(totalHt: number, constructionCompany: boolean): B2
 }
 
 /**
+<<<<<<< Updated upstream
  * Prix d'intervention TTC (client) → montant HT de la ligne B2B.
  * - Entreprise de construction : autoliquidation, le TTC se facture tel quel en HT.
  * - Partenaire standard : on retire la TVA de 20 % (HT = TTC / 1,20).
@@ -33,4 +35,13 @@ export function toB2bHtFromTtc(totalTtc: number, constructionCompany: boolean): 
   const base = Math.round(Number(totalTtc ?? 0) * 100) / 100;
   if (constructionCompany === true) return base;
   return Math.round((base / (1 + B2B_VAT_RATE / 100)) * 100) / 100;
+=======
+ * Convertit un montant TTC (prix final/estimé d'une intervention) en HT.
+ * Autoliquidation (construction) : TVA 0 %, donc HT = TTC.
+ */
+export function toB2bHtFromTtc(ttc: number, constructionCompany: boolean): number {
+  const value = Math.round(Number(ttc ?? 0) * 100) / 100;
+  if (constructionCompany === true) return value;
+  return Math.round((value / B2B_VAT_DIVISOR) * 100) / 100;
+>>>>>>> Stashed changes
 }
