@@ -4,6 +4,7 @@ import { ensureDocumentNumber } from "../document-number.ts";
 import { renderDocumentPdf } from "./document-layout.ts";
 import { invoiceB2bSingleConfig } from "./invoice-b2b-single.ts";
 import { invoiceB2cConfig } from "./invoice-b2c.ts";
+import { computeB2bVat } from "../b2b-vat.ts";
 
 const CATEGORY_LABELS: Record<string, string> = {
   locksmith: "Serrurerie",
@@ -131,27 +132,31 @@ export async function renderInvoicePdf(interventionId: string) {
       clientLastName: intervention.client_last_name,
     });
 
-    // VAT rate from service
+    const isB2b = Boolean(intervention.b2b_partner_id);
+
+    // VAT rate: 20 % forfaitaire en B2B, taux du service pour le B2C.
     let vatRate = isCompany ? 20 : 10;
-    const { data: service } = await supabase
-      .from("services")
-      .select("vat_rate_individual, vat_rate_professional")
-      .eq("code", intervention.category)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (service) {
-      vatRate = isCompany ? service.vat_rate_professional : service.vat_rate_individual;
+    if (!isB2b) {
+      const { data: service } = await supabase
+        .from("services")
+        .select("vat_rate_individual, vat_rate_professional")
+        .eq("code", intervention.category)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (service) {
+        vatRate = isCompany ? service.vat_rate_professional : service.vat_rate_individual;
+      }
     }
 
     // Totals
     const baseTotal = quoteLines.reduce((s: number, l: any) => s + Number(l.calculated_price), 0);
     const additionalTotal = mods.reduce((s: number, m: any) => s + Number(m.total_additional_amount), 0);
     const totalHT = baseTotal + additionalTotal;
-    // B2B « entreprise de construction » → autoliquidation de TVA (art. 283-2 nonies du CGI).
-    const vatExempt = constructionCompany;
-    if (vatExempt) vatRate = 0;
-    const tva = vatExempt ? 0 : totalHT * (vatRate / 100);
-    const totalTTC = totalHT + tva;
+    const b2bVat = isB2b ? computeB2bVat(totalHT, constructionCompany) : null;
+    const vatExempt = b2bVat?.vatExempt ?? false;
+    if (b2bVat) vatRate = b2bVat.vatRate;
+    const tva = b2bVat ? b2bVat.vatAmount : totalHT * (vatRate / 100);
+    const totalTTC = b2bVat ? b2bVat.totalTtc : totalHT + tva;
 
     const invoiceDate = intervention.invoice_signed_at
       ? new Date(intervention.invoice_signed_at)
@@ -164,7 +169,6 @@ export async function renderInvoicePdf(interventionId: string) {
     const quoteNumber = await ensureDocumentNumber(supabase, interventionId, "quote");
 
     // Build PDF
-    const isB2b = Boolean(intervention.b2b_partner_id);
     const config = isB2b ? invoiceB2bSingleConfig : invoiceB2cConfig;
     const serviceLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
     const invoiceBase64 = renderDocumentPdf({

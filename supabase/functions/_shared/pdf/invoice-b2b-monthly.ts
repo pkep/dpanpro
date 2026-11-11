@@ -5,6 +5,7 @@
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 import { LOGO_DATA_URI, LOGO_WIDTH, LOGO_HEIGHT } from "../assets.ts";
 import { drawCompanyFooter } from "./document-layout.ts";
+import { computeB2bVat } from "../b2b-vat.ts";
 
 export interface B2bInvoiceLine {
   interventionId: string;
@@ -95,10 +96,10 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
   const textWidth = contentWidth - amountWidth - 3;
   const footerTop = pageHeight - 32;
 
-  const vatExempt = data.partner.construction_company === true;
-  const vatRate = vatExempt ? 0 : 20;
-  const vatAmount = vatExempt ? 0 : data.vat;
-  const totalTtc = vatExempt ? data.totalHt : data.totalTtc;
+  const { vatExempt, vatRate, vatAmount, totalTtc } = computeB2bVat(
+    data.totalHt,
+    data.partner.construction_company === true,
+  );
   const emissionDate = formatFrDate(data.generatedAt ?? new Date().toISOString());
   const periodStart = formatFrDate(data.periodStart);
   const periodEnd = formatFrDate(data.periodEnd);
