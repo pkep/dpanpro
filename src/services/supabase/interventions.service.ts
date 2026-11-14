@@ -16,8 +16,8 @@ import {
   InterventionPriority,
   UpdateInterventionPayload,
 } from '@/types/intervention.types';
-import type { IInterventionsService } from '@/services/interfaces/interventions.interface';
-import type { DbIntervention, DbInterventionCategory, DbInterventionStatus, DbInterventionPriority } from '@/types/database.types';
+import type { IInterventionsService, AssignTechnicianOptions } from '@/services/interfaces/interventions.interface';
+import type { DbIntervention } from '@/types/database.types';
 import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import type { PaginatedResponse } from '@/types/pagination.types';
 import { dispatchService } from '@/services/supabase/dispatch.service';
@@ -25,6 +25,7 @@ import { recordInterventionStatusChange } from '@/services/supabase/intervention
 import { geocodingService } from '@/services/components/geocoding/geocoding.service';
 import { services } from '@/services/factory';
 import { mapAdminInterventionRow, type AdminInterventionRow } from '@/lib/interventionAdmin';
+import { buildInterventionInsertData, isB2bFormData } from '@/lib/interventionInsert';
 
 /**
  * ✅ PRESETS INTERNES - Sélection des champs par use-case
@@ -177,54 +178,14 @@ class SupabaseInterventionsService implements IInterventionsService {
       console.error('Geocoding failed for intervention:', error);
     }
 
-    const insertData: Record<string, unknown> = {
-      client_id: clientId,
-      category: formData.category as DbInterventionCategory,
-      title: generatedTitle,
-      description: formData.description,
-      address: formData.address,
-      city: formData.city,
-      postal_code: formData.postalCode,
-      latitude,
-      longitude,
-      priority: (formData.priority || 'normal') as DbInterventionPriority,
-      status: 'new' as DbInterventionStatus,
-      is_active: true,
-      client_email: formData.clientEmail || null,
-      client_phone: formData.clientPhone || null,
-      photos: formData.photos || null,
-      scheduled_at: formData.scheduledAt || null,
-    };
-
-    const campaignCode = formData.campaignCode || questionnaireData?.campaignCode;
-    if (campaignCode) {
-      insertData.campaign_code = campaignCode.trim().toUpperCase();
-    }
-
-    // B2B : intervention pour un partenaire — pas de client User, bénéficiaire sur site
-    const isB2b = formData.billingType === 'b2b' || !!formData.b2bPartnerId;
-    if (isB2b) {
-      insertData.billing_type = 'b2b';
-      insertData.b2b_partner_id = formData.b2bPartnerId || null;
-      insertData.client_id = null;
-      insertData.client_first_name = formData.clientFirstName || null;
-      insertData.client_last_name = formData.clientLastName || null;
-      insertData.b2b_order_reference = formData.b2bOrderReference || null;
-      if (formData.b2bPriceCap != null) insertData.b2b_price_cap = formData.b2bPriceCap;
-    }
-
-    // Add questionnaire data if provided
-    if (questionnaireData) {
-      if (questionnaireData.questionnaireAnswers) {
-        insertData.questionnaire_answers = questionnaireData.questionnaireAnswers;
-      }
-      if (questionnaireData.prixMin !== undefined) {
-        insertData.prix_min = questionnaireData.prixMin;
-      }
-      if (questionnaireData.prixMax !== undefined) {
-        insertData.prix_max = questionnaireData.prixMax;
-      }
-    }
+    const insertData = buildInterventionInsertData(
+      clientId,
+      formData,
+      questionnaireData,
+      { latitude, longitude },
+      generatedTitle,
+    );
+    const isB2b = isB2bFormData(formData);
 
     const { data, error } = await supabase
       .from('interventions')
@@ -383,10 +344,16 @@ class SupabaseInterventionsService implements IInterventionsService {
     }
   }
 
-  async assignTechnician(id: string, technicianId: string): Promise<void> {
+  async assignTechnician(id: string, technicianId: string, options?: AssignTechnicianOptions): Promise<void> {
     // Assignation avec imposition d'éligibilité côté serveur (edge function).
+    // La notification technicien (SMS/email/push) est envoyée par l'edge (chaîne manual-dispatch).
     const { data, error } = await supabase.functions.invoke('dispatch-intervention', {
-      body: { interventionId: id, technicianId, action: 'assign' },
+      body: {
+        interventionId: id,
+        technicianId,
+        action: 'assign',
+        notifyTechnician: options?.notifyTechnician !== false,
+      },
     });
 
     if (error) throw error;

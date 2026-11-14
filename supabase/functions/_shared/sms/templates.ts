@@ -66,16 +66,23 @@ export function buildPaymentRequiredSms(data: PaymentRequiredSmsData): string {
   return `${PREFIX} autorisation de paiement requise.\nUne action est requise pour avancer dans l'intervention. Cliquer pour procéder au paiement: ${data.paymentUrl}\n\nPour suivre le étape de l'intervention ouvrez: ${data.trackingUrl}\nCode: ${data.trackingCode}`;
 }
 
-// ── Manual Dispatch (technician) ────────────────────────────────────
+// ── Manual Dispatch / assignation (technician) ──────────────────────
 interface ManualDispatchSmsData {
   categoryLabel: string;
   city: string;
   address: string;
+  /** Lien générique (legacy). Utilisé si `interventionUrl` est absent. */
   dashboardUrl: string;
+  /** Référence d'intervention (tracking code). */
+  trackingCode?: string | null;
+  /** Lien direct vers l'intervention côté technicien. */
+  interventionUrl?: string | null;
 }
 
 export function buildManualDispatchSms(data: ManualDispatchSmsData): string {
-  return `${PREFIX} Mission assignee par le manager: ${data.categoryLabel} a ${data.city}. ${data.address}.\nOuvrez l'app pour voir les details: ${data.dashboardUrl}`;
+  const link = data.interventionUrl || data.dashboardUrl;
+  const ref = data.trackingCode ? ` Ref: ${data.trackingCode}.` : "";
+  return `${PREFIX} Nouvelle intervention assignee: ${data.categoryLabel} a ${data.city}. ${data.address}.${ref}\nSi vous etes en route, mettez a jour l'intervention dans l'app: ${link}`;
 }
 
 // ── Technician Dispatch ─────────────────────────────────────────────

@@ -27,6 +27,8 @@ interface DispatchRequest {
   technicianId?: string;
   technicianIds?: string[];
   reason?: string; // For decline and cancel actions
+  /** action=assign : prévenir le technicien (SMS/email/push). Défaut true ; false pour un auto-accept. */
+  notifyTechnician?: boolean;
 }
 
 interface Intervention {
@@ -169,7 +171,7 @@ Deno.serve(async (req) => {
     // Handle different actions
     switch (action) {
       case 'assign':
-        return await handleAssign(supabase, interventionId, technicianId!);
+        return await handleAssign(supabase, interventionId, technicianId!, body.notifyTechnician !== false);
       case 'accept':
         return await handleAccept(supabase, interventionId, technicianId!);
       case 'reject':
@@ -702,8 +704,8 @@ async function handleNotify(supabase: any, interventionId: string) {
 }
 
 // Manual assignment of a specific technician (admin/manager), with eligibility enforcement
-async function handleAssign(supabase: any, interventionId: string, technicianId: string) {
-  console.log(`[Dispatch] Assigning technician ${technicianId} to intervention ${interventionId}`);
+async function handleAssign(supabase: any, interventionId: string, technicianId: string, notifyTechnician = true) {
+  console.log(`[Dispatch] Assigning technician ${technicianId} to intervention ${interventionId} (notify=${notifyTechnician})`);
 
   const { data: intervention, error } = await supabase
     .from('interventions')
@@ -735,6 +737,8 @@ async function handleAssign(supabase: any, interventionId: string, technicianId:
   }
 
   const oldStatus = intervention.status;
+  // Déjà assigné au même technicien → pas de nouvelle notification technicien.
+  const alreadyAssignedToSame = intervention.technician_id === technicianId;
   const nowDate = new Date();
   const now = nowDate.toISOString();
   const responseTimeSeconds = Math.round(
@@ -787,6 +791,15 @@ async function handleAssign(supabase: any, interventionId: string, technicianId:
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   await notifyStatusChange(supabaseUrl, serviceRoleKey, interventionId, 'assigned', oldStatus);
+
+  // Prévenir le technicien assigné via la chaîne existante (SMS + email + push), best-effort.
+  if (notifyTechnician && !alreadyAssignedToSame) {
+    fetch(`${supabaseUrl}/functions/v1/notify-manual-dispatch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceRoleKey}` },
+      body: JSON.stringify({ interventionId, technicianId, notifyAgentReceivers: false }),
+    }).catch(err => console.error('[Dispatch] notify-manual-dispatch failed:', err));
+  }
 
   return new Response(
     JSON.stringify({ success: true, technicianId, distanceKm: eligibility.distanceKm }),

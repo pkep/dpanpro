@@ -1,4 +1,4 @@
-import type { IInterventionsService } from '@/services/interfaces/interventions.interface';
+import type { IInterventionsService, AssignTechnicianOptions } from '@/services/interfaces/interventions.interface';
 import {
   Intervention,
   InterventionFormData,
@@ -89,6 +89,13 @@ export class SpringInterventionsService implements IInterventionsService {
   async getInterventionsForAdmin(filters: {
     status?: InterventionStatus;
     category?: InterventionCategory;
+    type?: 'client' | 'b2b';
+    urgency?: 'standard' | 'high' | 'urgent' | 'scheduled';
+    technicianId?: string;
+    amountMin?: number;
+    amountMax?: number;
+    createdFrom?: string;
+    createdTo?: string;
     search?: string;
     page?: number;
     size?: number;
@@ -96,6 +103,13 @@ export class SpringInterventionsService implements IInterventionsService {
     const params: Record<string, string> = {};
     if (filters?.status)   params.status   = filters.status;
     if (filters?.category) params.category = filters.category;
+    if (filters?.type)     params.type     = filters.type;
+    if (filters?.urgency)  params.urgency  = filters.urgency;
+    if (filters?.technicianId) params.technicianId = filters.technicianId;
+    if (filters?.amountMin != null) params.amountMin = String(filters.amountMin);
+    if (filters?.amountMax != null) params.amountMax = String(filters.amountMax);
+    if (filters?.createdFrom) params.createdFrom = filters.createdFrom;
+    if (filters?.createdTo)   params.createdTo   = filters.createdTo;
     if (filters?.search?.trim()) params.search = filters.search.trim();
     if (filters?.page !== undefined) params.page = String(filters.page);
     if (filters?.size !== undefined) params.size = String(filters.size);
@@ -125,30 +139,6 @@ export class SpringInterventionsService implements IInterventionsService {
   // ============================================================
   // CORE METHODS
   // ============================================================
-  getInterventions(filters: {
-    status?: InterventionStatus | InterventionStatus[];
-    category?: InterventionCategory;
-    clientId?: string;
-    technicianId?: string;
-    isActive?: boolean;
-    unassignedOnly?: boolean;
-    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
-    orderDirection?: ('asc' | 'desc')[];
-    page: number;
-    size?: number;
-  }): Promise<PaginatedResponse<Intervention>>;
-  getInterventions(filters?: {
-    status?: InterventionStatus | InterventionStatus[];
-    category?: InterventionCategory;
-    clientId?: string;
-    technicianId?: string;
-    isActive?: boolean;
-    unassignedOnly?: boolean;
-    orderBy?: ('createdAt' | 'priority' | 'updatedAt')[];
-    orderDirection?: ('asc' | 'desc')[];
-    page?: undefined;
-    size?: number;
-  }): Promise<Intervention[]>;
   async getInterventions(filters?: {
     status?: InterventionStatus | InterventionStatus[];
     category?: InterventionCategory;
@@ -160,7 +150,7 @@ export class SpringInterventionsService implements IInterventionsService {
     orderDirection?: ('asc' | 'desc')[];
     page?: number;
     size?: number;
-  }): Promise<Intervention[] | PaginatedResponse<Intervention>> {
+  }): Promise<Intervention[]> {
     const params: Record<string, string> = {};
 
     // Handle status filter: can be a single value or an array
@@ -186,16 +176,9 @@ export class SpringInterventionsService implements IInterventionsService {
       params.orderDirection = filters.orderDirection.join(',');
     }
 
-    // Handle pagination
-    if (filters?.page !== undefined) params.page = String(filters.page);
+    // Handle pagination (limit)
     if (filters?.size !== undefined) params.size = String(filters.size);
 
-    // If pagination params provided, return paginated response
-    if (filters?.page !== undefined && filters?.size !== undefined) {
-      return springHttp.get<PaginatedResponse<Intervention>>('/interventions', params);
-    }
-
-    // Otherwise, maintain backward compatibility by returning just content array
     const page = await springHttp.get<{ content: Intervention[] }>('/interventions', params);
     return page.content;
   }
@@ -216,8 +199,11 @@ export class SpringInterventionsService implements IInterventionsService {
   }
 
   // POST /interventions/{id}/assign (changed from PATCH to POST)
-  async assignTechnician(id: string, technicianId: string): Promise<void> {
-    await springHttp.post(`/interventions/${id}/assign`, { technicianId });
+  async assignTechnician(id: string, technicianId: string, options?: AssignTechnicianOptions): Promise<void> {
+    await springHttp.post(`/interventions/${id}/assign`, {
+      technicianId,
+      notifyTechnician: options?.notifyTechnician !== false,
+    });
   }
 
   // PATCH /interventions/{id}/b2b-price-cap
@@ -253,16 +239,17 @@ export class SpringInterventionsService implements IInterventionsService {
   }
 
   // PATCH /interventions/{id}/signature
-  async updateQuoteInterventionSignature(interventionId: string, signatureData: string): Promise<void> {
-    await springHttp.patch(`/interventions/${interventionId}/quote-signature`, { signatureData });
+  async updateQuoteInterventionSignature(interventionId: string, signatureData: string, signatureId: string): Promise<void> {
+    await springHttp.patch(`/interventions/${interventionId}/quote-signature`, { signatureData, quoteSignatureId: signatureId });
   }
 
   // PATCH /interventions/{id}/finalized
-  async finalized(interventionId: string, finalPrice: number, signatureData: string): Promise<void> {
+  async finalized(interventionId: string, finalPrice: number, signatureData: string, signatureId: string): Promise<void> {
     await springHttp.patch(`/interventions/${interventionId}/finalized`, {
         status: 'completed',
         finalPrice,
         invoiceSignature : signatureData,
+        invoiceSignatureId: signatureId,
         invoiceSignatureDate: new Date().toISOString()
         });
   }

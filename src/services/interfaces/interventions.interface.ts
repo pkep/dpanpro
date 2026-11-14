@@ -17,6 +17,11 @@ import {
 } from '@/types/intervention.types';
 import type { PaginatedResponse } from '@/types/pagination.types';
 
+export interface AssignTechnicianOptions {
+  /** Prévenir le technicien assigné (défaut `true`). `false` pour un auto-accept. */
+  notifyTechnician?: boolean;
+}
+
 export interface IInterventionsService {
 
   // ============================================================
@@ -171,7 +176,12 @@ export interface IInterventionsService {
    * bénéficiaire, technicien, prestations + prix). Règles de domaine validées côté serveur.
    */
   updateIntervention(id: string, payload: UpdateInterventionPayload): Promise<void>;
-  assignTechnician(id: string, technicianId: string): Promise<void>;
+  /**
+   * Assignation manuelle d'un technicien.
+   * `options.notifyTechnician` (défaut `true`) : prévenir le technicien (SMS/email/push)
+   * via la chaîne « manual dispatch ». Mettre `false` pour un auto-accept technicien.
+   */
+  assignTechnician(id: string, technicianId: string, options?: AssignTechnicianOptions): Promise<void>;
   /** Définir/augmenter le plafond de prix B2B (ADMIN/MANAGER). */
   updateB2bPriceCap(id: string, b2bPriceCap: number | null): Promise<Intervention>;
   toggleActive(id: string, isActive: boolean): Promise<void>;

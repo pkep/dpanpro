@@ -14,192 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      action_notification_recipients: {
-        Row: {
-          action: string
-          created_at: string
-          email: string[] | null
-          id: string
-          roles: Database["public"]["Enums"]["app_role"][] | null
-          updated_at: string
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          email?: string[] | null
-          id?: string
-          roles?: Database["public"]["Enums"]["app_role"][] | null
-          updated_at?: string
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          email?: string[] | null
-          id?: string
-          roles?: Database["public"]["Enums"]["app_role"][] | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      affiliate_campaign: {
-        Row: {
-          can_combine: boolean
-          code: string | null
-          commission_type: string
-          commission_value: number
-          created_at: string
-          end_date: string | null
-          id: string
-          is_permanent: boolean
-          is_suspended: boolean
-          name: string
-          requires_code: boolean
-          start_date: string | null
-          updated_at: string
-        }
-        Insert: {
-          can_combine?: boolean
-          code?: string | null
-          commission_type: string
-          commission_value: number
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          is_permanent?: boolean
-          is_suspended?: boolean
-          name: string
-          requires_code?: boolean
-          start_date?: string | null
-          updated_at?: string
-        }
-        Update: {
-          can_combine?: boolean
-          code?: string | null
-          commission_type?: string
-          commission_value?: number
-          created_at?: string
-          end_date?: string | null
-          id?: string
-          is_permanent?: boolean
-          is_suspended?: boolean
-          name?: string
-          requires_code?: boolean
-          start_date?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      affiliate_transactions: {
-        Row: {
-          affiliate_id: string
-          commission_amount: number
-          commission_type: string
-          commission_value: number
-          confirmed_at: string | null
-          created_at: string
-          id: string
-          intervention_id: string
-          paid_at: string | null
-          revenue_amount: number
-          status: string
-        }
-        Insert: {
-          affiliate_id: string
-          commission_amount: number
-          commission_type: string
-          commission_value: number
-          confirmed_at?: string | null
-          created_at?: string
-          id?: string
-          intervention_id: string
-          paid_at?: string | null
-          revenue_amount: number
-          status?: string
-        }
-        Update: {
-          affiliate_id?: string
-          commission_amount?: number
-          commission_type?: string
-          commission_value?: number
-          confirmed_at?: string | null
-          created_at?: string
-          id?: string
-          intervention_id?: string
-          paid_at?: string | null
-          revenue_amount?: number
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "affiliate_transactions_affiliate_id_fkey"
-            columns: ["affiliate_id"]
-            isOneToOne: false
-            referencedRelation: "affiliates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "affiliate_transactions_intervention_id_fkey"
-            columns: ["intervention_id"]
-            isOneToOne: false
-            referencedRelation: "interventions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      affiliates: {
-        Row: {
-          address: string | null
-          city: string | null
-          code: string
-          commission_type: string
-          commission_value: number
-          created_at: string
-          email: string
-          first_name: string
-          id: string
-          is_active: boolean
-          last_name: string
-          notes: string | null
-          phone: string
-          postal_code: string | null
-          updated_at: string
-        }
-        Insert: {
-          address?: string | null
-          city?: string | null
-          code: string
-          commission_type: string
-          commission_value: number
-          created_at?: string
-          email: string
-          first_name: string
-          id?: string
-          is_active?: boolean
-          last_name: string
-          notes?: string | null
-          phone: string
-          postal_code?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string | null
-          city?: string | null
-          code?: string
-          commission_type?: string
-          commission_value?: number
-          created_at?: string
-          email?: string
-          first_name?: string
-          id?: string
-          is_active?: boolean
-          last_name?: string
-          notes?: string | null
-          phone?: string
-          postal_code?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       agent_receiver: {
         Row: {
           created_at: string
@@ -227,317 +41,26 @@ export type Database = {
         }
         Relationships: []
       }
-      article_tags: {
+      customer_zone_to_deploy: {
         Row: {
-          article_id: string
-          tag_id: string
-        }
-        Insert: {
-          article_id: string
-          tag_id: string
-        }
-        Update: {
-          article_id?: string
-          tag_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "article_tags_article_id_fkey"
-            columns: ["article_id"]
-            isOneToOne: false
-            referencedRelation: "articles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "article_tags_tag_id_fkey"
-            columns: ["tag_id"]
-            isOneToOne: false
-            referencedRelation: "tags"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      articles: {
-        Row: {
-          author_id: string
-          body: string
-          cover_image_alt: string | null
-          cover_image_height: number | null
-          cover_image_size_kb: number | null
-          cover_image_url: string | null
-          cover_image_width: number | null
-          created_at: string
-          excerpt: string | null
-          id: string
-          published_at: string | null
-          slug: string
-          status: Database["public"]["Enums"]["article_status"]
-          theme_id: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          author_id: string
-          body: string
-          cover_image_alt?: string | null
-          cover_image_height?: number | null
-          cover_image_size_kb?: number | null
-          cover_image_url?: string | null
-          cover_image_width?: number | null
-          created_at?: string
-          excerpt?: string | null
-          id?: string
-          published_at?: string | null
-          slug: string
-          status?: Database["public"]["Enums"]["article_status"]
-          theme_id?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          author_id?: string
-          body?: string
-          cover_image_alt?: string | null
-          cover_image_height?: number | null
-          cover_image_size_kb?: number | null
-          cover_image_url?: string | null
-          cover_image_width?: number | null
-          created_at?: string
-          excerpt?: string | null
-          id?: string
-          published_at?: string | null
-          slug?: string
-          status?: Database["public"]["Enums"]["article_status"]
-          theme_id?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "articles_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "authors"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "articles_theme_id_fkey"
-            columns: ["theme_id"]
-            isOneToOne: false
-            referencedRelation: "themes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      authors: {
-        Row: {
+          city: string
           created_at: string
           id: string
-          lastname: string
-          name: string
+          postal_code: number
         }
         Insert: {
+          city: string
           created_at?: string
           id?: string
-          lastname: string
-          name: string
+          postal_code: number
         }
         Update: {
+          city?: string
           created_at?: string
           id?: string
-          lastname?: string
-          name?: string
+          postal_code?: number
         }
         Relationships: []
-      }
-      b2b_invoices: {
-        Row: {
-          created_at: string
-          created_by: string | null
-          id: string
-          number: string | null
-          paid_at: string | null
-          partner_id: string
-          pdf_url: string | null
-          period_end: string | null
-          period_start: string | null
-          sent_at: string | null
-          status: string
-          total_ht: number
-          total_ttc: number
-          updated_at: string
-          vat_amount: number
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          number?: string | null
-          paid_at?: string | null
-          partner_id: string
-          pdf_url?: string | null
-          period_end?: string | null
-          period_start?: string | null
-          sent_at?: string | null
-          status?: string
-          total_ht?: number
-          total_ttc?: number
-          updated_at?: string
-          vat_amount?: number
-        }
-        Update: {
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          number?: string | null
-          paid_at?: string | null
-          partner_id?: string
-          pdf_url?: string | null
-          period_end?: string | null
-          period_start?: string | null
-          sent_at?: string | null
-          status?: string
-          total_ht?: number
-          total_ttc?: number
-          updated_at?: string
-          vat_amount?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "b2b_invoices_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "b2b_invoices_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "b2b_partners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      b2b_invoices_lines: {
-        Row: {
-          amount: number
-          created_at: string
-          details: Json
-          id: string
-          intervention_id: string | null
-          invoice_id: string
-          label: string | null
-        }
-        Insert: {
-          amount?: number
-          created_at?: string
-          details?: Json
-          id?: string
-          intervention_id?: string | null
-          invoice_id: string
-          label?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          details?: Json
-          id?: string
-          intervention_id?: string | null
-          invoice_id?: string
-          label?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "b2b_invoices_lines_intervention_id_fkey"
-            columns: ["intervention_id"]
-            isOneToOne: false
-            referencedRelation: "interventions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "b2b_invoices_lines_invoice_id_fkey"
-            columns: ["invoice_id"]
-            isOneToOne: false
-            referencedRelation: "b2b_invoices"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      b2b_partners: {
-        Row: {
-          address: string | null
-          city: string | null
-          company_name: string
-          construction_company: boolean
-          contact_email: string | null
-          contact_firstname: string | null
-          contact_lastname: string | null
-          contact_phone: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          is_active: boolean
-          postal_code: string | null
-          siret: string | null
-          updated_at: string
-          user_id: string | null
-          vat_number: string | null
-        }
-        Insert: {
-          address?: string | null
-          city?: string | null
-          company_name: string
-          construction_company?: boolean
-          contact_email?: string | null
-          contact_firstname?: string | null
-          contact_lastname?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          postal_code?: string | null
-          siret?: string | null
-          updated_at?: string
-          user_id?: string | null
-          vat_number?: string | null
-        }
-        Update: {
-          address?: string | null
-          city?: string | null
-          company_name?: string
-          construction_company?: boolean
-          contact_email?: string | null
-          contact_firstname?: string | null
-          contact_lastname?: string | null
-          contact_phone?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          is_active?: boolean
-          postal_code?: string | null
-          siret?: string | null
-          updated_at?: string
-          user_id?: string | null
-          vat_number?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "b2b_partners_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "b2b_partners_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       cancelled_assignments: {
         Row: {
@@ -636,27 +159,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      customer_zone_to_deploy: {
-        Row: {
-          city: string
-          created_at: string
-          id: string
-          postal_code: number
-        }
-        Insert: {
-          city: string
-          created_at?: string
-          id?: string
-          postal_code: number
-        }
-        Update: {
-          city?: string
-          created_at?: string
-          id?: string
-          postal_code?: number
-        }
-        Relationships: []
       }
       declined_interventions: {
         Row: {
@@ -875,39 +377,6 @@ export type Database = {
           },
         ]
       }
-      document_number_backfill_20261031: {
-        Row: {
-          applied_at: string
-          id: number
-          intervention_id: string
-          invoice_number_after: string | null
-          invoice_number_before: string | null
-          quote_number_after: string | null
-          quote_number_before: string | null
-          tracking_code: string
-        }
-        Insert: {
-          applied_at?: string
-          id?: never
-          intervention_id: string
-          invoice_number_after?: string | null
-          invoice_number_before?: string | null
-          quote_number_after?: string | null
-          quote_number_before?: string | null
-          tracking_code: string
-        }
-        Update: {
-          applied_at?: string
-          id?: never
-          intervention_id?: string
-          invoice_number_after?: string | null
-          invoice_number_before?: string | null
-          quote_number_after?: string | null
-          quote_number_before?: string | null
-          tracking_code?: string
-        }
-        Relationships: []
-      }
       email_verification_tokens: {
         Row: {
           created_at: string
@@ -939,132 +408,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      external_escalations: {
-        Row: {
-          category: string | null
-          company_name: string | null
-          created_at: string
-          created_by: string | null
-          id: string
-          intervention_id: string
-          notes: string | null
-          price: number | null
-          rating: number | null
-          status: string
-          technician_first_name: string | null
-          technician_information: string | null
-          technician_last_name: string | null
-          technician_phone: string | null
-          time_until_service: string | null
-          updated_at: string
-        }
-        Insert: {
-          category?: string | null
-          company_name?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          intervention_id: string
-          notes?: string | null
-          price?: number | null
-          rating?: number | null
-          status?: string
-          technician_first_name?: string | null
-          technician_information?: string | null
-          technician_last_name?: string | null
-          technician_phone?: string | null
-          time_until_service?: string | null
-          updated_at?: string
-        }
-        Update: {
-          category?: string | null
-          company_name?: string | null
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          intervention_id?: string
-          notes?: string | null
-          price?: number | null
-          rating?: number | null
-          status?: string
-          technician_first_name?: string | null
-          technician_information?: string | null
-          technician_last_name?: string | null
-          technician_phone?: string | null
-          time_until_service?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "external_escalations_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "external_escalations_intervention_id_fkey"
-            columns: ["intervention_id"]
-            isOneToOne: false
-            referencedRelation: "interventions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      intervention_campaigns: {
-        Row: {
-          base_amount: number
-          campaign_id: string | null
-          code: string | null
-          commission_type: string
-          commission_value: number
-          created_at: string
-          discount_amount: number
-          id: string
-          intervention_id: string
-          name: string
-        }
-        Insert: {
-          base_amount: number
-          campaign_id?: string | null
-          code?: string | null
-          commission_type: string
-          commission_value: number
-          created_at?: string
-          discount_amount: number
-          id?: string
-          intervention_id: string
-          name: string
-        }
-        Update: {
-          base_amount?: number
-          campaign_id?: string | null
-          code?: string | null
-          commission_type?: string
-          commission_value?: number
-          created_at?: string
-          discount_amount?: number
-          id?: string
-          intervention_id?: string
-          name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "intervention_campaigns_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "affiliate_campaign"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "intervention_campaigns_intervention_id_fkey"
-            columns: ["intervention_id"]
-            isOneToOne: false
-            referencedRelation: "interventions"
             referencedColumns: ["id"]
           },
         ]
@@ -1184,58 +527,11 @@ export type Database = {
           },
         ]
       }
-      intervention_prestations: {
-        Row: {
-          created_at: string
-          id: string
-          intervention_id: string
-          prestation_id: string
-          variante_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          intervention_id: string
-          prestation_id: string
-          variante_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          intervention_id?: string
-          prestation_id?: string
-          variante_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "intervention_prestations_intervention_id_fkey"
-            columns: ["intervention_id"]
-            isOneToOne: false
-            referencedRelation: "interventions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "intervention_prestations_prestation_id_fkey"
-            columns: ["prestation_id"]
-            isOneToOne: false
-            referencedRelation: "prestation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "intervention_prestations_variante_id_fkey"
-            columns: ["variante_id"]
-            isOneToOne: false
-            referencedRelation: "prestation_variantes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       intervention_quotes: {
         Row: {
           base_price: number
           calculated_price: number
           created_at: string
-          description: string | null
           display_order: number
           id: string
           intervention_id: string
@@ -1247,7 +543,6 @@ export type Database = {
           base_price?: number
           calculated_price?: number
           created_at?: string
-          description?: string | null
           display_order?: number
           id?: string
           intervention_id: string
@@ -1259,7 +554,6 @@ export type Database = {
           base_price?: number
           calculated_price?: number
           created_at?: string
-          description?: string | null
           display_order?: number
           id?: string
           intervention_id?: string
@@ -1315,36 +609,6 @@ export type Database = {
           },
         ]
       }
-      intervention_technician_backfill_20261101: {
-        Row: {
-          applied_at: string
-          id: number
-          intervention_id: string
-          note: string
-          technician_id_after: string
-          technician_id_before: string | null
-          tracking_code: string
-        }
-        Insert: {
-          applied_at?: string
-          id?: never
-          intervention_id: string
-          note: string
-          technician_id_after: string
-          technician_id_before?: string | null
-          tracking_code: string
-        }
-        Update: {
-          applied_at?: string
-          id?: never
-          intervention_id?: string
-          note?: string
-          technician_id_after?: string
-          technician_id_before?: string | null
-          tracking_code?: string
-        }
-        Relationships: []
-      }
       intervention_work_photos: {
         Row: {
           created_at: string
@@ -1394,56 +658,24 @@ export type Database = {
         Row: {
           accepted_at: string | null
           address: string
-          affiliate_code: string | null
-          affiliate_id: string | null
           arrived_at: string | null
-          b2b_invoice_id: string | null
-          b2b_order_reference: string | null
-          b2b_partner_id: string | null
-          b2b_price_cap: number | null
-          billing_mode: string | null
-          billing_type: string
-          campaign_code: string | null
-          campaign_discount_amount: number | null
-          campaign_id: string | null
           category: string
           city: string
           client_email: string | null
           client_first_name: string | null
-          client_id: string | null
           client_last_name: string | null
+          client_id: string | null
           client_phone: string | null
-          client_photos_count: number | null
           completed_at: string | null
           created_at: string
-          customer_consent: boolean | null
           description: string | null
-          escalation_completed_at: string | null
-          escalation_consent_signature_data: string | null
-          escalation_consent_signature_id: string | null
-          escalation_consent_signed_at: string | null
-          escalation_notes: string | null
-          escalation_photos: Json | null
-          escalation_reason: string | null
-          escalation_requested_at: string | null
-          escalation_type: string | null
           estimated_price: number | null
-          expected_completion_date: string | null
           final_price: number | null
           id: string
           intervention_duration_seconds: number | null
-          invoice_number: string | null
-          invoice_pdf_url: string | null
-          invoice_signature_data: string | null
-          invoice_signature_id: string | null
-          invoice_signed_at: string | null
           is_active: boolean
-          is_processing: boolean
           latitude: number | null
           longitude: number | null
-          other_prestation_label: string | null
-          other_prestation_price: number | null
-          parent_id_intervention: string | null
           photos: string[] | null
           postal_code: string
           priority: string
@@ -1451,20 +683,19 @@ export type Database = {
           prix_min: number | null
           questionnaire_answers: Json | null
           questionnaire_resultat_id: string | null
-          quote_number: string | null
+          invoice_pdf_url: string | null
           quote_pdf_url: string | null
           quote_signature_data: string | null
-          quote_signature_id: string | null
           quote_signed_at: string | null
           response_time_seconds: number | null
           scheduled_at: string | null
-          service_started: boolean | null
           started_at: string | null
           status: string
           suspended: boolean
           suspended_at: string | null
           suspended_by: string | null
           suspension_reason: string | null
+          expected_completion_date: string | null
           technician_id: string | null
           title: string
           tracking_code: string | null
@@ -1474,56 +705,24 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           address: string
-          affiliate_code?: string | null
-          affiliate_id?: string | null
           arrived_at?: string | null
-          b2b_invoice_id?: string | null
-          b2b_order_reference?: string | null
-          b2b_partner_id?: string | null
-          b2b_price_cap?: number | null
-          billing_mode?: string | null
-          billing_type?: string
-          campaign_code?: string | null
-          campaign_discount_amount?: number | null
-          campaign_id?: string | null
           category: string
           city: string
           client_email?: string | null
           client_first_name?: string | null
-          client_id?: string | null
           client_last_name?: string | null
+          client_id?: string | null
           client_phone?: string | null
-          client_photos_count?: number | null
           completed_at?: string | null
           created_at?: string
-          customer_consent?: boolean | null
           description?: string | null
-          escalation_completed_at?: string | null
-          escalation_consent_signature_data?: string | null
-          escalation_consent_signature_id?: string | null
-          escalation_consent_signed_at?: string | null
-          escalation_notes?: string | null
-          escalation_photos?: Json | null
-          escalation_reason?: string | null
-          escalation_requested_at?: string | null
-          escalation_type?: string | null
           estimated_price?: number | null
-          expected_completion_date?: string | null
           final_price?: number | null
           id?: string
           intervention_duration_seconds?: number | null
-          invoice_number?: string | null
-          invoice_pdf_url?: string | null
-          invoice_signature_data?: string | null
-          invoice_signature_id?: string | null
-          invoice_signed_at?: string | null
           is_active?: boolean
-          is_processing?: boolean
           latitude?: number | null
           longitude?: number | null
-          other_prestation_label?: string | null
-          other_prestation_price?: number | null
-          parent_id_intervention?: string | null
           photos?: string[] | null
           postal_code: string
           priority?: string
@@ -1531,20 +730,18 @@ export type Database = {
           prix_min?: number | null
           questionnaire_answers?: Json | null
           questionnaire_resultat_id?: string | null
-          quote_number?: string | null
           quote_pdf_url?: string | null
           quote_signature_data?: string | null
-          quote_signature_id?: string | null
           quote_signed_at?: string | null
           response_time_seconds?: number | null
           scheduled_at?: string | null
-          service_started?: boolean | null
           started_at?: string | null
           status?: string
           suspended?: boolean
           suspended_at?: string | null
           suspended_by?: string | null
           suspension_reason?: string | null
+          expected_completion_date?: string | null
           technician_id?: string | null
           title: string
           tracking_code?: string | null
@@ -1554,56 +751,24 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           address?: string
-          affiliate_code?: string | null
-          affiliate_id?: string | null
           arrived_at?: string | null
-          b2b_invoice_id?: string | null
-          b2b_order_reference?: string | null
-          b2b_partner_id?: string | null
-          b2b_price_cap?: number | null
-          billing_mode?: string | null
-          billing_type?: string
-          campaign_code?: string | null
-          campaign_discount_amount?: number | null
-          campaign_id?: string | null
           category?: string
           city?: string
           client_email?: string | null
           client_first_name?: string | null
-          client_id?: string | null
           client_last_name?: string | null
+          client_id?: string | null
           client_phone?: string | null
-          client_photos_count?: number | null
           completed_at?: string | null
           created_at?: string
-          customer_consent?: boolean | null
           description?: string | null
-          escalation_completed_at?: string | null
-          escalation_consent_signature_data?: string | null
-          escalation_consent_signature_id?: string | null
-          escalation_consent_signed_at?: string | null
-          escalation_notes?: string | null
-          escalation_photos?: Json | null
-          escalation_reason?: string | null
-          escalation_requested_at?: string | null
-          escalation_type?: string | null
           estimated_price?: number | null
-          expected_completion_date?: string | null
           final_price?: number | null
           id?: string
           intervention_duration_seconds?: number | null
-          invoice_number?: string | null
-          invoice_pdf_url?: string | null
-          invoice_signature_data?: string | null
-          invoice_signature_id?: string | null
-          invoice_signed_at?: string | null
           is_active?: boolean
-          is_processing?: boolean
           latitude?: number | null
           longitude?: number | null
-          other_prestation_label?: string | null
-          other_prestation_price?: number | null
-          parent_id_intervention?: string | null
           photos?: string[] | null
           postal_code?: string
           priority?: string
@@ -1611,20 +776,18 @@ export type Database = {
           prix_min?: number | null
           questionnaire_answers?: Json | null
           questionnaire_resultat_id?: string | null
-          quote_number?: string | null
           quote_pdf_url?: string | null
           quote_signature_data?: string | null
-          quote_signature_id?: string | null
           quote_signed_at?: string | null
           response_time_seconds?: number | null
           scheduled_at?: string | null
-          service_started?: boolean | null
           started_at?: string | null
           status?: string
           suspended?: boolean
           suspended_at?: string | null
           suspended_by?: string | null
           suspension_reason?: string | null
+          expected_completion_date?: string | null
           technician_id?: string | null
           title?: string
           tracking_code?: string | null
@@ -1633,59 +796,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "interventions_affiliate_code_fkey"
-            columns: ["affiliate_code"]
-            isOneToOne: false
-            referencedRelation: "affiliates"
-            referencedColumns: ["code"]
-          },
-          {
-            foreignKeyName: "interventions_affiliate_id_fkey"
-            columns: ["affiliate_id"]
-            isOneToOne: false
-            referencedRelation: "affiliates"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "interventions_b2b_invoice_id_fkey"
-            columns: ["b2b_invoice_id"]
-            isOneToOne: false
-            referencedRelation: "b2b_invoices"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "interventions_b2b_partner_id_fkey"
-            columns: ["b2b_partner_id"]
-            isOneToOne: false
-            referencedRelation: "b2b_partners"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "interventions_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "affiliate_campaign"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "interventions_parent_id_intervention_fkey"
-            columns: ["parent_id_intervention"]
-            isOneToOne: false
-            referencedRelation: "interventions"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "interventions_questionnaire_resultat_id_fkey"
             columns: ["questionnaire_resultat_id"]
             isOneToOne: false
             referencedRelation: "questionnaire_resultats"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "interventions_suspended_by_fkey"
-            columns: ["suspended_by"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {
@@ -1696,42 +810,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      job_runs: {
-        Row: {
-          error_message: string | null
-          failed_count: number
-          finished_at: string | null
-          id: string
-          job_name: string
-          metadata: Json
-          processed_count: number
-          started_at: string
-          status: string
-        }
-        Insert: {
-          error_message?: string | null
-          failed_count?: number
-          finished_at?: string | null
-          id?: string
-          job_name: string
-          metadata?: Json
-          processed_count?: number
-          started_at?: string
-          status?: string
-        }
-        Update: {
-          error_message?: string | null
-          failed_count?: number
-          finished_at?: string | null
-          id?: string
-          job_name?: string
-          metadata?: Json
-          processed_count?: number
-          started_at?: string
-          status?: string
-        }
-        Relationships: []
       }
       manager_permissions: {
         Row: {
@@ -1810,130 +888,106 @@ export type Database = {
       }
       partner_applications: {
         Row: {
-          address: string | null
-          ape_code: string | null
-          availability: Database["public"]["Enums"]["partner_availability"][]
-          bank_account_holder: string | null
-          bank_name: string | null
-          bic: string | null
-          birth_date: string | null
-          birth_place: string | null
-          certifications: string[]
-          city: string | null
+          address: string
+          bank_account_holder: string
+          bank_name: string
+          bic: string
+          birth_date: string
+          birth_place: string
+          city: string
           company_name: string
           created_at: string
           current_city: string | null
           data_accuracy_confirmed: boolean
           department: string | null
           has_decennial_insurance: boolean
-          iban: string | null
+          iban: string
           id: string
-          insurance_company: string | null
-          insurance_expiry_date: string | null
-          insurance_policy_number: string | null
-          kbis_url: string | null
+          insurance_company: string
+          insurance_expiry_date: string
+          insurance_policy_number: string
           latitude: number | null
-          legal_status: string | null
+          legal_status: string
           longitude: number | null
-          postal_code: string | null
-          presentation: string | null
-          rejection_reason: string | null
+          presentation: string
+          postal_code: string
           siren: string
           skills: string[]
           status: string
           terms_accepted: boolean
           updated_at: string
           user_id: string | null
-          validated_at: string | null
+          ape_code: string | null
           vat_number: string | null
-          vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
-          vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
-          zone: string[] | null
         }
         Insert: {
-          address?: string | null
-          ape_code?: string | null
-          availability?: Database["public"]["Enums"]["partner_availability"][]
-          bank_account_holder?: string | null
-          bank_name?: string | null
-          bic?: string | null
-          birth_date?: string | null
-          birth_place?: string | null
-          certifications?: string[]
-          city?: string | null
+          address: string
+          bank_account_holder: string
+          bank_name: string
+          bic: string
+          birth_date: string
+          birth_place: string
+          city: string
           company_name: string
           created_at?: string
           current_city?: string | null
           data_accuracy_confirmed?: boolean
           department?: string | null
           has_decennial_insurance?: boolean
-          iban?: string | null
+          iban: string
           id?: string
-          insurance_company?: string | null
-          insurance_expiry_date?: string | null
-          insurance_policy_number?: string | null
-          kbis_url?: string | null
+          insurance_company: string
+          insurance_expiry_date: string
+          insurance_policy_number: string
           latitude?: number | null
-          legal_status?: string | null
+          legal_status: string
           longitude?: number | null
-          postal_code?: string | null
-          presentation?: string | null
-          rejection_reason?: string | null
+          presentation: string
+          postal_code: string
           siren: string
           skills: string[]
           status?: string
           terms_accepted?: boolean
           updated_at?: string
           user_id?: string | null
-          validated_at?: string | null
+          ape_code?: string | null
           vat_number?: string | null
-          vehicle_types?: Database["public"]["Enums"]["vehicle_type"][] | null
-          vehicule_types?: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience: number
-          zone?: string[] | null
         }
         Update: {
-          address?: string | null
-          ape_code?: string | null
-          availability?: Database["public"]["Enums"]["partner_availability"][]
-          bank_account_holder?: string | null
-          bank_name?: string | null
-          bic?: string | null
-          birth_date?: string | null
-          birth_place?: string | null
-          certifications?: string[]
-          city?: string | null
+          address?: string
+          bank_account_holder?: string
+          bank_name?: string
+          bic?: string
+          birth_date?: string
+          birth_place?: string
+          city?: string
           company_name?: string
           created_at?: string
           current_city?: string | null
           data_accuracy_confirmed?: boolean
           department?: string | null
           has_decennial_insurance?: boolean
-          iban?: string | null
+          iban?: string
           id?: string
-          insurance_company?: string | null
-          insurance_expiry_date?: string | null
-          insurance_policy_number?: string | null
-          kbis_url?: string | null
+          insurance_company?: string
+          insurance_expiry_date?: string
+          insurance_policy_number?: string
           latitude?: number | null
-          legal_status?: string | null
+          legal_status?: string
           longitude?: number | null
-          postal_code?: string | null
-          presentation?: string | null
-          rejection_reason?: string | null
+          presentation?: string
+          postal_code?: string
           siren?: string
           skills?: string[]
           status?: string
           terms_accepted?: boolean
           updated_at?: string
           user_id?: string | null
-          validated_at?: string | null
+          ape_code?: string | null
           vat_number?: string | null
-          vehicle_types?: Database["public"]["Enums"]["vehicle_type"][] | null
-          vehicule_types?: Database["public"]["Enums"]["vehicule_type"][] | null
           years_experience?: number
-          zone?: string[] | null
         }
         Relationships: [
           {
@@ -2086,137 +1140,6 @@ export type Database = {
             columns: ["intervention_id"]
             isOneToOne: false
             referencedRelation: "interventions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      phone_verification_codes: {
-        Row: {
-          attempts: number
-          code: string
-          created_at: string
-          expires_at: string
-          id: string
-          phone: string
-          used_at: string | null
-        }
-        Insert: {
-          attempts?: number
-          code: string
-          created_at?: string
-          expires_at: string
-          id?: string
-          phone: string
-          used_at?: string | null
-        }
-        Update: {
-          attempts?: number
-          code?: string
-          created_at?: string
-          expires_at?: string
-          id?: string
-          phone?: string
-          used_at?: string | null
-        }
-        Relationships: []
-      }
-      prestation: {
-        Row: {
-          created_at: string
-          description: string | null
-          display_order: number
-          domain_code: string
-          emergency_available: boolean
-          guarantee: number | null
-          icon: string | null
-          id: string
-          image_url: string | null
-          is_active: boolean
-          max_duration: number | null
-          max_price: number | null
-          min_duration: number | null
-          min_price: number | null
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          display_order?: number
-          domain_code: string
-          emergency_available?: boolean
-          guarantee?: number | null
-          icon?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          max_duration?: number | null
-          max_price?: number | null
-          min_duration?: number | null
-          min_price?: number | null
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          display_order?: number
-          domain_code?: string
-          emergency_available?: boolean
-          guarantee?: number | null
-          icon?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          max_duration?: number | null
-          max_price?: number | null
-          min_duration?: number | null
-          min_price?: number | null
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      prestation_variantes: {
-        Row: {
-          created_at: string
-          display_order: number
-          id: string
-          is_active: boolean
-          max_price: number | null
-          min_price: number | null
-          name: string
-          prestation_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          display_order?: number
-          id?: string
-          is_active?: boolean
-          max_price?: number | null
-          min_price?: number | null
-          name: string
-          prestation_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          display_order?: number
-          id?: string
-          is_active?: boolean
-          max_price?: number | null
-          min_price?: number | null
-          name?: string
-          prestation_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prestation_variantes_prestation_id_fkey"
-            columns: ["prestation_id"]
-            isOneToOne: false
-            referencedRelation: "prestation"
             referencedColumns: ["id"]
           },
         ]
@@ -2554,12 +1477,8 @@ export type Database = {
       }
       quote_modifications: {
         Row: {
-          approved_channel: string | null
           client_notified_at: string | null
           client_responded_at: string | null
-          client_signature_at: string | null
-          client_signature_data: string | null
-          client_signature_id: string | null
           created_at: string
           created_by: string
           decline_reason: string | null
@@ -2571,12 +1490,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          approved_channel?: string | null
           client_notified_at?: string | null
           client_responded_at?: string | null
-          client_signature_at?: string | null
-          client_signature_data?: string | null
-          client_signature_id?: string | null
           created_at?: string
           created_by: string
           decline_reason?: string | null
@@ -2588,12 +1503,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          approved_channel?: string | null
           client_notified_at?: string | null
           client_responded_at?: string | null
-          client_signature_at?: string | null
-          client_signature_data?: string | null
-          client_signature_id?: string | null
           created_at?: string
           created_by?: string
           decline_reason?: string | null
@@ -2614,76 +1525,6 @@ export type Database = {
           },
           {
             foreignKeyName: "quote_modifications_intervention_id_fkey"
-            columns: ["intervention_id"]
-            isOneToOne: false
-            referencedRelation: "interventions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rating_reminders_sent: {
-        Row: {
-          id: string
-          intervention_id: string
-          sent_at: string
-          stage: string
-        }
-        Insert: {
-          id?: string
-          intervention_id: string
-          sent_at?: string
-          stage: string
-        }
-        Update: {
-          id?: string
-          intervention_id?: string
-          sent_at?: string
-          stage?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rating_reminders_sent_intervention_id_fkey"
-            columns: ["intervention_id"]
-            isOneToOne: false
-            referencedRelation: "interventions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      scheduled_reminders: {
-        Row: {
-          created_at: string
-          id: string
-          intervention_id: string
-          reminder_type: string
-          scheduled_for: string
-          sent_at: string | null
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          intervention_id: string
-          reminder_type: string
-          scheduled_for: string
-          sent_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          intervention_id?: string
-          reminder_type?: string
-          scheduled_for?: string
-          sent_at?: string | null
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "scheduled_reminders_intervention_id_fkey"
             columns: ["intervention_id"]
             isOneToOne: false
             referencedRelation: "interventions"
@@ -2745,45 +1586,6 @@ export type Database = {
         }
         Relationships: []
       }
-      signature_id_backfill_20261101: {
-        Row: {
-          applied_at: string
-          id: number
-          intervention_id: string | null
-          record_id: string
-          signature_data_length: number
-          signature_id_after: string
-          signature_id_before: string | null
-          signature_kind: string
-          source_table: string
-          tracking_code: string | null
-        }
-        Insert: {
-          applied_at?: string
-          id?: never
-          intervention_id?: string | null
-          record_id: string
-          signature_data_length: number
-          signature_id_after: string
-          signature_id_before?: string | null
-          signature_kind: string
-          source_table: string
-          tracking_code?: string | null
-        }
-        Update: {
-          applied_at?: string
-          id?: never
-          intervention_id?: string | null
-          record_id?: string
-          signature_data_length?: number
-          signature_id_after?: string
-          signature_id_before?: string | null
-          signature_kind?: string
-          source_table?: string
-          tracking_code?: string | null
-        }
-        Relationships: []
-      }
       site_settings: {
         Row: {
           created_at: string
@@ -2808,57 +1610,6 @@ export type Database = {
           setting_key?: string
           setting_value?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      system_logs: {
-        Row: {
-          context: Json | null
-          created_at: string
-          id: string
-          intervention_id: string | null
-          level: string
-          message: string
-          source: string
-          user_id: string | null
-        }
-        Insert: {
-          context?: Json | null
-          created_at?: string
-          id?: string
-          intervention_id?: string | null
-          level: string
-          message: string
-          source: string
-          user_id?: string | null
-        }
-        Update: {
-          context?: Json | null
-          created_at?: string
-          id?: string
-          intervention_id?: string | null
-          level?: string
-          message?: string
-          source?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      tags: {
-        Row: {
-          id: string
-          name: string
-          slug: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          slug: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          slug?: string
         }
         Relationships: []
       }
@@ -3012,35 +1763,6 @@ export type Database = {
           },
         ]
       }
-      technician_reconnect_reminders: {
-        Row: {
-          id: string
-          sent_at: string
-          sent_date: string
-          technician_id: string
-        }
-        Insert: {
-          id?: string
-          sent_at?: string
-          sent_date?: string
-          technician_id: string
-        }
-        Update: {
-          id?: string
-          sent_at?: string
-          sent_date?: string
-          technician_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "technician_reconnect_reminders_technician_id_fkey"
-            columns: ["technician_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       technician_schedule_overrides: {
         Row: {
           created_at: string
@@ -3126,27 +1848,6 @@ export type Database = {
           },
         ]
       }
-      themes: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          slug: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          slug: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          slug?: string
-        }
-        Relationships: []
-      }
       user_notification_preferences: {
         Row: {
           channel: string
@@ -3228,6 +1929,9 @@ export type Database = {
         Row: {
           avatar_url: string | null
           company_address: string | null
+          photo_quality_ok: boolean | null
+          photo_quality_checked_at: string | null
+          photo_quality_issues: string[] | null
           company_logo_url: string | null
           company_name: string | null
           created_at: string
@@ -3236,25 +1940,21 @@ export type Database = {
           id: string
           is_active: boolean
           is_company: boolean
-          last_login_at: string | null
           last_name: string
           must_change_password: boolean | null
-          oauth_email_verified: boolean
-          oauth_provider: string | null
-          oauth_provider_id: string | null
-          password_hash: string | null
+          password_hash: string
           phone: string | null
-          photo_quality_checked_at: string | null
-          photo_quality_issues: string[] | null
-          photo_quality_ok: boolean | null
           role: string
           siren: string | null
           updated_at: string
-          vat_number: string | null
+          ape_code: string | null
         }
         Insert: {
           avatar_url?: string | null
           company_address?: string | null
+          photo_quality_ok?: boolean | null
+          photo_quality_checked_at?: string | null
+          photo_quality_issues?: string[] | null
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
@@ -3263,25 +1963,21 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_company?: boolean
-          last_login_at?: string | null
           last_name: string
           must_change_password?: boolean | null
-          oauth_email_verified?: boolean
-          oauth_provider?: string | null
-          oauth_provider_id?: string | null
-          password_hash?: string | null
+          password_hash: string
           phone?: string | null
-          photo_quality_checked_at?: string | null
-          photo_quality_issues?: string[] | null
-          photo_quality_ok?: boolean | null
           role?: string
           siren?: string | null
           updated_at?: string
-          vat_number?: string | null
+          ape_code?: string | null
         }
         Update: {
           avatar_url?: string | null
           company_address?: string | null
+          photo_quality_ok?: boolean | null
+          photo_quality_checked_at?: string | null
+          photo_quality_issues?: string[] | null
           company_logo_url?: string | null
           company_name?: string | null
           created_at?: string
@@ -3290,17 +1986,10 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_company?: boolean
-          last_login_at?: string | null
           last_name?: string
           must_change_password?: boolean | null
-          oauth_email_verified?: boolean
-          oauth_provider?: string | null
-          oauth_provider_id?: string | null
-          password_hash?: string | null
+          password_hash?: string
           phone?: string | null
-          photo_quality_checked_at?: string | null
-          photo_quality_issues?: string[] | null
-          photo_quality_ok?: boolean | null
           role?: string
           siren?: string | null
           updated_at?: string
@@ -3309,61 +1998,172 @@ export type Database = {
         Relationships: []
       }
     }
+       themes: {
+         Row: {
+           created_at: string
+           id: string
+           name: string
+           slug: string
+         }
+         Insert: {
+           created_at?: string
+           id?: string
+           name: string
+           slug: string
+         }
+         Update: {
+           created_at?: string
+           id?: string
+           name?: string
+           slug?: string
+         }
+         Relationships: []
+       }
+       authors: {
+         Row: {
+           created_at: string
+           email: string
+           id: string
+           name: string
+         }
+         Insert: {
+           created_at?: string
+           email: string
+           id?: string
+           name: string
+         }
+         Update: {
+           created_at?: string
+           email?: string
+           id?: string
+           name?: string
+         }
+         Relationships: []
+       }
+       articles: {
+         Row: {
+           author_id: string
+           body: string
+           cover_image_alt: string | null
+           cover_image_height: number | null
+           cover_image_size_kb: number | null
+           cover_image_url: string | null
+           cover_image_width: number | null
+           created_at: string
+           excerpt: string | null
+           id: string
+           published_at: string | null
+           slug: string
+           status: string
+           theme_id: string
+           title: string
+           updated_at: string
+         }
+         Insert: {
+           author_id: string
+           body: string
+           cover_image_alt?: string | null
+           cover_image_height?: number | null
+           cover_image_size_kb?: number | null
+           cover_image_url?: string | null
+           cover_image_width?: number | null
+           created_at?: string
+           excerpt?: string | null
+           id?: string
+           published_at?: string | null
+           slug: string
+           status?: string
+           theme_id: string
+           title: string
+           updated_at?: string
+         }
+         Update: {
+           author_id?: string
+           body?: string
+           cover_image_alt?: string | null
+           cover_image_height?: number | null
+           cover_image_size_kb?: number | null
+           cover_image_url?: string | null
+           cover_image_width?: number | null
+           created_at?: string
+           excerpt?: string | null
+           id?: string
+           published_at?: string | null
+           slug?: string
+           status?: string
+           theme_id?: string
+           title?: string
+           updated_at?: string
+         }
+         Relationships: [
+           {
+             foreignKeyName: "articles_author_id_fkey"
+             columns: ["author_id"]
+             isOneToOne: false
+             referencedRelation: "authors"
+             referencedColumns: ["id"]
+           },
+           {
+             foreignKeyName: "articles_theme_id_fkey"
+             columns: ["theme_id"]
+             isOneToOne: false
+             referencedRelation: "themes"
+             referencedColumns: ["id"]
+           },
+         ]
+       }
+       tags: {
+         Row: {
+           id: string
+           name: string
+           slug: string
+         }
+         Insert: {
+           id?: string
+           name: string
+           slug: string
+         }
+         Update: {
+           id?: string
+           name?: string
+           slug?: string
+         }
+         Relationships: []
+       }
+       article_tags: {
+         Row: {
+           article_id: string
+           tag_id: string
+         }
+         Insert: {
+           article_id: string
+           tag_id: string
+         }
+         Update: {
+           article_id?: string
+           tag_id?: string
+         }
+         Relationships: [
+           {
+             foreignKeyName: "article_tags_article_id_fkey"
+             columns: ["article_id"]
+             isOneToOne: false
+             referencedRelation: "articles"
+             referencedColumns: ["id"]
+           },
+           {
+             foreignKeyName: "article_tags_tag_id_fkey"
+             columns: ["tag_id"]
+             isOneToOne: false
+             referencedRelation: "tags"
+             referencedColumns: ["id"]
+           },
+         ]
+       }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      accept_technician_application: {
-        Args: { p_application_id: string }
-        Returns: {
-          address: string | null
-          ape_code: string | null
-          availability: Database["public"]["Enums"]["partner_availability"][]
-          bank_account_holder: string | null
-          bank_name: string | null
-          bic: string | null
-          birth_date: string | null
-          birth_place: string | null
-          certifications: string[]
-          city: string | null
-          company_name: string
-          created_at: string
-          current_city: string | null
-          data_accuracy_confirmed: boolean
-          department: string | null
-          has_decennial_insurance: boolean
-          iban: string | null
-          id: string
-          insurance_company: string | null
-          insurance_expiry_date: string | null
-          insurance_policy_number: string | null
-          kbis_url: string | null
-          latitude: number | null
-          legal_status: string | null
-          longitude: number | null
-          postal_code: string | null
-          presentation: string | null
-          rejection_reason: string | null
-          siren: string
-          skills: string[]
-          status: string
-          terms_accepted: boolean
-          updated_at: string
-          user_id: string | null
-          validated_at: string | null
-          vat_number: string | null
-          vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
-          vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
-          years_experience: number
-          zone: string[] | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "partner_applications"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       can_create_managers: { Args: { _user_id: string }; Returns: boolean }
       generate_tracking_code: { Args: never; Returns: string }
       has_role: {
@@ -3374,165 +2174,21 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_manager: { Args: { _user_id: string }; Returns: boolean }
-      lock_and_get_scheduled_interventions: {
-        Args: never
-        Returns: {
-          address: string
-          city: string
-          client_id: string
-          id: string
-          postal_code: string
-          scheduled_at: string
-          technician_id: string
-          title: string
-        }[]
-      }
-      next_document_number: { Args: { p_type: string }; Returns: string }
-      reject_technician_application: {
-        Args: { p_application_id: string; p_reason?: string }
-        Returns: {
-          address: string | null
-          ape_code: string | null
-          availability: Database["public"]["Enums"]["partner_availability"][]
-          bank_account_holder: string | null
-          bank_name: string | null
-          bic: string | null
-          birth_date: string | null
-          birth_place: string | null
-          certifications: string[]
-          city: string | null
-          company_name: string
-          created_at: string
-          current_city: string | null
-          data_accuracy_confirmed: boolean
-          department: string | null
-          has_decennial_insurance: boolean
-          iban: string | null
-          id: string
-          insurance_company: string | null
-          insurance_expiry_date: string | null
-          insurance_policy_number: string | null
-          kbis_url: string | null
-          latitude: number | null
-          legal_status: string | null
-          longitude: number | null
-          postal_code: string | null
-          presentation: string | null
-          rejection_reason: string | null
-          siren: string
-          skills: string[]
-          status: string
-          terms_accepted: boolean
-          updated_at: string
-          user_id: string | null
-          validated_at: string | null
-          vat_number: string | null
-          vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
-          vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
-          years_experience: number
-          zone: string[] | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "partner_applications"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      replace_intervention_quotes: {
-        Args: { p_intervention_id: string; p_lines: Json }
-        Returns: {
-          base_price: number
-          calculated_price: number
-          created_at: string
-          description: string | null
-          display_order: number
-          id: string
-          intervention_id: string
-          label: string
-          line_type: string
-          multiplier: number
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "intervention_quotes"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
-      technician_status_counts: { Args: never; Returns: Json }
-      validate_technician_qualification: {
-        Args: { p_application_id: string }
-        Returns: {
-          address: string | null
-          ape_code: string | null
-          availability: Database["public"]["Enums"]["partner_availability"][]
-          bank_account_holder: string | null
-          bank_name: string | null
-          bic: string | null
-          birth_date: string | null
-          birth_place: string | null
-          certifications: string[]
-          city: string | null
-          company_name: string
-          created_at: string
-          current_city: string | null
-          data_accuracy_confirmed: boolean
-          department: string | null
-          has_decennial_insurance: boolean
-          iban: string | null
-          id: string
-          insurance_company: string | null
-          insurance_expiry_date: string | null
-          insurance_policy_number: string | null
-          kbis_url: string | null
-          latitude: number | null
-          legal_status: string | null
-          longitude: number | null
-          postal_code: string | null
-          presentation: string | null
-          rejection_reason: string | null
-          siren: string
-          skills: string[]
-          status: string
-          terms_accepted: boolean
-          updated_at: string
-          user_id: string | null
-          validated_at: string | null
-          vat_number: string | null
-          vehicle_types: Database["public"]["Enums"]["vehicle_type"][] | null
-          vehicule_types: Database["public"]["Enums"]["vehicule_type"][] | null
-          years_experience: number
-          zone: string[] | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "partner_applications"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
     }
-    Enums: {
-      app_role:
-        | "admin"
-        | "manager"
-        | "technician"
-        | "client"
-        | "guest"
-        | "payment"
-        | "b2b"
-      article_status: "draft" | "published" | "archived"
-      partner_availability:
-        | "week_day"
-        | "evening"
-        | "week_end"
-        | "public_holidays"
-        | "night"
-        | "anytime"
-      vehicle_type: "car" | "moto"
-      vehicule_type: "car" | "moto"
-    }
+     Enums: {
+       app_role:
+         | "admin"
+         | "manager"
+         | "technician"
+         | "client"
+         | "guest"
+         | "payment"
+         | "b2b"
+       article_status:
+         | "draft"
+         | "published"
+         | "archived"
+     }
     CompositeTypes: {
       [_ in never]: never
     }
@@ -3547,12 +2203,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3576,11 +2232,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3601,11 +2257,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3626,11 +2282,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3643,11 +2299,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -3659,26 +2315,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "admin",
-        "manager",
-        "technician",
-        "client",
-        "guest",
-        "payment",
-        "b2b",
-      ],
-      article_status: ["draft", "published", "archived"],
-      partner_availability: [
-        "week_day",
-        "evening",
-        "week_end",
-        "public_holidays",
-        "night",
-        "anytime",
-      ],
-      vehicle_type: ["car", "moto"],
-      vehicule_type: ["car", "moto"],
-    },
-  },
+       app_role: [
+         "admin",
+         "manager",
+         "technician",
+         "client",
+         "guest",
+         "payment",
+         "b2b",
+       ],
+       article_status: [
+         "draft",
+         "published",
+         "archived",
+       ],
+     },
+   },
 } as const

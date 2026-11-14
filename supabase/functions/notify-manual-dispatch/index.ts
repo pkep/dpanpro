@@ -20,6 +20,7 @@ interface NotifyManualDispatchRequest {
     city: string;
     postalCode: string;
     category: string;
+    trackingCode?: string | null;
   };
 }
 
@@ -64,7 +65,7 @@ serve(async (req) => {
     if (!intervention) {
       const { data: intData, error: intError } = await supabase
         .from('interventions')
-        .select('title, address, city, postal_code, category')
+        .select('title, address, city, postal_code, category, tracking_code')
         .eq('id', interventionId)
         .single();
 
@@ -82,12 +83,15 @@ serve(async (req) => {
         city: intData.city,
         postalCode: intData.postal_code,
         category: intData.category,
+        trackingCode: intData.tracking_code ?? null,
       };
     }
 
     const categoryLabel = CATEGORY_LABELS[intervention.category] || intervention.category;
     const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://dpanpro.lovable.app";
     const dashboardUrl = `${frontendUrl}/technician`;
+    const interventionUrl = `${frontendUrl}/technician/intervention/${interventionId}`;
+    const trackingCode = intervention.trackingCode ?? interventionId.substring(0, 8).toUpperCase();
     const results = { sms: false, email: false, push: false, agentsSms: { sent: 0, failed: 0, skipped: false, errors: [] as string[] } };
 
     // 1. Send SMS via shared Twilio module
@@ -97,6 +101,8 @@ serve(async (req) => {
         city: intervention.city,
         address: intervention.address,
         dashboardUrl,
+        trackingCode,
+        interventionUrl,
       });
       results.sms = await sendSMS(techData.phone, smsMessage, "[NotifyManualDispatch]");
     }
@@ -197,6 +203,7 @@ serve(async (req) => {
               city: intervention.city,
               address: intervention.address,
               dashboardUrl,
+              trackingCode,
             });
             const sent = await sendSMS(agent.phone, smsMessage, "[NotifyManualDispatch]");
             if (sent) {
