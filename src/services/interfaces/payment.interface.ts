@@ -4,6 +4,32 @@ export type { PaymentAuthorization, PaymentRow };
 /** Mode d'encaissement manuel saisi par un admin/manager. */
 export type ManualPaymentMethod = 'partner_link' | 'bank_transfer';
 
+/** Prestataire de paiement supporté. */
+export type PaymentProvider = 'stripe' | 'manual';
+
+/** Paramètres d'une demande d'autorisation de paiement. */
+export interface AuthorizationParams {
+  interventionId: string;
+  amount: number;
+  currency?: string;
+  clientEmail: string;
+  clientPhone?: string;
+}
+
+/** Résultat d'une demande d'autorisation. */
+export interface AuthorizationResult {
+  id: string;
+  checkoutUrl?: string;
+  status: 'pending' | 'authorized' | 'captured' | 'cancelled' | 'failed';
+}
+
+/** Résultat d'une capture (encaissement) de paiement. */
+export interface CaptureResult {
+  id: string;
+  amount: number;
+  status: 'captured' | 'failed';
+}
+
 // ── Database Row Shapes ──
 export interface DbPaymentAuthorization {
   id: string;
