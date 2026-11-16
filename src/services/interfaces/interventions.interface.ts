@@ -222,8 +222,15 @@ export interface IInterventionsService {
    * @param finalPrice - The final amount charged (TTC)
    * @param signatureData - Base64 signature data
    * @param signatureId - Réf. de signature (SIG-<uuid>)
+   * @param options.skipInvoiceEmail - Ne pas envoyer la facture (l'appelant gère l'envoi)
    */
-  finalized(interventionId: string, finalPrice: number, signatureData: string, signatureId: string): Promise<void>;
+  finalized(
+    interventionId: string,
+    finalPrice: number,
+    signatureData: string,
+    signatureId: string,
+    options?: { skipInvoiceEmail?: boolean },
+  ): Promise<void>;
 
   /**
    * Schedule an intervention with a date, time and optionally assign a technician

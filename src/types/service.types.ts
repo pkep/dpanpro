@@ -66,6 +66,8 @@ export interface PaymentAuthorization {
   cancelledAt?: string;
   createdAt: string;
   updatedAt: string;
+  /** Métadonnées libres (ex. mode de paiement encaissé manuellement). */
+  metadata?: Record<string, unknown>;
 }
 
 export interface PaymentRow {

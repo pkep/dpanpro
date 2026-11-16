@@ -100,6 +100,8 @@ export function getAmountInfo(i: AmountSource): AmountInfo {
 
 export type PaymentDisplayStatus =
   | 'paid'
+  | 'paid_partner_link'
+  | 'paid_bank_transfer'
   | 'authorized'
   | 'pending'
   | 'failed'
@@ -120,6 +122,8 @@ export interface PaymentStatusMeta {
 
 export const PAYMENT_STATUS_META: Record<PaymentDisplayStatus, PaymentStatusMeta> = {
   paid:               { label: 'Payé',              className: 'bg-emerald-100 text-emerald-800 border-emerald-200', description: 'Paiement encaissé' },
+  paid_partner_link:  { label: 'Payé',              className: 'bg-emerald-100 text-emerald-800 border-emerald-200', description: 'Paiement encaissé par lien de paiement partenaire' },
+  paid_bank_transfer: { label: 'Payé',              className: 'bg-emerald-100 text-emerald-800 border-emerald-200', description: 'Payé par virement' },
   authorized:         { label: 'Autorisé',          className: 'bg-blue-100 text-blue-800 border-blue-200',          description: 'Paiement autorisé, non capturé' },
   pending:            { label: 'En attente',        className: 'bg-amber-100 text-amber-800 border-amber-200',        description: 'Paiement en attente' },
   failed:             { label: 'Échec',             className: 'bg-rose-100 text-rose-800 border-rose-200',           description: 'Paiement échoué' },
@@ -156,6 +160,8 @@ export interface PaymentStatusSource {
   b2b: boolean;
   /** Dernière autorisation de paiement B2C (la plus récente par `createdAt`). */
   authorizationStatus?: string | null;
+  /** Mode d'encaissement manuel (`metadata.paymentMethod`) le cas échéant. */
+  paymentMethod?: string | null;
   /** Statut de la facture mensuelle liée (`interventions.b2b_invoice_id`). */
   invoiceStatus?: string | null;
 }
@@ -171,6 +177,10 @@ export function getPaymentStatus(source: PaymentStatusSource): PaymentDisplaySta
     return B2B_PAYMENT_STATUS[source.invoiceStatus] ?? 'draft';
   }
   if (!source.authorizationStatus) return 'unpaid';
+  if (source.authorizationStatus === 'captured') {
+    if (source.paymentMethod === 'partner_link') return 'paid_partner_link';
+    if (source.paymentMethod === 'bank_transfer') return 'paid_bank_transfer';
+  }
   return B2C_PAYMENT_STATUS[source.authorizationStatus] ?? 'unpaid';
 }
 

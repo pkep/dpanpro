@@ -421,7 +421,13 @@ class SupabaseInterventionsService implements IInterventionsService {
     console.log(`Intervention ${interventionId} quote signature updated`);
   }
 
-  async finalized(interventionId: string, finalPrice: number, signatureData: string, signatureId: string): Promise<void> {
+  async finalized(
+    interventionId: string,
+    finalPrice: number,
+    signatureData: string,
+    signatureId: string,
+    options?: { skipInvoiceEmail?: boolean },
+  ): Promise<void> {
     const current = new Date().toISOString()
     const { data: timing } = await supabase
       .from('interventions')
@@ -454,9 +460,11 @@ class SupabaseInterventionsService implements IInterventionsService {
     console.log(`Intervention ${interventionId} final price updated to ${finalPrice}`);
 
     // send end intervention notification
-    await supabase.functions.invoke('send-invoice-email', {
-        body: { interventionId }
-        });
+    if (!options?.skipInvoiceEmail) {
+      await supabase.functions.invoke('send-invoice-email', {
+          body: { interventionId }
+          });
+    }
 
     // store invoice into storage
     await supabase.functions.invoke('upload-invoice-pdf', {

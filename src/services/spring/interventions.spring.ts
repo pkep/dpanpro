@@ -244,7 +244,13 @@ export class SpringInterventionsService implements IInterventionsService {
   }
 
   // PATCH /interventions/{id}/finalized
-  async finalized(interventionId: string, finalPrice: number, signatureData: string, signatureId: string): Promise<void> {
+  async finalized(
+    interventionId: string,
+    finalPrice: number,
+    signatureData: string,
+    signatureId: string,
+    _options?: { skipInvoiceEmail?: boolean },
+  ): Promise<void> {
     await springHttp.patch(`/interventions/${interventionId}/finalized`, {
         status: 'completed',
         finalPrice,
