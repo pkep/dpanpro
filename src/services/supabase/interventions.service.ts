@@ -1167,6 +1167,84 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
         .catch((e) => console.error('cancel-suspension-reminders failed:', e));
     }
 
+    async adminResumeIntervention(interventionId: string): Promise<void> {
+      const { data: current, error: getError } = await supabase
+        .from('interventions')
+        .select('suspended, technician_id, tracking_code, status')
+        .eq('id', interventionId)
+        .single();
+      if (getError) throw getError;
+
+      const row = current as {
+        suspended?: boolean;
+        technician_id?: string | null;
+        status?: string | null;
+      } | null;
+      if (row?.suspended !== true) {
+        throw new Error("L'intervention n'est pas suspendue.");
+      }
+
+      if (row.technician_id) {
+        const { data: busy } = await supabase
+          .from('interventions')
+          .select('id')
+          .eq('technician_id', row.technician_id)
+          .eq('suspended', false)
+          .in('status', ['assigned', 'on_route', 'arrived', 'in_progress'])
+          .neq('id', interventionId)
+          .limit(1);
+        if (busy && busy.length > 0) {
+          throw new Error("Le technicien a déjà une intervention active. Terminez-la avant de reprendre.");
+        }
+      }
+
+      const { error } = await supabase
+        .from('interventions')
+        .update({ suspended: false } as never)
+        .eq('id', interventionId);
+      if (error) throw error;
+
+      supabase.functions
+        .invoke('schedule-suspension-reminders', { body: { action: 'cancel', interventionId } })
+        .catch((e) => console.error('cancel-suspension-reminders failed:', e));
+
+      if (row.status && ['assigned', 'on_route', 'arrived'].includes(row.status)) {
+        supabase.functions
+          .invoke('schedule-arrival-reminders', { body: { interventionId } })
+          .catch((e) => console.error('schedule-arrival-reminders failed:', e));
+      }
+
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData?.user?.id;
+      if (userId) {
+        let actorName = 'admin/manager';
+        try {
+          const actor = await services.users.getUser(userId);
+          if (actor) {
+            actorName = `${actor.firstName ?? ''} ${actor.lastName ?? ''}`.trim() || actorName;
+          }
+        } catch {
+          /* best-effort */
+        }
+        try {
+          await services.history.addHistoryEntry({
+            interventionId,
+            userId,
+            action: 'updated',
+            oldValue: 'suspended=true',
+            newValue: 'suspended=false',
+            comment: `Reprise de la suspension par admin/manager ${actorName}. Technicien libre.`,
+          });
+        } catch (historyError) {
+          console.error('adminResumeIntervention history failed:', historyError);
+        }
+      }
+
+      supabase.functions
+        .invoke('notify-admin-resume', { body: { interventionId } })
+        .catch((e) => console.error('notify-admin-resume failed:', e));
+    }
+
     async getSuspendedInterventionsForTechnician(technicianId: string): Promise<Intervention[]> {
       const { data, error } = await supabase
         .from('interventions')

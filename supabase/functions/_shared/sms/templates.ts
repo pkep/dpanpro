@@ -187,6 +187,16 @@ export function buildVerificationCodeSms(data: VerificationCodeSmsData): string 
   return `${PREFIX} Bonjour,\nVeuillez saisir le code suivant :\n${data.code}\npour lancer l'intervention.`;
 }
 
+// ── Admin resume intervention ──────────────────────────────────────
+interface AdminResumeSmsData {
+  trackingCode?: string | null;
+}
+
+export function buildAdminResumeSms(data: AdminResumeSmsData): string {
+  const ref = data.trackingCode ? ` Ref: ${data.trackingCode}.` : "";
+  return `${PREFIX} la suspension de l'intervention a été levée par l'administration.${ref} Vous pouvez reprendre l'intervention depuis votre espace.`;
+}
+
 // ── Affiliate Welcome (QR Code) ─────────────────────────────────────
 interface AffiliateWelcomeSmsData {
   firstName: string;

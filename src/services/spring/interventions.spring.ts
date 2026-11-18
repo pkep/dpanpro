@@ -331,6 +331,10 @@ export class SpringInterventionsService implements IInterventionsService {
     await springHttp.post(`/interventions/${interventionId}/resume`);
   }
 
+  async adminResumeIntervention(interventionId: string): Promise<void> {
+    await springHttp.post(`/interventions/${interventionId}/resume-admin`);
+  }
+
   async getSuspendedInterventionsForTechnician(technicianId: string): Promise<Intervention[]> {
     return springHttp.get<Intervention[]>(`/interventions/technician/${technicianId}/suspended`);
   }

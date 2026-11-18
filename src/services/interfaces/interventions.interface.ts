@@ -287,5 +287,11 @@ export interface IInterventionsService {
 
    resumeIntervention(interventionId: string): Promise<void>;
 
+   /**
+    * Reprise d'une intervention suspendue par un admin/manager.
+    * Refusée si le technicien assigné a déjà une autre intervention active.
+    */
+   adminResumeIntervention(interventionId: string): Promise<void>;
+
    getSuspendedInterventionsForTechnician(technicianId: string): Promise<Intervention[]>;
 }
