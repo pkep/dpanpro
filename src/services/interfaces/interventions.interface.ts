@@ -233,6 +233,17 @@ export interface IInterventionsService {
   ): Promise<void>;
 
   /**
+   * Finalisation réservée admin/manager.
+   * Autorise la transition directe assigned/on_route → completed.
+   */
+  finalizedByAdmin(
+    interventionId: string,
+    finalPrice: number,
+    signatureData: string,
+    signatureId: string,
+  ): Promise<void>;
+
+  /**
    * Schedule an intervention with a date, time and optionally assign a technician
    * @param interventionId - The intervention ID
    * @param scheduledAt - The scheduled date and time (ISO string)

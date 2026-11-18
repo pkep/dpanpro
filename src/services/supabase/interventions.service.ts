@@ -473,6 +473,15 @@ class SupabaseInterventionsService implements IInterventionsService {
 
   }
 
+async finalizedByAdmin(
+    interventionId: string,
+    finalPrice: number,
+    signatureData: string,
+    signatureId: string,
+  ): Promise<void> {
+    await this.finalized(interventionId, finalPrice, signatureData, signatureId, { skipInvoiceEmail: true });
+  }
+
 async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Promise<void> {
     const { error } = await supabase
       .from('interventions')

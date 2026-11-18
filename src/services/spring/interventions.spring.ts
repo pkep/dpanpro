@@ -260,6 +260,21 @@ export class SpringInterventionsService implements IInterventionsService {
         });
   }
 
+  async finalizedByAdmin(
+    interventionId: string,
+    finalPrice: number,
+    signatureData: string,
+    signatureId: string,
+  ): Promise<void> {
+    await springHttp.patch(`/interventions/${interventionId}/finalized-admin`, {
+      status: 'completed',
+      finalPrice,
+      invoiceSignature: signatureData,
+      invoiceSignatureId: signatureId,
+      invoiceSignatureDate: new Date().toISOString(),
+    });
+  }
+
 // PATCH /interventions/{id}/estimated-price·
   async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Promise<void> {
     await springHttp.patch(`/interventions/${interventionId}/estimated-price`, { estimatedPrice });
