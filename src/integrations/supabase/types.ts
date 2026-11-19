@@ -3238,6 +3238,7 @@ export type Database = {
           is_company: boolean
           last_login_at: string | null
           last_name: string
+          last_seen_at: string | null
           must_change_password: boolean | null
           oauth_email_verified: boolean
           oauth_provider: string | null
@@ -3265,6 +3266,7 @@ export type Database = {
           is_company?: boolean
           last_login_at?: string | null
           last_name: string
+          last_seen_at?: string | null
           must_change_password?: boolean | null
           oauth_email_verified?: boolean
           oauth_provider?: string | null
@@ -3292,6 +3294,7 @@ export type Database = {
           is_company?: boolean
           last_login_at?: string | null
           last_name?: string
+          last_seen_at?: string | null
           must_change_password?: boolean | null
           oauth_email_verified?: boolean
           oauth_provider?: string | null
