@@ -32,6 +32,8 @@ export interface User {
   hasPassword?: boolean;
   createdAt: string;
   updatedAt: string;
+  lastLoginAt?: string | null;
+  lastSeenAt?: string | null;
 }
 
 export interface LoginCredentials {

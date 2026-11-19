@@ -12,6 +12,8 @@ export interface StaffUser {
   /** true tant que la première connexion (changement de mot de passe) n'est pas faite. */
   mustChangePassword: boolean;
   createdAt: string;
+  lastLoginAt?: string | null;
+  lastSeenAt?: string | null;
   b2bPartnerId: string | null;
   b2bCompanyName: string | null;
   canCreateManagers?: boolean;
@@ -61,6 +63,9 @@ export interface IUsersService {
       completed?: number;
       companyName?: string | null;
       yearsExperience?: number | null;
+      companyCity?: string | null;
+      companyPostalCode?: string | null;
+      lastLoginAt?: string | null;
       zones?: string[] | null;
       validatedAt?: string | null;
       /** Champs de profil manquants (clés de technicianProfileCompleteness). Vide = complet. */

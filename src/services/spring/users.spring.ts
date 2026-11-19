@@ -1,35 +1,10 @@
 import type { IUsersService, StaffUser, StaffUserFilters } from '@/services/interfaces/users.interface';
 import type { User, UserRole } from '@/types/auth.types';
 import type { IncompleteTechnicianProfile } from '@/lib/technicianProfileCompleteness';
+import { normalizeZones } from '@/lib/zones';
 import { springHttp } from './http-client';
 
-/** Ligne du schéma `Technician` (GET /technicians, GET /technicians/{id}/profile). */
-interface SpringTechnicianRow {
-  id: string;
-  userId?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  role?: UserRole | null;
-  companyName?: string | null;
-  currentCity?: string | null;
-  department?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
-  skills?: string[] | null;
-  averageRating?: number | null;
-  totalRatings?: number | null;
-  completedInterventions?: number | null;
-  active?: boolean | null;
-  avatarUrl?: string | null;
-}
-
-/** GET /technicians n'accepte que page/size : on récupère une grande page puis on
- *  filtre, trie et page côté client pour que `total` corresponde à la liste affichée. */
-const TECHNICIAN_FETCH_SIZE = 500;
-
-/** True when `userId` is the user currently logged in (persisted by useAuth). */
+/** True when `userId` is the user currently logged in (persisted by useAuth in localStorage). */
 function isCurrentSessionUser(userId: string): boolean {
   try {
     const raw = localStorage.getItem('depanpro_user');
@@ -41,30 +16,120 @@ function isCurrentSessionUser(userId: string): boolean {
   }
 }
 
-function toEnrichedTechnician(row: SpringTechnicianRow) {
-  return {
-    id: row.id,
-    email: row.email ?? '',
-    firstName: row.firstName ?? '',
-    lastName: row.lastName ?? '',
-    phone: row.phone ?? null,
-    role: (row.role ?? 'technician') as UserRole,
-    isActive: row.active ?? true,
-    isCompany: false,
-    companyName: row.companyName ?? null,
-    avatarUrl: row.avatarUrl ?? null,
-    createdAt: '',
-    updatedAt: '',
-    skills: row.skills ?? [],
-    rating: row.averageRating ?? undefined,
-    completed: row.completedInterventions ?? 0,
-    yearsExperience: null,
-    zones: null,
-    validatedAt: null,
-  };
-}
 
 export class SpringUsersService implements IUsersService {
+  async searchTechniciansEnriched(
+    query?: string,
+    pagination?: { page: number; limit: number },
+    filters?: {
+      skill?: string;
+      sortBy?: 'firstNameAsc' | 'firstNameDesc';
+      isActive?: boolean;
+      applicationStatus?: string;
+    }
+  ): Promise<{
+    technicians: Array<User & {
+      skills?: string[];
+      rating?: number;
+      completed?: number;
+      companyName?: string | null;
+      yearsExperience?: number | null;
+      companyCity?: string | null;
+      companyPostalCode?: string | null;
+      lastLoginAt?: string | null;
+      zones?: string[] | null;
+      validatedAt?: string | null;
+      missingProfileFields?: string[] | null;
+    }>;
+    total: number;
+  }> {
+    const limit = pagination?.limit || 15;
+    const page = (pagination?.page || 1) - 1; // Spring uses 0-based pages
+
+    const params: Record<string, string> = {
+      role: 'technician',
+      isActive: filters?.isActive !== undefined ? String(filters.isActive) : 'true',
+      page: String(page),
+      size: String(limit),
+    };
+
+    if (query) {
+      params.search = query;
+    }
+    if (filters?.skill?.trim()) {
+      params.skill = filters.skill.trim();
+    }
+    if (filters?.sortBy) {
+      params.sortBy = filters.sortBy;
+    }
+    if (filters?.applicationStatus?.trim()) {
+      params.applicationStatus = filters.applicationStatus.trim();
+    }
+
+    const response = await springHttp.get<{
+      content: Array<User & {
+        skills?: string[];
+        rating?: number;
+        completed?: number;
+        companyName?: string | null;
+        yearsExperience?: number | null;
+        companyCity?: string | null;
+        companyPostalCode?: string | null;
+        lastLoginAt?: string | null;
+        zone?: string[] | null;
+        validatedAt?: string | null;
+        missingProfileFields?: string[] | null;
+      }>;
+      totalElements: number;
+    }>('/users', params);
+
+    return {
+      technicians: response.content.map((t) => ({ ...t, zones: normalizeZones(t.zone) })),
+      total: response.totalElements,
+    };
+  }
+
+  // GET /users/technicians/incomplete-profiles
+  async getIncompleteTechnicianProfiles(): Promise<IncompleteTechnicianProfile[]> {
+    return springHttp.get<IncompleteTechnicianProfile[]>('/users/technicians/incomplete-profiles');
+  }
+
+  // GET /technicians/{technicianId}/position
+  async getTechnicianPosition(technicianId: string): Promise<{ latitude: number; longitude: number; address: string; city: string } | null> {
+    try {
+      return await springHttp.get<{ latitude: number; longitude: number; address: string; city: string }>(`/technicians/${technicianId}/position`);
+    } catch {
+      return null;
+    }
+  }
+
+  // GET /technicians/{technicianId}/avatar
+  async getTechnicianAvatar(technicianId: string): Promise<string | null> {
+    try {
+      const response = await springHttp.get<{ avatarUrl: string }>(`/technicians/${technicianId}/avatar`);
+      return response?.avatarUrl || null;
+    } catch {
+      return null;
+    }
+  }
+  // GET /users/staff?search=&role=&from=&to=
+  getStaffUsers(filters?: StaffUserFilters): Promise<StaffUser[]> {
+    const params: Record<string, string> = {};
+    if (filters?.search) params.search = filters.search;
+    if (filters?.role) params.role = filters.role;
+    if (filters?.from) params.from = filters.from.slice(0, 10);
+    if (filters?.to) params.to = filters.to.slice(0, 10);
+    return springHttp.get<StaffUser[]>('/users/staff', Object.keys(params).length ? params : undefined);
+  }
+
+  deleteUser(id: string): Promise<void> {
+    return springHttp.delete(`/users/${id}`);
+  }
+
+  sendFirstConnectionEmail(id: string): Promise<{ email: string }> {
+    return springHttp.post<{ email: string }>(`/users/${id}/first-connection`);
+  }
+
   // GET /users?role=&isActive=&search=&page=&size=
   async getUsers(filters?: { role?: UserRole; isActive?: boolean }): Promise<User[]> {
     const params: Record<string, string> = {};
@@ -91,6 +156,11 @@ export class SpringUsersService implements IUsersService {
   }
 
   // GET /users/{id}
+  async getUsersByIds(ids: string[]): Promise<User[]> {
+    if (ids.length === 0) return [];
+    return springHttp.post<User[]>('/users/batch', { userIds: ids });
+  }
+
   async getUser(id: string): Promise<User | null> {
     return springHttp.get<User | null>(`/users/${id}`);
   }
@@ -111,128 +181,20 @@ export class SpringUsersService implements IUsersService {
   }
 
   // PATCH /users/{id}
-  async updateUser(id: string, updates: { firstName?: string; lastName?: string; phone?: string }): Promise<void> {
+  async updateUser(id: string, updates: { firstName?: string; lastName?: string; email?: string; phone?: string, avatarUrl?: string; companyLogoUrl?: string | null; }): Promise<void> {
     await springHttp.patch(`/users/${id}`, updates);
   }
 
-  // GET /users/{id} × N — le contrat n'expose pas de recherche par liste d'ids
-  async getUsersByIds(ids: string[]): Promise<User[]> {
-    if (ids.length === 0) return [];
-    const users = await Promise.all(ids.map((id) => this.getUser(id)));
-    return users.filter((u): u is User => Boolean(u));
-  }
-
   /**
-   * GET /technicians (schéma `Technician` : skills, note moyenne, interventions
-   * terminées). La route ne gère ni recherche, ni compétence, ni tri : ces
-   * filtres sont appliqués côté client sur la page récupérée.
-   */
-  async searchTechniciansEnriched(
-    query?: string,
-    pagination?: { page: number; limit: number },
-    filters?: {
-      skill?: string;
-      sortBy?: 'firstNameAsc' | 'firstNameDesc';
-      isActive?: boolean;
-      applicationStatus?: string;
-    }
-  ): Promise<{
-    technicians: Array<User & {
-      skills?: string[];
-      rating?: number;
-      completed?: number;
-      companyName?: string | null;
-      yearsExperience?: number | null;
-      zones?: string[] | null;
-      validatedAt?: string | null;
-      missingProfileFields?: string[] | null;
-    }>;
-    total: number;
-  }> {
-    if (filters?.applicationStatus) {
-      throw new Error(
-        'searchTechniciansEnriched: le filtre « applicationStatus » n\'est pas supporté en mode Spring',
-      );
-    }
-
-    const page = pagination?.page ?? 1;
-    const limit = pagination?.limit ?? 15;
-
-    const rows = await springHttp.get<
-      SpringTechnicianRow[] | { content?: SpringTechnicianRow[] }
-    >('/technicians', { page: '1', size: String(TECHNICIAN_FETCH_SIZE) });
-    const all = Array.isArray(rows) ? rows : rows.content ?? [];
-
-    let technicians = all.map(toEnrichedTechnician);
-
-    const q = query?.trim().toLowerCase();
-    if (q) {
-      technicians = technicians.filter((t) =>
-        [t.firstName, t.lastName, t.email, t.companyName]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-          .includes(q),
-      );
-    }
-
-    const skill = filters?.skill?.trim();
-    if (skill) technicians = technicians.filter((t) => (t.skills ?? []).includes(skill));
-
-    if (filters?.isActive !== undefined) {
-      technicians = technicians.filter((t) => t.isActive === filters.isActive);
-    }
-
-    if (filters?.sortBy) {
-      const dir = filters.sortBy === 'firstNameDesc' ? -1 : 1;
-      technicians.sort((a, b) =>
-        dir * (a.firstName ?? '').localeCompare(b.firstName ?? '', 'fr', { sensitivity: 'base' }),
-      );
-    }
-
-    const total = technicians.length;
-    const from = (page - 1) * limit;
-    return { technicians: technicians.slice(from, from + limit), total };
-  }
-
-  /**
-   * Non réalisable côté Spring : la complétude du profil dépend du hash de mot de
-   * passe et de l'IBAN/BIC, qu'aucune route du contrat ne renvoie.
-   */
-  async getIncompleteTechnicianProfiles(): Promise<IncompleteTechnicianProfile[]> {
-    throw new Error(
-      'getIncompleteTechnicianProfiles: non supporté en mode Spring (mot de passe et coordonnées bancaires non exposés)',
-    );
-  }
-
-  // GET /technicians/{id}/profile — le schéma n'a pas de rue : la ville courante fait office d'adresse
-  async getTechnicianPosition(
-    technicianId: string,
-  ): Promise<{ latitude: number; longitude: number; address: string; city: string } | null> {
-    const profile = await springHttp.get<SpringTechnicianRow | null>(
-      `/technicians/${encodeURIComponent(technicianId)}/profile`,
-    );
-    if (!profile || profile.latitude == null || profile.longitude == null) return null;
-    return {
-      latitude: profile.latitude,
-      longitude: profile.longitude,
-      address: profile.currentCity ?? '',
-      city: profile.currentCity ?? '',
-    };
-  }
-
-  // GET /users/{id} → avatarUrl
-  async getTechnicianAvatar(technicianId: string): Promise<string | null> {
-    const user = await this.getUser(technicianId);
-    return user?.avatarUrl ?? null;
-  }
-
-  /**
-   * Mise à jour + synchronisation de la session.
+   * ✨ UPDATE USER WITH AUTOMATIC SYNC
    *
-   * SAFETY: comme la version Lovable Cloud, l'événement « user:updated » n'est émis
-   * que lorsque `userId` est l'utilisateur courant — éditer un autre compte ne doit
-   * jamais remplacer la session de l'appelant.
+   * Combines database update + context notification in one call
+   * Returns the updated user for immediate UI use
+   *
+   * SAFETY: the 'user:updated' broadcast replaces the logged-in session
+   * (useAuth + localStorage + other tabs). It is therefore only emitted when
+   * `userId` is the CURRENT user. Editing someone else (e.g. admin editing a
+   * technician) updates the DB but never touches the caller's session.
    */
   async updateUserAndSync(
     userId: string,
@@ -242,28 +204,53 @@ export class SpringUsersService implements IUsersService {
       phone?: string;
       avatarUrl?: string;
       companyLogoUrl?: string | null;
-    },
+    }
   ): Promise<User> {
+    // 1. Update in database
     await this.updateUser(userId, updates);
 
+    // 2. Fetch updated user to get all fields
     const freshUser = await this.getUser(userId);
-    if (!freshUser) throw new Error('Failed to fetch updated user');
+    if (!freshUser) {
+      throw new Error('Failed to fetch updated user');
+    }
 
+    // 3. Notify all listeners (context, localStorage, other tabs)
     if (isCurrentSessionUser(userId)) {
       this.notifyUserUpdate(freshUser);
     }
 
+    // Signal any session for this user (e.g. the technician's own tab on the
+    // same browser) to re-fetch their session — without replacing the caller's.
     window.dispatchEvent(new CustomEvent('user:invalidate', { detail: { id: userId } }));
 
+    // 4. Return for immediate component use
     return freshUser;
   }
 
+  /**
+   * ✨ BROADCAST USER UPDATE
+   *
+   * Dispatches event that triggers:
+   * - useAuth() context update
+   * - localStorage sync
+   * - BroadcastChannel to other tabs
+   */
   notifyUserUpdate(user: User): void {
-    window.dispatchEvent(new CustomEvent('user:updated', { detail: user }));
+    window.dispatchEvent(
+      new CustomEvent('user:updated', {
+        detail: user,
+      })
+    );
   }
 
-  /** Aucune route du contrat ne crée de compte admin/manager (généré côté Lovable Cloud). */
-  async createAdminOrManager(_data: {
+  /**
+   * ✨ CREATE ADMIN OR MANAGER
+   *
+   * Creates a new admin/manager user via REST API
+   * Returns userId, tempPassword, and email
+   */
+  async createAdminOrManager(data: {
     firstName: string;
     lastName: string;
     email: string;
@@ -272,34 +259,23 @@ export class SpringUsersService implements IUsersService {
     createdBy: string;
     loginUrl?: string;
   }): Promise<{ userId: string; tempPassword: string; email: string }> {
-    throw new Error('createAdminOrManager: non supporté en mode Spring');
-  }
-
-  /** Le contrôle qualité de photo s'appuie sur des colonnes non exposées par le contrat. */
-  async updatePhotoQuality(_userId: string, _ok: boolean, _issues: string[]): Promise<void> {
-    throw new Error('updatePhotoQuality: non supporté en mode Spring');
-  }
-
-  /**
-   * GET /users ne renvoie ni le partenaire B2B, ni le drapeau « doit changer de
-   * mot de passe », ni les permissions manager/payment : la liste « Gestion des
-   * utilisateurs » ne peut pas être reconstituée fidèlement.
-   */
-  async getStaffUsers(_filters?: StaffUserFilters): Promise<StaffUser[]> {
-    throw new Error(
-      'getStaffUsers: non supporté en mode Spring (partenaire B2B, permissions et mot de passe temporaire non exposés)',
+    // POST /users/admin-manager
+    const result = await springHttp.post<{ userId: string; tempPassword: string; email: string }>(
+      '/users/admin-manager',
+      {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone || null,
+        role: data.role,
+        createdBy: data.createdBy,
+      }
     );
+
+    return result;
+  }
+  async updatePhotoQuality(userId: string, ok: boolean, issues: string[]): Promise<void> {
+    await springHttp.patch(`/users/${userId}/photo-quality`, { ok, issues });
   }
 
-  /** Aucune route DELETE /users/{id} dans le contrat. */
-  async deleteUser(_id: string): Promise<void> {
-    throw new Error('deleteUser: non supporté en mode Spring (suppression de compte non exposée)');
-  }
-
-  /** Aucune route de régénération du mot de passe temporaire dans le contrat. */
-  async sendFirstConnectionEmail(_id: string): Promise<{ email: string }> {
-    throw new Error(
-      'sendFirstConnectionEmail: non supporté en mode Spring (régénération du mot de passe temporaire non exposée)',
-    );
-  }
 }

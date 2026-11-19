@@ -48,11 +48,12 @@ class AuthService implements IAuthService {
         return { success: false, error: 'Compte désactivé. Contactez le support.' };
       }
 
-      if (dbUser.role === 'technician') {
-        await supabase
-          .from('users')
-          .update({ last_login_at: new Date().toISOString() } as never)
-          .eq('id', dbUser.id);
+      try {
+        await supabase.functions.invoke('record-user-activity', {
+          body: { userId: dbUser.id, kind: 'login' },
+        });
+      } catch (activityError) {
+        console.error('record-user-activity login failed:', activityError);
       }
 
       // Créer la session
@@ -72,6 +73,8 @@ class AuthService implements IAuthService {
         avatarUrl: dbUser.avatar_url,
         companyLogoUrl: dbUser.company_logo_url,
         mustChangePassword: dbUser.must_change_password,
+        lastLoginAt: dbUser.last_login_at ?? null,
+        lastSeenAt: dbUser.last_seen_at ?? null,
         createdAt: dbUser.created_at,
         updatedAt: dbUser.updated_at,
       };
@@ -375,7 +378,7 @@ class AuthService implements IAuthService {
    * in-memory + localStorage session. Fixes stale cached data (avatar, name…)
    * after an admin/manager edited the account on another device.
    */
-  async refreshUser(): Promise<User | null> {
+  async refreshCurrentUser(): Promise<User | null> {
     const current = this.getCurrentUser();
     if (!current?.id) return current;
 
@@ -399,7 +402,7 @@ class AuthService implements IAuthService {
       this.notifyListeners();
       return user;
     } catch (error) {
-      console.warn('[auth] refreshUser failed:', error);
+      console.warn('[auth] refreshCurrentUser failed:', error);
       return current;
     }
   }
@@ -438,9 +441,23 @@ class AuthService implements IAuthService {
     };
   }
 
+
+  async recordActivity(): Promise<void> {
+    const current = this.getCurrentUser();
+    if (!current?.id) return;
+    try {
+      await supabase.functions.invoke('record-user-activity', {
+        body: { userId: current.id, kind: 'activity' },
+      });
+    } catch (activityError) {
+      console.error('record-user-activity activity failed:', activityError);
+    }
+  }
+
   /**
    * Change the current user's password
    */
+
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     const user = this.getCurrentUser();
     if (!user) {

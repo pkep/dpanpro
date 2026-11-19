@@ -3,12 +3,12 @@ import type { User, UserRole } from '@/types/auth.types';
 import type { DbUser } from '@/types/database.types';
 import type { TablesUpdate } from '@/integrations/supabase/types';
 import { IUsersService } from "@/services/interfaces";
-import type { StaffUser, StaffUserFilters } from '@/services/interfaces/users.interface';
 import {
   computeMissingProfileFields,
   isProfileComplete,
   type IncompleteTechnicianProfile,
 } from '@/lib/technicianProfileCompleteness';
+import { normalizeZones } from '@/lib/zones';
 
 /** True when `userId` is the user currently logged in (persisted by useAuth in localStorage). */
 function isCurrentSessionUser(userId: string): boolean {
@@ -28,25 +28,14 @@ interface PartnerApplicationRow {
   skills: string[] | null;
   company_name: string | null;
   years_experience: number | null;
+  city: string | null;
+  postal_code: string | null;
   zone: unknown;
   validated_at: string | null;
   bank_account_holder: string | null;
   bank_name: string | null;
   iban: string | null;
   bic: string | null;
-}
-
-function toZones(value: unknown): string[] {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) return [];
-    if (trimmed.startsWith('{')) {
-      return trimmed.slice(1, -1).split(',').map((v: string) => v.trim()).filter(Boolean);
-    }
-    return [trimmed];
-  }
-  return [];
 }
 
 class UsersService implements IUsersService {
@@ -93,7 +82,7 @@ class UsersService implements IUsersService {
     // Get technicians with count
     let userQuery = supabase
       .from('users')
-      .select('id, first_name, last_name, email, phone, is_active, created_at, role, avatar_url, password_hash', { count: 'exact' })
+      .select('id, first_name, last_name, email, phone, is_active, created_at, role, avatar_url, password_hash, last_login_at, last_seen_at', { count: 'exact' })
       .eq('role', 'technician')
       .eq('is_active', isActive);
 
@@ -125,7 +114,7 @@ class UsersService implements IUsersService {
     // Get skills, company and experience from partner_applications
     const { data: apps, error: appsError } = await supabase
       .from('partner_applications')
-      .select('user_id, skills, company_name, years_experience, zone, validated_at, bank_account_holder, bank_name, iban, bic')
+      .select('user_id, skills, company_name, years_experience, city, postal_code, zone, validated_at, bank_account_holder, bank_name, iban, bic')
       .in('user_id', userIds);
     if (appsError) throw appsError;
 
@@ -139,6 +128,8 @@ class UsersService implements IUsersService {
     // Map skills by user_id
     const skillsMap = new Map<string, string[]>();
     const companyMap = new Map<string, string>();
+    const companyCityMap = new Map<string, string>();
+    const companyPostalCodeMap = new Map<string, string>();
     const experienceMap = new Map<string, number>();
     const zoneMap = new Map<string, string[]>();
     const validatedAtMap = new Map<string, string>();
@@ -149,8 +140,10 @@ class UsersService implements IUsersService {
       if (app.user_id) {
         skillsMap.set(app.user_id, app.skills || []);
         companyMap.set(app.user_id, app.company_name || '');
+        companyCityMap.set(app.user_id, app.city || '');
+        companyPostalCodeMap.set(app.user_id, app.postal_code || '');
         experienceMap.set(app.user_id, app.years_experience || 0);
-        zoneMap.set(app.user_id, toZones(app.zone));
+        zoneMap.set(app.user_id, normalizeZones(app.zone));
         validatedAtMap.set(app.user_id, app.validated_at || '');
         bankMap.set(app.user_id, {
           bank_account_holder: app.bank_account_holder,
@@ -182,6 +175,10 @@ class UsersService implements IUsersService {
         completed: statsMap.get(user.id)?.completed,
         companyName: companyMap.get(user.id) || mappedUser.companyName || null,
         yearsExperience: experienceMap.get(user.id) ?? null,
+        companyCity: companyCityMap.get(user.id) || null,
+        companyPostalCode: companyPostalCodeMap.get(user.id) || null,
+        lastLoginAt: mappedUser.lastLoginAt ?? null,
+        lastSeenAt: mappedUser.lastSeenAt ?? null,
         zones: zoneMap.get(user.id) || null,
         validatedAt: validatedAtMap.get(user.id) || null,
         missingProfileFields: computeMissingProfileFields({
@@ -282,7 +279,7 @@ class UsersService implements IUsersService {
     const primary = await applyFilters(
       db
         .from('users')
-        .select('id, first_name, last_name, email, phone, role, is_active, must_change_password, created_at, b2b_partners!b2b_partners_user_id_fkey(id, company_name)'),
+        .select('id, first_name, last_name, email, phone, role, is_active, must_change_password, created_at, last_login_at, last_seen_at, b2b_partners!b2b_partners_user_id_fkey(id, company_name)'),
     );
 
     let rows: Record<string, unknown>[] = [];
@@ -290,7 +287,7 @@ class UsersService implements IUsersService {
       // Fallback : requête users seule + jointure partenaire séparée.
       console.warn('getStaffUsers embed failed, falling back to separate partner query:', primary.error);
       const fallback = await applyFilters(
-        db.from('users').select('id, first_name, last_name, email, phone, role, is_active, must_change_password, created_at'),
+        db.from('users').select('id, first_name, last_name, email, phone, role, is_active, must_change_password, created_at, last_login_at, last_seen_at'),
       );
       if (fallback.error) throw fallback.error;
       rows = (fallback.data || []) as Record<string, unknown>[];
@@ -356,6 +353,8 @@ class UsersService implements IUsersService {
         isActive: r.is_active !== false,
         mustChangePassword: r.must_change_password === true,
         createdAt: String(r.created_at),
+        lastLoginAt: (r.last_login_at as string) ?? null,
+        lastSeenAt: (r.last_seen_at as string) ?? null,
         b2bPartnerId: partner?.id ? String(partner.id) : null,
         b2bCompanyName: partner?.company_name ?? null,
         canCreateManagers: managersPermissions.get(id) ?? false,
@@ -604,6 +603,8 @@ class UsersService implements IUsersService {
       vatNumber: data.vat_number,
       avatarUrl: data.avatar_url,
       companyLogoUrl: data.company_logo_url,
+      lastLoginAt: data.last_login_at ?? null,
+      lastSeenAt: data.last_seen_at ?? null,
       photoQualityOk: (data as any).photo_quality_ok ?? null,
       photoQualityCheckedAt: (data as any).photo_quality_checked_at ?? null,
       photoQualityIssues: (data as any).photo_quality_issues ?? null,
