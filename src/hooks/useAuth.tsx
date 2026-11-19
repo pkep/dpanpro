@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshUser = useCallback(async () => {
-    await services.auth.refreshUser();
+    await services.auth.refreshCurrentUser();
   }, []);
 
   return (

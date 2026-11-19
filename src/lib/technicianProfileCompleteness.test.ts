@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeMissingProfileFields, isProfileComplete } from './technicianProfileCompleteness';
+import { computeMissingProfileFields, isProfileComplete, isProfileFieldRequired } from './technicianProfileCompleteness';
 
 describe('profile completeness helper compatibility', () => {
   const profile = {

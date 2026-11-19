@@ -82,7 +82,8 @@ export class SpringPartnersService implements IPartnersService {
       skills: data.skills || [],
       certifications: data.certifications || [],
       yearsExperience: data.yearsExperience,
-      presentation: data.presentation,
+      presentation: data.presentation ?? data.motivation ?? null,
+      kbisUrl: data.kbisUrl ?? null,
       birthDate: data.birthDate,
       birthPlace: data.birthPlace,
       insuranceCompany: data.insuranceCompany,
@@ -131,6 +132,7 @@ export class SpringPartnersService implements IPartnersService {
       skills: string[];
       yearsExperience: number;
       presentation: string;
+      motivation: string;
       bankAccountHolder: string;
       bankName: string;
       iban: string;
@@ -170,6 +172,7 @@ export class SpringPartnersService implements IPartnersService {
           skills: tech.specializations || [],
           yearsExperience: tech.yearsExperience || 0,
           presentation: tech.presentation || '',
+          motivation: tech.presentation || '',
           bankAccountHolder: tech.bankAccountHolder || '',
           bankName: tech.bankName || '',
           iban: tech.iban || '',

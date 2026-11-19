@@ -68,14 +68,15 @@ class SupabasePartnersService implements IPartnersService{
         company_name: data.companyName,
         siren: data.siren,
         legal_status: data.legalStatus,
-        vehicle_types: data.vehicleTypes,
+        vehicle_types: data.vehicleTypes ?? null,
         ape_code: data.apeCode,
         vat_number: normalizeVatNumber(data.vatNumber),
         zone: normalizeZones(data.zones),
         skills: data.skills,
-        certifications: data.certifications,
+        certifications: data.certifications ?? null,
         years_experience: data.yearsExperience,
-        presentation: data.presentation,
+        presentation: data.presentation ?? data.motivation ?? null,
+        kbis_url: data.kbisUrl ?? null,
         terms_accepted: data.termsAccepted,
         data_accuracy_confirmed: data.dataAccuracyConfirmed,
       } as Record<string, unknown>);
@@ -119,6 +120,7 @@ class SupabasePartnersService implements IPartnersService{
       skills: string[];
       yearsExperience: number;
       presentation: string;
+      motivation: string;
       bankAccountHolder: string;
       bankName: string;
       iban: string;
@@ -168,6 +170,7 @@ class SupabasePartnersService implements IPartnersService{
         skills: appData.skills,
         yearsExperience: appData.years_experience,
         presentation: appData.presentation,
+        motivation: appData.presentation,
         bankAccountHolder: appData.bank_account_holder,
         bankName: appData.bank_name,
         iban: appData.iban,
@@ -249,6 +252,9 @@ class SupabasePartnersService implements IPartnersService{
     if (data.skills) appUpdates.skills = data.skills;
     if (data.yearsExperience !== undefined) appUpdates.years_experience = data.yearsExperience;
     if (data.presentation) appUpdates.presentation = data.presentation;
+    // Le formulaire « Expertises » édite la motivation : même colonne que presentation.
+    const motivation = (data as { motivation?: string }).motivation;
+    if (motivation) appUpdates.presentation = motivation;
     if (data.bankAccountHolder) appUpdates.bank_account_holder = data.bankAccountHolder;
     if (data.bankName) appUpdates.bank_name = data.bankName;
     if (data.iban) appUpdates.iban = data.iban;

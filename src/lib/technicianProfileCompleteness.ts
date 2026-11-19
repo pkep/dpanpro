@@ -38,3 +38,21 @@ export function computeMissingProfileFields(profile: TechnicianProfileFields): s
 export function isProfileComplete(missingFields: readonly string[]): boolean {
   return missingFields.length === 0;
 }
+
+/** Champs dont l'absence bloque la validation d'une candidature. */
+export const REQUIRED_PROFILE_FIELDS = [
+  'firstName',
+  'lastName',
+  'avatar',
+  'password',
+  'bankAccountHolder',
+  'bankName',
+  'iban',
+  'bic',
+  'application',
+] as const;
+
+/** true si l'absence de ce champ empêche de valider la candidature. */
+export function isProfileFieldRequired(field: string): boolean {
+  return (REQUIRED_PROFILE_FIELDS as readonly string[]).includes(field);
+}

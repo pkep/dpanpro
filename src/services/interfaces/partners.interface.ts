@@ -69,9 +69,9 @@ export interface PartnerApplicationData {
   /** Numéro de TVA intracommunautaire (facultatif). */
   vatNumber?: string | null;
   legalStatus: string;
-  vehicleTypes: string[];
-  zones: string[];
-  certifications: string[];
+  vehicleTypes?: string[];
+  zones?: string[];
+  certifications?: string[];
 
   // Insurance
   insuranceCompany?: string;
@@ -82,8 +82,11 @@ export interface PartnerApplicationData {
   // Expertise
   skills: string[];
   yearsExperience: number;
-  presentation: string;
-  availability: string[];
+  /** Texte de présentation du candidat. */
+  presentation?: string;
+  /** Motivation du candidat (formulaire d'inscription ; même colonne que presentation). */
+  motivation?: string;
+  availability?: string[];
 
   // Banking
   bankAccountHolder?: string;
@@ -94,6 +97,9 @@ export interface PartnerApplicationData {
   // Agreements
   termsAccepted: boolean;
   dataAccuracyConfirmed: boolean;
+
+  /** URL du Kbis uploadé dans le bucket `technicians`. */
+  kbisUrl?: string | null;
 }
 
 export interface IPartnersService {
@@ -105,6 +111,8 @@ export interface IPartnersService {
       companyName: string; siren: string; apeCode: string | null; legalStatus: string; vatNumber: string | null;
       insuranceCompany: string; insurancePolicyNumber: string; insuranceExpiryDate: string;
       hasDecennialInsurance: boolean; skills: string[]; yearsExperience: number; presentation: string;
+      /** Motivation du candidat (même colonne que presentation). */
+      motivation: string;
       bankAccountHolder: string; bankName: string; iban: string; bic: string;
     };
   } | null>;

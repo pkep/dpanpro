@@ -16,4 +16,14 @@ export class SpringNotificationsService implements INotificationsService {
   async notifyNewIntervention(interventionId: string): Promise<void> {
     await springHttp.post('/notifications/new-intervention', { interventionId });
   }
+
+  // POST /notifications/welcome-job-technician
+  async notifyWelcomeJobTechnician(technicianId: string): Promise<void> {
+    await springHttp.post('/notifications/welcome-job-technician', { technicianId });
+  }
+
+  // POST /notifications/manager-after-job-technician
+  async notifyManagerAfterJobTechnician(technicianId: string): Promise<void> {
+    await springHttp.post('/notifications/manager-after-job-technician', { technicianId });
+  }
 }
