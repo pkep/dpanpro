@@ -92,8 +92,6 @@ export class SpringInterventionsService implements IInterventionsService {
     type?: 'client' | 'b2b';
     urgency?: 'standard' | 'high' | 'urgent' | 'scheduled';
     technicianId?: string;
-    amountMin?: number;
-    amountMax?: number;
     createdFrom?: string;
     createdTo?: string;
     search?: string;
@@ -106,8 +104,6 @@ export class SpringInterventionsService implements IInterventionsService {
     if (filters?.type)     params.type     = filters.type;
     if (filters?.urgency)  params.urgency  = filters.urgency;
     if (filters?.technicianId) params.technicianId = filters.technicianId;
-    if (filters?.amountMin != null) params.amountMin = String(filters.amountMin);
-    if (filters?.amountMax != null) params.amountMax = String(filters.amountMax);
     if (filters?.createdFrom) params.createdFrom = filters.createdFrom;
     if (filters?.createdTo)   params.createdTo   = filters.createdTo;
     if (filters?.search?.trim()) params.search = filters.search.trim();

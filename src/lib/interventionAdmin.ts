@@ -28,13 +28,13 @@ export interface InterventionDetailSource {
 
 /**
  * Niveau d'urgence affiché dans la colonne « Urgence » :
- * une intervention planifiée (`scheduledAt`) est « Planifié », sinon on
- * déduit de la priorité : `urgent` → Urgence, `high` → Prioritaire, sinon Standard.
+ * `urgent` > `high` > planifié > standard.
+ * La planification est donc traitée comme une priorité plus faible.
  */
 export function getUrgencyLevel(intervention: InterventionDetailSource): UrgencyLevel {
-  if (intervention.scheduledAt) return 'scheduled';
   if (intervention.priority === 'urgent') return 'urgent';
   if (intervention.priority === 'high') return 'high';
+  if (intervention.scheduledAt) return 'scheduled';
   return 'standard';
 }
 

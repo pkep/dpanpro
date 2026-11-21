@@ -108,9 +108,6 @@ export interface IInterventionsService {
     urgency?: 'standard' | 'high' | 'urgent' | 'scheduled';
     /** Technicien assigné (UUID) ou `'unassigned'`. */
     technicianId?: string;
-    /** Plage de montant (estimé, € HT). */
-    amountMin?: number;
-    amountMax?: number;
     /** Plage de date de création (ISO). */
     createdFrom?: string;
     createdTo?: string;

@@ -765,6 +765,11 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
    async getInterventionsForAdmin(filters: {
      status?: InterventionStatus;
      category?: InterventionCategory;
+     type?: 'client' | 'b2b';
+     urgency?: 'standard' | 'high' | 'urgent' | 'scheduled';
+     technicianId?: string;
+     createdFrom?: string;
+     createdTo?: string;
      search?: string;
      page?: number;
      size?: number;
@@ -780,6 +785,35 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
 
      if (filters.category) {
        query = query.eq('category', filters.category);
+     }
+
+     if (filters.type === 'b2b') {
+       query = query.not('b2b_partner_id', 'is', null);
+     } else if (filters.type === 'client') {
+       query = query.is('b2b_partner_id', null);
+     }
+
+     if (filters.urgency === 'urgent') {
+       query = query.eq('priority', 'urgent');
+     } else if (filters.urgency === 'high') {
+       query = query.eq('priority', 'high');
+     } else if (filters.urgency === 'scheduled') {
+       query = query.in('priority', ['normal', 'low']).not('scheduled_at', 'is', null);
+     } else if (filters.urgency === 'standard') {
+       query = query.in('priority', ['normal', 'low']).is('scheduled_at', null);
+     }
+
+     if (filters.technicianId === 'unassigned') {
+       query = query.is('technician_id', null);
+     } else if (filters.technicianId) {
+       query = query.eq('technician_id', filters.technicianId);
+     }
+
+     if (filters.createdFrom) {
+       query = query.gte('created_at', filters.createdFrom);
+     }
+     if (filters.createdTo) {
+       query = query.lte('created_at', filters.createdTo);
      }
 
      // ✨ NOUVEAU: Recherche multi-champs insensible à la casse
