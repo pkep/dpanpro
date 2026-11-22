@@ -19,7 +19,7 @@ function fromRow(row: SiteSettingRow): SiteSetting {
     key: row.setting_key,
     value: row.setting_value,
     description: row.description ?? undefined,
-    updated_at: row.updated_at,
+    updatedAt: row.updated_at,
   };
 }
 

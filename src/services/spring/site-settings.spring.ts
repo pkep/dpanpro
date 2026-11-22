@@ -13,7 +13,7 @@ export class SpringSiteSettingsService implements ISiteSettingsService {
   }
 
   // PATCH /settings/{key}
-  async updateSetting(key: string, value: string): Promise<SiteSetting> {
-    return springHttp.patch<SiteSetting>(`/settings/${key}`, { value });
+  async updateSetting(key: string, value: unknown): Promise<void> {
+    await springHttp.patch(`/settings/${key}`, { value: String(value) });
   }
 }
