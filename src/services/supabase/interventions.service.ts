@@ -823,7 +823,13 @@ async updateEstimatedPrice(interventionId: string, estimatedPrice: number): Prom
        query = query.or(
          `title.ilike.%${searchTerm}%,` +
          `address.ilike.%${searchTerm}%,` +
-         `tracking_code.ilike.%${searchTerm}%`
+         `city.ilike.%${searchTerm}%,` +
+         `postal_code.ilike.%${searchTerm}%,` +
+         `tracking_code.ilike.%${searchTerm}%,` +
+         `client_first_name.ilike.%${searchTerm}%,` +
+         `client_last_name.ilike.%${searchTerm}%,` +
+         `client_email.ilike.%${searchTerm}%,` +
+         `client_phone.ilike.%${searchTerm}%`
        );
      }
 

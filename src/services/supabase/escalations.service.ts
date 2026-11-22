@@ -5,6 +5,8 @@ import type {
   EscalationClimbInput,
   EscalationDeclineInput,
   EscalationState,
+  ManualEscalationInput,
+  ManualEscalationResult,
   ExternalEscalation,
   ExternalEscalationPatch,
   ExternalEscalationStatus,
@@ -164,6 +166,19 @@ class SupabaseEscalationsService implements IEscalationsService {
 
     const childId = (data as { childInterventionId?: string } | null)?.childInterventionId;
     return this.buildState(childId ?? input.interventionId);
+  }
+
+  async escalateManually(input: ManualEscalationInput): Promise<ManualEscalationResult> {
+    const { data, error } = await supabase.functions.invoke('manual-escalate-intervention', {
+      body: {
+        interventionId: input.interventionId,
+        mode: input.mode,
+        category: input.category,
+        createdBy: await this.currentUserId(),
+      },
+    });
+    if (error) throw error;
+    return data as ManualEscalationResult;
   }
 
   async decline(input: EscalationDeclineInput): Promise<EscalationState> {

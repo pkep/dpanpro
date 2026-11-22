@@ -49,6 +49,19 @@ export interface EscalationDeclineInput {
   reason?: string;
 }
 
+export interface ManualEscalationInput {
+  interventionId: string;
+  mode: EscalationMode;
+  category: InterventionCategory;
+}
+
+export interface ManualEscalationResult {
+  parentInterventionId: string;
+  childInterventionId: string | null;
+  mode: EscalationMode;
+  category: InterventionCategory;
+}
+
 export interface ExternalEscalation {
   id: string;
   interventionId: string;
@@ -104,6 +117,9 @@ export interface IEscalationsService {
 
   /** Refus client → clôture (cancelled_escalation_declined). */
   decline(input: EscalationDeclineInput): Promise<EscalationState>;
+
+  /** Escalade à froid admin/manager : création immédiate, sans paiement ni signature. */
+  escalateManually(input: ManualEscalationInput): Promise<ManualEscalationResult>;
 
   /** État complet de l'escalade d'une intervention. */
   getState(interventionId: string): Promise<EscalationState | null>;
