@@ -211,8 +211,10 @@ export function drawCompanyFooter(doc: jsPDF, margin = 19) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(...TEXT_BODY);
+  // Break avant le bloc SIRET/RCS/TVA (aligné avec la 2e ligne de gauche).
+  const rightTopBaseline = topBaseline + lineHeight;
   rightLines.forEach((line, index) => {
-    doc.text(line, right, topBaseline + index * lineHeight, { align: "right" });
+    doc.text(line, right, rightTopBaseline + index * lineHeight, { align: "right" });
   });
 }
 

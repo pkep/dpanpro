@@ -3,7 +3,10 @@
  * Le PDF est produit en mémoire (aucune persistance ici).
  */
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
-import { LOGO_DATA_URI, LOGO_WIDTH, LOGO_HEIGHT } from "../assets.ts";
+import {
+  LOGO_DATA_URI, LOGO_WIDTH, LOGO_HEIGHT,
+  RIB_DATA_URI, RIB_WIDTH, RIB_HEIGHT,
+} from "../assets.ts";
 import { drawCompanyFooter } from "./document-layout.ts";
 import {
   drawInlineSegments,
@@ -115,57 +118,30 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...TEXT_DARK);
-  doc.text(`Date : ${emissionDate}`, left, 18);
+  doc.text(`Date : ${emissionDate}`, left, 23);
 
   doc.setFont("helvetica", "bold");
-  doc.text("Facture mensuelle N°", left, 24);
+  doc.text("Facture mensuelle N°", left, 29);
   const labelWidth = doc.getTextWidth("Facture mensuelle N° ");
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...TEXT_MUTED);
-  doc.text(data.number, left + labelWidth, 24);
+  doc.text(data.number, left + labelWidth, 29);
 
   doc.setTextColor(...TEXT_DARK);
-  doc.text(`Période : ${periodStart} -> ${periodEnd}`, left, 30);
+  doc.text(`Période : ${periodStart} -> ${periodEnd}`, left, 35);
 
-  doc.addImage(LOGO_DATA_URI, "PNG", right - LOGO_WIDTH, 14, LOGO_WIDTH, LOGO_HEIGHT);
+  doc.addImage(LOGO_DATA_URI, "PNG", right - LOGO_WIDTH, 19, LOGO_WIDTH, LOGO_HEIGHT);
 
-  // ── Titre ───────────────────────────────────────────────────────────────
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(34);
-  doc.setTextColor(...TEXT_DARK);
-  doc.text("FACTURE MENSUELLE", right, 52, { align: "right" });
-
-  // ── Récapitulatif / Facturé à ───────────────────────────────────────────
-  let leftY = 70;
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...TEXT_BODY);
-  doc.text("Récapitulatif :", left, leftY);
-  leftY += 6;
+  // ── RIB + titre + Facturé à ─────────────────────────────────────────────
+  const ribTop = 39;
+  doc.addImage(RIB_DATA_URI, "PNG", left, ribTop, RIB_WIDTH, RIB_HEIGHT);
 
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
   doc.setTextColor(...TEXT_DARK);
-  doc.setFontSize(9.2);
-  doc.text(`${data.lines.length} interventions réalisées`, left, leftY);
-  leftY += 5;
+  doc.text("FACTURE MENSUELLE", right, ribTop + 5, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(...TEXT_BODY);
-  doc.text(`Période du ${periodStart} -> ${periodEnd}`, left, leftY);
-  leftY += 8;
-
-  doc.setFontSize(8.5);
-  leftY = drawWrapped(
-    doc,
-    "Document de facturation groupé du mois. Les factures par intervention sont des justificatifs et ne doivent pas être réglées séparément.",
-    left,
-    leftY,
-    95,
-    4.2,
-  );
-
-  let rightY = 70;
+  let rightY = ribTop + 12;
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...TEXT_BODY);
@@ -184,7 +160,6 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
     .join(" ")
     .trim();
   if (contactName) {
-    doc.setFontSize(11);
     doc.text(contactName, right, rightY, { align: "right" });
     rightY += 5;
   }
@@ -203,13 +178,12 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
     rightY += 4;
   }
   doc.setFont("helvetica", "normal");
-  if (data.partner.address) {
-    doc.text(data.partner.address, right, rightY, { align: "right" });
-    rightY += 4;
-  }
-  const cityLine = [data.partner.postal_code, data.partner.city].filter(Boolean).join(" ");
-  if (cityLine) {
-    doc.text(cityLine, right, rightY, { align: "right" });
+  const addressLine = [
+    data.partner.address,
+    [data.partner.postal_code, data.partner.city].filter(Boolean).join(" "),
+  ].filter(Boolean).join(", ");
+  if (addressLine) {
+    doc.text(addressLine, right, rightY, { align: "right" });
     rightY += 4;
   }
   if (data.partner.siret) {
@@ -223,7 +197,34 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
     rightY += 4;
   }
 
-  let y = Math.max(leftY, rightY) + 8;
+  // ── Récapitulatif sous le RIB ───────────────────────────────────────────
+  let leftY = ribTop + RIB_HEIGHT + 8;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...TEXT_BODY);
+  doc.text("Récapitulatif :", left, leftY);
+  leftY += 6;
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...TEXT_DARK);
+  doc.setFontSize(9.2);
+  doc.text(`${data.lines.length} interventions réalisées`, left, leftY);
+  leftY += 5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...TEXT_BODY);
+  leftY = drawWrapped(
+    doc,
+    "Document de facturation groupé du mois. Les factures par intervention sont des justificatifs et ne doivent pas être réglées séparément.",
+    left,
+    leftY,
+    90,
+    4.2,
+  );
+  leftY += 3;
+
+  let y = Math.max(leftY, rightY) + 6;
 
   const drawTableHeader = () => {
     doc.setFont("helvetica", "bold");
@@ -240,7 +241,10 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
 
   drawTableHeader();
 
+  const ROW_LINE_HEIGHT = 3.8;
+  let rowIndex = 0;
   for (const line of data.lines) {
+    const mustBreak = rowIndex >= 3 && (rowIndex - 3) % 6 === 0;
     type Block = {
       text?: string;
       segments?: InlineTextSegment[];
@@ -284,17 +288,17 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
 
     const lineHeights = blocks.map((b) => {
       if (b.segments) {
-        return measureInlineSegments(doc, b.segments, textWidth, b.size ?? 9) * 4.2 + (b.gapBefore ?? 0);
+        return measureInlineSegments(doc, b.segments, textWidth, b.size ?? 9) * ROW_LINE_HEIGHT + (b.gapBefore ?? 0);
       }
       doc.setFontSize(b.size ?? 9);
       doc.setFont("helvetica", b.bold ? "bold" : "normal");
-      return (doc.splitTextToSize(b.text ?? "", textWidth) as string[]).length * 4.2 + (b.gapBefore ?? 0);
+      return (doc.splitTextToSize(b.text ?? "", textWidth) as string[]).length * ROW_LINE_HEIGHT + (b.gapBefore ?? 0);
     });
-    const rowHeight = lineHeights.reduce((sum, h) => sum + h, 0) + 4;
+    const rowHeight = lineHeights.reduce((sum, h) => sum + h, 0) + 5;
 
-    if (y + rowHeight > footerTop) {
+    if (mustBreak || y + rowHeight > footerTop) {
       doc.addPage();
-      y = 30;
+      y = 20;
       drawTableHeader();
     }
 
@@ -303,7 +307,7 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
       const block = blocks[i];
       if (block.gapBefore) y += block.gapBefore;
       if (block.segments) {
-        y = drawInlineSegments(doc, block.segments, left, y, textWidth, 4.2, block.size ?? 9);
+        y = drawInlineSegments(doc, block.segments, left, y, textWidth, ROW_LINE_HEIGHT, block.size ?? 9);
         continue;
       }
       doc.setFontSize(block.size ?? 9);
@@ -312,7 +316,7 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
       const wrapped = doc.splitTextToSize(block.text ?? "", textWidth) as string[];
       for (const part of wrapped) {
         doc.text(part, left, y);
-        y += 4.2;
+        y += ROW_LINE_HEIGHT;
       }
     }
 
@@ -321,17 +325,18 @@ export function buildInvoiceB2bMonthlyPdfBase64(data: B2bInvoicePdfInput): strin
     doc.setTextColor(...TEXT_DARK);
     doc.text(money(line.amount), right, rowTop, { align: "right" });
 
-    y += 3;
+    y += 1;
     doc.setDrawColor(209, 213, 219);
     doc.setLineWidth(0.1);
     doc.line(left, y, right, y);
     y += 4;
+    rowIndex++;
   }
 
   // ── Conditions + totaux ─────────────────────────────────────────────────
   if (y + 22 > footerTop) {
     doc.addPage();
-    y = 30;
+    y = 20;
   }
 
   const totalsTop = y + 4;
