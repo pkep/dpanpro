@@ -22,6 +22,18 @@ export interface AssignTechnicianOptions {
   notifyTechnician?: boolean;
 }
 
+export interface CreateFromInterventionInput {
+  interventionId: string;
+  category: InterventionCategory;
+  description?: string | null;
+  priority?: 'urgent' | 'high' | 'normal' | 'low';
+}
+
+export interface CreateFromInterventionResult {
+  sourceInterventionId: string;
+  newInterventionId: string;
+}
+
 export interface IInterventionsService {
 
   // ============================================================
@@ -162,6 +174,7 @@ export interface IInterventionsService {
     size?: number;
   }): Promise<Intervention[]>;
   getIntervention(id: string): Promise<Intervention | null>;
+  createFromIntervention(input: CreateFromInterventionInput): Promise<CreateFromInterventionResult>;
   createIntervention(
     clientId: string | null,
     formData: InterventionFormData,

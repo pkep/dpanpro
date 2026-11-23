@@ -185,6 +185,17 @@ export class SpringInterventionsService implements IInterventionsService {
   }
 
   // POST /interventions
+  async createFromIntervention(input: CreateFromInterventionInput): Promise<CreateFromInterventionResult> {
+    return springHttp.post<CreateFromInterventionResult>(
+      `/interventions/${input.interventionId}/create-from`,
+      {
+        category: input.category,
+        description: input.description ?? null,
+        priority: input.priority ?? 'normal',
+      },
+    );
+  }
+
   async createIntervention(clientId: string | null, formData: InterventionFormData, questionnaireData?: InterventionQuestionnaireData): Promise<Intervention> {
     return springHttp.post<Intervention>('/interventions', { clientId, ...formData, ...questionnaireData });
   }

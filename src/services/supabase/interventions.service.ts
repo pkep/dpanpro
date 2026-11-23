@@ -26,6 +26,7 @@ import { geocodingService } from '@/services/components/geocoding/geocoding.serv
 import { services } from '@/services/factory';
 import { mapAdminInterventionRow, type AdminInterventionRow } from '@/lib/interventionAdmin';
 import { buildInterventionInsertData, isB2bFormData } from '@/lib/interventionInsert';
+import type { CreateFromInterventionInput, CreateFromInterventionResult } from '@/services/interfaces/interventions.interface';
 
 /**
  * ✅ PRESETS INTERNES - Sélection des champs par use-case
@@ -56,6 +57,16 @@ const INTERVENTION_SELECT_FIELDS = {
 } as const;
 
 class SupabaseInterventionsService implements IInterventionsService {
+  private async currentUserId(): Promise<string | null> {
+    try {
+      const raw = localStorage.getItem('depanpro_user');
+      if (!raw) return null;
+      return (JSON.parse(raw) as { id?: string }).id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   async getInterventions(filters?: {
     status?: InterventionStatus | InterventionStatus[];
     category?: InterventionCategory;
@@ -138,6 +149,20 @@ class SupabaseInterventionsService implements IInterventionsService {
     if (!data) return null;
 
     return this.mapToIntervention(data as unknown as DbIntervention);
+  }
+
+  async createFromIntervention(input: CreateFromInterventionInput): Promise<CreateFromInterventionResult> {
+    const { data, error } = await supabase.functions.invoke('create-intervention-from', {
+      body: {
+        interventionId: input.interventionId,
+        category: input.category,
+        description: input.description ?? null,
+        priority: input.priority ?? 'normal',
+        createdBy: await this.currentUserId(),
+      },
+    });
+    if (error) throw error;
+    return data as CreateFromInterventionResult;
   }
 
   async createIntervention(

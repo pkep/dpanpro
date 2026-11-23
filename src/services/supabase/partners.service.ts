@@ -68,15 +68,14 @@ class SupabasePartnersService implements IPartnersService{
         company_name: data.companyName,
         siren: data.siren,
         legal_status: data.legalStatus,
-        vehicle_types: data.vehicleTypes ?? null,
+        vehicle_types: data.vehicleTypes,
         ape_code: data.apeCode,
         vat_number: normalizeVatNumber(data.vatNumber),
         zone: normalizeZones(data.zones),
         skills: data.skills,
-        certifications: data.certifications ?? null,
+        certifications: data.certifications,
         years_experience: data.yearsExperience,
-        presentation: data.presentation ?? data.motivation ?? null,
-        kbis_url: data.kbisUrl ?? null,
+        presentation: data.presentation,
         terms_accepted: data.termsAccepted,
         data_accuracy_confirmed: data.dataAccuracyConfirmed,
       } as Record<string, unknown>);
@@ -120,7 +119,6 @@ class SupabasePartnersService implements IPartnersService{
       skills: string[];
       yearsExperience: number;
       presentation: string;
-      motivation: string;
       bankAccountHolder: string;
       bankName: string;
       iban: string;
@@ -170,7 +168,6 @@ class SupabasePartnersService implements IPartnersService{
         skills: appData.skills,
         yearsExperience: appData.years_experience,
         presentation: appData.presentation,
-        motivation: appData.presentation,
         bankAccountHolder: appData.bank_account_holder,
         bankName: appData.bank_name,
         iban: appData.iban,
@@ -212,6 +209,30 @@ class SupabasePartnersService implements IPartnersService{
       bic?: string;
     }
   ): Promise<void> {
+    if (data.birthDate) {
+      const parsed = new Date(data.birthDate);
+      const today = new Date();
+      if (Number.isNaN(parsed.getTime())) throw new Error('Date de naissance invalide');
+      if (parsed > today) throw new Error('La date de naissance ne peut pas être dans le futur');
+      let age = today.getFullYear() - parsed.getFullYear();
+      const monthDiff = today.getMonth() - parsed.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < parsed.getDate())) age--;
+      if (age < 17) throw new Error('Le technicien doit avoir au moins 17 ans');
+    }
+    if (data.birthPlace !== undefined && data.birthPlace.trim().length > 70) {
+      throw new Error('Le lieu de naissance est limité à 70 caractères');
+    }
+
+    let oldBirth: { id: string; birth_date: string | null; birth_place: string | null } | null = null;
+    if (data.birthDate !== undefined || data.birthPlace !== undefined) {
+      const { data: row } = await supabase
+        .from('partner_applications')
+        .select('id, birth_date, birth_place')
+        .eq('user_id', userId)
+        .maybeSingle();
+      oldBirth = row as { id: string; birth_date: string | null; birth_place: string | null } | null;
+    }
+
     // Update user table
     const userUpdates: Record<string, unknown> = {};
     if (data.firstName) userUpdates.first_name = data.firstName;
@@ -230,7 +251,10 @@ class SupabasePartnersService implements IPartnersService{
     // Update partner_applications table
     const appUpdates: Record<string, unknown> = {};
     if (data.birthDate) appUpdates.birth_date = data.birthDate;
-    if (data.birthPlace) appUpdates.birth_place = data.birthPlace;
+    if (data.birthPlace !== undefined) {
+      const birthPlace = data.birthPlace.trim();
+      if (birthPlace) appUpdates.birth_place = birthPlace;
+    }
     if (data.address) appUpdates.address = data.address;
     if (data.postalCode) appUpdates.postal_code = data.postalCode;
     if (data.city) appUpdates.city = data.city;
@@ -252,9 +276,6 @@ class SupabasePartnersService implements IPartnersService{
     if (data.skills) appUpdates.skills = data.skills;
     if (data.yearsExperience !== undefined) appUpdates.years_experience = data.yearsExperience;
     if (data.presentation) appUpdates.presentation = data.presentation;
-    // Le formulaire « Expertises » édite la motivation : même colonne que presentation.
-    const motivation = (data as { motivation?: string }).motivation;
-    if (motivation) appUpdates.presentation = motivation;
     if (data.bankAccountHolder) appUpdates.bank_account_holder = data.bankAccountHolder;
     if (data.bankName) appUpdates.bank_name = data.bankName;
     if (data.iban) appUpdates.iban = data.iban;
@@ -268,6 +289,59 @@ class SupabasePartnersService implements IPartnersService{
 
       if (appError) throw appError;
     }
+
+    if (oldBirth) {
+      await this.auditBirthChanges(oldBirth, data);
+    }
+  }
+
+  private async currentUserId(): Promise<string | null> {
+    try {
+      const raw = localStorage.getItem('depanpro_user');
+      if (!raw) return null;
+      return (JSON.parse(raw) as { id?: string }).id ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async auditBirthChanges(
+    oldBirth: { id: string; birth_date: string | null; birth_place: string | null },
+    data: { birthDate?: string; birthPlace?: string },
+  ): Promise<void> {
+    const actorId = await this.currentUserId();
+    if (!actorId) return;
+
+    const entries: Array<Record<string, unknown>> = [];
+    const newDate = data.birthDate || null;
+    const newPlace = data.birthPlace !== undefined ? data.birthPlace.trim() : null;
+
+    if (newDate && newDate !== oldBirth.birth_date) {
+      entries.push({
+        table_name: 'partner_applications',
+        record_id: oldBirth.id,
+        field_name: 'birth_date',
+        old_value: oldBirth.birth_date,
+        new_value: newDate,
+        changed_by: actorId,
+        change_reason: 'Modification fiche technicien (admin)',
+      });
+    }
+    if (newPlace && newPlace !== oldBirth.birth_place) {
+      entries.push({
+        table_name: 'partner_applications',
+        record_id: oldBirth.id,
+        field_name: 'birth_place',
+        old_value: oldBirth.birth_place,
+        new_value: newPlace,
+        changed_by: actorId,
+        change_reason: 'Modification fiche technicien (admin)',
+      });
+    }
+
+    if (entries.length === 0) return;
+    const { error } = await supabase.from('configuration_history').insert(entries as never);
+    if (error) console.error('Failed to log technician birth changes:', error);
   }
 
   // ── Load partner application data (pas d'appels directs Supabase) ──
